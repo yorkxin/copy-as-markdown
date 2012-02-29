@@ -63,25 +63,29 @@ h1 {
       document.execCommand('Copy');
     }
 
-    this.copyTabAsLink = function(tab, options) {
+    var linkTo = function(title, url, options) {
       if (options === undefined) {
         options = { use_identifier: false };
       }
 
       var result = "";
       if (options.use_identifier === true) {
-        result = "[" + tab.title + "][identifier]\n\n[identifier]: " + tab.url;
+        result = "[" + title + "][identifier]\n\n[identifier]: " + url;
       } else {
-        result = "[" + tab.title + "](" + tab.url + ")";
+        result = "[" + title + "](" + url + ")";
       }
 
-      setMarkdownResult(result);
+      return result;
+    }
+
+    this.copyLinkAsMarkdown = function(title, url, options) {
+      setMarkdownResult(linkTo(title, url, options));
       copyMarkdownCodeToClipboard();
     }
 
     this.copySelectedTabAsLink = function(options) {
       chrome.tabs.getSelected(null, function(tab) {
-        CopyAsMarkdown.copyTabAsLink(tab, options);
+        CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, options);
       });
     }
   })();
