@@ -46,15 +46,18 @@ h1 {
 
 <script type="text/javascript">
 (function() {
-  var CopyAsMarkdown = {
-    resultContainer: document.getElementById("result-markdown"),
-    setMarkdownResult: function(text) {
-      CopyAsMarkdown.resultContainer.value = text;
-    },
-    copyMarkdownCodeToClipboard: function() {
+  var CopyAsMarkdown = new (function() {
+    var resultContainer = document.getElementById("result-markdown");
+
+    var setMarkdownResult = function(text) {
+      resultContainer.value = text;
+    };
+
+    var copyMarkdownCodeToClipboard = function() {
       CopyAsMarkdown.resultContainer.select();
       document.execCommand('Copy');
     }
-  };
+
+  })();
 })();
 </script>
