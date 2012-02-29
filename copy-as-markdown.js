@@ -47,4 +47,53 @@
         break;
     }
   });
+
+  /* XXX: DIRTY WAY to make context menu work.
+   * Should split these into another javascript file that manages context menus */
+
+  var copyAsMarkdownContextMenuId = chrome.contextMenus.create({
+    title: "Copy as Markdown",
+    type: "normal",
+    contexts: ["page", "link"]
+  });
+
+  chrome.contextMenus.create({
+    parentId: copyAsMarkdownContextMenuId,
+    title: "Tab as [title](url)",
+    type: "normal",
+    contexts: ["page", "link"],
+    onclick: function copyPageAsMarkdownCallback(info, tab) {
+      CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, {use_identifier: false});
+    }
+  });
+
+  chrome.contextMenus.create({
+    parentId: copyAsMarkdownContextMenuId,
+    title: "Tab as [title][identifier]",
+    type: "normal",
+    contexts: ["page", "link"],
+    onclick: function copyPageAsMarkdownCallback(info, tab) {
+      CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, {use_identifier: true});
+    }
+  });
+
+  chrome.contextMenus.create({
+    parentId: copyAsMarkdownContextMenuId,
+    title: "Link as [title](url)",
+    type: "normal",
+    contexts: ["link"],
+    onclick: function copyPageAsMarkdownCallback(info, tab) {
+      CopyAsMarkdown.copyLinkAsMarkdown(info.selectionText, info.linkUrl, {use_identifier: false});
+    }
+  });
+
+  chrome.contextMenus.create({
+    parentId: copyAsMarkdownContextMenuId,
+    title: "Link as [title][identifier]",
+    type: "normal",
+    contexts: ["link"],
+    onclick: function copyPageAsMarkdownCallback(info, tab) {
+      CopyAsMarkdown.copyLinkAsMarkdown(info.selectionText, info.linkUrl, {use_identifier: true});
+    }
+  });
 })();

@@ -4,6 +4,7 @@
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "tabs",
+    "contextMenus",
     "http://*/*",
     "https://*/*"
   ],
