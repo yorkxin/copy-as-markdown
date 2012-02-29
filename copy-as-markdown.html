@@ -85,7 +85,7 @@ h1 {
 
     this.copySelectedTabAsLink = function(options) {
       chrome.tabs.getSelected(null, function(tab) {
-        CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, options);
+        copyLinkAsMarkdown(tab.title, tab.url, options);
       });
     }
   })();
