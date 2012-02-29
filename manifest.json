@@ -10,7 +10,7 @@
   "browser_action": {
      "default_icon": "toolbar-copy-as-markdown.png",
      "default_title": "Copy as Markdown...", 
-     "default_popup": "copy-as-markdown.html"
+     "default_popup": "browser-action-popup.html"
   },
   "background_page": "background.html"
 }
