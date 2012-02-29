@@ -70,7 +70,7 @@ h1 {
 
       var result = "";
       if (options.use_identifier === true) {
-        result = "[" + tab.title + "][identifier]";
+        result = "[" + tab.title + "][identifier]\n\n[identifier]: " + tab.url;
       } else {
         result = "[" + tab.title + "](" + tab.url + ")";
       }
