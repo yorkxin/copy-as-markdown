@@ -1,0 +1,8 @@
+{
+  "name": "Copy as Markdown",
+  "version": "0.0.0",
+  "description": "Copy Link or Image as Markdown code",
+  "browser_action": {
+     "default_icon": "toolbar-copy-as-markdown.png"
+  }
+}
