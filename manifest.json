@@ -13,5 +13,10 @@
      "default_title": "Copy as Markdown...", 
      "default_popup": "browser-action-popup.html"
   },
+  "icons": {
+    "16": "toolbar-copy-as-markdown.png",
+    "48": "toolbar-copy-as-markdown.png",
+    "128": "toolbar-copy-as-markdown.png"
+  },
   "background_page": "background.html"
 }
