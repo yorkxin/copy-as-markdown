@@ -41,6 +41,7 @@ h1 {
     <h1>Current Tab</h1>
     <ul class="menu">
       <li id="current-tab-link"><code>[title](url)</code></li>
+      <li id="current-tab-link-with-identifier"><code>[title][<em>identifier</em>]</code></li>
     </ul>
   </div>
 </div>
@@ -89,5 +90,8 @@ h1 {
     CopyAsMarkdown.copySelectedTabAsLink({use_identifier: false});
   });
 
+  document.getElementById("current-tab-link-with-identifier").addEventListener("click", function() {
+    CopyAsMarkdown.copySelectedTabAsLink({use_identifier: true});
+  })
 })();
 </script>
