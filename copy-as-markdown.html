@@ -49,6 +49,9 @@ h1 {
 (function() {
   var CopyAsMarkdown = new (function() {
     var resultContainer = document.getElementById("result-markdown");
+    resultContainer.addEventListener("click", function() {
+      resultContainer.select();
+    });
 
     var setMarkdownResult = function(text) {
       resultContainer.value = text;
