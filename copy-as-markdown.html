@@ -40,7 +40,7 @@ h1 {
   <div id="current-tab">
     <h1>Current Tab</h1>
     <ul class="menu">
-      <li><code>[title](url)</code></li>
+      <li id="current-tab-link"><code>[title](url)</code></li>
     </ul>
   </div>
 </div>
@@ -59,6 +59,17 @@ h1 {
       document.execCommand('Copy');
     }
 
+    this.copyTabAsLink = function(tab) {
+      setMarkdownResult("[" + tab.title + "](" + tab.url + ")");
+      copyMarkdownCodeToClipboard();
+    }
+
+    this.copySelectedTabAsLink = function() {
+      chrome.tabs.getSelected(null, CopyAsMarkdown.copyTabAsLink);
+    }
   })();
+
+  document.getElementById("current-tab-link").addEventListener("click", CopyAsMarkdown.copySelectedTabAsLink);
+
 })();
 </script>
