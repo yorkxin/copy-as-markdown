@@ -27,9 +27,15 @@ h1 {
   font-size: 18px;
 }
 
+#result textarea {
+}
+
 </style>
 
 <div id="container">
+  <div id="result">
+    <textarea id="result-markdown" disabled="disabled"></textarea>
+  </div>
   <div id="current-tab">
     <h1>Current Tab</h1>
     <ul class="menu">
@@ -37,3 +43,18 @@ h1 {
     </ul>
   </div>
 </div>
+
+<script type="text/javascript">
+(function() {
+  var CopyAsMarkdown = {
+    resultContainer: document.getElementById("result-markdown"),
+    setMarkdownResult: function(text) {
+      CopyAsMarkdown.resultContainer.value = text;
+    },
+    copyMarkdownCodeToClipboard: function() {
+      CopyAsMarkdown.resultContainer.select();
+      document.execCommand('Copy');
+    }
+  };
+})();
+</script>
