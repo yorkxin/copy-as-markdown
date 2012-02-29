@@ -48,54 +48,46 @@ h1 {
 
 <script type="text/javascript">
 (function() {
-  var CopyAsMarkdown = new (function() {
-    var resultContainer = document.getElementById("result-markdown");
-    resultContainer.addEventListener("click", function() {
-      resultContainer.select();
-    });
 
-    var setMarkdownResult = function(text) {
-      resultContainer.value = text;
-    };
-
-    var copyMarkdownCodeToClipboard = function() {
-      resultContainer.select();
-      document.execCommand('Copy');
-    }
-
-    var linkTo = function(title, url, options) {
-      if (options === undefined) {
-        options = { use_identifier: false };
-      }
-
-      var result = "";
-      if (options.use_identifier === true) {
-        result = "[" + title + "][identifier]\n\n[identifier]: " + url;
-      } else {
-        result = "[" + title + "](" + url + ")";
-      }
-
-      return result;
-    }
-
-    this.copyLinkAsMarkdown = function(title, url, options) {
-      setMarkdownResult(linkTo(title, url, options));
-      copyMarkdownCodeToClipboard();
-    }
-
-    this.copySelectedTabAsLink = function(options) {
-      chrome.tabs.getSelected(null, function(tab) {
-        copyLinkAsMarkdown(tab.title, tab.url, options);
-      });
-    }
-  })();
+  var resultContainer = document.getElementById("result-markdown");
+  resultContainer.addEventListener("click", function() {
+    resultContainer.select();
+  });
 
   document.getElementById("current-tab-link").addEventListener("click", function() {
-    CopyAsMarkdown.copySelectedTabAsLink({use_identifier: false});
+    chrome.tabs.getSelected(null, function(tab) {
+      chrome.extension.sendRequest({
+        action: "copyLinkAsMarkdown",
+        params: {
+          title: tab.title,
+          url: tab.url,
+          options: {
+            use_identifier: false
+          }
+        }
+      }, function(response) {
+        resultContainer.value = response.markdown;
+        console.log(response);
+      });
+    });
   });
 
   document.getElementById("current-tab-link-with-identifier").addEventListener("click", function() {
-    CopyAsMarkdown.copySelectedTabAsLink({use_identifier: true});
+    chrome.tabs.getSelected(null, function(tab) {
+      chrome.extension.sendRequest({
+        action: "copyLinkAsMarkdown",
+        params: {
+          title: tab.title,
+          url: tab.url,
+          options: {
+            use_identifier: true
+          }
+        }
+      }, function(response) {
+        resultContainer.value = response.markdown;
+        console.log(response);
+      });
+    });
   })
 })();
 </script>

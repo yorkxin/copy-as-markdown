@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
-    "tabs"
+    "tabs",
+    "http://*/*",
+    "https://*/*"
   ],
   "browser_action": {
      "default_icon": "toolbar-copy-as-markdown.png",
      "default_title": "Copy as Markdown...", 
      "default_popup": "copy-as-markdown.html"
-  }
+  },
+  "background_page": "background.html"
 }
