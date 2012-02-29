@@ -27,14 +27,15 @@ h1 {
   font-size: 18px;
 }
 
-#result textarea {
+#result input[type="text"] {
+  width: 100%;
 }
 
 </style>
 
 <div id="container">
   <div id="result">
-    <textarea id="result-markdown" disabled="disabled"></textarea>
+    <input type="text" id="result-markdown" readonly="readonly" />
   </div>
   <div id="current-tab">
     <h1>Current Tab</h1>
