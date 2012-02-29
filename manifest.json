@@ -3,6 +3,8 @@
   "version": "0.0.0",
   "description": "Copy Link or Image as Markdown code",
   "browser_action": {
-     "default_icon": "toolbar-copy-as-markdown.png"
+     "default_icon": "toolbar-copy-as-markdown.png",
+     "default_title": "Copy as Markdown...", 
+     "default_popup": "copy-as-markdown.html"
   }
 }
