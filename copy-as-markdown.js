@@ -99,7 +99,15 @@
     type: "normal",
     contexts: ["link"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
-      CopyAsMarkdown.copyLinkAsMarkdown(info.selectionText, info.linkUrl, {use_identifier: false});
+      // auto discover image
+      var linkText = "";
+
+      if (info.mediaType === "image") {
+        linkText = "![]("+info.srcUrl+")";
+      } else {
+        linkText = info.selectionText;
+      }
+      CopyAsMarkdown.copyLinkAsMarkdown(linkText, info.linkUrl, {use_identifier: false});
     }
   });
 
@@ -109,7 +117,16 @@
     type: "normal",
     contexts: ["link"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
-      CopyAsMarkdown.copyLinkAsMarkdown(info.selectionText, info.linkUrl, {use_identifier: true});
+      // auto discover image
+      var linkText = "";
+
+      if (info.mediaType === "image") {
+        linkText = "![]("+info.srcUrl+")";
+      } else {
+        linkText = info.selectionText;
+      }
+
+      CopyAsMarkdown.copyLinkAsMarkdown(linkText, info.linkUrl, {use_identifier: true});
     }
   });
 
