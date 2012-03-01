@@ -18,7 +18,7 @@
 
       var result = "";
       if (options.use_identifier === true) {
-        result = "[" + title + "][identifier]\n\n[identifier]: " + url;
+        result = "[" + title + "][id]\n\n[id]: " + url;
       } else {
         result = "[" + title + "](" + url + ")";
       }
@@ -59,7 +59,7 @@
 
   chrome.contextMenus.create({
     parentId: copyAsMarkdownContextMenuId,
-    title: "Tab as [title](url)",
+    title: "Page [title](url)",
     type: "normal",
     contexts: ["page", "link"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
@@ -69,7 +69,7 @@
 
   chrome.contextMenus.create({
     parentId: copyAsMarkdownContextMenuId,
-    title: "Tab as [title][identifier]",
+    title: "Page [title][id]",
     type: "normal",
     contexts: ["page", "link"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
@@ -79,7 +79,7 @@
 
   chrome.contextMenus.create({
     parentId: copyAsMarkdownContextMenuId,
-    title: "Link as [title](url)",
+    title: "Link [text or img](url)",
     type: "normal",
     contexts: ["link"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
@@ -89,7 +89,7 @@
 
   chrome.contextMenus.create({
     parentId: copyAsMarkdownContextMenuId,
-    title: "Link as [title][identifier]",
+    title: "Link [text or img][id]",
     type: "normal",
     contexts: ["link"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
