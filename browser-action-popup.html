@@ -44,6 +44,13 @@ h1 {
       <li id="current-tab-link-with-identifier"><code>[title][<em>identifier</em>]</code></li>
     </ul>
   </div>
+
+  <div id="all-tabs">
+    <h1>All Tabs as List</h1>
+    <ul class="menu">
+      <li id="all-tabs-link-as-list"><code>* [title](url)</code></li>
+    </ul>
+  </div>
 </div>
 
 <script type="text/javascript">
@@ -89,5 +96,35 @@ h1 {
       });
     });
   })
+
+  document.getElementById("all-tabs-link-as-list").addEventListener("click", function() {
+    chrome.windows.getCurrent(function (currentWindow) {
+      chrome.tabs.query({
+        windowId: currentWindow.id
+      }, function(tabs) {
+        var links = [];
+        for(var i in tabs) {
+          var tab = tabs[i];
+          links.push({
+            title: tab.title,
+            url: tab.url
+          });
+        }
+
+        chrome.extension.sendRequest({
+          action: "copyLinksAsListMarkdown", 
+          params: {
+            links: links,
+            options: {
+              use_identifier: false
+            }
+          }
+        }, function(response) {
+          resultContainer.value = response.markdown;
+          console.log(response);
+        });
+      });
+    });
+  });
 })();
 </script>

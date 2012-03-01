@@ -43,6 +43,19 @@
       return markdown;
     }
 
+    this.copyLinksAsListMarkdown = function(links, options) {
+      var md_list = [];
+        for(var i in links) {
+        var md = linkTo(links[i].title, links[i].url, options);
+        md_list.push("* " + md);
+      }
+
+      var markdown = md_list.join("\n");
+      setMarkdownResult(markdown);
+      copyMarkdownCodeToClipboard(markdown);
+      return markdown;
+    };
+
     this.copyImageAsMarkdown = function(title, url) {
       var markdown = imageFor(title, url);
       setMarkdownResult(markdown);
@@ -56,6 +69,10 @@
     switch(request.action) {
       case "copyLinkAsMarkdown":
         var md = CopyAsMarkdown.copyLinkAsMarkdown(request.params.title, request.params.url, request.params.options);
+        sendResponse({markdown: md});
+        break;
+      case "copyLinksAsListMarkdown":
+        var md = CopyAsMarkdown.copyLinksAsListMarkdown(request.params.links, request.params.options);
         sendResponse({markdown: md});
         break;
       default:
