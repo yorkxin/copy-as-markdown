@@ -2,6 +2,8 @@
   var CopyAsMarkdown = new (function() {
     var resultContainer = document.getElementById("result-markdown");
 
+    var defaultTitle = "(No Title)";
+
     var setMarkdownResult = function(text) {
       resultContainer.value = text;
     };
@@ -14,6 +16,10 @@
     var linkTo = function(title, url, options) {
       if (options === undefined) {
         options = { use_identifier: false };
+      }
+
+      if (title === undefined) {
+        title = defaultTitle;
       }
 
       var result = "";
