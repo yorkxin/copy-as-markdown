@@ -32,11 +32,21 @@
       return result;
     }
 
+    var imageFor = function(title, url) {
+      return "!["+title+"]("+url+")";
+    }
+
     this.copyLinkAsMarkdown = function(title, url, options) {
       var markdown = linkTo(title, url, options);
       setMarkdownResult(markdown);
       copyMarkdownCodeToClipboard();
       return markdown;
+    }
+
+    this.copyImageAsMarkdown = function(title, url) {
+      var markdown = imageFor(title, url);
+      setMarkdownResult(markdown);
+      copyMarkdownCodeToClipboard();
     }
   })();
 
@@ -60,7 +70,7 @@
   var copyAsMarkdownContextMenuId = chrome.contextMenus.create({
     title: "Copy as Markdown",
     type: "normal",
-    contexts: ["page", "link"]
+    contexts: ["page", "link", "image"]
   });
 
   chrome.contextMenus.create({
@@ -100,6 +110,16 @@
     contexts: ["link"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
       CopyAsMarkdown.copyLinkAsMarkdown(info.selectionText, info.linkUrl, {use_identifier: true});
+    }
+  });
+
+  chrome.contextMenus.create({
+    parentId: copyAsMarkdownContextMenuId,
+    title: "Image ![](src)", // TODO: how to fetch alt text?
+    type: "normal",
+    contexts: ["image"],
+    onclick: function copyImageAsMarkdownCallback(info, tab) {
+      CopyAsMarkdown.copyImageAsMarkdown("", info.srcUrl);
     }
   });
 })();
