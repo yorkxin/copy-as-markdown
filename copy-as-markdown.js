@@ -67,7 +67,7 @@
     parentId: copyAsMarkdownContextMenuId,
     title: "Page [title](url)",
     type: "normal",
-    contexts: ["page", "link"],
+    contexts: ["page"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
       CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, {use_identifier: false});
     }
@@ -77,7 +77,7 @@
     parentId: copyAsMarkdownContextMenuId,
     title: "Page [title][id]",
     type: "normal",
-    contexts: ["page", "link"],
+    contexts: ["page"],
     onclick: function copyPageAsMarkdownCallback(info, tab) {
       CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, {use_identifier: true});
     }
