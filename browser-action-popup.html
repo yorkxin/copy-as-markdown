@@ -61,8 +61,17 @@ h1 {
     resultContainer.select();
   });
 
+  var getCurrentTab = function (callback) {
+    chrome.tabs.query({
+      windowId: chrome.windows.WINDOW_ID_CURRENT,
+      active: true
+    }, function(tabs) {
+      callback(tabs[0]);
+    });
+  };
+
   document.getElementById("current-tab-link").addEventListener("click", function() {
-    chrome.tabs.getSelected(null, function(tab) {
+    getCurrentTab(function(tab) {
       chrome.extension.sendRequest({
         action: "copyLinkAsMarkdown",
         params: {
@@ -80,7 +89,7 @@ h1 {
   });
 
   document.getElementById("current-tab-link-with-identifier").addEventListener("click", function() {
-    chrome.tabs.getSelected(null, function(tab) {
+    getCurrentTab(function(tab) {
       chrome.extension.sendRequest({
         action: "copyLinkAsMarkdown",
         params: {
