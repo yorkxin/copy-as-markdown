@@ -61,78 +61,23 @@ h1 {
     resultContainer.select();
   });
 
-  var getCurrentTab = function (callback) {
-    chrome.tabs.query({
-      windowId: chrome.windows.WINDOW_ID_CURRENT,
-      active: true
-    }, function(tabs) {
-      callback(tabs[0]);
-    });
-  };
+  var backgroundPage = chrome.extension.getBackgroundPage();
 
   document.getElementById("current-tab-link").addEventListener("click", function() {
-    getCurrentTab(function(tab) {
-      chrome.extension.sendRequest({
-        action: "copyLinkAsMarkdown",
-        params: {
-          title: tab.title,
-          url: tab.url,
-          options: {
-            use_identifier: false
-          }
-        }
-      }, function(response) {
-        resultContainer.value = response.markdown;
-        console.log(response);
-      });
+    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: false}, function(markdown) {
+      resultContainer.value = markdown;
     });
   });
 
   document.getElementById("current-tab-link-with-identifier").addEventListener("click", function() {
-    getCurrentTab(function(tab) {
-      chrome.extension.sendRequest({
-        action: "copyLinkAsMarkdown",
-        params: {
-          title: tab.title,
-          url: tab.url,
-          options: {
-            use_identifier: true
-          }
-        }
-      }, function(response) {
-        resultContainer.value = response.markdown;
-        console.log(response);
-      });
+    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: true}, function(markdown) {
+      resultContainer.value = markdown;
     });
   })
 
   document.getElementById("all-tabs-link-as-list").addEventListener("click", function() {
-    chrome.windows.getCurrent(function (currentWindow) {
-      chrome.tabs.query({
-        windowId: currentWindow.id
-      }, function(tabs) {
-        var links = [];
-        for(var i in tabs) {
-          var tab = tabs[i];
-          links.push({
-            title: tab.title,
-            url: tab.url
-          });
-        }
-
-        chrome.extension.sendRequest({
-          action: "copyLinksAsListMarkdown", 
-          params: {
-            links: links,
-            options: {
-              use_identifier: false
-            }
-          }
-        }, function(response) {
-          resultContainer.value = response.markdown;
-          console.log(response);
-        });
-      });
+    backgroundPage.CopyAsMarkdown.copyAllTabs({use_identifier: false}, function(markdown) {
+      resultContainer.value = markdown;
     });
   });
 })();
