@@ -27,16 +27,9 @@ h1 {
   font-size: 18px;
 }
 
-#result textarea {
-  width: 100%;
-}
-
 </style>
 
 <div id="container">
-  <div id="result">
-    <textarea id="result-markdown" readonly="readonly"></textarea>
-  </div>
   <div id="current-tab">
     <h1>Current Tab</h1>
     <ul class="menu">
@@ -56,29 +49,18 @@ h1 {
 <script type="text/javascript">
 (function() {
 
-  var resultContainer = document.getElementById("result-markdown");
-  resultContainer.addEventListener("click", function() {
-    resultContainer.select();
-  });
-
   var backgroundPage = chrome.extension.getBackgroundPage();
 
   document.getElementById("current-tab-link").addEventListener("click", function() {
-    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: false}, function(markdown) {
-      resultContainer.value = markdown;
-    });
+    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: false});
   });
 
   document.getElementById("current-tab-link-with-identifier").addEventListener("click", function() {
-    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: true}, function(markdown) {
-      resultContainer.value = markdown;
-    });
+    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: true});
   })
 
   document.getElementById("all-tabs-link-as-list").addEventListener("click", function() {
-    backgroundPage.CopyAsMarkdown.copyAllTabs({use_identifier: false}, function(markdown) {
-      resultContainer.value = markdown;
-    });
+    backgroundPage.CopyAsMarkdown.copyAllTabs({use_identifier: false});
   });
 })();
 </script>
