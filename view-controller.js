@@ -15,7 +15,7 @@ var ViewController = new (function() {
       setMessage("normal", "...");
 
       // a little tricky, see http://stackoverflow.com/questions/969743
-      backgroundPage.CopyAsMarkdown[action](options, function(markdown) {
+      backgroundPage.CopyAsMarkdown[action](options, function() {
         setMessage("success", "Copied!");
       });
 
