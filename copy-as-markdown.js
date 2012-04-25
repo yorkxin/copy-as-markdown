@@ -1,4 +1,3 @@
-(function() {
   var CopyAsMarkdown = new (function() {
     var resultContainer = document.getElementById("result-markdown");
 
@@ -156,4 +155,3 @@
       CopyAsMarkdown.copyImageAsMarkdown("", info.srcUrl);
     }
   });
-})();
