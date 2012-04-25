@@ -25,3 +25,24 @@ ul.menu > li.hover {
 h1 {
   font-size: 18px;
 }
+
+#message {
+  font-size: 12px;
+  height: 12px;
+}
+
+#message.normal {
+  color: silver;
+}
+
+#message.success {
+  color: green;
+  /* TODO: add a check icon.
+   * use :before with content: "(unicode of the check character)" */
+}
+
+#message.error {
+  color: red;
+  /* TODO: add a cross icon.
+   * use :before with content: "(unicode of the cross character)" */
+}
