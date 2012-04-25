@@ -18,21 +18,13 @@
   </div>
 </div>
 
+<script src="view-controller.js" type="text/javascript"></script>
 <script type="text/javascript">
 (function() {
 
-  var backgroundPage = chrome.extension.getBackgroundPage();
+  ViewController.bindFeature("current-tab-link", "click", "copyCurrentTab", { use_identifier: false });
+  ViewController.bindFeature("current-tab-link-with-identifier", "click", "copyCurrentTab", { use_identifier: true });
+  ViewController.bindFeature("all-tabs-link-as-list", "click", "copyAllTabs", { use_identifier: false });
 
-  document.getElementById("current-tab-link").addEventListener("click", function() {
-    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: false});
-  });
-
-  document.getElementById("current-tab-link-with-identifier").addEventListener("click", function() {
-    backgroundPage.CopyAsMarkdown.copyCurrentTab({use_identifier: true});
-  })
-
-  document.getElementById("all-tabs-link-as-list").addEventListener("click", function() {
-    backgroundPage.CopyAsMarkdown.copyAllTabs({use_identifier: false});
-  });
 })();
 </script>
