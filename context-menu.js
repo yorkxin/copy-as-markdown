@@ -10,7 +10,7 @@ chrome.contextMenus.create({
   type: "normal",
   contexts: ["page"],
   onclick: function copyPageAsMarkdownCallback(info, tab) {
-    CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, {use_identifier: false});
+    CopyAsMarkdown.copyLink(tab.title, tab.url, {use_identifier: false});
   }
 });
 
@@ -20,7 +20,7 @@ chrome.contextMenus.create({
   type: "normal",
   contexts: ["page"],
   onclick: function copyPageAsMarkdownCallback(info, tab) {
-    CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, {use_identifier: true});
+    CopyAsMarkdown.copyLink(tab.title, tab.url, {use_identifier: true});
   }
 });
 
@@ -38,7 +38,7 @@ chrome.contextMenus.create({
     } else {
       linkText = info.selectionText;
     }
-    CopyAsMarkdown.copyLinkAsMarkdown(linkText, info.linkUrl, {use_identifier: false});
+    CopyAsMarkdown.copyLink(linkText, info.linkUrl, {use_identifier: false});
   }
 });
 
@@ -57,7 +57,7 @@ chrome.contextMenus.create({
       linkText = info.selectionText;
     }
 
-    CopyAsMarkdown.copyLinkAsMarkdown(linkText, info.linkUrl, {use_identifier: true});
+    CopyAsMarkdown.copyLink(linkText, info.linkUrl, {use_identifier: true});
   }
 });
 
@@ -66,7 +66,7 @@ chrome.contextMenus.create({
   title: "Image ![](src)", // TODO: how to fetch alt text?
   type: "normal",
   contexts: ["image"],
-  onclick: function copyImageAsMarkdownCallback(info, tab) {
-    CopyAsMarkdown.copyImageAsMarkdown("", info.srcUrl);
+  onclick: function copyImageCallback(info, tab) {
+    CopyAsMarkdown.copyImage("", info.srcUrl);
   }
 });

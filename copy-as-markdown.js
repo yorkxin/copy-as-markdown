@@ -22,18 +22,18 @@ var CopyAsMarkdown = new (function() {
     resultContainer.value = text;
   };
 
-  var copyMarkdownCodeToClipboard = function() {
+  var copyResultToClipboard = function() {
     resultContainer.select();
     document.execCommand('Copy');
   }
 
-  this.copyLinkAsMarkdown = function(title, url, options) {
+  this.copyLink = function(title, url, options) {
     var markdown = Markdown.linkTo(title, url, options);
     setMarkdownResult(markdown);
-    copyMarkdownCodeToClipboard();
+    copyResultToClipboard();
   }
 
-  this.copyLinksAsListMarkdown = function(links, options) {
+  this.copyListOfLinks = function(links, options) {
     var md_list = [];
       for(var i in links) {
       var md = Markdown.linkTo(links[i].title, links[i].url, options);
@@ -42,19 +42,19 @@ var CopyAsMarkdown = new (function() {
 
     var markdown = md_list.join("\n");
     setMarkdownResult(markdown);
-    copyMarkdownCodeToClipboard();
+    copyResultToClipboard();
   };
 
-  this.copyImageAsMarkdown = function(title, url) {
+  this.copyImage = function(title, url) {
     var markdown = Markdown.imageFor(title, url);
     setMarkdownResult(markdown);
-    copyMarkdownCodeToClipboard();
+    copyResultToClipboard();
   }
 
   this.copyCurrentTab = function(options, callback) {
     getCurrentTab(function(tab) {
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
-      CopyAsMarkdown.copyLinkAsMarkdown(tab.title, tab.url, options);
+      CopyAsMarkdown.copyLink(tab.title, tab.url, options);
       callback();
     });
   };
@@ -71,7 +71,7 @@ var CopyAsMarkdown = new (function() {
       };
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
-      CopyAsMarkdown.copyLinksAsListMarkdown(links, options);
+      CopyAsMarkdown.copyListOfLinks(links, options);
       callback();
     });
   };

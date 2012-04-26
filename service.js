@@ -1,11 +1,11 @@
 chrome.extension.onRequest.addListener(function(request, sender, sendResponse) {
   switch(request.action) {
-    case "copyLinkAsMarkdown":
-      var md = CopyAsMarkdown.copyLinkAsMarkdown(request.params.title, request.params.url, request.params.options);
+    case "copyLink":
+      var md = CopyAsMarkdown.copyLink(request.params.title, request.params.url, request.params.options);
       sendResponse({markdown: md});
       break;
-    case "copyLinksAsListMarkdown":
-      var md = CopyAsMarkdown.copyLinksAsListMarkdown(request.params.links, request.params.options);
+    case "copyListOfLinks":
+      var md = CopyAsMarkdown.copyListOfLinks(request.params.links, request.params.options);
       sendResponse({markdown: md});
       break;
     default:
