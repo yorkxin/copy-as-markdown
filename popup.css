@@ -1,0 +1,48 @@
+#container {
+  width: 240px;
+  font-family: sans-serif;
+}
+
+ul.menu {
+  font-size: 16px;
+  list-style: none;
+  padding: 0 0.5em;
+}
+
+ul.menu > li {
+  border: 1px solid black;
+  padding: 5px;
+  border-radius: 5px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  cursor: pointer;
+}
+
+ul.menu > li.hover {
+  background-color: #FCC;
+}
+
+h1 {
+  font-size: 18px;
+}
+
+#message {
+  font-size: 12px;
+  height: 12px;
+}
+
+#message.normal {
+  color: silver;
+}
+
+#message.success {
+  color: green;
+  /* TODO: add a check icon.
+   * use :before with content: "(unicode of the check character)" */
+}
+
+#message.error {
+  color: red;
+  /* TODO: add a cross icon.
+   * use :before with content: "(unicode of the cross character)" */
+}
