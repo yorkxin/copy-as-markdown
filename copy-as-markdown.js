@@ -18,38 +18,30 @@ var CopyAsMarkdown = new (function() {
 
   var defaultTitle = "(No Title)";
 
-  var setMarkdownResult = function(text) {
+  var copyToClipboard = function(text) {
     resultContainer.value = text;
-  };
-
-  var copyResultToClipboard = function() {
     resultContainer.select();
     document.execCommand('Copy');
-  }
+    resultContainer.value = "";
+  };
 
   this.copyLink = function(title, url, options) {
-    var markdown = Markdown.linkTo(title, url, options);
-    setMarkdownResult(markdown);
-    copyResultToClipboard();
-  }
+    copyToClipboard(Markdown.linkTo(title, url, options));
+  };
 
   this.copyListOfLinks = function(links, options) {
     var md_list = [];
-      for(var i in links) {
+    for(var i in links) {
       var md = Markdown.linkTo(links[i].title, links[i].url, options);
       md_list.push("* " + md);
     }
 
-    var markdown = md_list.join("\n");
-    setMarkdownResult(markdown);
-    copyResultToClipboard();
+    copyToClipboard(md_list.join("\n"));
   };
 
   this.copyImage = function(title, url) {
-    var markdown = Markdown.imageFor(title, url);
-    setMarkdownResult(markdown);
-    copyResultToClipboard();
-  }
+    copyToClipboard(Markdown.imageFor(title, url));
+  };
 
   this.copyCurrentTab = function(options, callback) {
     getCurrentTab(function(tab) {
