@@ -1,42 +1,7 @@
-<style type="text/css" media="screen">
-#container {
-  width: 240px;
-  font-family: sans-serif;
-}
-
-ul.menu {
-  font-size: 16px;
-  list-style: none;
-  padding: 0 0.5em;
-}
-
-ul.menu > li {
-  border: 1px solid black;
-  padding: 5px;
-  border-radius: 5px;
-  margin-top: 3px;
-  margin-bottom: 3px;
-  cursor: pointer;
-}
-
-ul.menu > li.hover {
-  background-color: #FCC;
-}
-
-h1 {
-  font-size: 18px;
-}
-
-#result textarea {
-  width: 100%;
-}
-
-</style>
+<link rel="stylesheet" href="popup.css" type="text/css" media="screen">
 
 <div id="container">
-  <div id="result">
-    <textarea id="result-markdown" readonly="readonly"></textarea>
-  </div>
+  <span id="message" class="normal"></span>
   <div id="current-tab">
     <h1>Current Tab</h1>
     <ul class="menu">
@@ -53,87 +18,13 @@ h1 {
   </div>
 </div>
 
+<script src="view-controller.js" type="text/javascript"></script>
 <script type="text/javascript">
 (function() {
 
-  var resultContainer = document.getElementById("result-markdown");
-  resultContainer.addEventListener("click", function() {
-    resultContainer.select();
-  });
+  ViewController.bindFeature("current-tab-link", "click", "copyCurrentTab", { use_identifier: false });
+  ViewController.bindFeature("current-tab-link-with-identifier", "click", "copyCurrentTab", { use_identifier: true });
+  ViewController.bindFeature("all-tabs-link-as-list", "click", "copyAllTabs", { use_identifier: false });
 
-  var getCurrentTab = function (callback) {
-    chrome.tabs.query({
-      windowId: chrome.windows.WINDOW_ID_CURRENT,
-      active: true
-    }, function(tabs) {
-      callback(tabs[0]);
-    });
-  };
-
-  document.getElementById("current-tab-link").addEventListener("click", function() {
-    getCurrentTab(function(tab) {
-      chrome.extension.sendRequest({
-        action: "copyLinkAsMarkdown",
-        params: {
-          title: tab.title,
-          url: tab.url,
-          options: {
-            use_identifier: false
-          }
-        }
-      }, function(response) {
-        resultContainer.value = response.markdown;
-        console.log(response);
-      });
-    });
-  });
-
-  document.getElementById("current-tab-link-with-identifier").addEventListener("click", function() {
-    getCurrentTab(function(tab) {
-      chrome.extension.sendRequest({
-        action: "copyLinkAsMarkdown",
-        params: {
-          title: tab.title,
-          url: tab.url,
-          options: {
-            use_identifier: true
-          }
-        }
-      }, function(response) {
-        resultContainer.value = response.markdown;
-        console.log(response);
-      });
-    });
-  })
-
-  document.getElementById("all-tabs-link-as-list").addEventListener("click", function() {
-    chrome.windows.getCurrent(function (currentWindow) {
-      chrome.tabs.query({
-        windowId: currentWindow.id
-      }, function(tabs) {
-        var links = [];
-        for(var i in tabs) {
-          var tab = tabs[i];
-          links.push({
-            title: tab.title,
-            url: tab.url
-          });
-        }
-
-        chrome.extension.sendRequest({
-          action: "copyLinksAsListMarkdown", 
-          params: {
-            links: links,
-            options: {
-              use_identifier: false
-            }
-          }
-        }, function(response) {
-          resultContainer.value = response.markdown;
-          console.log(response);
-        });
-      });
-    });
-  });
 })();
 </script>
