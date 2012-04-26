@@ -9,7 +9,7 @@ chrome.contextMenus.create({
   title: "Page [title](url)",
   type: "normal",
   contexts: ["page"],
-  onclick: function copyPageAsMarkdownCallback(info, tab) {
+  onclick: function (info, tab) {
     CopyAsMarkdown.copyLink(tab.title, tab.url, {use_identifier: false});
   }
 });
@@ -19,7 +19,7 @@ chrome.contextMenus.create({
   title: "Page [title][id]",
   type: "normal",
   contexts: ["page"],
-  onclick: function copyPageAsMarkdownCallback(info, tab) {
+  onclick: function (info, tab) {
     CopyAsMarkdown.copyLink(tab.title, tab.url, {use_identifier: true});
   }
 });
@@ -29,7 +29,7 @@ chrome.contextMenus.create({
   title: "Link [text or img](url)",
   type: "normal",
   contexts: ["link"],
-  onclick: function copyPageAsMarkdownCallback(info, tab) {
+  onclick: function (info, tab) {
     // auto discover image
     var linkText = "";
 
@@ -47,7 +47,7 @@ chrome.contextMenus.create({
   title: "Link [text or img][id]",
   type: "normal",
   contexts: ["link"],
-  onclick: function copyPageAsMarkdownCallback(info, tab) {
+  onclick: function (info, tab) {
     // auto discover image
     var linkText = "";
 
@@ -66,7 +66,7 @@ chrome.contextMenus.create({
   title: "Image ![](src)", // TODO: how to fetch alt text?
   type: "normal",
   contexts: ["image"],
-  onclick: function copyImageCallback(info, tab) {
+  onclick: function (info, tab) {
     CopyAsMarkdown.copyImage("", info.srcUrl);
   }
 });
