@@ -19,5 +19,7 @@
     "48": "toolbar-copy-as-markdown.png",
     "128": "toolbar-copy-as-markdown.png"
   },
-  "background_page": "background.html"
+  "background": {
+    "page": "background.html"
+  }
 }
