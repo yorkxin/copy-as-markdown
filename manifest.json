@@ -1,6 +1,7 @@
 {
   "name": "Copy as Markdown",
   "version": "0.4.0",
+  "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "tabs",
@@ -18,5 +19,7 @@
     "48": "toolbar-copy-as-markdown.png",
     "128": "toolbar-copy-as-markdown.png"
   },
-  "background_page": "background.html"
+  "background": {
+    "page": "background.html"
+  }
 }
