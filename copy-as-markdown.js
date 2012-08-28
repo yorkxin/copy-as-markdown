@@ -25,6 +25,10 @@ var CopyAsMarkdown = new (function() {
     resultContainer.value = "";
   };
 
+  this.getDefaultTitle = function() {
+    return defaultTitle;
+  };
+
   this.copyLink = function(title, url, options) {
     copyToClipboard(Markdown.linkTo(title, url, options));
   };

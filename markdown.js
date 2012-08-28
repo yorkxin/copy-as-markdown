@@ -5,7 +5,7 @@ var Markdown = {
     }
 
     if (title === undefined) {
-      title = defaultTitle;
+      title = CopyAsMarkdown.getDefaultTitle();
     }
 
     var result = "";
