@@ -12,7 +12,7 @@ var CopyAsMarkdown = new (function() {
 
   var getAllTabsOfCurrentWindow = function (callback) {
     chrome.tabs.query({
-      windowId: chrome.windows.WINDOW_ID_CURRENT,
+      windowId: chrome.windows.WINDOW_ID_CURRENT
     }, callback);
   };
 
@@ -64,7 +64,7 @@ var CopyAsMarkdown = new (function() {
           title: tab.title,
           url: tab.url
         });
-      };
+      }
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyListOfLinks(links, options);
