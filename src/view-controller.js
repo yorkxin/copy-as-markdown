@@ -9,7 +9,7 @@ var ViewController = new (function() {
 
   this.bindFeature = function(id, eventType, action, options) {
 
-    document.getElementById(id).addEventListener("click", function() {
+    document.getElementById(id).addEventListener(eventType, function() {
 
       // reset message to tell user it is working.
       setMessage("normal", "...");
