@@ -19,11 +19,13 @@ ul.menu > li {
 }
 
 ul.menu > li:hover {
-  background-color: #FCC;
+  background-color: #6CF;
+  color: white;
 }
 
 ul.menu > li.highlight-success {
   background-color: #CFC;
+  color: black;
 }
 
 h1 {
