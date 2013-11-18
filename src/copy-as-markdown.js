@@ -23,6 +23,8 @@ var CopyAsMarkdown = new (function() {
     resultContainer.select();
     document.execCommand('Copy');
     resultContainer.value = "";
+
+    flashBadge("success");
   };
 
   this.getDefaultTitle = function() {
@@ -69,6 +71,43 @@ var CopyAsMarkdown = new (function() {
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyListOfLinks(links, options);
       callback();
+    });
+  };
+
+  var flashBadge = function(type) {
+    var color, text;
+
+    switch (type) {
+      case "success":
+        color = "#408000";
+        text = "\u2713"; // Check mark
+        break;
+      case "fail":
+        color = "#800000";
+        text = "\u2717"; // Ballout X
+        break;
+      default:
+        return; // don't know what it is. quit.
+    }
+
+    chrome.browserAction.setBadgeText({
+      "text": text
+    });
+
+    chrome.browserAction.setBadgeBackgroundColor({
+      "color": color
+    });
+
+    setTimeout(clearBadge, 3000);
+  };
+
+  var clearBadge = function(type, text) {
+    chrome.browserAction.setBadgeText({
+      text: ""
+    });
+
+    chrome.browserAction.setBadgeBackgroundColor({
+      color: [0, 0, 0, 255] // opaque
     });
   };
 })();
