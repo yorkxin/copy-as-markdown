@@ -18,7 +18,7 @@ ul.menu > li {
   cursor: pointer;
 }
 
-ul.menu > li.hover {
+ul.menu > li:hover {
   background-color: #FCC;
 }
 
