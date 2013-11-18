@@ -9,7 +9,7 @@ var ViewController = new (function() {
       // a little tricky, see http://stackoverflow.com/questions/969743
       backgroundPage.CopyAsMarkdown[action](options, function() {
         elem.classList.add('highlight-success');
-        setTimeout(window.close, 150);
+        setTimeout(window.close, 300);
       });
 
     });
