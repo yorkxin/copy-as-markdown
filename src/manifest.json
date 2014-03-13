@@ -21,5 +21,16 @@
   },
   "background": {
     "page": "background.html"
+  },
+  "commands": {
+    "current-tab-link": {
+      "description": "current tab: [title](url)"
+    },
+    "current-tab-link-with-identifier": {
+      "description": "current tab: [title][identifier]"
+    },
+    "all-tabs-link-as-list": {
+      "description": "all tabs: * [title](url)"
+    }
   }
 }
