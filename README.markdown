@@ -49,12 +49,10 @@ You can add keyboard shortuts for copying tab(s) as Markdown. By default, Copy a
 
 1. Open [Extensions Page at chrome://extensions/](chrome://extensions/).
 2. Scroll to the bottom and click "Keyboard shortcuts"
-
-![](keybinding-1.png)
-
+![](screenshots/keybinding-1.png)
 3. Assign Keyboard Shortcuts in the dialog.
 
-![](keybinding-2.png)
+![](screenshots/keybinding-2.png)
 
 ## Known Issues
 
