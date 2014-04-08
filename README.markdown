@@ -42,7 +42,20 @@ The copied Markdown code will be:
     * ...
 
 *Note*: Planning to provide a reference-style option.
-  
+
+## Keyboard Shortcuts
+
+You can add keyboard shortuts for copying tab(s) as Markdown. By default, Copy as Markdown does not assign any keyboard shortcuts.
+
+1. Open [Extensions Page at chrome://extensions/](chrome://extensions/).
+2. Scroll to the bottom and click "Keyboard shortcuts"
+
+![](keybinding-1.png)
+
+3. Assign Keyboard Shortcuts in the dialog.
+
+![](keybinding-2.png)
+
 ## Known Issues
 
 - Cannot grab `image.alt`
