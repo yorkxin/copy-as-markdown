@@ -1,5 +1,4 @@
 chrome.commands.onCommand.addListener(function(command) {
-  console.log(CopyAsMarkdown);
   switch(command) {
     case "current-tab-link":
       CopyAsMarkdown.copyCurrentTab({ use_identifier: false });
