@@ -6,7 +6,8 @@ var SDK = {
   },
   Tabs: require("sdk/tabs"),
   Windows: require("sdk/windows"),
-  Clipboard: require("sdk/clipboard")
+  Clipboard: require("sdk/clipboard"),
+  ContextMenu: require("sdk/context-menu")
 };
 
 var CopyAsMarkdown = require('copy-as-markdown');
@@ -41,4 +42,29 @@ var button = SDK.UI.Button.Action.ActionButton({
     "64": "./images/icon-64.png"
   },
   onClick: copyAllTabsAsMarkdown
+});
+
+var anyContext = SDK.ContextMenu.PredicateContext(function() {
+  return true;
+});
+
+var contextMenu = SDK.ContextMenu.Menu({
+  label: "Copy as Markdown",
+  context: anyContext,
+  // TODO: don't know how to specify a correct image url. This isn't working:
+  // image: "./images/icon-16.png"
+});
+
+// context menu actions for page itself
+var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
+  label: "[Page Title](url)",
+  data: "copyCurrentPageAsMarkdown",
+  parentMenu: contextMenu,
+  context: anyContext,
+  contentScript:  'self.on("click", function(node, data) {' +
+                  '  self.postMessage({ node: node, data: data, url: window.location.href, title: document.title });' +
+                  '});',
+  onMessage: function(message) {
+    copyToClipboard(CopyAsMarkdown.formatLink(message.url, message.title));
+  }
 });
