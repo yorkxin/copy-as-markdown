@@ -82,3 +82,17 @@ var copyLinkAsMarkdownMenuItem = SDK.ContextMenu.Item({
     copyToClipboard(CopyAsMarkdown.formatLink(message.url, message.title));
   }
 });
+
+var copyImageAsMarkdown = SDK.ContextMenu.Item({
+  label: "![Image Alt](url)",
+  data: "copyImageAsMarkdown",
+  parentMenu: contextMenu,
+  context: SDK.ContextMenu.SelectorContext("img"),
+  contentScript:  'self.on("click", function(node, data) {' +
+                  '  self.postMessage({ node: node, data: data, url: node.src, title: node.alt });' +
+                  '});',
+  onMessage: function(message) {
+    copyToClipboard(CopyAsMarkdown.formatImage(message.url, message.title));
+  }
+});
+

@@ -1,15 +1,29 @@
-exports.formatLink = function(url, title) {
+function chomp(string) {
   // string chomp!
-  title = title.replace(/^\s+/, '').replace(/\s+$/, '');
+  return string.replace(/^\s+/, '').replace(/\s+$/, '');
+}
 
+function removeNewlines(string) {
   // remove any new-line chars
-  title = title.replace("\n", '');
+  return string.replace("\n", '');
+}
+
+function determineTitle(title) {
+  title = removeNewlines(chomp(title));
 
   if (title === '') {
     title = "(No Title)";
   }
 
-  return "[" + title + "](" + url + ")";
+  return title;
+}
+
+exports.formatLink = function(url, title) {
+  return "[" + determineTitle(title) + "](" + url + ")";
+};
+
+exports.formatImage = function(url, title) {
+  return "![" + determineTitle(title) + "](" + url + ")";
 };
 
 exports.formatList = function(texts) {
