@@ -1,9 +1,9 @@
 {
-  "name": "src-fx",
-  "title": "src-fx",
+  "name": "copy-as-markdown",
+  "title": "copy-as-markdown",
   "id": "jid1-tfBgelm3d4bLkQ",
-  "description": "a basic add-on",
-  "author": "",
-  "license": "MPL 2.0",
+  "description": "Copy Links, Tabs & Images as Markdown",
+  "author": "Yu-Cheng Chuang",
+  "license": "MIT",
   "version": "0.1"
 }
