@@ -68,3 +68,17 @@ var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
     copyToClipboard(CopyAsMarkdown.formatLink(message.url, message.title));
   }
 });
+
+// context menu for a link
+var copyLinkAsMarkdownMenuItem = SDK.ContextMenu.Item({
+  label: "[Link Title](url)",
+  data: "copyLinkAsMarkdownMenuItem",
+  parentMenu: contextMenu,
+  context: SDK.ContextMenu.SelectorContext("a"),
+  contentScript:  'self.on("click", function(node, data) {' +
+                  '  self.postMessage({ node: node, data: data, url: node.href, title: node.textContent });' +
+                  '});',
+  onMessage: function(message) {
+    copyToClipboard(CopyAsMarkdown.formatLink(message.url, message.title));
+  }
+});

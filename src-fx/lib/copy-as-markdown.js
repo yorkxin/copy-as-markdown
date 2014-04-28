@@ -1,4 +1,6 @@
 exports.formatLink = function(url, title) {
+  // string chomp!
+  title = title.replace(/^\s+/, '').replace(/\s+$/, '');
   return "[" + title + "](" + url + ")";
 };
 
