@@ -1,6 +1,14 @@
 exports.formatLink = function(url, title) {
   // string chomp!
   title = title.replace(/^\s+/, '').replace(/\s+$/, '');
+
+  // remove any new-line chars
+  title = title.replace("\n", '');
+
+  if (title === '') {
+    title = "(No Title)";
+  }
+
   return "[" + title + "](" + url + ")";
 };
 
