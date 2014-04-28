@@ -1,17 +1,25 @@
-var buttons = require('sdk/ui/button/action');
-var tabs = require("sdk/tabs");
-
-var button = buttons.ActionButton({
-  id: "mozilla-link",
-  label: "Visit Mozilla",
-  icon: {
-    "16": "./icon-16.png",
-    "32": "./icon-32.png",
-    "64": "./icon-64.png"
+var SDK = {
+  UI: {
+    Button: {
+      Action: require('sdk/ui/button/action')
+    }
   },
-  onClick: handleClick
-});
+  Tabs: require("sdk/tabs")
+};
 
-function handleClick(state) {
-  tabs.open("http://www.mozilla.org/");
-}
+var copyAllTabsAsMarkdown = function(state) {
+  console.log("ok");
+  // todo
+};
+
+// bootstrap
+var button = SDK.UI.Button.Action.ActionButton({
+  id: "copy-as-markdown",
+  label: "Copy as Markdown (All Tabs)",
+  icon: {
+    "16": "./images/icon-16.png",
+    "32": "./images/icon-32.png",
+    "64": "./images/icon-64.png"
+  },
+  onClick: copyAllTabsAsMarkdown
+});
