@@ -1,0 +1,9 @@
+{
+  "name": "copy-as-markdown",
+  "title": "Copy as Markdown",
+  "id": "jid1-tfBgelm3d4bLkQ",
+  "description": "Copy Links, Tabs & Images as Markdown",
+  "author": "Yu-Cheng Chuang",
+  "license": "MIT",
+  "version": "0.1.0"
+}
