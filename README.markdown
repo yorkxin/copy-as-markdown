@@ -11,10 +11,10 @@ Do you often type Markdown code manually for a link or image, or even all tabs i
 
 **Copy as Markdown** is a browser extension helps you copy the following things as Markdown to your system clipboard:
 
-:ballot_box_with_check: Current Tab as Link
-:ballot_box_with_check: A Link in the Page
-:ballot_box_with_check: An Image in the Page
-:ballot_box_with_check: An Image that is wrapped with a Link
+:ballot_box_with_check: Current Tab as Link<br>
+:ballot_box_with_check: A Link in the Page<br>
+:ballot_box_with_check: An Image in the Page<br>
+:ballot_box_with_check: An Image that is wrapped with a Link<br>
 :ballot_box_with_check: All Tabs as a List of Links
 
 ## Keyboard Shortcuts (Chrome-only)
