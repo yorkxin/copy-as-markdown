@@ -3,24 +3,27 @@ body {
   margin: 0;
 }
 
-ul.menu {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+.command {
+  /* restyle button */
+  -webkit-appearance: none;
+  outline: none;
+  background-color: white;
+  border: none;
+  width: 100%;
+  font-size: 1em;
+  text-align: left;
 
-ul.menu > li {
   padding: .3em .5em;
   cursor: pointer;
   white-space: nowrap;
 }
 
-ul.menu > li:hover {
+.command:hover {
   background-color: #268BD2;
   color: white;
 }
 
-ul.menu > .highlight-success {
+.command.highlight-success {
   background-color: #259286;
   color: #fdf5dd;
 }
