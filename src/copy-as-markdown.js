@@ -103,11 +103,11 @@ var CopyAsMarkdown = new (function() {
 
     switch (type) {
       case "success":
-        color = "#408000";
+        color = "#738a05";
         text = "\u2713"; // Check mark
         break;
       case "fail":
-        color = "#800000";
+        color = "#d11b24";
         text = "\u2717"; // Ballout X
         break;
       default:
