@@ -10,14 +10,14 @@
     "https://*/*"
   ],
   "browser_action": {
-     "default_icon": "toolbar-copy-as-markdown.png",
+     "default_icon": "icon-128.png",
      "default_title": "Copy as Markdown...", 
      "default_popup": "browser-action-popup.html"
   },
   "icons": {
-    "16": "toolbar-copy-as-markdown.png",
-    "48": "toolbar-copy-as-markdown.png",
-    "128": "toolbar-copy-as-markdown.png"
+    "16": "icon-16.png",
+    "48": "icon-48.png",
+    "128": "icon-128.png"
   },
   "background": {
     "page": "background.html"
