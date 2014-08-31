@@ -1,33 +1,26 @@
-#container {
-  width: 240px;
+body {
   font-family: sans-serif;
+  margin: 0;
 }
 
 ul.menu {
-  font-size: 16px;
   list-style: none;
-  padding: 0 0.5em;
+  padding: 0;
+  margin: 0;
 }
 
 ul.menu > li {
-  border: 1px solid black;
-  padding: 5px;
-  border-radius: 5px;
-  margin-top: 3px;
-  margin-bottom: 3px;
+  padding: .3em .5em;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 ul.menu > li:hover {
-  background-color: #6CF;
+  background-color: #268BD2;
   color: white;
 }
 
-ul.menu > li.highlight-success {
-  background-color: #CFC;
-  color: black;
-}
-
-h1 {
-  font-size: 18px;
+ul.menu > .highlight-success {
+  background-color: #259286;
+  color: #fdf5dd;
 }
