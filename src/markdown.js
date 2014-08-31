@@ -1,19 +1,10 @@
 var Markdown = {
-  linkTo: function(title, url, options) {
-    if (options === undefined) {
-      options = { use_identifier: false };
-    }
-
+  linkTo: function(title, url) {
     if (title === undefined) {
       title = CopyAsMarkdown.getDefaultTitle();
     }
 
-    var result = "";
-    if (options.use_identifier === true) {
-      result = "[" + title + "][id]\n\n[id]: " + url;
-    } else {
-      result = "[" + title + "](" + url + ")";
-    }
+    var result = "[" + title + "](" + url + ")";
 
     return result;
   },
