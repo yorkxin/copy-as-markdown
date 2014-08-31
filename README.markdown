@@ -16,6 +16,7 @@ Do you often type Markdown code manually for a link or image, or even all tabs i
 :ballot_box_with_check: An Image in the Page<br>
 :ballot_box_with_check: An Image that is wrapped with a Link<br>
 :ballot_box_with_check: All Tabs as a List of Links
+:ballot_box_with_check: Highlighted Tabs as a List of Links
 
 ## Keyboard Shortcuts (Chrome-only)
 
