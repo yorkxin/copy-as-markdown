@@ -16,6 +16,13 @@ var CopyAsMarkdown = new (function() {
     }, callback);
   };
 
+  var getHighlightedTabsOfCurrentWindow = function (callback) {
+    chrome.tabs.query({
+      currentWindow: true,
+      highlighted: true
+    }, callback);
+  };
+
   var defaultTitle = "(No Title)";
 
   var copyToClipboard = function(text) {
@@ -57,16 +64,33 @@ var CopyAsMarkdown = new (function() {
     });
   };
 
+  var extractTabsList = function(tabs) {
+    var links = [];
+
+    for (var i in tabs) {
+      var tab = tabs[i];
+      links.push({
+        title: tab.title,
+        url: tab.url
+      });
+    }
+
+    return links;
+  };
+
   this.copyAllTabs = function(options, callback) {
     getAllTabsOfCurrentWindow(function(tabs) {
-      var links = [];
-      for (var i in tabs) {
-        var tab = tabs[i];
-        links.push({
-          title: tab.title,
-          url: tab.url
-        });
-      }
+      var links = extractTabsList(tabs);
+
+      // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
+      CopyAsMarkdown.copyListOfLinks(links, options);
+      callback();
+    });
+  };
+
+  this.copyHighlightedTabs = function(options, callback) {
+    getHighlightedTabsOfCurrentWindow(function(tabs) {
+      var links = extractTabsList(tabs);
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyListOfLinks(links, options);

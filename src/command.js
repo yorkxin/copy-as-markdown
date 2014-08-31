@@ -7,5 +7,9 @@ chrome.commands.onCommand.addListener(function(command) {
     case "all-tabs-link-as-list":
       CopyAsMarkdown.copyAllTabs();
       break;
+
+    case "highlighted-tabs-link-as-list":
+      CopyAsMarkdown.copyHighlightedTabs();
+      break;
   }
 });
