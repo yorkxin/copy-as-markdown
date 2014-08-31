@@ -1,6 +1,6 @@
 {
   "name": "Copy as Markdown",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
