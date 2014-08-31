@@ -12,7 +12,7 @@ var CopyAsMarkdown = new (function() {
 
   var getAllTabsOfCurrentWindow = function (callback) {
     chrome.tabs.query({
-      windowId: chrome.windows.WINDOW_ID_CURRENT
+      currentWindow: true,
     }, callback);
   };
 
