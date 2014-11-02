@@ -42,20 +42,16 @@ chrome.contextMenus.create({
   }
 });
 
-
-chrome.contextMenus.create({
+chrome.contextMenus.create(
+  {
+  id: "imageToLocal",
   parentId: copyAsMarkdownContextMenuId,
-  title: "DownloadedImage ![](src)", // TODO: how to fetch alt text?
+  title: "DownloadedImage ![](src)",
   type: "normal",
   contexts: ["image"],
+  enabled: false,
   onclick: function (info, tab) {
     CopyAsMarkdown.copyImageToLocal("", info.srcUrl);
   }
 });
-
-
-
-
-
-
 

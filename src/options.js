@@ -37,6 +37,14 @@ var _OptionsClass = function() {
 
 
 function saveChanges() {
+  var checked = document.getElementById('enableImageToLocal').checked;
+  if (checked == true) {
+    chrome.contextMenus.update(
+      "imageToLocal",
+      {
+      enabled: true
+    });
+  }
   var storagePath = document.getElementById('path').value;
   if (!storagePath) {
     message('Error: No value specified');
