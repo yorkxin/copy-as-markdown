@@ -57,15 +57,14 @@ var CopyAsMarkdown = new (function() {
   };
 
   this.copyImageToLocal = function (title, url) {
+    user_dir = localStorage["path"].replace(/[\r\n]/, '');
 
-    //you have to manually type in your username ex. /Users/YOU/Downloads/whatever
-    var user_dir = "~/Downloads/markdownImages/" 
     var filename = url.replace(/^.*[\\\/]/, '');
     var localPath = user_dir.concat(filename);
     copyToClipboard(Markdown.imageFor(title, localPath));
 
-    //when a file is under https domain, special url path
-    var relativePath = "./markdownImages/".concat(filename);
+    var pathDownloadDir = user_dir.replace(/^.*[\\\/]Downloads/, '');
+    var relativePath = ".".concat(pathDownloadDir).concat(filename);
     chrome.downloads.download({url: url, filename: relativePath}, function(id) {
     });
   }

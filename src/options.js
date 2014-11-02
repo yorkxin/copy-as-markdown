@@ -29,13 +29,33 @@ var _OptionsClass = function() {
   };
 
   this.save = function() {
-
   };
 };
 
+
+
+
+
+function saveChanges() {
+  var storagePath = document.getElementById('path').value;
+  if (!storagePath) {
+    message('Error: No value specified');
+    return;
+  }
+  localStorage["path"] = storagePath;
+
+  var display = document.getElementById("hasDownloaded");
+  display.innerText = "your download directory is: ".concat(storagePath)
+}
+
+
+
+document.getElementById('save').addEventListener('click',
+    saveChanges);
 Options = new _OptionsClass();
 
 document.addEventListener("DOMContentLoaded", function() {
   var form = document.getElementById("options");
   Options.load(localStorage, form);
 });
+

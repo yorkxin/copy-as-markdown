@@ -38,7 +38,6 @@ chrome.contextMenus.create({
   type: "normal",
   contexts: ["image"],
   onclick: function (info, tab) {
-
     CopyAsMarkdown.copyImage("", info.srcUrl);
   }
 });

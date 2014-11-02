@@ -8,8 +8,10 @@
     "contextMenus",
     "http://*/*",
     "https://*/*",
-    "downloads"
+    "downloads",
+    "storage"
   ],
+  "options_page": "options.html",
   "browser_action": {
      "default_icon": "icon-128.png",
      "default_title": "Copy as Markdown...", 

@@ -1,9 +1,3 @@
-/*
-generates markdonw syntax on given data
-
-don't touch here 
-*/
-
 var Markdown = {
   linkTo: function(title, url) {
     if (title === undefined) {
