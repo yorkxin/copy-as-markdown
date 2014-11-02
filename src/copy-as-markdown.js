@@ -56,6 +56,21 @@ var CopyAsMarkdown = new (function() {
     copyToClipboard(Markdown.imageFor(title, url));
   };
 
+  this.copyImageToLocal = function (title, url) {
+    user_dir = localStorage["path"].replace(/[\r\n]/, '');
+
+    var filename = url.replace(/^.*[\\\/]/, '');
+    var localPath = user_dir.concat(filename);
+    copyToClipboard(Markdown.imageFor(title, localPath));
+
+    var pathDownloadDir = user_dir.replace(/^.*[\\\/]Downloads/, '');
+    var relativePath = ".".concat(pathDownloadDir).concat(filename);
+    chrome.downloads.download({url: url, filename: relativePath}, function(id) {
+    });
+  }
+
+
+
   this.copyCurrentTab = function(options, callback) {
     getCurrentTab(function(tab) {
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
@@ -108,7 +123,7 @@ var CopyAsMarkdown = new (function() {
         break;
       case "fail":
         color = "#d11b24";
-        text = "\u2717"; // Ballout X
+        text = "\u2717"; // Ballout XXX
         break;
       default:
         return; // don't know what it is. quit.

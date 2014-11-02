@@ -41,3 +41,17 @@ chrome.contextMenus.create({
     CopyAsMarkdown.copyImage("", info.srcUrl);
   }
 });
+
+chrome.contextMenus.create(
+  {
+  id: "imageToLocal",
+  parentId: copyAsMarkdownContextMenuId,
+  title: "DownloadedImage ![](src)",
+  type: "normal",
+  contexts: ["image"],
+  enabled: false,
+  onclick: function (info, tab) {
+    CopyAsMarkdown.copyImageToLocal("", info.srcUrl);
+  }
+});
+
