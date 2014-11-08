@@ -1,11 +1,13 @@
 var SDK = {
   UI: {
     Button: {
-      Action: require('sdk/ui/button/action')
+      Toggle: require('sdk/ui/button/toggle')
     }
   },
   Tabs: require("sdk/tabs"),
   Windows: require("sdk/windows"),
+  Panels: require("sdk/panel"),
+  Self: require("sdk/self"),
   Clipboard: require("sdk/clipboard"),
   ContextMenu: require("sdk/context-menu")
 };
@@ -14,6 +16,15 @@ var Markdown = require('markdown');
 
 var copyToClipboard = function(string) {
   SDK.Clipboard.set(string, "text");
+};
+
+var copyCurrentTabAsMarkdown = function() {
+  var currentWindow = SDK.Windows.browserWindows.activeWindow;
+  var tab = currentWindow.tabs.activeTab;
+
+  var string = Markdown.formatLink(tab.url, tab.title);
+
+  copyToClipboard(string);
 };
 
 var copyAllTabsAsMarkdown = function(state) {
@@ -32,17 +43,51 @@ var copyAllTabsAsMarkdown = function(state) {
   copyToClipboard(string);
 };
 
+var panel = SDK.Panels.Panel({
+  contentURL: SDK.Self.data.url("panel.html"),
+  contentStyleFile: SDK.Self.data.url("panel.css"),
+  contentScriptFile: SDK.Self.data.url("panel.js"),
+  onHide: handleHide
+});
+
+panel.port.on("copy", function(scope) {
+  console.log(scope);
+
+  switch (scope) {
+    case "current-tab":
+    copyCurrentTabAsMarkdown();
+    break;
+
+    case "all-tabs":
+    copyAllTabsAsMarkdown();
+    break;
+  }
+
+});
+
+var togglePanel = function(state) {
+  if (state.checked) {
+    panel.show({
+      position: button
+    });
+  }
+};
+
 // bootstrap
-var button = SDK.UI.Button.Action.ActionButton({
+var button = SDK.UI.Button.Toggle.ToggleButton({
   id: "copy-as-markdown",
-  label: "Copy as Markdown (All Tabs)",
+  label: "Copy as Markdown",
   icon: {
     "16": "./images/icon-16.png",
     "32": "./images/icon-32.png",
     "64": "./images/icon-64.png"
   },
-  onClick: copyAllTabsAsMarkdown
+  onChange: togglePanel
 });
+
+var handleHide = function() {
+  button.state('window', { checked: false });
+};
 
 var anyContext = SDK.ContextMenu.PredicateContext(function() {
   return true;
