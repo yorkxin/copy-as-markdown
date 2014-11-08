@@ -41,7 +41,9 @@ var panel = SDK.Panels.Panel({
   contentURL: SDK.Self.data.url("panel.html"),
   contentStyleFile: SDK.Self.data.url("panel.css"),
   contentScriptFile: SDK.Self.data.url("panel.js"),
-  onHide: handleHide
+  onHide: handleHide,
+  width: 100,
+  height: 56
 });
 
 panel.port.on("copy", function(scope) {
