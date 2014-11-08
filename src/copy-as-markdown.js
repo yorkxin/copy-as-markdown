@@ -25,13 +25,13 @@ var CopyAsMarkdown = new (function() {
 
   var defaultTitle = "(No Title)";
 
-  var copyToClipboard = function(text) {
+  var copyToClipboard = function(text, okCallback) {
     resultContainer.value = text;
     resultContainer.select();
     document.execCommand('Copy');
     resultContainer.value = "";
 
-    flashBadge("success");
+    okCallback();
   };
 
   this.getDefaultTitle = function() {
@@ -39,7 +39,9 @@ var CopyAsMarkdown = new (function() {
   };
 
   this.copyLink = function(title, url, options) {
-    copyToClipboard(Markdown.linkTo(title, url, options));
+    copyToClipboard(Markdown.linkTo(title, url, options), function() {
+      flashBadge("success", "1");
+    });
   };
 
   this.copyListOfLinks = function(links, options) {
@@ -49,11 +51,15 @@ var CopyAsMarkdown = new (function() {
       md_list.push("* " + md);
     }
 
-    copyToClipboard(md_list.join("\n"));
+    copyToClipboard(md_list.join("\n"), function() {
+      flashBadge("success", md_list.length.toString());
+    });
   };
 
   this.copyImage = function(title, url) {
-    copyToClipboard(Markdown.imageFor(title, url));
+    copyToClipboard(Markdown.imageFor(title, url), function() {
+      flashBadge("success", "1");
+    });
   };
 
   this.copyCurrentTab = function(options, callback) {
@@ -98,17 +104,16 @@ var CopyAsMarkdown = new (function() {
     });
   };
 
-  var flashBadge = function(type) {
-    var color, text;
+  var flashBadge = function(type, text) {
+    var color;
 
     switch (type) {
       case "success":
         color = "#738a05";
-        text = "\u2713"; // Check mark
         break;
       case "fail":
         color = "#d11b24";
-        text = "\u2717"; // Ballout X
+        text = "!";
         break;
       default:
         return; // don't know what it is. quit.
