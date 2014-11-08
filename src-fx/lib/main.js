@@ -10,7 +10,7 @@ var SDK = {
   ContextMenu: require("sdk/context-menu")
 };
 
-var CopyAsMarkdown = require('copy-as-markdown');
+var Markdown = require('markdown');
 
 var copyToClipboard = function(string) {
   SDK.Clipboard.set(string, "text");
@@ -24,10 +24,10 @@ var copyAllTabsAsMarkdown = function(state) {
 
   for (var i = 0; i < tabs.length; i++) {
     var tab = tabs[i];
-    formattedTabs[i] = CopyAsMarkdown.formatLink(tab.url, tab.title);
+    formattedTabs[i] = Markdown.formatLink(tab.url, tab.title);
   }
 
-  var string = CopyAsMarkdown.formatList(formattedTabs);
+  var string = Markdown.formatList(formattedTabs);
 
   copyToClipboard(string);
 };
@@ -65,7 +65,7 @@ var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
                   '  self.postMessage({ node: node, data: data, url: window.location.href, title: document.title });' +
                   '});',
   onMessage: function(message) {
-    copyToClipboard(CopyAsMarkdown.formatLink(message.url, message.title));
+    copyToClipboard(Markdown.formatLink(message.url, message.title));
   }
 });
 
@@ -79,7 +79,7 @@ var copyLinkAsMarkdownMenuItem = SDK.ContextMenu.Item({
                   '  self.postMessage({ node: node, data: data, url: node.href, title: node.textContent });' +
                   '});',
   onMessage: function(message) {
-    copyToClipboard(CopyAsMarkdown.formatLink(message.url, message.title));
+    copyToClipboard(Markdown.formatLink(message.url, message.title));
   }
 });
 
@@ -92,7 +92,7 @@ var copyImageAsMarkdown = SDK.ContextMenu.Item({
                   '  self.postMessage({ node: node, data: data, url: node.src, title: node.alt });' +
                   '});',
   onMessage: function(message) {
-    copyToClipboard(CopyAsMarkdown.formatImage(message.url, message.title));
+    copyToClipboard(Markdown.formatImage(message.url, message.title));
   }
 });
 
