@@ -13,27 +13,6 @@ var SDK = {
 
 var CopyAsMarkdown = require("copy-as-markdown");
 
-var panel = SDK.Panels.Panel({
-  contentURL: SDK.Self.data.url("panel.html"),
-  contentStyleFile: SDK.Self.data.url("panel.css"),
-  contentScriptFile: SDK.Self.data.url("panel.js"),
-  onHide: handleHide
-});
-
-panel.port.on("copy", function(scope) {
-  var currentWindow = SDK.Windows.browserWindows.activeWindow;
-
-  switch (scope) {
-    case "current-tab":
-      CopyAsMarkdown.tab(currentWindow.tabs.activeTab);
-      break;
-
-    case "all-tabs":
-      CopyAsMarkdown.tabs(currentWindow.tabs);
-      break;
-  }
-});
-
 var togglePanel = function(state) {
   if (state.checked) {
     panel.show({
@@ -57,6 +36,27 @@ var button = SDK.UI.Button.Toggle.ToggleButton({
 var handleHide = function() {
   button.state('window', { checked: false });
 };
+
+var panel = SDK.Panels.Panel({
+  contentURL: SDK.Self.data.url("panel.html"),
+  contentStyleFile: SDK.Self.data.url("panel.css"),
+  contentScriptFile: SDK.Self.data.url("panel.js"),
+  onHide: handleHide
+});
+
+panel.port.on("copy", function(scope) {
+  var currentWindow = SDK.Windows.browserWindows.activeWindow;
+
+  switch (scope) {
+    case "current-tab":
+      CopyAsMarkdown.tab(currentWindow.tabs.activeTab);
+      break;
+
+    case "all-tabs":
+      CopyAsMarkdown.tabs(currentWindow.tabs);
+      break;
+  }
+});
 
 var anyContext = SDK.ContextMenu.PredicateContext(function() {
   return true;
