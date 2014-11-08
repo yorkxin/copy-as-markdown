@@ -8,46 +8,10 @@ var SDK = {
   Windows: require("sdk/windows"),
   Panels: require("sdk/panel"),
   Self: require("sdk/self"),
-  Clipboard: require("sdk/clipboard"),
   ContextMenu: require("sdk/context-menu")
 };
 
-var Markdown = require('markdown');
-
-var copyToClipboard = function(string) {
-  SDK.Clipboard.set(string, "text");
-};
-
-var copyLink = function(url, title) {
-  title = title || url;
-
-  var string = Markdown.formatLink(url, title);
-
-  copyToClipboard(string);
-};
-
-var copyCurrentTabAsMarkdown = function() {
-  var currentWindow = SDK.Windows.browserWindows.activeWindow;
-  var tab = currentWindow.tabs.activeTab;
-
-  copyTab(tab.url, tab.title);
-};
-
-var copyAllTabsAsMarkdown = function(state) {
-  var currentWindow = SDK.Windows.browserWindows.activeWindow;
-  var tabs = currentWindow.tabs;
-
-  var formattedTabs = new Array(tabs.length);
-
-  for (var i = 0; i < tabs.length; i++) {
-    var tab = tabs[i];
-    formattedTabs[i] = Markdown.formatLink(tab.url, tab.title);
-  }
-
-  var string = Markdown.formatList(formattedTabs);
-
-  copyToClipboard(string);
-};
+var CopyAsMarkdown = require("copy-as-markdown");
 
 var panel = SDK.Panels.Panel({
   contentURL: SDK.Self.data.url("panel.html"),
@@ -57,18 +21,17 @@ var panel = SDK.Panels.Panel({
 });
 
 panel.port.on("copy", function(scope) {
-  console.log(scope);
+  var currentWindow = SDK.Windows.browserWindows.activeWindow;
 
   switch (scope) {
     case "current-tab":
-    copyCurrentTabAsMarkdown();
-    break;
+      CopyAsMarkdown.tab(currentWindow.tabs.activeTab);
+      break;
 
     case "all-tabs":
-    copyAllTabsAsMarkdown();
-    break;
+      CopyAsMarkdown.tabs(currentWindow.tabs);
+      break;
   }
-
 });
 
 var togglePanel = function(state) {
@@ -111,11 +74,12 @@ var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
   data: "copyCurrentPageAsMarkdown",
   parentMenu: contextMenu,
   context: anyContext,
+  // TODO: use contentScriptFile
   contentScript:  'self.on("click", function(node, data) {' +
                   '  self.postMessage({ node: node, data: data, url: window.location.href, title: document.title });' +
                   '});',
   onMessage: function(message) {
-    copyLink(message.url, message.title);
+    CopyAsMarkdown.link(message.url, message.title);
   }
 });
 
@@ -125,11 +89,12 @@ var copyLinkAsMarkdownMenuItem = SDK.ContextMenu.Item({
   data: "copyLinkAsMarkdownMenuItem",
   parentMenu: contextMenu,
   context: SDK.ContextMenu.SelectorContext("a"),
+  // TODO: use contentScriptFile
   contentScript:  'self.on("click", function(node, data) {' +
                   '  self.postMessage({ node: node, data: data, url: node.href, title: node.textContent });' +
                   '});',
   onMessage: function(message) {
-    copyLink(message.url, message.title);
+    CopyAsMarkdown.link(message.url, message.title);
   }
 });
 
@@ -138,11 +103,12 @@ var copyImageAsMarkdown = SDK.ContextMenu.Item({
   data: "copyImageAsMarkdown",
   parentMenu: contextMenu,
   context: SDK.ContextMenu.SelectorContext("img"),
+  // TODO: use contentScriptFile
   contentScript:  'self.on("click", function(node, data) {' +
                   '  self.postMessage({ node: node, data: data, url: node.src, title: node.alt });' +
                   '});',
   onMessage: function(message) {
-    copyToClipboard(Markdown.formatImage(message.url, message.title));
+    CopyAsMarkdown.image(message.url, message.title);
   }
 });
 
