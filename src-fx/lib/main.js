@@ -102,8 +102,7 @@ var anyContext = SDK.ContextMenu.PredicateContext(function() {
 var contextMenu = SDK.ContextMenu.Menu({
   label: "Copy as Markdown",
   context: anyContext,
-  // TODO: don't know how to specify a correct image url. This isn't working:
-  // image: "./images/icon-16.png"
+  image: SDK.Self.data.url("images/icon-16.png")
 });
 
 // context menu actions for page itself
