@@ -58,6 +58,10 @@ panel.port.on("copy", function(scope) {
   }
 });
 
+panel.port.on("close", function() {
+  panel.hide();
+});
+
 var anyContext = SDK.ContextMenu.PredicateContext(function() {
   return true;
 });
