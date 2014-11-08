@@ -76,7 +76,7 @@ var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
   context: anyContext,
   // TODO: use contentScriptFile
   contentScript:  'self.on("click", function(node, data) {' +
-                  '  self.postMessage({ node: node, data: data, url: window.location.href, title: document.title });' +
+                  '  self.postMessage({ url: window.location.href, title: document.title });' +
                   '});',
   onMessage: function(message) {
     CopyAsMarkdown.link(message.url, message.title);
@@ -86,12 +86,12 @@ var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
 // context menu for a link
 var copyLinkAsMarkdownMenuItem = SDK.ContextMenu.Item({
   label: "[Link Title](url)",
-  data: "copyLinkAsMarkdownMenuItem",
+  data: "copyLinkAsMarkdown",
   parentMenu: contextMenu,
   context: SDK.ContextMenu.SelectorContext("a"),
   // TODO: use contentScriptFile
   contentScript:  'self.on("click", function(node, data) {' +
-                  '  self.postMessage({ node: node, data: data, url: node.href, title: node.textContent });' +
+                  '  self.postMessage({ url: node.href, title: node.textContent });' +
                   '});',
   onMessage: function(message) {
     CopyAsMarkdown.link(message.url, message.title);
@@ -105,7 +105,7 @@ var copyImageAsMarkdown = SDK.ContextMenu.Item({
   context: SDK.ContextMenu.SelectorContext("img"),
   // TODO: use contentScriptFile
   contentScript:  'self.on("click", function(node, data) {' +
-                  '  self.postMessage({ node: node, data: data, url: node.src, title: node.alt });' +
+                  '  self.postMessage({ url: node.src, title: node.alt });' +
                   '});',
   onMessage: function(message) {
     CopyAsMarkdown.image(message.url, message.title);
