@@ -18,13 +18,19 @@ var copyToClipboard = function(string) {
   SDK.Clipboard.set(string, "text");
 };
 
+var copyLink = function(url, title) {
+  title = title || url;
+
+  var string = Markdown.formatLink(url, title);
+
+  copyToClipboard(string);
+};
+
 var copyCurrentTabAsMarkdown = function() {
   var currentWindow = SDK.Windows.browserWindows.activeWindow;
   var tab = currentWindow.tabs.activeTab;
 
-  var string = Markdown.formatLink(tab.url, tab.title);
-
-  copyToClipboard(string);
+  copyTab(tab.url, tab.title);
 };
 
 var copyAllTabsAsMarkdown = function(state) {
@@ -110,7 +116,7 @@ var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
                   '  self.postMessage({ node: node, data: data, url: window.location.href, title: document.title });' +
                   '});',
   onMessage: function(message) {
-    copyToClipboard(Markdown.formatLink(message.url, message.title));
+    copyLink(message.url, message.title);
   }
 });
 
@@ -124,7 +130,7 @@ var copyLinkAsMarkdownMenuItem = SDK.ContextMenu.Item({
                   '  self.postMessage({ node: node, data: data, url: node.href, title: node.textContent });' +
                   '});',
   onMessage: function(message) {
-    copyToClipboard(Markdown.formatLink(message.url, message.title));
+    copyLink(message.url, message.title);
   }
 });
 
