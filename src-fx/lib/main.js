@@ -68,21 +68,6 @@ var contextMenu = SDK.ContextMenu.Menu({
   image: SDK.Self.data.url("images/icon-16.png")
 });
 
-// context menu actions for page itself
-var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
-  label: "[Page Title](url)",
-  data: "copyCurrentPageAsMarkdown",
-  parentMenu: contextMenu,
-  context: anyContext,
-  // TODO: use contentScriptFile
-  contentScript:  'self.on("click", function(node, data) {' +
-                  '  self.postMessage({ url: window.location.href, title: document.title });' +
-                  '});',
-  onMessage: function(message) {
-    CopyAsMarkdown.link(message.url, message.title);
-  }
-});
-
 // context menu for a link
 var copyLinkAsMarkdownMenuItem = SDK.ContextMenu.Item({
   label: "[Link Title](url)",
@@ -112,3 +97,17 @@ var copyImageAsMarkdown = SDK.ContextMenu.Item({
   }
 });
 
+// context menu actions for page itself
+var copyCurrentPageAsMarkdownMenuItem = SDK.ContextMenu.Item({
+  label: "[Page Title](url)",
+  data: "copyCurrentPageAsMarkdown",
+  parentMenu: contextMenu,
+  context: anyContext,
+  // TODO: use contentScriptFile
+  contentScript:  'self.on("click", function(node, data) {' +
+                  '  self.postMessage({ url: window.location.href, title: document.title });' +
+                  '});',
+  onMessage: function(message) {
+    CopyAsMarkdown.link(message.url, message.title);
+  }
+});
