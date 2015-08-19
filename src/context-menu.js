@@ -1,7 +1,7 @@
 var copyAsMarkdownContextMenuId = chrome.contextMenus.create({
   title: "Copy as Markdown",
   type: "normal",
-  contexts: ["page", "link", "image"]
+  contexts: ["page", "link", "image", "selection"]
 });
 
 chrome.contextMenus.create({
