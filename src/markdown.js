@@ -10,5 +10,13 @@ var Markdown = {
   },
   imageFor: function(title, url) {
     return "!["+title+"]("+url+")";
+  },
+  fromHtml: function(html, text) {
+    if (html === undefined) {
+      return text;
+    }
+    else {
+      return toMarkdown(html);
+    }
   }
 };
