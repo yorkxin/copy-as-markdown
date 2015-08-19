@@ -49,7 +49,9 @@ chrome.contextMenus.create({
   contexts: ["selection"],
   onclick: function (info, tab) {
     chrome.tabs.sendRequest(tab.id, {}, function(selection) {
-      CopyAsMarkdown.copySelection(selection.html);
+      if (selection !== undefined) {
+        CopyAsMarkdown.copySelection(selection.html, selection.text);
+      }
     });
   }
 });

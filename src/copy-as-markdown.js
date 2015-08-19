@@ -38,8 +38,8 @@ var CopyAsMarkdown = new (function() {
     return defaultTitle;
   };
 
-  this.copySelection = function(html) {
-    copyToClipboard(Markdown.fromHtml(html), function() {
+  this.copySelection = function(html, text) {
+    copyToClipboard(Markdown.fromHtml(html, text), function() {
       flashBadge("success", "1");
     });
   }
