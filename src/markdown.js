@@ -1,4 +1,4 @@
-const ESCAPE_CHARS = /([\\`*_\[\]#])/g;
+const ESCAPE_CHARS = /([\\`*_\[\]<>#])/g;
 
 var escapeLinkText = function(text) {
   return text.replace(ESCAPE_CHARS, "\\$1");
