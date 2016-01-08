@@ -8,10 +8,10 @@ var copyToClipboard = function(string) {
   SDK.Clipboard.set(string, "text");
 };
 
-exports.link = function(url, title) {
+exports.link = function(url, title, options={ escape: true }) {
   title = title || url;
 
-  var string = Markdown.formatLink(url, title);
+  var string = Markdown.formatLink(url, title, options);
 
   copyToClipboard(string);
 };
