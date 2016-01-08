@@ -5,10 +5,19 @@ var escapeLinkText = function(text) {
 };
 
 var Markdown = {
-  linkTo: function(title, url) {
+  linkTo: function(title, url, options) {
+    options = options || {};
+
+    // used for copying link-in-image
+    if (options.escape !== false) {
+      options.escape = true;
+    }
+
     if (title === undefined) {
       title = CopyAsMarkdown.getDefaultTitle();
-    } else {
+    }
+
+    if (options.escape) {
       title = escapeLinkText(title);
     }
 
