@@ -11,7 +11,7 @@ var SDK = {
   ContextMenu: require("sdk/context-menu")
 };
 
-var CopyAsMarkdown = require("copy-as-markdown");
+var CopyAsMarkdown = require("./lib/copy-as-markdown");
 
 var togglePanel = function(state) {
   if (state.checked) {

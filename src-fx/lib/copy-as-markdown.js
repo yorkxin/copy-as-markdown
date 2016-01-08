@@ -2,7 +2,7 @@ var SDK = {
   Clipboard: require("sdk/clipboard")
 };
 
-var Markdown = require("markdown");
+var Markdown = require("./markdown");
 
 var copyToClipboard = function(string) {
   SDK.Clipboard.set(string, "text");
