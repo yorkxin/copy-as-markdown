@@ -1,6 +1,6 @@
 {
   "name": "Copy as Markdown",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
@@ -11,7 +11,7 @@
   ],
   "browser_action": {
      "default_icon": "icon-128.png",
-     "default_title": "Copy as Markdown...", 
+     "default_title": "Copy as Markdown...",
      "default_popup": "browser-action-popup.html"
   },
   "icons": {
