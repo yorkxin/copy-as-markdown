@@ -11,7 +11,7 @@ var SDK = {
   ContextMenu: require("sdk/context-menu")
 };
 
-var CopyAsMarkdown = require("copy-as-markdown");
+var CopyAsMarkdown = require("./lib/copy-as-markdown");
 
 var togglePanel = function(state) {
   if (state.checked) {
@@ -99,7 +99,7 @@ var copyImageAsMarkdown = SDK.ContextMenu.Item({
                   '  self.postMessage({ url: node.src, title: node.alt });' +
                   '});',
   onMessage: function(message) {
-    CopyAsMarkdown.image(message.url, message.title);
+    CopyAsMarkdown.image(message.url, message.title, { escape: false });
   }
 });
 
