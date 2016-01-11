@@ -14,7 +14,7 @@ function escapeLinkText(string) {
   return string.replace(ESCAPE_CHARS, "\\$1");
 }
 
-function determineTitle(title, options={ escape: false }) {
+function determineTitle(title, options={ escape: true }) {
   title = removeNewlines(chomp(title));
 
   if (options.escape) {
@@ -28,7 +28,7 @@ function determineTitle(title, options={ escape: false }) {
   return title;
 }
 
-exports.formatLink = function(url, title, options={ escape: false }) {
+exports.formatLink = function(url, title, options={ escape: true }) {
   return "[" + determineTitle(title, options) + "](" + url + ")";
 };
 
