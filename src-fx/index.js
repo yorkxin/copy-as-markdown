@@ -99,7 +99,7 @@ var copyImageAsMarkdown = SDK.ContextMenu.Item({
                   '  self.postMessage({ url: node.src, title: node.alt });' +
                   '});',
   onMessage: function(message) {
-    CopyAsMarkdown.image(message.url, message.title, { escape: false });
+    CopyAsMarkdown.image(message.url, message.title, { needEscape: false });
   }
 });
 

@@ -5,5 +5,14 @@
   "description": "Copy Links, Tabs & Images as Markdown",
   "author": "Yu-Cheng Chuang",
   "license": "MIT",
-  "version": "1.1.0"
+  "version": "1.2.0",
+  "preferences": [
+    {
+      "name": "escape",
+      "title": "Escape Markdown code",
+      "description": "If checked, all unsafe Markdown code will be escaped (e.g. [] becomes \\[\\])",
+      "type": "bool",
+      "value": false
+    }
+  ]
 }

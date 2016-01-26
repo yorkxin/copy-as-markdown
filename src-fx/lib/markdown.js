@@ -28,7 +28,7 @@ function determineTitle(title, options={ escape: true }) {
   return title;
 }
 
-exports.formatLink = function(url, title, options={ escape: true }) {
+exports.formatLink = function(url, title, options={ escape: false }) {
   return "[" + determineTitle(title, options) + "](" + url + ")";
 };
 

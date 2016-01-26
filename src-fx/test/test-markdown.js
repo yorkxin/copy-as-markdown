@@ -10,7 +10,10 @@ exports["test formatLink"] = function(assert) {
   assert.equal(actual, "[(No Title)](http://example.com)", "empty title");
 
   actual = Markdown.formatLink("http://example.com", '[Shin_Bangumi] Anime \\ Yuruyuri <S> San * High');
-  assert.equal(actual, '[\\\[Shin\\\_Bangumi\\\] Anime \\\\ Yuruyuri \\\<S\\\> San \\\* High](http://example.com)', "escape by default");
+  assert.equal(actual, '[[Shin_Bangumi] Anime \\ Yuruyuri <S> San * High](http://example.com)', "no escape by default");
+
+  actual = Markdown.formatLink("http://example.com", '[Shin_Bangumi] Anime \\ Yuruyuri <S> San * High', { escape: true });
+  assert.equal(actual, '[\\\[Shin\\\_Bangumi\\\] Anime \\\\ Yuruyuri \\\<S\\\> San \\\* High](http://example.com)', "escapes when explicitly requested");
 
   actual = Markdown.formatLink("http://example.com",
     '![test](https://media.giphy.com/media/ACQ6dBWweIEIU/giphy.gif)',

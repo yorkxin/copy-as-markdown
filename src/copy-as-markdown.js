@@ -1,6 +1,19 @@
 var CopyAsMarkdown = new (function() {
   var resultContainer = document.getElementById("result-markdown");
 
+  // load options
+  this.options = {};
+
+  Options.load(function(options) {
+    this.options = options;
+  }.bind(this));
+
+  Options.onChange(function(changes) {
+    for (key in changes) {
+      this.options[key] = changes[key];
+    }
+  }.bind(this))
+
   var getCurrentTab = function (callback) {
     chrome.tabs.query({
       windowId: chrome.windows.WINDOW_ID_CURRENT,
@@ -39,19 +52,28 @@ var CopyAsMarkdown = new (function() {
   };
 
   this.copyLink = function(title, url, options) {
-    copyToClipboard(Markdown.linkTo(title, url, options), function() {
+    var options = options || { needEscape: true };
+    var escape = (options.needEscape && this.options.escape);
+    var text = Markdown.linkTo(title, url, { escape });
+
+    copyToClipboard(text, function() {
       flashBadge("success", "1");
     });
   };
 
   this.copyListOfLinks = function(links, options) {
+    var options = options || { needEscape: true };
+    var escape = (options.needEscape && this.options.escape);
     var md_list = [];
+
     for(var i in links) {
-      var md = Markdown.linkTo(links[i].title, links[i].url, options);
+      var md = Markdown.linkTo(links[i].title, links[i].url, { escape });
       md_list.push("* " + md);
     }
 
-    copyToClipboard(md_list.join("\n"), function() {
+    var text = md_list.join("\n");
+
+    copyToClipboard(text, function() {
       flashBadge("success", md_list.length.toString());
     });
   };
@@ -140,4 +162,3 @@ var CopyAsMarkdown = new (function() {
     });
   };
 })();
-

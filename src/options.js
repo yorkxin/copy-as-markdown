@@ -1,41 +1,26 @@
-var _OptionsClass = function() {
-  this.load = function(localStorage, form) {
-    // Local Storage can only save string values.
-    // Just serialize them as JSON, and apply then to the form.
-
-    var options_json = localStorage["options"];
-
-    if (!options_json) {
-      
-    }
-
-    // var stringProperties = form.querySelectorAll("input[type=text], textarea");
-    // var booleanProperties = form.querySelectorAll("checkbox");
-    // var enumPropertyValues = form.querySelectorAll("option, input[type=radio]");
-
-    // stringProperties.forEach(function(element, index) {
-    //   var name = element.attr("name");
-    //   element.value = localStorage[name];
-    // });
-
-    // booleanProperties.forEach(function(element, index) {
-    //   var name = element.attr("name");
-    //   element.value = localStorage[name];
-    // });
-
-    // enumPropertyValues.forEach(function(element, index) {
-
-    // });
-  };
-
-  this.save = function() {
-
-  };
+var DEFAULT_OPTIONS = {
+  escape: false
 };
 
-Options = new _OptionsClass();
+var Options = {
+  save: function (params) {
+    chrome.storage.sync.set(params);
+  },
 
-document.addEventListener("DOMContentLoaded", function() {
-  var form = document.getElementById("options");
-  Options.load(localStorage, form);
-});
+  load: function (callback) {
+    chrome.storage.sync.get(DEFAULT_OPTIONS, callback);
+  },
+
+  onChange: function(callback) {
+    chrome.storage.onChanged.addListener(function(changes, _) {
+      var callbackChanges = {};
+
+      for (key in DEFAULT_OPTIONS) {
+        callbackChanges[key] = changes[key].newValue;
+      }
+
+      callback(callbackChanges);
+    })
+
+  }
+};
