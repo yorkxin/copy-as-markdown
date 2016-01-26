@@ -9,8 +9,8 @@ var Markdown = {
     options = options || {};
 
     // used for copying link-in-image
-    if (options.escape !== false) {
-      options.escape = true;
+    if (options.escape !== true) {
+      options.escape = false;
     }
 
     if (title === undefined) {
