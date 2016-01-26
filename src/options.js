@@ -1,41 +1,24 @@
-var _OptionsClass = function() {
-  this.load = function(localStorage, form) {
-    // Local Storage can only save string values.
-    // Just serialize them as JSON, and apply then to the form.
-
-    var options_json = localStorage["options"];
-
-    if (!options_json) {
-      
-    }
-
-    // var stringProperties = form.querySelectorAll("input[type=text], textarea");
-    // var booleanProperties = form.querySelectorAll("checkbox");
-    // var enumPropertyValues = form.querySelectorAll("option, input[type=radio]");
-
-    // stringProperties.forEach(function(element, index) {
-    //   var name = element.attr("name");
-    //   element.value = localStorage[name];
-    // });
-
-    // booleanProperties.forEach(function(element, index) {
-    //   var name = element.attr("name");
-    //   element.value = localStorage[name];
-    // });
-
-    // enumPropertyValues.forEach(function(element, index) {
-
-    // });
-  };
-
-  this.save = function() {
-
-  };
+var DEFAULT_OPTIONS = {
+  escape: false
 };
 
-Options = new _OptionsClass();
+// Saves options to chrome.storage.sync.
+function save() {
+  var form = document.getElementById("form")
 
-document.addEventListener("DOMContentLoaded", function() {
-  var form = document.getElementById("options");
-  Options.load(localStorage, form);
-});
+  chrome.storage.sync.set({
+    escape: form.escape.checked
+  });
+}
+
+// Restores select box and checkbox state using the preferences
+// stored in chrome.storage.
+function load() {
+  chrome.storage.sync.get(DEFAULT_OPTIONS, function(items) {
+    var form = document.getElementById("form")
+    form.escape.checked = items.escape;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', load);
+document.getElementById('form').addEventListener('change', save);

@@ -7,7 +7,8 @@
     "tabs",
     "contextMenus",
     "http://*/*",
-    "https://*/*"
+    "https://*/*",
+    "storage"
   ],
   "browser_action": {
      "default_icon": "icon-128.png",
@@ -29,5 +30,9 @@
     "all-tabs-link-as-list": {
       "description": "all tabs: * [title](url)"
     }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
   }
 }
