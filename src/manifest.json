@@ -32,6 +32,9 @@
     },
     "all-tabs-link-as-list": {
       "description": "all tabs: * [title](url)"
+    },
+    "selected-markdown": {
+         "description": "selected html to markdown"
     }
   }
 }
