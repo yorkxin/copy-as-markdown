@@ -1,17 +1,17 @@
 {
   "name": "Copy as Markdown",
-  "version": "1.0.1",
+  "version": "1.3.0",
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "tabs",
     "contextMenus",
-    "http://*/*",
-    "https://*/*"
+    "activeTab",
+    "storage"
   ],
   "browser_action": {
      "default_icon": "icon-128.png",
-     "default_title": "Copy as Markdown...", 
+     "default_title": "Copy as Markdown...",
      "default_popup": "browser-action-popup.html"
   },
   "content_scripts": [{
@@ -36,5 +36,9 @@
     "selected-markdown": {
          "description": "selected html to markdown"
     }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "chrome_style": true
   }
 }

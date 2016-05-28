@@ -21,7 +21,7 @@ This is Copy as Markdown for Firefox.
 
 1. Install Firefox 30+.
 * [Install Firefox Add-ON SDK](https://developer.mozilla.org/en-US/Add-ons/SDK/Tutorials/Installation) if you haven't installed it.
-* Run `cfx run` from Terminal
+* Run `jpm run` from Terminal
 
 ## License
 

@@ -1,17 +1,22 @@
 var SDK = {
-  Clipboard: require("sdk/clipboard")
+  Clipboard: require("sdk/clipboard"),
+  SimplePrefs: require("sdk/simple-prefs")
 };
 
-var Markdown = require("markdown");
+var Markdown = require("./markdown");
+
+var preferences = SDK.SimplePrefs.prefs;
 
 var copyToClipboard = function(string) {
   SDK.Clipboard.set(string, "text");
 };
 
-exports.link = function(url, title) {
+exports.link = function(url, title, options={ needEscape: true }) {
   title = title || url;
 
-  var string = Markdown.formatLink(url, title);
+  var escape = options.needEscape && preferences.escape;
+
+  var string = Markdown.formatLink(url, title, { escape });
 
   copyToClipboard(string);
 };
@@ -29,11 +34,13 @@ exports.tab = function(tab) {
 };
 
 exports.tabs = function(tabs) {
+  var escape = preferences.escape;
+
   var formattedTabs = new Array(tabs.length);
 
   for (var i = 0; i < tabs.length; i++) {
     var tab = tabs[i];
-    formattedTabs[i] = Markdown.formatLink(tab.url, tab.title);
+    formattedTabs[i] = Markdown.formatLink(tab.url, tab.title, { escape });
   }
 
   var string = Markdown.formatList(formattedTabs);

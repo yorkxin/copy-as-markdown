@@ -22,13 +22,16 @@ chrome.contextMenus.create({
   onclick: function (info, tab) {
     // auto discover image
     var linkText = "";
+    var needEscape = true;
 
     if (info.mediaType === "image") {
+      needEscape = false;
       linkText = "![]("+info.srcUrl+")";
     } else {
       linkText = info.selectionText;
     }
-    CopyAsMarkdown.copyLink(linkText, info.linkUrl);
+
+    CopyAsMarkdown.copyLink(linkText, info.linkUrl, { needEscape });
   }
 });
 
