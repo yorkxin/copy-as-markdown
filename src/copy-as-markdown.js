@@ -94,7 +94,9 @@ var CopyAsMarkdown = new (function() {
     getCurrentTab(function(tab) {
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyLink(tab.title, tab.url, options);
-      callback();
+      if (typeof callback === "function") {
+        callback();
+      }
     });
   };
 
@@ -118,7 +120,9 @@ var CopyAsMarkdown = new (function() {
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyListOfLinks(links, options);
-      callback();
+      if (typeof callback === "function") {
+        callback();
+      }
     });
   };
 
@@ -128,7 +132,9 @@ var CopyAsMarkdown = new (function() {
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyListOfLinks(links, options);
-      callback();
+      if (typeof callback === "function") {
+        callback();
+      }
     });
   };
 
