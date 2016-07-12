@@ -14,5 +14,8 @@
       "type": "bool",
       "value": false
     }
-  ]
+  ],
+  "permissions": {
+    "private-browsing": true
+  }
 }
