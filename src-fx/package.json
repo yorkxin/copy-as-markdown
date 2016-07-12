@@ -5,7 +5,7 @@
   "description": "Copy Links, Tabs & Images as Markdown",
   "author": "Yu-Cheng Chuang",
   "license": "MIT",
-  "version": "1.2.0",
+  "version": "1.2.1rc1",
   "preferences": [
     {
       "name": "escape",
