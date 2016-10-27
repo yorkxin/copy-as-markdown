@@ -30,6 +30,10 @@
       "description": "all tabs: * [title](url)"
     }
   },
+  "content_scripts": [ {
+    "js": [ "content.js" ],
+    "matches": [ "http://*/*", "https://*/*" ]
+  } ],
   "options_ui": {
     "page": "options.html",
     "chrome_style": true
