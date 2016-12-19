@@ -1,7 +1,7 @@
 var copyAsMarkdownContextMenuId = chrome.contextMenus.create({
   title: "Copy as Markdown",
   type: "normal",
-  contexts: ["page", "link", "image"]
+  contexts: ["page", "link", "image", "selection"]
 });
 
 chrome.contextMenus.create({
@@ -42,5 +42,19 @@ chrome.contextMenus.create({
   contexts: ["image"],
   onclick: function (info, tab) {
     CopyAsMarkdown.copyImage("", info.srcUrl);
+  }
+});
+
+chrome.contextMenus.create({
+  parentId: copyAsMarkdownContextMenuId,
+  title: "Copy selection as markdown",
+  type: "normal",
+  contexts: ["selection"],
+  onclick: function (info, tab) {
+    chrome.tabs.sendRequest(tab.id, {}, function(selection) {
+      if (selection !== undefined) {
+        CopyAsMarkdown.copySelection(selection.html, selection.text);
+      }
+    });
   }
 });

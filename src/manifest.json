@@ -14,6 +14,10 @@
      "default_title": "Copy as Markdown...",
      "default_popup": "browser-action-popup.html"
   },
+  "content_scripts": [{
+    "matches": ["http://*/*", "https://*/*", "ftp://*/*", "file:///*"],
+    "js": ["content.js"]
+  }],
   "icons": {
     "16": "icon-16.png",
     "48": "icon-48.png",
@@ -28,6 +32,9 @@
     },
     "all-tabs-link-as-list": {
       "description": "all tabs: * [title](url)"
+    },
+    "selected-markdown": {
+         "description": "selected html to markdown"
     }
   },
   "options_ui": {
