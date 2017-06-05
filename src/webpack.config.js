@@ -11,7 +11,7 @@ module.exports = {
     popup: "./ui/popup.js"
   },
   output: {
-    path: path.resolve(__dirname, "extension"),
+    path: path.resolve(__dirname, "build"),
     filename: "[name].dist.js"
   },
   resolve: {
