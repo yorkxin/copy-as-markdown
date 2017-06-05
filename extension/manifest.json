@@ -20,7 +20,8 @@
     "128": "images/icon-128.png"
   },
   "background": {
-    "page": "background.html"
+    "page": "background.html",
+    "persistent": false
   },
   "commands": {
     "current-tab-link": {

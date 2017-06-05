@@ -1,46 +1,63 @@
-var copyAsMarkdownContextMenuId = chrome.contextMenus.create({
-  title: "Copy as Markdown",
-  type: "normal",
-  contexts: ["page", "link", "image"]
-});
+import CopyAsMarkdown from "copy-as-markdown";
 
-chrome.contextMenus.create({
-  parentId: copyAsMarkdownContextMenuId,
-  title: "Page [title](url)",
-  type: "normal",
-  contexts: ["page"],
-  onclick: function (info, tab) {
-    CopyAsMarkdown.copyLink(tab.title, tab.url);
+function handler(info, tab) {
+  switch (info.menuItemId) {
+    case "current-page":
+      CopyAsMarkdown.copyLink(tab.title, tab.url);
+      break;
+
+    case "link":
+      // auto discover image
+      let linkText = "";
+      let needEscape = true;
+
+      if (info.mediaType === "image") {
+        needEscape = false;
+        linkText = "![]("+info.srcUrl+")";
+      } else {
+        linkText = info.selectionText;
+      }
+
+      CopyAsMarkdown.copyLink(linkText, info.linkUrl, { needEscape });
+      break;
+
+    case "image":
+      CopyAsMarkdown.copyImage("", info.srcUrl);
+      break;
   }
-});
+};
 
-chrome.contextMenus.create({
-  parentId: copyAsMarkdownContextMenuId,
-  title: "Link [text or img](url)",
-  type: "normal",
-  contexts: ["link"],
-  onclick: function (info, tab) {
-    // auto discover image
-    var linkText = "";
-    var needEscape = true;
+chrome.runtime.onInstalled.addListener(function() {
+  let parentID = chrome.contextMenus.create({
+    id: "parent",
+    title: "Copy as Markdown",
+    type: "normal",
+    contexts: ["page", "link", "image"]
+  });
 
-    if (info.mediaType === "image") {
-      needEscape = false;
-      linkText = "![]("+info.srcUrl+")";
-    } else {
-      linkText = info.selectionText;
-    }
+  chrome.contextMenus.create({
+    id: "current-page",
+    parentId: parentID,
+    title: "Page [title](url)",
+    type: "normal",
+    contexts: ["page"]
+  });
 
-    CopyAsMarkdown.copyLink(linkText, info.linkUrl, { needEscape });
-  }
-});
+  chrome.contextMenus.create({
+    id: "link",
+    parentId: parentID,
+    title: "Link [text or img](url)",
+    type: "normal",
+    contexts: ["link"]
+  });
 
-chrome.contextMenus.create({
-  parentId: copyAsMarkdownContextMenuId,
-  title: "Image ![](src)", // TODO: how to fetch alt text?
-  type: "normal",
-  contexts: ["image"],
-  onclick: function (info, tab) {
-    CopyAsMarkdown.copyImage("", info.srcUrl);
-  }
+  chrome.contextMenus.create({
+    id: "image",
+    parentId: parentID,
+    title: "Image ![](src)", // TODO: how to fetch alt text?
+    type: "normal",
+    contexts: ["image"]
+  });
+
+  chrome.contextMenus.onClicked.addListener(handler);
 });
