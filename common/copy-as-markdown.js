@@ -1,21 +1,10 @@
 import Options from "options";
 import Markdown from "markdown";
 import flashBadge from "badge";
-
-// A text box is required to access clipboard
-var textbox = document.createElement("textarea");
-document.body.appendChild(textbox);
+import Clipboard from "clipboard";
 
 var globalOptions = {};
-
-function copyToClipboard(text, okCallback) {
-  textbox.value = text;
-  textbox.select();
-  document.execCommand('Copy');
-  textbox.value = "";
-
-  okCallback();
-}
+var clipboard = new Clipboard(document.body);
 
 function extractTabsList(tabs) {
   let links = [];
@@ -47,7 +36,7 @@ export function copyLink(title, url, options) {
   var escape = (options.needEscape && globalOptions.escape);
   var text = Markdown.linkTo(title, url, { escape });
 
-  copyToClipboard(text, function() {
+  clipboard.set(text, function() {
     flashBadge("success", "1");
   });
 }
@@ -64,13 +53,13 @@ export function copyListOfLinks(links, options) {
 
   var text = md_list.join("\n");
 
-  copyToClipboard(text, function() {
+  clipboard.set(text, function() {
     flashBadge("success", md_list.length.toString());
   });
 }
 
 export function copyImage(title, url) {
-  copyToClipboard(Markdown.imageFor(title, url), function() {
+  clipboard.set(Markdown.imageFor(title, url), function() {
     flashBadge("success", "1");
   });
 }
