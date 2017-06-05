@@ -1,3 +1,5 @@
+import Options from "options";
+
 // Saves options to chrome.storage.sync.
 function save() {
   var form = document.getElementById("form")
