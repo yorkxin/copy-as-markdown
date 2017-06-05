@@ -6,20 +6,6 @@ import Clipboard from "clipboard";
 var globalOptions = {};
 var clipboard = new Clipboard(document.body);
 
-function extractTabsList(tabs) {
-  let links = [];
-
-  for (let i in tabs) {
-    let tab = tabs[i];
-    links.push({
-      title: tab.title,
-      url: tab.url
-    });
-  }
-
-  return links;
-}
-
 // load options
 Options.load(function(newOptions) {
   globalOptions = newOptions;
@@ -76,9 +62,7 @@ export function copyAllTabs(options) {
   let query = { currentWindow: true };
 
   chrome.tabs.query(query, function(tabs) {
-    var links = extractTabsList(tabs);
-
-    copyListOfLinks(links, options);
+    copyListOfLinks(tabs, options);
   });
 }
 
@@ -86,9 +70,7 @@ export function copyHighlightedTabs(options) {
   let query = { currentWindow: true, highlighted: true };
 
   chrome.tabs.query(query, function(tabs) {
-    var links = extractTabsList(tabs);
-
-    copyListOfLinks(links, options);
+    copyListOfLinks(tabs, options);
   });
 }
 
