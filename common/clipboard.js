@@ -6,11 +6,13 @@ export default class Clipboard {
   }
 
   set (text, okCallback) {
-    this.textbox.value = text;
-    this.textbox.select();
-    document.execCommand('Copy');
-    this.textbox.value = "";
-
-    okCallback();
+    let textbox = this.textbox;
+    return new Promise(function(resolve, reject) {
+      textbox.value = text;
+      textbox.select();
+      document.execCommand('Copy');
+      textbox.value = "";
+      resolve();
+    });
   }
 }

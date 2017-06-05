@@ -36,24 +36,27 @@ export function copyLink(title, url, options) {
   var escape = (options.needEscape && globalOptions.escape);
   var text = Markdown.linkTo(title, url, { escape });
 
-  clipboard.set(text, function() {
-    flashBadge("success", "1");
-  });
+  clipboard.set(text)
+    .then(function() {
+      flashBadge("success", "1");
+    });
 }
 
 export function copyListOfLinks(links, options) {
   var options = options || { needEscape: true };
   var escape = (options.needEscape && globalOptions.escape);
 
-  clipboard.set(Markdown.list(links, escape), function() {
-    flashBadge("success", links.length.toString());
-  });
+  clipboard.set(Markdown.list(links, escape))
+    .then(function() {
+      flashBadge("success", links.length.toString());
+    });
 }
 
 export function copyImage(title, url) {
-  clipboard.set(Markdown.imageFor(title, url), function() {
-    flashBadge("success", "1");
-  });
+  clipboard.set(Markdown.imageFor(title, url))
+    .then(function() {
+      flashBadge("success", "1");
+    });
 }
 
 export function copyCurrentTab(options) {
