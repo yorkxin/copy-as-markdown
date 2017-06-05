@@ -39,75 +39,77 @@ Options.onChange(function(changes) {
   }
 });
 
-var CopyAsMarkdown = new (function() {
-  this.copyLink = function(title, url, options) {
-    var options = options || { needEscape: true };
-    var escape = (options.needEscape && globalOptions.escape);
-    var text = Markdown.linkTo(title, url, { escape });
+export function copyLink(title, url, options) {
+  var options = options || { needEscape: true };
+  var escape = (options.needEscape && globalOptions.escape);
+  var text = Markdown.linkTo(title, url, { escape });
 
-    copyToClipboard(text, function() {
-      flashBadge("success", "1");
-    });
+  copyToClipboard(text, function() {
+    flashBadge("success", "1");
+  });
+}
+
+export function copyListOfLinks(links, options) {
+  var options = options || { needEscape: true };
+  var escape = (options.needEscape && globalOptions.escape);
+  var md_list = [];
+
+  for(var i in links) {
+    var md = Markdown.linkTo(links[i].title, links[i].url, { escape });
+    md_list.push("* " + md);
+  }
+
+  var text = md_list.join("\n");
+
+  copyToClipboard(text, function() {
+    flashBadge("success", md_list.length.toString());
+  });
+}
+
+export function copyImage(title, url) {
+  copyToClipboard(Markdown.imageFor(title, url), function() {
+    flashBadge("success", "1");
+  });
+}
+
+export function copyCurrentTab(options) {
+  let query = {
+    windowId: chrome.windows.WINDOW_ID_CURRENT,
+    active: true
   };
 
-  this.copyListOfLinks = function(links, options) {
-    var options = options || { needEscape: true };
-    var escape = (options.needEscape && globalOptions.escape);
-    var md_list = [];
+  chrome.tabs.query(query, function(tabs) {
+    tab = tabs[0];
 
-    for(var i in links) {
-      var md = Markdown.linkTo(links[i].title, links[i].url, { escape });
-      md_list.push("* " + md);
-    }
+    copyLink(tab.title, tab.url, options);
+  });
+}
 
-    var text = md_list.join("\n");
+export function copyAllTabs(options) {
+  let query = { currentWindow: true };
 
-    copyToClipboard(text, function() {
-      flashBadge("success", md_list.length.toString());
-    });
-  };
+  chrome.tabs.query(query, function(tabs) {
+    var links = extractTabsList(tabs);
 
-  this.copyImage = function(title, url) {
-    copyToClipboard(Markdown.imageFor(title, url), function() {
-      flashBadge("success", "1");
-    });
-  };
+    copyListOfLinks(links, options);
+  });
+}
 
-  this.copyCurrentTab = function(options) {
-    let query = {
-      windowId: chrome.windows.WINDOW_ID_CURRENT,
-      active: true
-    };
+export function copyHighlightedTabs(options) {
+  let query = { currentWindow: true, highlighted: true };
 
-    chrome.tabs.query(query, function(tabs) {
-      tab = tabs[0];
+  chrome.tabs.query(query, function(tabs) {
+    var links = extractTabsList(tabs);
 
-      // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
-      CopyAsMarkdown.copyLink(tab.title, tab.url, options);
-    });
-  };
+    copyListOfLinks(links, options);
+  });
+}
 
-  this.copyAllTabs = function(options) {
-    let query = { currentWindow: true };
-
-    chrome.tabs.query(query, function(tabs) {
-      var links = extractTabsList(tabs);
-
-      // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
-      CopyAsMarkdown.copyListOfLinks(links, options);
-    });
-  };
-
-  this.copyHighlightedTabs = function(options) {
-    let query = { currentWindow: true, highlighted: true };
-
-    chrome.tabs.query(query, function(tabs) {
-      var links = extractTabsList(tabs);
-
-      // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
-      CopyAsMarkdown.copyListOfLinks(links, options);
-    });
-  };
-})();
-
-export default CopyAsMarkdown;
+export default {
+  copyLink,
+  copyListOfLinks,
+  copyImage,
+  copyCurrentTab,
+  copyAllTabs,
+  copyHighlightedTabs
+};
