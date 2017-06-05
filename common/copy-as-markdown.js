@@ -2,9 +2,32 @@ import Options from "options";
 import Markdown from "markdown";
 import flashBadge from "badge";
 
-var CopyAsMarkdown = new (function() {
-  var resultContainer = document.getElementById("result-markdown");
+var resultContainer = document.getElementById("result-markdown");
 
+function copyToClipboard(text, okCallback) {
+  resultContainer.value = text;
+  resultContainer.select();
+  document.execCommand('Copy');
+  resultContainer.value = "";
+
+  okCallback();
+}
+
+function extractTabsList(tabs) {
+  let links = [];
+
+  for (let i in tabs) {
+    let tab = tabs[i];
+    links.push({
+      title: tab.title,
+      url: tab.url
+    });
+  }
+
+  return links;
+}
+
+var CopyAsMarkdown = new (function() {
   // load options
   this.options = {};
 
@@ -17,37 +40,6 @@ var CopyAsMarkdown = new (function() {
       this.options[key] = changes[key];
     }
   }.bind(this))
-
-  var getCurrentTab = function (callback) {
-    chrome.tabs.query({
-      windowId: chrome.windows.WINDOW_ID_CURRENT,
-      active: true
-    }, function(tabs) {
-      callback(tabs[0]);
-    });
-  };
-
-  var getAllTabsOfCurrentWindow = function (callback) {
-    chrome.tabs.query({
-      currentWindow: true,
-    }, callback);
-  };
-
-  var getHighlightedTabsOfCurrentWindow = function (callback) {
-    chrome.tabs.query({
-      currentWindow: true,
-      highlighted: true
-    }, callback);
-  };
-
-  var copyToClipboard = function(text, okCallback) {
-    resultContainer.value = text;
-    resultContainer.select();
-    document.execCommand('Copy');
-    resultContainer.value = "";
-
-    okCallback();
-  };
 
   this.copyLink = function(title, url, options) {
     var options = options || { needEscape: true };
@@ -83,28 +75,23 @@ var CopyAsMarkdown = new (function() {
   };
 
   this.copyCurrentTab = function(options) {
-    getCurrentTab(function(tab) {
+    let query = {
+      windowId: chrome.windows.WINDOW_ID_CURRENT,
+      active: true
+    };
+
+    chrome.tabs.query(query, function(tabs) {
+      tab = tabs[0];
+
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyLink(tab.title, tab.url, options);
     });
   };
 
-  var extractTabsList = function(tabs) {
-    var links = [];
-
-    for (var i in tabs) {
-      var tab = tabs[i];
-      links.push({
-        title: tab.title,
-        url: tab.url
-      });
-    }
-
-    return links;
-  };
-
   this.copyAllTabs = function(options) {
-    getAllTabsOfCurrentWindow(function(tabs) {
+    let query = { currentWindow: true };
+
+    chrome.tabs.query(query, function(tabs) {
       var links = extractTabsList(tabs);
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
@@ -113,7 +100,9 @@ var CopyAsMarkdown = new (function() {
   };
 
   this.copyHighlightedTabs = function(options) {
-    getHighlightedTabsOfCurrentWindow(function(tabs) {
+    let query = { currentWindow: true, highlighted: true };
+
+    chrome.tabs.query(query, function(tabs) {
       var links = extractTabsList(tabs);
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
