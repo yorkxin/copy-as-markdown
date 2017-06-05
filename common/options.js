@@ -8,7 +8,15 @@ var Options = {
   },
 
   load: function (callback) {
-    chrome.storage.sync.get(DEFAULT_OPTIONS, callback);
+    // XXX: Chrome vs Firefox incompatibilty
+    let syncStorage = chrome.storage.sync;
+    if (syncStorage.get.length === 1) {
+      // Firefox, Promise
+      syncStorage.get(DEFAULT_OPTIONS).then(callback);
+    } else if (syncStorage.get.length === 2) {
+      // Chrome, callback
+      syncStorage.get(DEFAULT_OPTIONS, callback);
+    }
   },
 
   onChange: function(callback) {
