@@ -10,14 +10,14 @@
     "storage"
   ],
   "browser_action": {
-     "default_icon": "icon-128.png",
+     "default_icon": "images/icon-128.png",
      "default_title": "Copy as Markdown...",
      "default_popup": "popup.html"
   },
   "icons": {
-    "16": "icon-16.png",
-    "48": "icon-48.png",
-    "128": "icon-128.png"
+    "16": "images/icon-16.png",
+    "48": "images/icon-48.png",
+    "128": "images/icon-128.png"
   },
   "background": {
     "page": "background.html"
