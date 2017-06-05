@@ -34,7 +34,7 @@ Options.onChange(function(changes) {
 export function copyLink(title, url, options) {
   var options = options || { needEscape: true };
   var escape = (options.needEscape && globalOptions.escape);
-  var text = Markdown.linkTo(title, url, { escape });
+  var text = Markdown.linkTo(title, url, escape);
 
   clipboard.set(text)
     .then(function() {

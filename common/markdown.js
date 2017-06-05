@@ -5,34 +5,26 @@ var escapeLinkText = function(text) {
   return text.replace(ESCAPE_CHARS, "\\$1");
 };
 
-export function linkTo(title, url, options) {
-  options = options || {};
-
-  // used for copying link-in-image
-  if (options.escape !== true) {
-    options.escape = false;
-  }
-
+export function linkTo(title, url, escape = false) {
   if (title === undefined) {
     title = DEFAULT_TITLE;
   }
 
-  if (options.escape) {
+  // used for copying link-in-image
+  if (escape) {
     title = escapeLinkText(title);
   }
 
-  var result = "[" + title + "](" + url + ")";
-
-  return result;
+  return `[${title}](${url})`;
 };
 
 export function imageFor(title, url) {
-  return "!["+title+"]("+url+")";
+  return `![${title}](${url})`;
 }
 
-export function list(links, escape=false) {
+export function list(links, escape = false) {
   return links.map(function(link) {
-    return "* " + linkTo(link.title, link.url, { escape });
+    return "* " + linkTo(link.title, link.url, escape);
   }).join("\n");
 };
 
