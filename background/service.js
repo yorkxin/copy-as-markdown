@@ -1,5 +1,7 @@
-chrome.commands.onCommand.addListener(function(command) {
-  switch(command) {
+import CopyAsMarkdown from "copy-as-markdown";
+
+chrome.extension.onMessage.addListener(function(action, sender, sendResponse) {
+  switch(action) {
     case "current-tab-link":
       CopyAsMarkdown.copyCurrentTab();
       break;

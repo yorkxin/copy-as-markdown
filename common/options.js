@@ -24,3 +24,5 @@ var Options = {
 
   }
 };
+
+export default Options;

@@ -1,4 +1,5 @@
 const ESCAPE_CHARS = /([\\`*_\[\]<>])/g;
+const DEFAULT_TITLE = "(No Title)";
 
 var escapeLinkText = function(text) {
   return text.replace(ESCAPE_CHARS, "\\$1");
@@ -14,7 +15,7 @@ var Markdown = {
     }
 
     if (title === undefined) {
-      title = CopyAsMarkdown.getDefaultTitle();
+      title = DEFAULT_TITLE;
     }
 
     if (options.escape) {
@@ -29,3 +30,5 @@ var Markdown = {
     return "!["+title+"]("+url+")";
   }
 };
+
+export default Markdown;

@@ -1,8 +1,10 @@
+import ViewController from "./view-controller";
+
 (function(ViewController) {
 
-  ViewController.bindFeature("current-tab-link", "click", "copyCurrentTab");
-  ViewController.bindFeature("all-tabs-link-as-list", "click", "copyAllTabs");
-  ViewController.bindFeature("highlighted-tabs-link-as-list", "click", "copyHighlightedTabs");
+  ViewController.bindFeature("current-tab-link");
+  ViewController.bindFeature("all-tabs-link-as-list");
+  ViewController.bindFeature("highlighted-tabs-link-as-list");
 
   chrome.windows.getCurrent({ populate: true }, function(crWindow) {
     var tabsCount = crWindow.tabs.length;

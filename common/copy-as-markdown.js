@@ -1,3 +1,6 @@
+import Options from "options";
+import Markdown from "markdown";
+
 var CopyAsMarkdown = new (function() {
   var resultContainer = document.getElementById("result-markdown");
 
@@ -36,8 +39,6 @@ var CopyAsMarkdown = new (function() {
     }, callback);
   };
 
-  var defaultTitle = "(No Title)";
-
   var copyToClipboard = function(text, okCallback) {
     resultContainer.value = text;
     resultContainer.select();
@@ -45,10 +46,6 @@ var CopyAsMarkdown = new (function() {
     resultContainer.value = "";
 
     okCallback();
-  };
-
-  this.getDefaultTitle = function() {
-    return defaultTitle;
   };
 
   this.copyLink = function(title, url, options) {
@@ -84,11 +81,10 @@ var CopyAsMarkdown = new (function() {
     });
   };
 
-  this.copyCurrentTab = function(options, callback) {
+  this.copyCurrentTab = function(options) {
     getCurrentTab(function(tab) {
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyLink(tab.title, tab.url, options);
-      callback();
     });
   };
 
@@ -106,23 +102,21 @@ var CopyAsMarkdown = new (function() {
     return links;
   };
 
-  this.copyAllTabs = function(options, callback) {
+  this.copyAllTabs = function(options) {
     getAllTabsOfCurrentWindow(function(tabs) {
       var links = extractTabsList(tabs);
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyListOfLinks(links, options);
-      callback();
     });
   };
 
-  this.copyHighlightedTabs = function(options, callback) {
+  this.copyHighlightedTabs = function(options) {
     getHighlightedTabsOfCurrentWindow(function(tabs) {
       var links = extractTabsList(tabs);
 
       // XXX: Bad namespacing! (CoffeeScript's binding can resolve this issue)
       CopyAsMarkdown.copyListOfLinks(links, options);
-      callback();
     });
   };
 
@@ -162,3 +156,5 @@ var CopyAsMarkdown = new (function() {
     });
   };
 })();
+
+export default CopyAsMarkdown;
