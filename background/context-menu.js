@@ -1,4 +1,5 @@
 import CopyAsMarkdown from "copy-as-markdown";
+import Markdown from "markdown";
 
 function handler(info, tab) {
   switch (info.menuItemId) {
@@ -13,7 +14,7 @@ function handler(info, tab) {
 
       if (info.mediaType === "image") {
         needEscape = false;
-        linkText = "![]("+info.srcUrl+")";
+        linkText = Markdown.imageFor("", info.srcUrl);
       } else {
         linkText = info.selectionText;
       }
