@@ -5,7 +5,7 @@ export default class Clipboard {
     contianer.appendChild(this.textbox);
   }
 
-  set (text, okCallback) {
+  set (text) {
     let textbox = this.textbox;
     return new Promise(function(resolve, reject) {
       textbox.value = text;
