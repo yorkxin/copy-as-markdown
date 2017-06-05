@@ -44,17 +44,9 @@ export function copyLink(title, url, options) {
 export function copyListOfLinks(links, options) {
   var options = options || { needEscape: true };
   var escape = (options.needEscape && globalOptions.escape);
-  var md_list = [];
 
-  for(var i in links) {
-    var md = Markdown.linkTo(links[i].title, links[i].url, { escape });
-    md_list.push("* " + md);
-  }
-
-  var text = md_list.join("\n");
-
-  clipboard.set(text, function() {
-    flashBadge("success", md_list.length.toString());
+  clipboard.set(Markdown.list(links, escape), function() {
+    flashBadge("success", links.length.toString());
   });
 }
 

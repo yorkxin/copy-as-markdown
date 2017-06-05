@@ -5,7 +5,7 @@ var escapeLinkText = function(text) {
   return text.replace(ESCAPE_CHARS, "\\$1");
 };
 
-export linkTo(title, url, options) {
+export function linkTo(title, url, options) {
   options = options || {};
 
   // used for copying link-in-image
@@ -26,11 +26,18 @@ export linkTo(title, url, options) {
   return result;
 };
 
-export imageFor(title, url) {
+export function imageFor(title, url) {
   return "!["+title+"]("+url+")";
 }
 
+export function list(links, escape=false) {
+  return links.map(function(link) {
+    return "* " + linkTo(link.title, link.url, { escape });
+  }).join("\n");
+};
+
 export default {
   linkTo,
-  imageFor
+  imageFor,
+  list
 };
