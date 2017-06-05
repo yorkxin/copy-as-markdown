@@ -3,6 +3,7 @@ import Markdown from "markdown";
 import flashBadge from "badge";
 
 var resultContainer = document.getElementById("result-markdown");
+var globalOptions = {};
 
 function copyToClipboard(text, okCallback) {
   resultContainer.value = text;
@@ -27,23 +28,21 @@ function extractTabsList(tabs) {
   return links;
 }
 
+// load options
+Options.load(function(newOptions) {
+  globalOptions = newOptions;
+});
+
+Options.onChange(function(changes) {
+  for (let key in changes) {
+    globalOptions[key] = changes[key];
+  }
+});
+
 var CopyAsMarkdown = new (function() {
-  // load options
-  this.options = {};
-
-  Options.load(function(options) {
-    this.options = options;
-  }.bind(this));
-
-  Options.onChange(function(changes) {
-    for (key in changes) {
-      this.options[key] = changes[key];
-    }
-  }.bind(this))
-
   this.copyLink = function(title, url, options) {
     var options = options || { needEscape: true };
-    var escape = (options.needEscape && this.options.escape);
+    var escape = (options.needEscape && globalOptions.escape);
     var text = Markdown.linkTo(title, url, { escape });
 
     copyToClipboard(text, function() {
@@ -53,7 +52,7 @@ var CopyAsMarkdown = new (function() {
 
   this.copyListOfLinks = function(links, options) {
     var options = options || { needEscape: true };
-    var escape = (options.needEscape && this.options.escape);
+    var escape = (options.needEscape && globalOptions.escape);
     var md_list = [];
 
     for(var i in links) {
