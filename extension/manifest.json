@@ -12,7 +12,7 @@
   "browser_action": {
      "default_icon": "icon-128.png",
      "default_title": "Copy as Markdown...",
-     "default_popup": "browser-action-popup.html"
+     "default_popup": "popup.html"
   },
   "icons": {
     "16": "icon-16.png",

@@ -12,12 +12,11 @@ module.exports = {
       "./options/ui.js"
     ],
     popup: [
-      "./popup/view-controller.js",
       "./popup/popup.js"
     ]
   },
   output: {
-    path: path.resolve(__dirname, "src"),
+    path: path.resolve(__dirname, "extension"),
     filename: "[name].dist.js"
   },
   resolve: {
