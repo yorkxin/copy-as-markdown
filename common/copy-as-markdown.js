@@ -18,9 +18,9 @@ Options.onChange(function(changes) {
 });
 
 export function copyLink(title, url, options) {
-  var options = options || { needEscape: true };
-  var escape = (options.needEscape && globalOptions.escape);
-  var text = Markdown.linkTo(title, url, escape);
+  options = options || { needEscape: true };
+  let escape = (options.needEscape && globalOptions.escape);
+  let text = Markdown.linkTo(title, url, escape);
 
   clipboard.set(text)
     .then(function() {
@@ -29,8 +29,8 @@ export function copyLink(title, url, options) {
 }
 
 export function copyListOfLinks(links, options) {
-  var options = options || { needEscape: true };
-  var escape = (options.needEscape && globalOptions.escape);
+  options = options || { needEscape: true };
+  let escape = (options.needEscape && globalOptions.escape);
 
   clipboard.set(Markdown.list(links, escape))
     .then(function() {

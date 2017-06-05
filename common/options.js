@@ -13,7 +13,7 @@ var Options = {
 
   onChange: function(callback) {
     chrome.storage.onChanged.addListener(function(changes, _) {
-      var callbackChanges = {};
+      let callbackChanges = {};
 
       for (let key in DEFAULT_OPTIONS) {
         callbackChanges[key] = changes[key].newValue;

@@ -1,5 +1,5 @@
 function flashBadge(type, text) {
-  var color;
+  let color;
 
   switch (type) {
     case "success":

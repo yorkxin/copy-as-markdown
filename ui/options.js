@@ -2,7 +2,7 @@ import Options from "options";
 
 // Saves options to chrome.storage.sync.
 function save() {
-  var form = document.getElementById("form")
+  let form = document.getElementById("form")
 
   Options.save({
     escape: form.escape.checked
@@ -13,7 +13,7 @@ function save() {
 // stored in chrome.storage.
 function load() {
   Options.load(function(items) {
-    var form = document.getElementById("form")
+    let form = document.getElementById("form")
     form.escape.checked = items.escape;
   });
 }
