@@ -2,14 +2,17 @@ import Options from "options";
 import Markdown from "markdown";
 import flashBadge from "badge";
 
-var resultContainer = document.getElementById("result-markdown");
+// A text box is required to access clipboard
+var textbox = document.createElement("textarea");
+document.body.appendChild(textbox);
+
 var globalOptions = {};
 
 function copyToClipboard(text, okCallback) {
-  resultContainer.value = text;
-  resultContainer.select();
+  textbox.value = text;
+  textbox.select();
   document.execCommand('Copy');
-  resultContainer.value = "";
+  textbox.value = "";
 
   okCallback();
 }

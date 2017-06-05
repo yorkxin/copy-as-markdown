@@ -20,7 +20,9 @@
     "128": "images/icon-128.png"
   },
   "background": {
-    "page": "background.html",
+    "scripts": [
+      "background.dist.js"
+    ],
     "persistent": false
   },
   "commands": {
