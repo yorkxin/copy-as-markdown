@@ -82,7 +82,7 @@ export function copyCurrentTab(options) {
   };
 
   chrome.tabs.query(query, function(tabs) {
-    tab = tabs[0];
+    let tab = tabs[0];
 
     copyLink(tab.title, tab.url, options);
   });
