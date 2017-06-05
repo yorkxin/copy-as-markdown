@@ -18,7 +18,7 @@ function handler(info, tab) {
         linkText = info.selectionText;
       }
 
-      CopyAsMarkdown.copyLink(linkText, info.linkUrl, { needEscape });
+      CopyAsMarkdown.copyLink(linkText, info.linkUrl, needEscape);
       break;
 
     case "image":
