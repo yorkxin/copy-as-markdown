@@ -11,9 +11,7 @@ module.exports = {
       "./common/options.js",
       "./options/ui.js"
     ],
-    popup: [
-      "./popup/popup.js"
-    ]
+    popup: "./popup/popup.js"
   },
   output: {
     path: path.resolve(__dirname, "extension"),

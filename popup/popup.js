@@ -1,23 +1,28 @@
-import ViewController from "./view-controller";
+function handler(event) {
+  let element = event.currentTarget;
+  action = element.dataset.action;
 
-(function(ViewController) {
+  chrome.runtime.sendMessage(action, function() {
+    element.classList.add('highlight-success');
+    setTimeout(window.close, 300);
+  });
+}
 
-  ViewController.bindFeature("current-tab-link");
-  ViewController.bindFeature("all-tabs-link-as-list");
-  ViewController.bindFeature("highlighted-tabs-link-as-list");
-
-  chrome.windows.getCurrent({ populate: true }, function(crWindow) {
-    var tabsCount = crWindow.tabs.length;
-    var highlightedCount = 0;
-
-    for (var i = crWindow.tabs.length - 1; i >= 0; i--) {
-      if (crWindow.tabs[i].highlighted === true) {
-        highlightedCount++;
-      }
-    }
-
-    document.getElementById("count-of-all-tabs").textContent = tabsCount;
-    document.getElementById("count-of-highlighted-tabs").textContent = highlightedCount;
+document.querySelectorAll("[data-action]")
+  .forEach(function(element) {
+    element.addEventListener("click", handler);
   });
 
-})(ViewController);
+chrome.windows.getCurrent({ populate: true }, function(crWindow) {
+  var tabsCount = crWindow.tabs.length;
+  var highlightedCount = 0;
+
+  for (var i = crWindow.tabs.length - 1; i >= 0; i--) {
+    if (crWindow.tabs[i].highlighted === true) {
+      highlightedCount++;
+    }
+  }
+
+  document.getElementById("count-of-all-tabs").textContent = tabsCount;
+  document.getElementById("count-of-highlighted-tabs").textContent = highlightedCount;
+});
