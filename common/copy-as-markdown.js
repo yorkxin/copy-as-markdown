@@ -29,15 +29,18 @@ export function copyLink(title, url, needEscape = true) {
 
 export function copyListOfLinks(links, needEscape = true) {
   let escape = (needEscape && globalOptions.escape);
+  let text = Markdown.list(links, escape);
 
-  clipboard.set(Markdown.list(links, escape))
+  clipboard.set(text)
     .then(function() {
       flashBadge("success", links.length.toString());
     });
 }
 
 export function copyImage(title, url) {
-  clipboard.set(Markdown.imageFor(title, url))
+  let text = Markdown.imageFor(title, url);
+  
+  clipboard.set(text)
     .then(function() {
       flashBadge("success", "1");
     });
