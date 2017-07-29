@@ -1,4 +1,5 @@
 const path = require("path");
+var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   entry: {
@@ -19,5 +20,10 @@ module.exports = {
       path.resolve(__dirname, "common"),
       "node_modules"
     ]
-  }
+  },
+  plugins: [
+    new CopyWebpackPlugin([
+      { from: './static/', to: './' }
+    ])
+  ]
 };
