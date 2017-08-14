@@ -4,7 +4,9 @@
   "description": "Copy Link or Image as Markdown code, a Web Extension",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "webpack"
+    "build": "npm run build-chrome && npm run build-firefox",
+    "build-chrome": "TARGET=chrome webpack",
+    "build-firefox": "TARGET=firefox webpack"
   },
   "license": "MIT",
   "devDependencies": {
