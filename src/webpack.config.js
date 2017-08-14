@@ -9,7 +9,7 @@ if (!process.env.TARGET) {
   console.info(`\x1b[1;32mBuilding for target ${process.env.TARGET}...\x1b[m`)
 }
 
-module.exports = {
+let config = {
   entry: {
     background: [
       "./background/context-menu.js",
@@ -31,7 +31,16 @@ module.exports = {
   },
   plugins: [
     new CopyWebpackPlugin([
-      { from: './static/', to: './' }
+      { from: './static/', to: './' },
+      { from: `./manifest.${process.env.TARGET}.json`, to: `./manifest.json` }
     ])
   ]
 };
+
+if (process.env.TARGET === 'firefox') {
+  config.entry["content-script"] = [
+    "./content-script/clipboard.js"
+  ];
+}
+
+module.exports = config;
