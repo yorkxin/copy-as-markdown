@@ -4,7 +4,7 @@
   "description": "Copy Link or Image as Markdown code, a Web Extension",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run build-chrome && npm run build-firefox",
+    "build": "yarn run build-chrome && yarn run build-firefox",
     "build-chrome": "TARGET=chrome webpack",
     "build-firefox": "TARGET=firefox webpack",
     "eslint": "$(yarn bin)/eslint ."
