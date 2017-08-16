@@ -1,6 +1,6 @@
 function handler(event) {
   let element = event.currentTarget;
-  action = element.dataset.action;
+  let action = element.dataset.action;
 
   chrome.runtime.sendMessage(action, function() {
     element.classList.add('highlight-success');

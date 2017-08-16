@@ -7,7 +7,7 @@ export default class Clipboard {
 
   set (text) {
     let textbox = this.textbox;
-    return new Promise(function(resolve, reject) {
+    return new Promise(function(resolve) {
       textbox.value = text;
       textbox.select();
       document.execCommand('Copy');

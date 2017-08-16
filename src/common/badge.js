@@ -22,9 +22,9 @@ function flashBadge(type, text) {
   });
 
   setTimeout(clearBadge, 3000);
-};
+}
 
-function clearBadge(type, text) {
+function clearBadge() {
   chrome.browserAction.setBadgeText({
     text: ""
   });
@@ -32,6 +32,6 @@ function clearBadge(type, text) {
   chrome.browserAction.setBadgeBackgroundColor({
     color: [0, 0, 0, 255] // opaque
   });
-};
+}
 
 export default flashBadge;

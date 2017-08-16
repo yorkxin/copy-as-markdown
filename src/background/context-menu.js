@@ -3,11 +3,12 @@ import Markdown from "markdown";
 
 function handler(info, tab) {
   switch (info.menuItemId) {
-    case "current-page":
+    case "current-page": {
       CopyAsMarkdown.copyLink(tab.title, tab.url);
       break;
+    }
 
-    case "link":
+    case "link": {
       // auto discover image
       let linkText = "";
       let needEscape = true;
@@ -21,12 +22,14 @@ function handler(info, tab) {
 
       CopyAsMarkdown.copyLink(linkText, info.linkUrl, needEscape);
       break;
+    }
 
-    case "image":
+    case "image": {
       CopyAsMarkdown.copyImage("", info.srcUrl);
       break;
+    }
   }
-};
+}
 
 chrome.runtime.onInstalled.addListener(function() {
   let parentID = chrome.contextMenus.create({

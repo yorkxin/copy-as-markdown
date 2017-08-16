@@ -14,4 +14,4 @@ export default function(action) {
       CopyAsMarkdown.copyHighlightedTabs();
       break;
   }
-};
+}
