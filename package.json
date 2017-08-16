@@ -5,8 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "yarn run build-chrome && yarn run build-firefox",
-    "build-chrome": "TARGET=chrome webpack",
-    "build-firefox": "TARGET=firefox webpack",
+    "build-chrome": "TARGET=chrome $(yarn bin)/webpack",
+    "build-firefox": "TARGET=firefox $(yarn bin)/webpack",
     "eslint": "$(yarn bin)/eslint ."
   },
   "license": "MIT",
