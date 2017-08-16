@@ -10,6 +10,7 @@ if (!process.env.TARGET) {
 }
 
 let config = {
+  context: path.resolve(__dirname, "src"),
   entry: {
     background: [
       "./background/context-menu.js",
@@ -25,8 +26,8 @@ let config = {
   },
   resolve: {
     modules: [
-      path.resolve(__dirname, "common"),
-      "node_modules"
+      path.resolve(__dirname, "src", "common"),
+      path.resolve(__dirname, "node_modules")
     ]
   },
   plugins: [
