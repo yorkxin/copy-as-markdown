@@ -10,7 +10,8 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "webpack": "^2.6.1",
-    "copy-webpack-plugin": "^4.0.1"
+    "copy-webpack-plugin": "^4.0.1",
+    "eslint": "^4.4.1",
+    "webpack": "^2.6.1"
   }
 }
