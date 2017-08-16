@@ -6,7 +6,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build-chrome && npm run build-firefox",
     "build-chrome": "TARGET=chrome webpack",
-    "build-firefox": "TARGET=firefox webpack"
+    "build-firefox": "TARGET=firefox webpack",
+    "eslint": "$(yarn bin)/eslint ."
   },
   "license": "MIT",
   "devDependencies": {

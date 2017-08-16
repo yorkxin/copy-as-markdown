@@ -1,0 +1,27 @@
+{
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "rules": {
+    },
+    "globals": {
+        "chrome": true
+    },
+    "overrides": [
+        {
+            "files": [ "webpack.*.js" ],
+            "env": {
+                "node": true
+            },
+            "rules": {
+                "no-console": 0
+            }
+        }
+    ]
+
+}
