@@ -1,10 +1,20 @@
-import CopyAsMarkdown from "copy-as-markdown";
-import Markdown from "markdown";
+import Markdown from "markdown.js";
+import flashBadge from "badge.js";
+
+function copyToClipboard(text, tab) {
+  browser.tabs.executeScript(tab.id, {
+    file: "/content-script.dist.js"
+  }).then(() => {
+    return browser.tabs.sendMessage(tab.id, { text });
+  });
+}
 
 function handler(info, tab) {
   switch (info.menuItemId) {
     case "current-page": {
-      CopyAsMarkdown.copyLink(tab.title, tab.url);
+      let response = Markdown.linkTo(tab.title, tab.url);
+      copyToClipboard(response.markdown, tab)
+        .then(() => flashBadge("success", response.size));
       break;
     }
 
@@ -20,12 +30,16 @@ function handler(info, tab) {
         linkText = info.selectionText;
       }
 
-      CopyAsMarkdown.copyLink(linkText, info.linkUrl, needEscape);
+      let response = Markdown.linkTo(linkText, info.linkUrl, needEscape);
+      copyToClipboard(response.markdown, tab)
+        .then(() => flashBadge("success", response.size));
       break;
     }
 
     case "image": {
-      CopyAsMarkdown.copyImage("", info.srcUrl);
+      let response = Markdown.imageFor("", info.srcUrl);
+      copyToClipboard(response.markdown, tab)
+        .then(() => flashBadge("success", response.size));
       break;
     }
   }

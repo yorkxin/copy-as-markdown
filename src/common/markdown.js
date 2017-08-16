@@ -1,3 +1,5 @@
+import MarkdownResponse from "./markdown-response";
+
 const ESCAPE_CHARS = /([\\`*_[\]<>])/g;
 const DEFAULT_TITLE = "(No Title)";
 
@@ -15,17 +17,23 @@ export function linkTo(title, url, escape = false) {
     title = escapeLinkText(title);
   }
 
-  return `[${title}](${url})`;
+  let markdown = `[${title}](${url})`;
+
+  return new MarkdownResponse({ markdown, size: 1 });
 }
 
 export function imageFor(title, url) {
-  return `![${title}](${url})`;
+  let markdown = `![${title}](${url})`;
+
+  return new MarkdownResponse({ markdown, size: 1 });
 }
 
 export function list(links, escape = false) {
-  return links.map(function(link) {
+  let markdown = links.map(function(link) {
     return "* " + linkTo(link.title, link.url, escape);
   }).join("\n");
+
+  return new MarkdownResponse({ markdown, size: links.length });
 }
 
 export default {
