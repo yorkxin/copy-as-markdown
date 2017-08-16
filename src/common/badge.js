@@ -14,7 +14,7 @@ function flashBadge(type, text) {
   }
 
   chrome.browserAction.setBadgeText({
-    "text": text
+    "text": String(text)
   });
 
   chrome.browserAction.setBadgeBackgroundColor({
