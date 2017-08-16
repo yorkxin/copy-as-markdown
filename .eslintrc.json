@@ -8,18 +8,17 @@
         "sourceType": "module"
     },
     "rules": {
+        "no-console": 0
     },
     "globals": {
-        "chrome": true
+        "chrome": true,
+        "browser": true
     },
     "overrides": [
         {
             "files": [ "webpack.*.js" ],
             "env": {
                 "node": true
-            },
-            "rules": {
-                "no-console": 0
             }
         }
     ]
