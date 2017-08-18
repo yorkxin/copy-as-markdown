@@ -2,7 +2,7 @@ import Markdown from "markdown.js";
 import flashBadge from "badge.js";
 
 function copyToClipboard(text, tab) {
-  browser.tabs.executeScript(tab.id, {
+  return browser.tabs.executeScript(tab.id, {
     file: "/content-script.dist.js"
   }).then(() => {
     return browser.tabs.sendMessage(tab.id, { text });
