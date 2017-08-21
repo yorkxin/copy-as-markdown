@@ -1,4 +1,6 @@
-export default class Clipboard {
+// Clipboard access in background page
+// Only available in Chrome / Chromium
+export default class BackgroundClipboard {
   constructor (contianer) {
     // A text box is required to access clipboard
     this.textbox = document.createElement("textarea");

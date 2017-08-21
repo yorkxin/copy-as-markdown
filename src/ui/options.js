@@ -1,10 +1,10 @@
-import Options from "options";
+import OptionsManager from "../lib/options-manager.js";
 
 // Saves options to chrome.storage.sync.
 function save() {
   let form = document.getElementById("form")
 
-  Options.save({
+  OptionsManager.save({
     escape: form.escape.checked
   });
 }
@@ -12,7 +12,7 @@ function save() {
 // Restores select box and checkbox state using the preferences
 // stored in chrome.storage.
 function load() {
-  Options.load(function(items) {
+  OptionsManager.load(function(items) {
     let form = document.getElementById("form")
     form.escape.checked = items.escape;
   });

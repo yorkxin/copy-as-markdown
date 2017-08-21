@@ -13,9 +13,8 @@ let config = {
   context: path.resolve(__dirname, "src"),
   entry: {
     background: [
-      "./background/context-menu.js",
-      "./background/command.js",
-      "./background/service.js"
+      "./background/context-menus.js",
+      "./background/message-listeners.js"
     ],
     options: "./ui/options.js",
     popup: "./ui/popup.js"
@@ -26,7 +25,6 @@ let config = {
   },
   resolve: {
     modules: [
-      path.resolve(__dirname, "src", "common"),
       path.resolve(__dirname, "node_modules")
     ]
   },
@@ -35,7 +33,8 @@ let config = {
       { from: './static/', to: './' },
       { from: `./manifest.${process.env.TARGET}.json`, to: `./manifest.json` }
     ])
-  ]
+  ],
+  devtool: "source-map"
 };
 
 if (process.env.TARGET === 'firefox') {

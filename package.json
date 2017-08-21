@@ -14,5 +14,8 @@
     "copy-webpack-plugin": "^4.0.1",
     "eslint": "^4.4.1",
     "webpack": "^2.6.1"
+  },
+  "dependencies": {
+    "es6-promisify": "^5.0.0"
   }
 }

@@ -1,13 +1,13 @@
-var DEFAULT_OPTIONS = {
+let DEFAULT_OPTIONS = {
   escape: false
 };
 
-var Options = {
-  save: function (params) {
+export default {
+  save: (params) => {
     chrome.storage.sync.set(params);
   },
 
-  load: function (callback) {
+  load: (callback) => {
     // XXX: Chrome vs Firefox incompatibilty
     let syncStorage = chrome.storage.sync;
     if (syncStorage.get.length === 1) {
@@ -19,7 +19,7 @@ var Options = {
     }
   },
 
-  onChange: function(callback) {
+  onChange: (callback) => {
     chrome.storage.onChanged.addListener(function(changes) {
       let callbackChanges = {};
 
@@ -29,8 +29,5 @@ var Options = {
 
       callback(callbackChanges);
     })
-
   }
 };
-
-export default Options;

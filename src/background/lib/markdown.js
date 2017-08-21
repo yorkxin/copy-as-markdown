@@ -1,4 +1,4 @@
-import MarkdownResponse from "./markdown-response";
+import MarkdownResponse from "./markdown-response.js";
 
 const ESCAPE_CHARS = /([\\`*_[\]<>])/g;
 const DEFAULT_TITLE = "(No Title)";
@@ -28,7 +28,7 @@ export function imageFor(title, url) {
   return new MarkdownResponse({ markdown, size: 1 });
 }
 
-export function list(links, escape = false) {
+export function links(links, escape = false) {
   let markdown = links.map(function(link) {
     return "* " + linkTo(link.title, link.url, escape);
   }).join("\n");
@@ -39,5 +39,5 @@ export function list(links, escape = false) {
 export default {
   linkTo,
   imageFor,
-  list
+  links
 };

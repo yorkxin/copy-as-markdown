@@ -1,21 +1,11 @@
-import Markdown from "markdown.js";
-import flashBadge from "badge.js";
-
-function copyToClipboard(text, tab) {
-  return browser.tabs.executeScript(tab.id, {
-    file: "/content-script.dist.js"
-  }).then(() => {
-    return browser.tabs.sendMessage(tab.id, { text });
-  });
-}
+import Markdown from "./lib/markdown.js";
+import { copyMarkdownResponse } from "./lib/clipboard-access.js"
 
 function handler(info, tab) {
   switch (info.menuItemId) {
     case "current-page": {
       let response = Markdown.linkTo(tab.title, tab.url);
-      copyToClipboard(response.markdown, tab)
-        .then(() => flashBadge("success", response.size));
-      break;
+      return copyMarkdownResponse(response, tab)
     }
 
     case "link": {
@@ -31,16 +21,12 @@ function handler(info, tab) {
       }
 
       let response = Markdown.linkTo(linkText, info.linkUrl, needEscape);
-      copyToClipboard(response.markdown, tab)
-        .then(() => flashBadge("success", response.size));
-      break;
+      return copyMarkdownResponse(response, tab)
     }
 
     case "image": {
       let response = Markdown.imageFor("", info.srcUrl);
-      copyToClipboard(response.markdown, tab)
-        .then(() => flashBadge("success", response.size));
-      break;
+      return copyMarkdownResponse(response, tab)
     }
   }
 }
