@@ -5,44 +5,43 @@
 //
 import BackgroundClipboard from "./background-clipboard.js"
 import flashBadge from "./badge.js";
-import aBrowser from "../../lib/async-browser.js"
+import ENVIRONMENT from "environment";
 
-let canCopyInBackground = false;
 let backgroundClipboard = new BackgroundClipboard(document.body)
-
-function copyByContentScript(text, tab) {
-  return aBrowser.tabs.executeScript(tab.id, { file: "/content-script.dist.js" })
-    .then(() => aBrowser.tabs.sendMessage(tab.id, { text }));
-}
 
 function copyByBackgroundPage(text) {
   return backgroundClipboard.set(text)
 }
 
-// test if we can do copy in background
-backgroundClipboard.set("test")
-  .then(() => canCopyInBackground = true)
-  .catch(() => canCopyInBackground = false)
+function copyByContentScript(text, tab) {
+  return browser.tabs.executeScript(tab.id, { file: "/content-script/clipboard.js" })
+    .then(() => browser.tabs.sendMessage(tab.id, { text }))
+}
 
-export function copyText(text, tab) {
-  if (canCopyInBackground) {
-    return copyByBackgroundPage(text)
-  } else if (!tab) {
-    return aBrowser.tabs.getCurrent()
+function copyByContentScriptWithTabWrapping(text, tab) {
+  if (!tab) {
+    return browser.tabs.getCurrent()
       .then(tab => copyByContentScript(text, tab))
   } else {
     return copyByContentScript(text, tab)
   }
 }
 
+let copyText = null;
+
+if (ENVIRONMENT.CAN_COPY_IN_BACKGROUND) {
+  copyText = copyByBackgroundPage
+} else {
+  copyText = copyByContentScriptWithTabWrapping
+}
+
 /**
  *
  * @param {MarkdownResponse} response generated from markdown.js
- * @param {chrome.tabs.tab | null} tab Tab in which the copy was called from. Default to `null` = use `currentTab()`.
+ * @param {chrome.tabs.tab} [tab=null] Tab in which the copy was called from. Default to `null` = use `currentTab()`.
  * @return {Promise}
  */
-export function copyMarkdownResponse(response, tab) {
-  tab = tab || null;
+export function copyMarkdownResponse(response, tab = null) {
   return copyText(response.markdown, tab)
     .then(() => flashBadge("success", response.size));
 }

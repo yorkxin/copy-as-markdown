@@ -26,21 +26,19 @@ let config = {
   resolve: {
     modules: [
       path.resolve(__dirname, "node_modules")
-    ]
+    ],
+    alias: {
+      environment: path.resolve(__dirname, "src", `environment.${process.env.TARGET}.js`)
+    }
   },
   plugins: [
     new CopyWebpackPlugin([
       { from: './static/', to: './' },
-      { from: `./manifest.${process.env.TARGET}.json`, to: `./manifest.json` }
+      { from: `./manifest.json`, to: `./manifest.json` },
+      { from: `./content-script/`, to: `./content-script/` }
     ])
   ],
   devtool: "source-map"
 };
-
-if (process.env.TARGET === 'firefox') {
-  config.entry["content-script"] = [
-    "./content-script/clipboard.js"
-  ];
-}
 
 module.exports = config;
