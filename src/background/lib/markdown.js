@@ -7,7 +7,7 @@ var escapeLinkText = function(text) {
   return text.replace(ESCAPE_CHARS, "\\$1");
 };
 
-export function linkTo(title, url, escape = false) {
+export function linkTo(title, url, { escape = false } = {}) {
   if (title === undefined) {
     title = DEFAULT_TITLE;
   }
@@ -28,10 +28,10 @@ export function imageFor(title, url) {
   return new MarkdownResponse({ markdown, size: 1 });
 }
 
-export function links(links, escape = false) {
-  let markdown = links.map(function(link) {
-    return "* " + linkTo(link.title, link.url, escape);
-  }).join("\n");
+export function links(links, options = {}) {
+  let markdown = links
+    .map(link => "* " + linkTo(link.title, link.url, options).markdown)
+    .join("\n");
 
   return new MarkdownResponse({ markdown, size: links.length });
 }

@@ -4,7 +4,7 @@ function handler(event) {
 
   chrome.runtime.sendMessage(action, () => {
     element.classList.add('highlight-success');
-    // setTimeout(window.close, 300);
+    setTimeout(window.close, 300);
   });
 }
 
