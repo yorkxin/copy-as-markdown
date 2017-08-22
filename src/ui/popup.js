@@ -13,15 +13,9 @@ document.querySelectorAll("[data-action]")
     element.addEventListener("click", handler)
   })
 
-chrome.windows.getCurrent({ populate: true }, (crWindow) => {
-  let tabsCount = crWindow.tabs.length;
-  let highlightedCount = 0;
-
-  for (let i = crWindow.tabs.length - 1; i >= 0; i--) {
-    if (crWindow.tabs[i].highlighted === true) {
-      highlightedCount++;
-    }
-  }
+chrome.windows.getCurrent({ populate: true }, crWindow => {
+  let tabsCount = crWindow.tabs.length
+  let highlightedCount = crWindow.tabs.filter(tab => tab.highlighted).length;
 
   document.getElementById("count-of-all-tabs").textContent = tabsCount;
   document.getElementById("count-of-highlighted-tabs").textContent = highlightedCount;
