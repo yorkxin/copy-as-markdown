@@ -1,19 +1,5 @@
 // Convert browser items (tabs / window / etc.) to Markdown
-import OptionsManager from "../../lib/options-manager.js";
 import Markdown from "./markdown.js";
-
-var globalOptions = {};
-
-// load options
-OptionsManager.load(function(newOptions) {
-  globalOptions = newOptions;
-});
-
-OptionsManager.onChange(function(changes) {
-  for (let key in changes) {
-    globalOptions[key] = changes[key];
-  }
-});
 
 export function currentTab(options = {}) {
   return new Promise((resolve) => {

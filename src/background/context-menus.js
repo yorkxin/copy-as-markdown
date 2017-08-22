@@ -10,17 +10,18 @@ function handler(info, tab) {
 
     case "link": {
       // auto discover image
-      let linkText = "";
-      let escape = true;
+      let linkText;
+      let needEscape;
 
       if (info.mediaType === "image") {
-        escape = false;
-        linkText = Markdown.imageFor("", info.srcUrl);
+        needEscape = false;
+        linkText = Markdown.imageFor("", info.srcUrl).markdown;
       } else {
+        needEscape = true;
         linkText = info.selectionText;
       }
 
-      let response = Markdown.linkTo(linkText, info.linkUrl, { escape });
+      let response = Markdown.linkTo(linkText, info.linkUrl, { needEscape });
       return copyMarkdownResponse(response, tab)
     }
 
