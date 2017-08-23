@@ -14,5 +14,8 @@
     "copy-webpack-plugin": "^4.0.1",
     "eslint": "^4.4.1",
     "webpack": "^2.6.1"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.1.1"
   }
 }

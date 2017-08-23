@@ -32,15 +32,15 @@ function handler(info, tab) {
   }
 }
 
-chrome.runtime.onInstalled.addListener(function() {
-  let parentID = chrome.contextMenus.create({
+browser.runtime.onInstalled.addListener(function() {
+  let parentID = browser.contextMenus.create({
     id: "parent",
     title: "Copy as Markdown",
     type: "normal",
     contexts: ["page", "link", "image"]
   });
 
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: "current-page",
     parentId: parentID,
     title: "Page [title](url)",
@@ -48,7 +48,7 @@ chrome.runtime.onInstalled.addListener(function() {
     contexts: ["page"]
   });
 
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: "link",
     parentId: parentID,
     title: "Link [text or img](url)",
@@ -56,7 +56,7 @@ chrome.runtime.onInstalled.addListener(function() {
     contexts: ["link"]
   });
 
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: "image",
     parentId: parentID,
     title: "Image ![](src)", // TODO: how to fetch alt text?
@@ -64,5 +64,5 @@ chrome.runtime.onInstalled.addListener(function() {
     contexts: ["image"]
   });
 
-  chrome.contextMenus.onClicked.addListener(handler);
+  browser.contextMenus.onClicked.addListener(handler);
 });

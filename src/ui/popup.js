@@ -2,7 +2,7 @@ function handler(event) {
   let element = event.currentTarget;
   let action = element.dataset.action;
 
-  chrome.runtime.sendMessage(action, () => {
+  browser.runtime.sendMessage(action).then(() => {
     element.classList.add('highlight-success');
     setTimeout(window.close, 300);
   });
@@ -13,7 +13,7 @@ document.querySelectorAll("[data-action]")
     element.addEventListener("click", handler)
   })
 
-chrome.windows.getCurrent({ populate: true }, crWindow => {
+browser.windows.getCurrent({ populate: true }).then(crWindow => {
   let tabsCount = crWindow.tabs.length
   let highlightedCount = crWindow.tabs.filter(tab => tab.highlighted).length;
 

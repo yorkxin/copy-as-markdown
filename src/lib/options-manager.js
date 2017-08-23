@@ -4,23 +4,15 @@ let DEFAULT_OPTIONS = {
 
 export default {
   save: (params) => {
-    chrome.storage.sync.set(params);
+    return browser.storage.sync.set(params);
   },
 
-  load: (callback) => {
-    // XXX: Chrome vs Firefox incompatibilty
-    let syncStorage = chrome.storage.sync;
-    if (syncStorage.get.length === 1) {
-      // Firefox, Promise
-      syncStorage.get(DEFAULT_OPTIONS).then(callback);
-    } else if (syncStorage.get.length === 2) {
-      // Chrome, callback
-      syncStorage.get(DEFAULT_OPTIONS, callback);
-    }
+  load: () => {
+    return browser.storage.sync.get(DEFAULT_OPTIONS)
   },
 
   onChange: (callback) => {
-    chrome.storage.onChanged.addListener(function(changes) {
+    browser.storage.onChanged.addListener(function(changes) {
       let callbackChanges = {};
 
       for (let key in DEFAULT_OPTIONS) {

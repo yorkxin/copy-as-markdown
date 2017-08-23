@@ -11,9 +11,7 @@ var escapeLinkText = function(text) {
 var userOptions = {};
 
 // load options
-OptionsManager.load(options => {
-  userOptions = options
-})
+OptionsManager.load().then(options => userOptions = options)
 
 OptionsManager.onChange(changes => {
   for (let key in changes) {

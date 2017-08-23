@@ -13,11 +13,11 @@ function flashBadge(type, text) {
       return; // don't know what it is. quit.
   }
 
-  chrome.browserAction.setBadgeText({
+  browser.browserAction.setBadgeText({
     "text": String(text)
   });
 
-  chrome.browserAction.setBadgeBackgroundColor({
+  browser.browserAction.setBadgeBackgroundColor({
     "color": color
   });
 
@@ -25,11 +25,11 @@ function flashBadge(type, text) {
 }
 
 function clearBadge() {
-  chrome.browserAction.setBadgeText({
+  browser.browserAction.setBadgeText({
     text: ""
   });
 
-  chrome.browserAction.setBadgeBackgroundColor({
+  browser.browserAction.setBadgeBackgroundColor({
     color: [0, 0, 0, 255] // opaque
   });
 }

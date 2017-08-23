@@ -38,7 +38,7 @@ if (ENVIRONMENT.CAN_COPY_IN_BACKGROUND) {
 /**
  *
  * @param {MarkdownResponse} response generated from markdown.js
- * @param {chrome.tabs.tab} [tab=null] Tab in which the copy was called from. Default to `null` = use `currentTab()`.
+ * @param {browser.tabs.tab} [tab=null] Tab in which the copy was called from. Default to `null` = use `currentTab()`.
  * @return {Promise}
  */
 export function copyMarkdownResponse(response, tab = null) {

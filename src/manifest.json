@@ -22,6 +22,7 @@
   },
   "background": {
     "scripts": [
+      "vendor/browser-polyfill.js",
       "background.dist.js"
     ],
     "persistent": false
