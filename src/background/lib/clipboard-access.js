@@ -14,7 +14,7 @@ function copyByBackgroundPage(text) {
 }
 
 function copyByContentScript(text, tab) {
-  return browser.tabs.executeScript(tab.id, { file: "/content-script/clipboard.js" })
+  return browser.tabs.executeScript(tab.id, { file: "/content-script-clipboard.dist.js" })
     .then(() => browser.tabs.sendMessage(tab.id, { text }))
 }
 

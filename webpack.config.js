@@ -17,7 +17,8 @@ let config = {
       "./background/message-listeners.js"
     ],
     options: "./ui/options.js",
-    popup: "./ui/popup.js"
+    popup: "./ui/popup.js",
+    "content-script-clipboard": './content-script/clipboard.js'
   },
   output: {
     path: path.resolve(__dirname, "build", process.env.TARGET),
@@ -35,7 +36,6 @@ let config = {
     new CopyWebpackPlugin([
       { from: './static/', to: './' },
       { from: `./manifest.json`, to: `./manifest.json` },
-      { from: `./content-script/`, to: `./content-script/` },
       { from: '../node_modules/webextension-polyfill/dist/browser-polyfill.js', to: './vendor/' }
     ])
   ],
