@@ -3,15 +3,9 @@
 // For browsers supporting background page copy (Chrome), use `copyByBackgroundPage()`
 // For browsers don't support it (Firefox), use `copyByContentScript()`
 //
-import BackgroundClipboard from "./background-clipboard.js"
+import copyByBackground from "../../lib/clipboard.js"
 import flashBadge from "./badge.js";
 import ENVIRONMENT from "environment";
-
-let backgroundClipboard = new BackgroundClipboard(document.body)
-
-function copyByBackgroundPage(text) {
-  return backgroundClipboard.set(text)
-}
 
 function copyByContentScript(text, tab) {
   return browser.tabs.executeScript(tab.id, { file: "/content-script-clipboard.dist.js" })
@@ -30,7 +24,7 @@ function copyByContentScriptWithTabWrapping(text, tab) {
 let copyText = null;
 
 if (ENVIRONMENT.CAN_COPY_IN_BACKGROUND) {
-  copyText = copyByBackgroundPage
+  copyText = copyByBackground
 } else {
   copyText = copyByContentScriptWithTabWrapping
 }
