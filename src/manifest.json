@@ -37,5 +37,10 @@
   },
   "options_ui": {
     "page": "options.html"
+  },
+  "applications": {
+    "gecko": {
+      "id": "jid1-tfBgelm3d4bLkQ@jetpack"
+    }
   }
 }
