@@ -12,8 +12,11 @@
         "focus": true,
         "panel": "shared"
       },
-      "isBackground": true,
-      "problemMatcher": "$tsc"
+      "problemMatcher": "$tsc",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     }
   ]
 }
