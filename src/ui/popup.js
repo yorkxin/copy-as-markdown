@@ -14,7 +14,7 @@ function handler(event) {
     // copy should be handled by promise receiver, e.g. popup page.
     promise = browser.runtime.sendMessage({ action, executeCopy: false })
       .then(markdownResponse => copyText(markdownResponse.markdown))
-      // TODO: then flash badge
+      // TODO: THIS     then flash badge
   }
 
   return promise.then(() => uiFeedback(element));
@@ -34,6 +34,6 @@ browser.windows.getCurrent({ populate: true }).then(crWindow => {
   let tabsCount = crWindow.tabs.length
   let highlightedCount = crWindow.tabs.filter(tab => tab.highlighted).length;
 
-  document.getElementById("count-of-all-tabs").textContent = tabsCount;
-  document.getElementById("count-of-highlighted-tabs").textContent = highlightedCount;
+  document.getElementById("count-of-all-tabs").textContent = String(tabsCount);
+  document.getElementById("count-of-highlighted-tabs").textContent = String(highlightedCount);
 })
