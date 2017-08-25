@@ -4,7 +4,6 @@
 // For browsers don't support it (Firefox), use `copyByContentScript()`
 //
 import copyByBackground from "../../lib/clipboard.js"
-import ENVIRONMENT from "environment";
 
 function copyByContentScript(text, tab) {
   return browser.tabs.executeScript(tab.id, { file: "/content-script-clipboard.dist.js" })

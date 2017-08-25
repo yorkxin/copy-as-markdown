@@ -12,7 +12,9 @@
     },
     "globals": {
         "chrome": true,
-        "browser": true
+        "browser": true,
+        "module": true,
+        "ENVIRONMENT": true
     },
     "overrides": [
         {

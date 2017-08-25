@@ -1,5 +1,6 @@
 const path = require("path");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const webpack = require('webpack');
 
 if (!process.env.TARGET) {
   throw Error("Please specify env var TARGET, 'chrome' or 'firefox'.")
@@ -27,17 +28,17 @@ let config = {
   resolve: {
     modules: [
       path.resolve(__dirname, "node_modules")
-    ],
-    alias: {
-      environment: path.resolve(__dirname, "src", `environment.${process.env.TARGET}.js`)
-    }
+    ]
   },
   plugins: [
     new CopyWebpackPlugin([
       { from: './static/', to: './' },
       { from: `./manifest.json`, to: `./manifest.json` },
       { from: '../node_modules/webextension-polyfill/dist/browser-polyfill.js', to: './vendor/' }
-    ])
+    ]),
+    new webpack.DefinePlugin({
+      'ENVIRONMENT': require(`./src/environment.${process.env.TARGET}.js`)
+    })
   ],
   devtool: "source-map"
 };

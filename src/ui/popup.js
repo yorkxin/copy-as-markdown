@@ -1,4 +1,3 @@
-import ENVIRONMENT from "environment"
 import copyText from "../lib/clipboard.js"
 
 function handler(event) {
