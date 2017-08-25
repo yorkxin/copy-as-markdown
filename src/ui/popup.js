@@ -1,6 +1,5 @@
 import ENVIRONMENT from "environment"
 import copyText from "../lib/clipboard.js"
-import { flashSuccessBadge } from "../lib/badge.js"
 
 function handler(event) {
   let element = event.currentTarget;
