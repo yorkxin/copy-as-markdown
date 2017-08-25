@@ -1,11 +1,15 @@
 import Markdown from "./lib/markdown.js";
 import { copyMarkdownResponse } from "./lib/clipboard-access.js"
+import { flashSuccessBadge } from "../lib/badge.js"
 
 function handler(info, tab) {
+  let promise;
+
   switch (info.menuItemId) {
     case "current-page": {
       let response = Markdown.linkTo(tab.title, tab.url);
-      return copyMarkdownResponse(response, tab)
+      promise = copyMarkdownResponse(response, tab)
+      break;
     }
 
     case "link": {
@@ -22,14 +26,22 @@ function handler(info, tab) {
       }
 
       let response = Markdown.linkTo(linkText, info.linkUrl, { needEscape });
-      return copyMarkdownResponse(response, tab)
+      promise = copyMarkdownResponse(response, tab)
+      break;
     }
 
     case "image": {
       let response = Markdown.imageFor("", info.srcUrl);
-      return copyMarkdownResponse(response, tab)
+      promise = copyMarkdownResponse(response, tab)
+      break;
+    }
+
+    default: {
+      return Promise.reject(`unknown context menu: ${info}`)
     }
   }
+
+  return promise.then(response => flashSuccessBadge(response.size))
 }
 
 browser.runtime.onInstalled.addListener(function() {

@@ -4,7 +4,6 @@
 // For browsers don't support it (Firefox), use `copyByContentScript()`
 //
 import copyByBackground from "../../lib/clipboard.js"
-import flashBadge from "./badge.js";
 import ENVIRONMENT from "environment";
 
 function copyByContentScript(text, tab) {
@@ -33,9 +32,9 @@ if (ENVIRONMENT.CAN_COPY_IN_BACKGROUND) {
  *
  * @param {MarkdownResponse} response generated from markdown.js
  * @param {browser.tabs.Tab} [tab=null] Tab in which the copy was called from. Default to `null` = use `currentTab()`.
- * @return {Promise}
+ * @return {Promise} contains original response
  */
 export function copyMarkdownResponse(response, tab = null) {
   return copyText(response.markdown, tab)
-    .then(() => flashBadge("success", response.size));
+    .then(() => response)
 }

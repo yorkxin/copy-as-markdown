@@ -1,27 +1,49 @@
 import ENVIRONMENT from "environment"
 import copyText from "../lib/clipboard.js"
+import { flashSuccessBadge } from "../lib/badge.js"
 
 function handler(event) {
   let element = event.currentTarget;
-  let action = element.dataset.action;
 
   let promise;
 
+  let payload = {
+    topic: "copy",
+    params: {
+      action: element.dataset.action
+    }
+  }
+
   if (ENVIRONMENT.CAN_COPY_IN_BACKGROUND) {
-    promise = browser.runtime.sendMessage({ action })
+    promise = browser.runtime.sendMessage(payload)
   } else {
     // for browsers don't support copy in background page (e.g. Firefox)
     // copy should be handled by promise receiver, e.g. popup page.
-    promise = browser.runtime.sendMessage({ action, executeCopy: false })
-      .then(markdownResponse => copyText(markdownResponse.markdown))
-      // TODO: THIS     then flash badge
+    payload.params.executeCopy = false
+    promise = browser.runtime.sendMessage(payload)
+      .then(markdownResponse => {
+        copyText(markdownResponse.markdown)
+        return markdownResponse
+      })
   }
 
-  return promise.then(() => uiFeedback());
+  return promise.then((markdownResponse) => uiFeedback(markdownResponse));
 }
 
-let uiFeedback = () => {
-  window.close()
+let uiFeedback = (markdownResponse) => {
+  return Promise.resolve()
+    .then(() => {
+      return browser.runtime.sendMessage({
+        topic: "badge",
+        params: {
+          action: "flashSuccess",
+          text: String(markdownResponse.size)
+        }
+      })
+    })
+    .then(() => {
+      window.close()
+    })
 }
 
 document.querySelectorAll("[data-action]")

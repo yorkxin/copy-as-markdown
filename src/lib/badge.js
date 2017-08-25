@@ -1,4 +1,8 @@
-function flashBadge(type, text) {
+export let flashSuccessBadge = (text) => {
+  return flashBadge("success", text)
+}
+
+export let flashBadge = (type, text) => {
   let color;
 
   switch (type) {
@@ -21,7 +25,10 @@ function flashBadge(type, text) {
     "color": color
   });
 
-  setTimeout(clearBadge, 3000);
+  return Promise.resolve()
+    .then(() => {
+      setTimeout(clearBadge, 3000);
+    })
 }
 
 function clearBadge() {
@@ -33,5 +40,3 @@ function clearBadge() {
     color: [0, 0, 0, 255] // opaque
   });
 }
-
-export default flashBadge;
