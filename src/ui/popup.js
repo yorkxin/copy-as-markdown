@@ -17,18 +17,21 @@ function handler(event) {
       // TODO: THIS     then flash badge
   }
 
-  return promise.then(() => uiFeedback(element));
+  return promise.then(() => uiFeedback());
 }
 
-let uiFeedback = (element) => {
-  element.classList.add('highlight-success');
-  setTimeout(window.close, 300);
+let uiFeedback = () => {
+  window.close()
 }
 
 document.querySelectorAll("[data-action]")
   .forEach(element => {
     element.addEventListener("click", handler)
   })
+
+if (!ENVIRONMENT.SUPPORTS_POPUP_BROWSER_STYLE) {
+  document.body.classList.add("custom-popup-style")
+}
 
 browser.windows.getCurrent({ populate: true }).then(crWindow => {
   let tabsCount = crWindow.tabs.length
