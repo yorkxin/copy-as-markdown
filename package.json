@@ -13,11 +13,11 @@
   "license": "MIT",
   "devDependencies": {
     "copy-webpack-plugin": "^4.0.1",
-    "eslint": "^4.4.1",
+    "eslint": "^4.5.0",
     "typescript": "^2.4.2",
     "web-ext": "^2.0.0",
     "web-ext-types": "^0.3.1",
-    "webpack": "^2.6.1"
+    "webpack": "^3.5.5"
   },
   "dependencies": {
     "webextension-polyfill": "^0.1.1"
