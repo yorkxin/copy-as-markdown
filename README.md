@@ -32,7 +32,6 @@ You can add keyboard shortuts for copying tab(s) as Markdown. By default, Copy a
 ## Known Issues
 
 * [Chrome] When copying an image, the image code does not include the alternative text of that image. This is due to API restriction.
-* [Firefox] Cannot add a popover when clicking the toolbar button. There is an API for that on Firefox 30.
 
 ## Development
 
