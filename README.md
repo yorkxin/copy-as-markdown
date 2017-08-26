@@ -34,18 +34,29 @@ You can add keyboard shortuts for copying tab(s) as Markdown. By default, Copy a
 * [Chrome] When copying an image, the image code does not include the alternative text of that image. This is due to API restriction.
 * [Firefox] Cannot add a popover when clicking the toolbar button. There is an API for that on Firefox 30.
 
-## Source Code Available!
+## Development
 
-The source code of Copy as Markdown is available at [GitHub](https://github.com/chitsaou/copy-as-markdown) and is MIT-Licensed. Feel free to add features, fix bugs and even use the code for your own purpose! (as long as you take a different name, of course)
+### Install dependencies
+
+```
+yarn install
+```
+
+### Build for Development
+
+```
+yarn build
+```
+
+* Chrome Version: `build/chrome/`
+* Firefox Version: `build/firefox/`
+
+To debug in Chrome: [Window] Menu -> Extensions -> Load unpacked extension
+
+To debug in Firefox: [Tools] Menu -> Add-ons -> [Gear] Icon -> Debug Add-ons -> Load Temporary Add-on
+
+TODO: Unit Tests
 
 ## License
 
-The MIT License
-
-Copyright (c) 2012-2014 Yu-Cheng Chuang
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+See [MIT-LICENSE.txt](./MIT-LICENSE.txt)

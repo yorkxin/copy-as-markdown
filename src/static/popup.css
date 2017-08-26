@@ -1,9 +1,9 @@
-body {
+.custom-popup-style {
   font-family: sans-serif;
   margin: 0;
 }
 
-.command {
+.custom-popup-style .panel-list-item {
   /* restyle button */
   -webkit-appearance: none;
   outline: none;
@@ -18,12 +18,8 @@ body {
   white-space: nowrap;
 }
 
-.command:hover {
+.custom-popup-style .panel-list-item:hover {
   background-color: #268BD2;
   color: white;
 }
 
-.command.highlight-success {
-  background-color: #259286;
-  color: #fdf5dd;
-}

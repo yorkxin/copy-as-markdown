@@ -1,0 +1,15 @@
+{
+  "compileOnSave": true,
+  "compilerOptions": {
+    "target": "es6",
+    "checkJs": true,
+    "noEmit": true
+  },
+  "typeAcquisition": {
+    "enable": true
+  },
+  "include": [
+    "src/**/*",
+    "node_modules/web-ext-types/global/index.d.ts"
+  ]
+}

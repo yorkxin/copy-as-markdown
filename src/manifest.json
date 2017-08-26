@@ -1,26 +1,32 @@
 {
   "name": "Copy as Markdown",
-  "version": "1.3.0",
+  "version": "2.0.0",
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "tabs",
     "contextMenus",
+    "clipboardWrite",
     "activeTab",
     "storage"
   ],
   "browser_action": {
-     "default_icon": "icon-128.png",
-     "default_title": "Copy as Markdown...",
-     "default_popup": "browser-action-popup.html"
+    "default_icon": "images/icon-128.png",
+    "default_title": "Copy as Markdown...",
+    "default_popup": "popup.html",
+    "browser_style": true
   },
   "icons": {
-    "16": "icon-16.png",
-    "48": "icon-48.png",
-    "128": "icon-128.png"
+    "16": "images/icon-16.png",
+    "48": "images/icon-48.png",
+    "128": "images/icon-128.png"
   },
   "background": {
-    "page": "background.html"
+    "scripts": [
+      "vendor/browser-polyfill.js",
+      "background.dist.js"
+    ],
+    "persistent": false
   },
   "commands": {
     "current-tab-link": {
@@ -31,7 +37,11 @@
     }
   },
   "options_ui": {
-    "page": "options.html",
-    "chrome_style": true
+    "page": "options.html"
+  },
+  "applications": {
+    "gecko": {
+      "id": "jid1-tfBgelm3d4bLkQ@jetpack"
+    }
   }
 }

@@ -1,0 +1,27 @@
+{
+  "name": "copy-as-markdown",
+  "version": "2.0.0",
+  "description": "Copy Link or Image as Markdown code, a Web Extension",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "yarn run build-dev-chrome && yarn run build-dev-firefox",
+    "build-dev-chrome": "TARGET=chrome $(yarn bin)/webpack",
+    "build-dev-firefox": "TARGET=firefox $(yarn bin)/webpack",
+    "pack": "yarn run build && yarn run pack-chrome && yarn run pack-firefox",
+    "pack-chrome": "zip -r build/chrome.zip build/",
+    "pack-firefox": "$(yarn bin)/web-ext build -s build/firefox -a build/",
+    "eslint": "$(yarn bin)/eslint ."
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "copy-webpack-plugin": "^4.0.1",
+    "eslint": "^4.5.0",
+    "typescript": "^2.4.2",
+    "web-ext": "^2.0.0",
+    "web-ext-types": "^0.3.1",
+    "webpack": "^3.5.5"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.1.1"
+  }
+}
