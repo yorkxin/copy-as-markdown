@@ -10,7 +10,8 @@
     "pack": "yarn run build && yarn run pack-chrome && yarn run pack-firefox",
     "pack-chrome": "zip -r build/chrome.zip build/chrome",
     "pack-firefox": "$(yarn bin)/web-ext build -s build/firefox -a build/",
-    "eslint": "$(yarn bin)/eslint ."
+    "eslint": "$(yarn bin)/eslint .",
+    "convert-images": "./utils/convert-images.sh"
   },
   "license": "MIT",
   "devDependencies": {
