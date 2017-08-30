@@ -40,16 +40,19 @@ export function imageFor(title, url) {
   return new MarkdownResponse({ markdown, size: 1 });
 }
 
-export function links(links, options = {}) {
-  let markdown = links
-    .map(link => "* " + linkTo(link.title, link.url, options).markdown)
-    .join("\n");
+export function list(list) {
+  let markdown = list.map(item => `* ${item}`).join("\n");
 
-  return new MarkdownResponse({ markdown, size: links.length });
+  return new MarkdownResponse({ markdown, size: list.length });
+}
+
+export function links(links, options = {}) {
+  return list(links.map(link => linkTo(link.title, link.url, options).markdown))
 }
 
 export default {
   linkTo,
   imageFor,
-  links
+  links,
+  list
 };

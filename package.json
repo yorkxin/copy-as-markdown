@@ -4,13 +4,14 @@
   "description": "Copy Link or Image as Markdown code, a Web Extension",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "yarn run build-dev-chrome && yarn run build-dev-firefox",
-    "build-dev-chrome": "TARGET=chrome $(yarn bin)/webpack",
-    "build-dev-firefox": "TARGET=firefox $(yarn bin)/webpack",
-    "pack": "yarn run build && yarn run pack-chrome && yarn run pack-firefox",
+    "build": "yarn run build-chrome && yarn run build-firefox",
+    "build-chrome": "TARGET=chrome $(yarn bin)/webpack",
+    "build-firefox": "TARGET=firefox $(yarn bin)/webpack",
+    "pack": "yarn run clean && yarn run build && yarn run pack-chrome && yarn run pack-firefox",
     "pack-chrome": "zip -r build/chrome.zip build/chrome",
     "pack-firefox": "$(yarn bin)/web-ext build -s build/firefox -a build/",
     "eslint": "$(yarn bin)/eslint .",
+    "clean": "rm -rf ./build/",
     "convert-images": "./utils/convert-images.sh"
   },
   "license": "MIT",

@@ -34,6 +34,12 @@
     },
     "all-tabs-link-as-list": {
       "description": "all tabs: * [title](url)"
+    },
+    "all-tabs-title-as-list": {
+      "description": "all tabs: * title"
+    },
+    "all-tabs-url-as-list": {
+      "description": "all tabs: * url"
     }
   },
   "options_ui": {

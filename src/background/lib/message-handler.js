@@ -11,12 +11,32 @@ let handleCopy = ({ action = null, executeCopy = true }) => {
     }
 
     case "all-tabs-link-as-list": {
-      promise = BrowserAsMarkdown.allTabs()
+      promise = BrowserAsMarkdown.allTabs("link")
+      break;
+    }
+
+    case "all-tabs-title-as-list": {
+      promise = BrowserAsMarkdown.allTabs("title")
+      break;
+    }
+
+    case "all-tabs-url-as-list": {
+      promise = BrowserAsMarkdown.allTabs("url")
       break;
     }
 
     case "highlighted-tabs-link-as-list": {
-      promise = BrowserAsMarkdown.highlightedTabs()
+      promise = BrowserAsMarkdown.highlightedTabs("link")
+      break;
+    }
+
+    case "highlighted-tabs-title-as-list": {
+      promise = BrowserAsMarkdown.highlightedTabs("title")
+      break;
+    }
+
+    case "highlighted-tabs-url-as-list": {
+      promise = BrowserAsMarkdown.highlightedTabs("url")
       break;
     }
 

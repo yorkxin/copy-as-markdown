@@ -57,6 +57,12 @@ browser.windows.getCurrent({ populate: true }).then(crWindow => {
   let tabsCount = crWindow.tabs.length
   let highlightedCount = crWindow.tabs.filter(tab => tab.highlighted).length;
 
-  document.getElementById("count-of-all-tabs").textContent = String(tabsCount);
-  document.getElementById("count-of-highlighted-tabs").textContent = String(highlightedCount);
+  document.querySelectorAll("[data-count=all-tabs]").forEach(element => {
+    element.textContent = String(tabsCount);
+  })
+
+  document.querySelectorAll("[data-count=highlighted-tabs]").forEach(element => {
+    element.textContent = String(highlightedCount);
+  })
+
 })
