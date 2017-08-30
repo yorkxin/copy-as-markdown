@@ -1,6 +1,6 @@
 {
   "name": "Copy as Markdown",
-  "version": "2.0.0",
+  "version": "2.0.0rc2",
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
@@ -23,7 +23,6 @@
   },
   "background": {
     "scripts": [
-      "vendor/browser-polyfill.js",
       "background.dist.js"
     ],
     "persistent": false

@@ -33,7 +33,7 @@ let config = {
   plugins: [
     new CopyWebpackPlugin([
       { from: './static/', to: './' },
-      { from: `./manifest.json`, to: `./manifest.json` },
+      { from: `./manifest.${process.env.TARGET}.json`, to: `./manifest.json` },
       { from: '../node_modules/webextension-polyfill/dist/browser-polyfill.js', to: './vendor/' }
     ]),
     new webpack.DefinePlugin({
