@@ -8,7 +8,7 @@
     "build-chrome": "TARGET=chrome $(yarn bin)/webpack",
     "build-firefox": "TARGET=firefox $(yarn bin)/webpack",
     "pack": "yarn run clean && yarn run build && yarn run pack-chrome && yarn run pack-firefox",
-    "pack-chrome": "zip -r build/chrome.zip build/chrome",
+    "pack-chrome": "cd build/chrome && zip -r ../chrome.zip .",
     "pack-firefox": "$(yarn bin)/web-ext build -s build/firefox -a build/",
     "eslint": "$(yarn bin)/eslint .",
     "clean": "rm -rf ./build/",
