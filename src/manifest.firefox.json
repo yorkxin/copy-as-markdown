@@ -24,8 +24,7 @@
   "background": {
     "scripts": [
       "background.dist.js"
-    ],
-    "persistent": false
+    ]
   },
   "commands": {
     "current-tab-link": {
