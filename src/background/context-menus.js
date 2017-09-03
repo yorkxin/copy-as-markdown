@@ -44,37 +44,35 @@ function handler(info, tab) {
   return promise.then(response => flashSuccessBadge(response.size))
 }
 
-browser.runtime.onInstalled.addListener(function() {
-  let parentID = browser.contextMenus.create({
-    id: "parent",
-    title: "Copy as Markdown",
-    type: "normal",
-    contexts: ["page", "link", "image"]
-  });
-
-  browser.contextMenus.create({
-    id: "current-page",
-    parentId: parentID,
-    title: "Page [title](url)",
-    type: "normal",
-    contexts: ["page"]
-  });
-
-  browser.contextMenus.create({
-    id: "link",
-    parentId: parentID,
-    title: "Link [text or img](url)",
-    type: "normal",
-    contexts: ["link"]
-  });
-
-  browser.contextMenus.create({
-    id: "image",
-    parentId: parentID,
-    title: "Image ![](src)", // TODO: how to fetch alt text?
-    type: "normal",
-    contexts: ["image"]
-  });
-
-  browser.contextMenus.onClicked.addListener(handler);
+let parentID = browser.contextMenus.create({
+  id: "parent",
+  title: "Copy as Markdown",
+  type: "normal",
+  contexts: ["page", "link", "image"]
 });
+
+browser.contextMenus.create({
+  id: "current-page",
+  parentId: parentID,
+  title: "Page [title](url)",
+  type: "normal",
+  contexts: ["page"]
+});
+
+browser.contextMenus.create({
+  id: "link",
+  parentId: parentID,
+  title: "Link [text or img](url)",
+  type: "normal",
+  contexts: ["link"]
+});
+
+browser.contextMenus.create({
+  id: "image",
+  parentId: parentID,
+  title: "Image ![](src)", // TODO: how to fetch alt text?
+  type: "normal",
+  contexts: ["image"]
+});
+
+browser.contextMenus.onClicked.addListener(handler);
