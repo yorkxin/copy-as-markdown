@@ -40,6 +40,7 @@ let config = {
       'ENVIRONMENT': require(`./src/environment.${process.env.TARGET}.js`)
     })
   ],
+  // always ship with source map so anyone can debug it
   devtool: "source-map"
 };
 
