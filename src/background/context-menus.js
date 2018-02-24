@@ -22,7 +22,7 @@ function handler(info, tab) {
         linkText = Markdown.imageFor("", info.srcUrl).markdown;
       } else {
         needEscape = true;
-        linkText = info.selectionText;
+        linkText = info.selectionText ? info.selectionText : info.linkText;
       }
 
       let response = Markdown.linkTo(linkText, info.linkUrl, { needEscape });
