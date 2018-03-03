@@ -1,10 +1,12 @@
-# Copy as Markdown (Firefox)
+# [DEPRECATED] Copy as Markdown (Old Firefox)
 
-This is Copy as Markdown for Firefox.
+This is Copy as Markdown for old Firefox (<56).
+
+Deprecated. Please see the latest version in parent folder.
 
 ## Requirements
 
-* Firefox 30+
+* Firefox 30 until 55
 
 ## Implemented Features
 
