@@ -4,6 +4,8 @@
 
 ## Tests
 
+<!-- If you have only 1 OS available, you can just test on that one -->
+
 - [ ] Chrome stable (macOS)
 - [ ] Firefox stable (macOS)
 - [ ] Chrome stable (Windows)
