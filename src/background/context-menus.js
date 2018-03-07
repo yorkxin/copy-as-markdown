@@ -22,6 +22,9 @@ function handler(info, tab) {
         linkText = Markdown.imageFor("", info.srcUrl).markdown;
       } else {
         needEscape = true;
+        // linkText for Firefox (as of 2018/03/07)
+        // selectionText for Chrome on Mac only. On Windows it does not highlight text when right-click.
+        // TODO: use linkText when Chrome supports it on stable.
         linkText = info.selectionText ? info.selectionText : info.linkText;
       }
 
