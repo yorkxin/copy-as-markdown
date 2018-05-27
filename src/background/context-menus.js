@@ -47,33 +47,23 @@ function handler(info, tab) {
   return promise.then(response => flashSuccessBadge(response.size))
 }
 
-let parentID = browser.contextMenus.create({
-  id: "parent",
-  title: "Copy as Markdown",
-  type: "normal",
-  contexts: ["page", "link", "image"]
-});
-
 browser.contextMenus.create({
   id: "current-page",
-  parentId: parentID,
-  title: "Page [title](url)",
+  title: "Copy [Page Title](URL)",
   type: "normal",
   contexts: ["page"]
 });
 
 browser.contextMenus.create({
   id: "link",
-  parentId: parentID,
-  title: "Link [text or img](url)",
+  title: "Copy [Link Content](URL)",
   type: "normal",
   contexts: ["link"]
 });
 
 browser.contextMenus.create({
   id: "image",
-  parentId: parentID,
-  title: "Image ![](src)", // TODO: how to fetch alt text?
+  title: "Copy ![](Image URL)", // TODO: how to fetch alt text?
   type: "normal",
   contexts: ["image"]
 });
