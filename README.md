@@ -38,17 +38,12 @@ You can add keyboard shortuts for copying tab(s) as Markdown. By default, Copy a
 ### Install dependencies
 
 ```
-yarn install
+npm install
 ```
 
-### Build for Development
+### Debugging
 
-```
-yarn build
-```
-
-* Chrome Version: `build/chrome/`
-* Firefox Version: `build/firefox/`
+The source code and manifest file is under `src/` folder.
 
 To debug in Chrome: [Window] Menu -> Extensions -> Load unpacked extension
 
