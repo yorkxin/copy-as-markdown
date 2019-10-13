@@ -4,14 +4,11 @@
   "description": "Copy Link or Image as Markdown code, a Web Extension",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run build-chrome && npm run build-firefox",
-    "build-chrome": "TARGET=chrome babel",
-    "build-firefox": "TARGET=firefox babel",
-    "pack": "npm run clean && npm run build && npm run pack-chrome && npm run pack-firefox",
-    "pack-chrome": "cd build/chrome && zip -r ../chrome.zip .",
-    "pack-firefox": "web-ext build -s build/firefox -a build/",
+    "build": "npm run clean && npm run build-chrome && npm run build-firefox",
+    "build-chrome": "zip -r build/chrome.zip src/",
+    "build-firefox": "web-ext build -s src/ -a build/",
     "eslint": "eslint .",
-    "clean": "rm -rf ./build/",
+    "clean": "rm -rf ./build/*",
     "convert-images": "./utils/convert-images.sh"
   },
   "license": "MIT",
