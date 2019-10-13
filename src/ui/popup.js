@@ -2,27 +2,27 @@ function sendMessageToBackgroundPage(payload) {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(payload, () => {
       // NOTE: there will be no response content even if the execution was successful
-      resolve(true)
+      resolve(true);
     });
   });
 }
 
 async function doCopy(action) {
-  return await sendMessageToBackgroundPage({
-    topic: "copy",
+  return sendMessageToBackgroundPage({
+    topic: 'copy',
     params: {
-      action: action
-    }
-  })
+      action,
+    },
+  });
 }
 
 async function showSuccessBadge() {
-  return await sendMessageToBackgroundPage({
-    topic: "badge",
+  return sendMessageToBackgroundPage({
+    topic: 'badge',
     params: {
-      action: "flashSuccess"
-    }
-  })
+      action: 'flashSuccess',
+    },
+  });
 }
 
 function handler(event) {
@@ -32,21 +32,19 @@ function handler(event) {
 }
 
 // Install listeners
-for (const element of document.querySelectorAll("[data-action]")) {
-  element.addEventListener("click", handler)
-}
+document.querySelectorAll('[data-action]').forEach((element) => {
+  element.addEventListener('click', handler);
+});
 
-document.body.classList.add("custom-popup-style")
+document.body.classList.add('custom-popup-style');
 
 chrome.windows.getCurrent({ populate: true }, (crWindow) => {
-  let tabsCount = crWindow.tabs.length
-  let highlightedCount = crWindow.tabs.filter(tab => tab.highlighted).length;
+  const tabsCount = crWindow.tabs.length;
+  const highlightedCount = crWindow.tabs.filter((tab) => tab.highlighted).length;
 
-  document.querySelectorAll("[data-count=all-tabs]").forEach(element => {
-    element.textContent = String(tabsCount);
-  })
+  const displayCountOfAllTabs = document.getElementById('display-count-all-tabs');
+  displayCountOfAllTabs.textContent = String(tabsCount);
 
-  document.querySelectorAll("[data-count=highlighted-tabs]").forEach(element => {
-    element.textContent = String(highlightedCount);
-  })
-})
+  const displayCountOfHighlightedTabs = document.getElementById('display-count-highlighted-tabs');
+  displayCountOfHighlightedTabs.textContent = String(highlightedCount);
+});

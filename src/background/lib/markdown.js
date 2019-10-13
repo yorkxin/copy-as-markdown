@@ -1,44 +1,44 @@
-import OptionsManager from "../../lib/options-manager.js";
+import * as OptionsManager from '../../lib/options-manager.js';
 
 const ESCAPE_CHARS = /([\\`*_[\]<>])/g;
-const DEFAULT_TITLE = "(No Title)";
+const DEFAULT_TITLE = '(No Title)';
 
-var escapeLinkText = function(text) {
-  return text.replace(ESCAPE_CHARS, "\\$1");
-};
+function escapeLinkText(text) {
+  return text.replace(ESCAPE_CHARS, '\\$1');
+}
 
-var userOptions = {};
+let userOptions = {};
 
 // load options
-OptionsManager.load().then(options => userOptions = options)
+OptionsManager.load().then((options) => {
+  userOptions = options;
+});
 
-OptionsManager.onChange(changes => {
-  for (let key in changes) {
+OptionsManager.onChange((changes) => {
+  Object.keys(changes).forEach((key) => {
     userOptions[key] = changes[key];
-  }
-})
+  });
+});
 
-export function linkTo(title, url, { needEscape = true } = {}) {
-  if (title === undefined) {
-    title = DEFAULT_TITLE;
-  }
+export function linkTo(title = DEFAULT_TITLE, url, { needEscape = true } = {}) {
+  let normalizedTitle = title;
 
   // used for copying link-in-image
   if (needEscape && userOptions.escape) {
-    title = escapeLinkText(title);
+    normalizedTitle = escapeLinkText(title);
   }
 
-  return `[${title}](${url})`;
+  return `[${normalizedTitle}](${url})`;
 }
 
 export function imageFor(title, url) {
   return `![${title}](${url})`;
 }
 
-export function list(list) {
-  return list.map(item => `* ${item}`).join("\n");
+export function list(theList) {
+  return theList.map((item) => `* ${item}`).join('\n');
 }
 
-export function links(links, options = {}) {
-  return list(links.map(link => linkTo(link.title, link.url, options)))
+export function links(theLinks, options = {}) {
+  return list(theLinks.map((link) => linkTo(link.title, link.url, options)));
 }

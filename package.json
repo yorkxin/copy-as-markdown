@@ -14,7 +14,9 @@
   "license": "MIT",
   "devDependencies": {
     "@types/chrome": "0.0.89",
-    "eslint": "^4.19.1",
+    "eslint": "^6.1.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
     "typescript": "^2.9.2",
     "web-ext": "^3.2.0"
   }

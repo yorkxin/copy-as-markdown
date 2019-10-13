@@ -11,7 +11,7 @@ function copyByClipboardCommand(text) {
 // For Firefox. Use native API. This won't work on Chrome since it requires focused document.
 // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard
 async function copyByNativeAPI(text) {
-  return await navigator.clipboard.writeText(text);
+  return navigator.clipboard.writeText(text);
 }
 
 /**
@@ -19,7 +19,7 @@ async function copyByNativeAPI(text) {
  * @param {string} text The text to be copied
  * @return {Promise} contains original response
  */
-export async function copy(text) {
+export default async function copy(text) {
   try {
     await copyByNativeAPI(text);
   } catch (error) {

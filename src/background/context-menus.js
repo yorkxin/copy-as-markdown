@@ -1,6 +1,6 @@
-import * as Markdown from "./lib/markdown.js";
-import { copy } from "./lib/clipboard-access.js"
-import { flashSuccessBadge } from "../lib/badge.js"
+import * as Markdown from './lib/markdown.js';
+import copy from './lib/clipboard-access.js';
+import { flashSuccessBadge } from '../lib/badge.js';
 
 function tabAsMarkdown(tab) {
   return Markdown.linkTo(tab.title, tab.url);
@@ -11,9 +11,9 @@ function linkAsMarkdown(info) {
   let linkText;
   let needEscape;
 
-  if (info.mediaType === "image") {
+  if (info.mediaType === 'image') {
     needEscape = false;
-    linkText = Markdown.imageFor("", info.srcUrl);
+    linkText = Markdown.imageFor('', info.srcUrl);
   } else {
     needEscape = true;
     // linkText for Firefox (as of 2018/03/07)
@@ -26,33 +26,33 @@ function linkAsMarkdown(info) {
 }
 
 function imageAsMarkdown(info) {
-  return Markdown.imageFor("", info.srcUrl)
+  return Markdown.imageFor('', info.srcUrl);
 }
 
-export async function contextMenuHandler(info, tab) {
+export default async function contextMenuHandler(info, tab) {
   let markdown;
 
   switch (info.menuItemId) {
-    case "current-page": {
-      markdown = tabAsMarkdown(tab)
+    case 'current-page': {
+      markdown = tabAsMarkdown(tab);
       break;
     }
 
-    case "link": {
-      markdown = linkAsMarkdown(info)
+    case 'link': {
+      markdown = linkAsMarkdown(info);
       break;
     }
 
-    case "image": {
+    case 'image': {
       markdown = imageAsMarkdown(info);
       break;
     }
 
     default: {
-      throw new TypeError(`unknown context menu: ${info}`)
+      throw new TypeError(`unknown context menu: ${info}`);
     }
   }
 
-  await copy(markdown)
-  await flashSuccessBadge()
+  await copy(markdown);
+  await flashSuccessBadge();
 }

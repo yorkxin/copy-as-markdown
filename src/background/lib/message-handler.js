@@ -1,44 +1,44 @@
-import * as BrowserAsMarkdown from "./browser-as-markdown.js";
-import { copy } from "./clipboard-access.js"
-import { flashSuccessBadge } from "../../lib/badge.js"
+import * as BrowserAsMarkdown from './browser-as-markdown.js';
+import copy from './clipboard-access.js';
+import { flashSuccessBadge } from '../../lib/badge.js';
 
 async function handleCopy(action) {
   /** @type {string} */
   let text;
 
   switch (action) {
-    case "current-tab-link": {
-      text = await BrowserAsMarkdown.currentTab()
+    case 'current-tab-link': {
+      text = await BrowserAsMarkdown.currentTab();
       break;
     }
 
-    case "all-tabs-link-as-list": {
-      text = await BrowserAsMarkdown.allTabs("link")
+    case 'all-tabs-link-as-list': {
+      text = await BrowserAsMarkdown.allTabs('link');
       break;
     }
 
-    case "all-tabs-title-as-list": {
-      text = await BrowserAsMarkdown.allTabs("title")
+    case 'all-tabs-title-as-list': {
+      text = await BrowserAsMarkdown.allTabs('title');
       break;
     }
 
-    case "all-tabs-url-as-list": {
-      text = await BrowserAsMarkdown.allTabs("url")
+    case 'all-tabs-url-as-list': {
+      text = await BrowserAsMarkdown.allTabs('url');
       break;
     }
 
-    case "highlighted-tabs-link-as-list": {
-      text = await BrowserAsMarkdown.highlightedTabs("link")
+    case 'highlighted-tabs-link-as-list': {
+      text = await BrowserAsMarkdown.highlightedTabs('link');
       break;
     }
 
-    case "highlighted-tabs-title-as-list": {
-      text = await BrowserAsMarkdown.highlightedTabs("title")
+    case 'highlighted-tabs-title-as-list': {
+      text = await BrowserAsMarkdown.highlightedTabs('title');
       break;
     }
 
-    case "highlighted-tabs-url-as-list": {
-      text = await BrowserAsMarkdown.highlightedTabs("url")
+    case 'highlighted-tabs-url-as-list': {
+      text = await BrowserAsMarkdown.highlightedTabs('url');
       break;
     }
 
@@ -53,22 +53,26 @@ async function handleCopy(action) {
 
 async function handleBadge(params) {
   switch (params.action) {
-    case "flashSuccess":
-      return await flashSuccessBadge()
+    case 'flashSuccess':
+      return flashSuccessBadge();
 
     default:
       throw new TypeError(`Unknown action: ${params.action}`);
   }
 }
 
-export function messageHandler({ topic = "", params = {} }) {
+export default function messageHandler({ topic = '', params = {} }) {
   switch (topic) {
-    case "copy": {
-      return handleCopy(params.action)
+    case 'copy': {
+      return handleCopy(params.action);
     }
 
-    case "badge": {
-      return handleBadge(params)
+    case 'badge': {
+      return handleBadge(params);
+    }
+
+    default: {
+      throw TypeError(`Unknown message topic '${topic}'`);
     }
   }
 }
