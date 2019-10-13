@@ -1,5 +1,5 @@
 // Convert browser items (tabs / window / etc.) to Markdown
-import Markdown from "./markdown.js";
+import * as Markdown from "./markdown.js";
 
 export async function currentTab(options = {}) {
   return new Promise((resolve) => {

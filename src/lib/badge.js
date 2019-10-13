@@ -17,8 +17,8 @@ function setBadgeBackgroundColor(color) {
   return new Promise(resolve => chrome.browserAction.setBadgeBackgroundColor({ color }, resolve));
 }
 
-export function flashSuccessBadge(text) {
-  return flashBadge("success", text)
+export function flashSuccessBadge() {
+  return flashBadge("success")
 }
 
 async function setBadge(text, color) {
@@ -30,10 +30,10 @@ async function clearBadge() {
   return await setBadge(TEXT_EMPTY, COLOR_OPAQUE)
 }
 
-export async function flashBadge(type, text) {
+export async function flashBadge(type) {
   switch (type) {
     case "success":
-      await setBadge(text || TEXT_OK, COLOR_GREEN)
+      await setBadge(TEXT_OK, COLOR_GREEN)
       break;
     case "fail":
       await setBadge(TEXT_ERROR, COLOR_RED)

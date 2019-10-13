@@ -1,43 +1,44 @@
 import BrowserAsMarkdown from "./browser-as-markdown.js";
-import { copyMarkdownResponse } from "./clipboard-access.js"
+import { copy } from "./clipboard-access.js"
 import { flashSuccessBadge } from "../../lib/badge.js"
 
 async function handleCopy(action) {
-  let promise = null;
+  /** @type {string} */
+  let text;
 
   switch (action) {
     case "current-tab-link": {
-      promise = BrowserAsMarkdown.currentTab()
+      text = await BrowserAsMarkdown.currentTab()
       break;
     }
 
     case "all-tabs-link-as-list": {
-      promise = BrowserAsMarkdown.allTabs("link")
+      text = await BrowserAsMarkdown.allTabs("link")
       break;
     }
 
     case "all-tabs-title-as-list": {
-      promise = BrowserAsMarkdown.allTabs("title")
+      text = await BrowserAsMarkdown.allTabs("title")
       break;
     }
 
     case "all-tabs-url-as-list": {
-      promise = BrowserAsMarkdown.allTabs("url")
+      text = await BrowserAsMarkdown.allTabs("url")
       break;
     }
 
     case "highlighted-tabs-link-as-list": {
-      promise = BrowserAsMarkdown.highlightedTabs("link")
+      text = await BrowserAsMarkdown.highlightedTabs("link")
       break;
     }
 
     case "highlighted-tabs-title-as-list": {
-      promise = BrowserAsMarkdown.highlightedTabs("title")
+      text = await BrowserAsMarkdown.highlightedTabs("title")
       break;
     }
 
     case "highlighted-tabs-url-as-list": {
-      promise = BrowserAsMarkdown.highlightedTabs("url")
+      text = await BrowserAsMarkdown.highlightedTabs("url")
       break;
     }
 
@@ -46,15 +47,14 @@ async function handleCopy(action) {
     }
   }
 
-  const response = await promise;
-  await copyMarkdownResponse(response);
-  return response;
+  await copy(text);
+  return text;
 }
 
 async function handleBadge(params) {
   switch (params.action) {
     case "flashSuccess":
-      return await flashSuccessBadge(params.text)
+      return await flashSuccessBadge()
 
     default:
       throw new TypeError(`Unknown action: ${params.action}`);

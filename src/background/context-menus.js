@@ -1,5 +1,5 @@
-import Markdown from "./lib/markdown.js";
-import { copyMarkdownResponse } from "./lib/clipboard-access.js"
+import * as Markdown from "./lib/markdown.js";
+import { copy } from "./lib/clipboard-access.js"
 import { flashSuccessBadge } from "../lib/badge.js"
 
 function tabAsMarkdown(tab) {
@@ -13,7 +13,7 @@ function linkAsMarkdown(info) {
 
   if (info.mediaType === "image") {
     needEscape = false;
-    linkText = Markdown.imageFor("", info.srcUrl).markdown;
+    linkText = Markdown.imageFor("", info.srcUrl);
   } else {
     needEscape = true;
     // linkText for Firefox (as of 2018/03/07)
@@ -30,21 +30,21 @@ function imageAsMarkdown(info) {
 }
 
 export async function contextMenuHandler(info, tab) {
-  let response;
+  let markdown;
 
   switch (info.menuItemId) {
     case "current-page": {
-      response = tabAsMarkdown(tab)
+      markdown = tabAsMarkdown(tab)
       break;
     }
 
     case "link": {
-      response = linkAsMarkdown(info)
+      markdown = linkAsMarkdown(info)
       break;
     }
 
     case "image": {
-      response = imageAsMarkdown(info);
+      markdown = imageAsMarkdown(info);
       break;
     }
 
@@ -53,6 +53,6 @@ export async function contextMenuHandler(info, tab) {
     }
   }
 
-  await copyMarkdownResponse(response)
-  await flashSuccessBadge(response.size)
+  await copy(markdown)
+  await flashSuccessBadge()
 }

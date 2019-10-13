@@ -16,12 +16,10 @@ async function copyByNativeAPI(text) {
 
 /**
  *
- * @param {MarkdownResponse} response generated from markdown.js
+ * @param {string} text The text to be copied
  * @return {Promise} contains original response
  */
-export async function copyMarkdownResponse(response) {
-  const text = response.markdown;
-
+export async function copy(text) {
   try {
     await copyByNativeAPI(text);
   } catch (error) {

@@ -1,4 +1,3 @@
-import MarkdownResponse from "./markdown-response.js";
 import OptionsManager from "../../lib/options-manager.js";
 
 const ESCAPE_CHARS = /([\\`*_[\]<>])/g;
@@ -29,30 +28,17 @@ export function linkTo(title, url, { needEscape = true } = {}) {
     title = escapeLinkText(title);
   }
 
-  let markdown = `[${title}](${url})`;
-
-  return new MarkdownResponse({ markdown, size: 1 });
+  return `[${title}](${url})`;
 }
 
 export function imageFor(title, url) {
-  let markdown = `![${title}](${url})`;
-
-  return new MarkdownResponse({ markdown, size: 1 });
+  return `![${title}](${url})`;
 }
 
 export function list(list) {
-  let markdown = list.map(item => `* ${item}`).join("\n");
-
-  return new MarkdownResponse({ markdown, size: list.length });
+  return list.map(item => `* ${item}`).join("\n");
 }
 
 export function links(links, options = {}) {
-  return list(links.map(link => linkTo(link.title, link.url, options).markdown))
+  return list(links.map(link => linkTo(link.title, link.url, options)))
 }
-
-export default {
-  linkTo,
-  imageFor,
-  links,
-  list
-};

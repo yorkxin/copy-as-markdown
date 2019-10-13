@@ -28,14 +28,14 @@ chrome.runtime.onInstalled.addListener(() => {
 
   // listen to keyboard shortcuts
   chrome.commands.onCommand.addListener(async command => {
-    const response = await messageHandler({
+    await messageHandler({
       topic: "copy",
       params: {
         action: command
       }
     })
 
-    flashSuccessBadge(response.size);
+    flashSuccessBadge();
   });
 
   // listen to messages from popup
