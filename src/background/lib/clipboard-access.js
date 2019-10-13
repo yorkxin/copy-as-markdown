@@ -1,5 +1,5 @@
 // For Chrome. Use a input box in background page to interact with clipboard.
-function copyByPastboardCommand(text) {
+function copyByClipboardCommand(text) {
   /** @type {HTMLTextAreaElement} */
   const textBox = document.getElementById('clipboard-access');
   textBox.value = text;
@@ -25,6 +25,6 @@ export async function copyMarkdownResponse(response) {
   try {
     await copyByNativeAPI(text);
   } catch (error) {
-    await copyByPastboardCommand(text);
+    await copyByClipboardCommand(text);
   }
 }
