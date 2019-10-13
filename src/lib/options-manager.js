@@ -3,16 +3,22 @@ let DEFAULT_OPTIONS = {
 };
 
 export default {
-  save: (params) => {
-    return browser.storage.sync.set(params);
+  save: async (params) => {
+    return new Promise(resolve => {
+      chrome.storage.sync.set(params, resolve);
+    });
   },
 
-  load: () => {
-    return browser.storage.sync.get(DEFAULT_OPTIONS)
+  load: async () => {
+    return new Promise(resolve => {
+      chrome.storage.sync.get(result => {
+        resolve(result || DEFAULT_OPTIONS)
+      });
+    });
   },
 
   onChange: (callback) => {
-    browser.storage.onChanged.addListener(function(changes) {
+    chrome.storage.onChanged.addListener(function(changes) {
       let callbackChanges = {};
 
       for (let key in DEFAULT_OPTIONS) {

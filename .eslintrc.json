@@ -1,28 +1,14 @@
 {
     "env": {
-        "browser": true,
+        "webextensions": true,
         "es6": true
     },
     "extends": "eslint:recommended",
     "parserOptions": {
-        "sourceType": "module"
+        "sourceType": "module",
+        "ecmaVersion": 8
     },
     "rules": {
         "no-console": 0
-    },
-    "globals": {
-        "chrome": true,
-        "browser": true,
-        "module": true,
-        "ENVIRONMENT": true
-    },
-    "overrides": [
-        {
-            "files": [ "webpack.*.js" ],
-            "env": {
-                "node": true
-            }
-        }
-    ]
-
+    }
 }

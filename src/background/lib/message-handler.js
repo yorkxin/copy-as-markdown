@@ -2,8 +2,9 @@ import BrowserAsMarkdown from "./browser-as-markdown.js";
 import { copyMarkdownResponse } from "./clipboard-access.js"
 import { flashSuccessBadge } from "../../lib/badge.js"
 
-let handleCopy = ({ action = null, executeCopy = true }) => {
+async function handleCopy(action) {
   let promise = null;
+
   switch (action) {
     case "current-tab-link": {
       promise = BrowserAsMarkdown.currentTab()
@@ -41,31 +42,29 @@ let handleCopy = ({ action = null, executeCopy = true }) => {
     }
 
     default: {
-      return Promise.reject(`Unkonwn action: ${action}`)
+      throw new TypeError(`Unknown action: ${action}`);
     }
   }
 
-  if (executeCopy) {
-    return promise.then(response => copyMarkdownResponse(response))
-  } else {
-    return promise;
-  }
+  const response = await promise;
+  await copyMarkdownResponse(response);
+  return response;
 }
 
-let handleBadge = ({ action = "", text = "" }) => {
-  switch (action) {
+async function handleBadge(params) {
+  switch (params.action) {
     case "flashSuccess":
-      return flashSuccessBadge(text)
+      return await flashSuccessBadge(params.text)
 
     default:
-      return Promise.reject(`Unknown action: ${action}`)
+      throw new TypeError(`Unknown action: ${params.action}`);
   }
 }
 
-export default ({ topic = "", params = {} }) => {
+export function messageHandler({ topic = "", params = {} }) {
   switch (topic) {
     case "copy": {
-      return handleCopy(params)
+      return handleCopy(params.action)
     }
 
     case "badge": {
