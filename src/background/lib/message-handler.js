@@ -1,4 +1,4 @@
-import BrowserAsMarkdown from "./browser-as-markdown.js";
+import * as BrowserAsMarkdown from "./browser-as-markdown.js";
 import { copy } from "./clipboard-access.js"
 import { flashSuccessBadge } from "../../lib/badge.js"
 
