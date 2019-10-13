@@ -7,8 +7,8 @@ function sendMessageToBackgroundPage(payload) {
   });
 }
 
-function doCopy(action) {
-  return sendMessageToBackgroundPage({
+async function doCopy(action) {
+  return await sendMessageToBackgroundPage({
     topic: "copy",
     params: {
       action: action
@@ -17,7 +17,7 @@ function doCopy(action) {
 }
 
 async function showSuccessBadge() {
-  return sendMessageToBackgroundPage({
+  return await sendMessageToBackgroundPage({
     topic: "badge",
     params: {
       action: "flashSuccess"
@@ -25,9 +25,9 @@ async function showSuccessBadge() {
   })
 }
 
-async function handler(event) {
-  await doCopy(event.currentTarget.dataset.action);
-  await showSuccessBadge();
+function handler(event) {
+  doCopy(event.currentTarget.dataset.action);
+  showSuccessBadge();
   window.close();
 }
 
