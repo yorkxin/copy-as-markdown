@@ -10,6 +10,6 @@
   },
   "include": [
     "src/**/*",
-    "node_modules/web-ext-types/global/index.d.ts"
+    "node_modules/web-ext-types/global/index.d.ts", "chrome/environment.chrome.js", "firefox/environment.firefox.js"
   ]
 }

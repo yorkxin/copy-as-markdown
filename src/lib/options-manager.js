@@ -1,25 +1,29 @@
-let DEFAULT_OPTIONS = {
-  escape: false
+const DEFAULT_OPTIONS = {
+  escape: false,
 };
 
-export default {
-  save: (params) => {
-    return browser.storage.sync.set(params);
-  },
+export async function save(params) {
+  return new Promise((resolve) => {
+    chrome.storage.sync.set(params, resolve);
+  });
+}
 
-  load: () => {
-    return browser.storage.sync.get(DEFAULT_OPTIONS)
-  },
+export async function load() {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get((result) => {
+      resolve(result || DEFAULT_OPTIONS);
+    });
+  });
+}
 
-  onChange: (callback) => {
-    browser.storage.onChanged.addListener(function(changes) {
-      let callbackChanges = {};
+export function onChange(callback) {
+  chrome.storage.onChanged.addListener((changes) => {
+    const callbackChanges = {};
 
-      for (let key in DEFAULT_OPTIONS) {
-        callbackChanges[key] = changes[key].newValue;
-      }
+    Object.keys(DEFAULT_OPTIONS).forEach((key) => {
+      callbackChanges[key] = changes[key].newValue;
+    });
 
-      callback(callbackChanges);
-    })
-  }
-};
+    callback(callbackChanges);
+  });
+}

@@ -7,25 +7,23 @@
   "permissions": [
     "tabs",
     "contextMenus",
+    "clipboardWrite",
     "activeTab",
     "storage"
   ],
   "browser_action": {
-    "default_icon": "images/icon-128.png",
+    "default_icon": "./images/icon-128.png",
     "default_title": "Copy as Markdown...",
-    "default_popup": "popup.html",
+    "default_popup": "./ui/popup.html",
     "browser_style": true
   },
   "icons": {
-    "16": "images/icon-16.png",
-    "48": "images/icon-48.png",
-    "128": "images/icon-128.png"
+    "16": "./images/icon-16.png",
+    "48": "./images/icon-48.png",
+    "128": "./images/icon-128.png"
   },
   "background": {
-    "scripts": [
-      "vendor/browser-polyfill.js",
-      "background.dist.js"
-    ],
+    "page": "./background.html",
     "persistent": false
   },
   "commands": {
@@ -43,6 +41,11 @@
     }
   },
   "options_ui": {
-    "page": "options.html"
+    "page": "./ui/options.html"
+  },
+  "applications": {
+    "gecko": {
+      "id": "jid1-tfBgelm3d4bLkQ@jetpack"
+    }
   }
 }

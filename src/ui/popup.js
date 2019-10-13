@@ -1,68 +1,50 @@
-import copyText from "../lib/clipboard.js"
+function sendMessageToBackgroundPage(payload) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(payload, () => {
+      // NOTE: there will be no response content even if the execution was successful
+      resolve(true);
+    });
+  });
+}
+
+async function doCopy(action) {
+  return sendMessageToBackgroundPage({
+    topic: 'copy',
+    params: {
+      action,
+    },
+  });
+}
+
+async function showSuccessBadge() {
+  return sendMessageToBackgroundPage({
+    topic: 'badge',
+    params: {
+      action: 'flashSuccess',
+    },
+  });
+}
 
 function handler(event) {
-  let element = event.currentTarget;
-
-  let promise;
-
-  let payload = {
-    topic: "copy",
-    params: {
-      action: element.dataset.action
-    }
-  }
-
-  if (ENVIRONMENT.CAN_COPY_IN_BACKGROUND) {
-    promise = browser.runtime.sendMessage(payload)
-  } else {
-    // for browsers don't support copy in background page (e.g. Firefox)
-    // copy should be handled by promise receiver, e.g. popup page.
-    payload.params.executeCopy = false
-    promise = browser.runtime.sendMessage(payload)
-      .then(markdownResponse => {
-        copyText(markdownResponse.markdown)
-        return markdownResponse
-      })
-  }
-
-  return promise.then((markdownResponse) => uiFeedback(markdownResponse));
+  doCopy(event.currentTarget.dataset.action);
+  showSuccessBadge();
+  window.close();
 }
 
-let uiFeedback = (markdownResponse) => {
-  return Promise.resolve()
-    .then(() => {
-      return browser.runtime.sendMessage({
-        topic: "badge",
-        params: {
-          action: "flashSuccess",
-          text: String(markdownResponse.size)
-        }
-      })
-    })
-    .then(() => {
-      window.close()
-    })
-}
+// Install listeners
+document.querySelectorAll('[data-action]').forEach((element) => {
+  element.addEventListener('click', handler);
+});
 
-document.querySelectorAll("[data-action]")
-  .forEach(element => {
-    element.addEventListener("click", handler)
-  })
+document.body.classList.add('custom-popup-style');
 
-if (!ENVIRONMENT.SUPPORTS_POPUP_BROWSER_STYLE) {
-  document.body.classList.add("custom-popup-style")
-}
+chrome.windows.getCurrent({ populate: true }, (crWindow) => {
+  const tabsCount = crWindow.tabs.length;
+  const highlightedCount = crWindow.tabs.filter((tab) => tab.highlighted).length;
 
-browser.windows.getCurrent({ populate: true }).then(crWindow => {
-  let tabsCount = crWindow.tabs.length
-  let highlightedCount = crWindow.tabs.filter(tab => tab.highlighted).length;
+  const displayCountOfAllTabs = document.getElementById('display-count-all-tabs');
+  displayCountOfAllTabs.textContent = String(tabsCount);
 
-  document.querySelectorAll("[data-count=all-tabs]").forEach(element => {
-    element.textContent = String(tabsCount);
-  })
-
-  document.querySelectorAll("[data-count=highlighted-tabs]").forEach(element => {
-    element.textContent = String(highlightedCount);
-  })
-
-})
+  const displayCountOfHighlightedTabs = document.getElementById('display-count-highlighted-tabs');
+  displayCountOfHighlightedTabs.textContent = String(highlightedCount);
+});
