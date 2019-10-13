@@ -1,6 +1,6 @@
-import * as Markdown from './lib/markdown.js';
-import copy from './lib/clipboard-access.js';
-import { flashSuccessBadge } from '../lib/badge.js';
+import * as Markdown from './markdown.js';
+import copy from './clipboard-access.js';
+import { flashSuccessBadge } from './badge.js';
 
 function tabAsMarkdown(tab) {
   return Markdown.linkTo(tab.title, tab.url);

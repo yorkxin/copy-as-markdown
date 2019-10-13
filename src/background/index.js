@@ -1,6 +1,6 @@
 import contextMenuHandler from './context-menus.js';
-import messageHandler from './lib/message-handler.js';
-import { flashSuccessBadge } from '../lib/badge.js';
+import messageHandler from './message-handler.js';
+import { flashSuccessBadge } from './badge.js';
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({

@@ -1,4 +1,4 @@
-import * as OptionsManager from '../../lib/options-manager.js';
+import * as OptionsManager from '../lib/options-manager.js';
 
 const ESCAPE_CHARS = /([\\`*_[\]<>])/g;
 const DEFAULT_TITLE = '(No Title)';
