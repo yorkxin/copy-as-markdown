@@ -28,12 +28,7 @@ Please refer to this Firefox Help: https://support.mozilla.org/en-US/kb/manage-e
 
 ### Chrome
 
-1. Open Extensions Page at chrome://extensions/.
-2. Scroll to the bottom and click "Keyboard shortcuts"
-![](screenshots/keybinding-1.png)
-3. Assign Keyboard Shortcuts in the dialog.
-
-![](screenshots/keybinding-2.png)
+The Keyboard Shortcuts of extensions can be found at `chrome://extensions/shortcuts` URL. (Paste and open the link in the Location Bar).
 
 ## Known Issues
 
