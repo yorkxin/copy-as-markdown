@@ -18,9 +18,15 @@ Do you often type Markdown code manually for a link or image, or even all tabs i
 :ballot_box_with_check: All Tabs as a List of Links<br>
 :ballot_box_with_check: Highlighted Tabs as a List of Links
 
-## Keyboard Shortcuts (Chrome-only)
+## Keyboard Shortcuts
 
 You can add keyboard shortuts for copying tab(s) as Markdown. By default, Copy as Markdown does not assign any keyboard shortcuts.
+
+### Firefox
+
+Please refer to this Firefox Help: https://support.mozilla.org/en-US/kb/manage-extension-shortcuts-firefox
+
+### Chrome
 
 1. Open Extensions Page at chrome://extensions/.
 2. Scroll to the bottom and click "Keyboard shortcuts"
