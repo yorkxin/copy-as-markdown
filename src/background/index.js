@@ -2,6 +2,7 @@ import contextMenuHandler from './context-menus.js';
 import messageHandler from './message-handler.js';
 import { flashSuccessBadge } from './badge.js';
 
+// Only create context menus when installed.
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'current-page',
@@ -23,26 +24,28 @@ chrome.runtime.onInstalled.addListener(() => {
     type: 'normal',
     contexts: ['image'],
   });
+});
 
-  chrome.contextMenus.onClicked.addListener(contextMenuHandler);
+// Listeners should be registered every time the background page is loaded.
 
-  // listen to keyboard shortcuts
-  chrome.commands.onCommand.addListener(async (command) => {
-    await messageHandler({
-      topic: 'copy',
-      params: {
-        action: command,
-      },
-    });
+chrome.contextMenus.onClicked.addListener(contextMenuHandler);
 
-    flashSuccessBadge();
+// listen to keyboard shortcuts
+chrome.commands.onCommand.addListener(async (command) => {
+  await messageHandler({
+    topic: 'copy',
+    params: {
+      action: command,
+    },
   });
 
-  // listen to messages from popup
-  chrome.runtime.onMessage.addListener(async (message) => {
-    await messageHandler(message);
+  flashSuccessBadge();
+});
 
-    // To avoid an error related to port closed before response
-    return true;
-  });
+// listen to messages from popup
+chrome.runtime.onMessage.addListener(async (message) => {
+  await messageHandler(message);
+
+  // To avoid an error related to port closed before response
+  return true;
 });
