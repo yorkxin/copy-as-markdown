@@ -24,7 +24,7 @@
   },
   "background": {
     "page": "./background.html",
-    "persistent": false
+    "persistent": true
   },
   "commands": {
     "current-tab-link": {
