@@ -3,27 +3,25 @@ import messageHandler from './message-handler.js';
 import { flashSuccessBadge } from './badge.js';
 
 // Only create context menus when installed.
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'current-page',
-    title: 'Copy [Page Title](URL)',
-    type: 'normal',
-    contexts: ['page'],
-  });
+chrome.contextMenus.create({
+  id: 'current-page',
+  title: 'Copy [Page Title](URL)',
+  type: 'normal',
+  contexts: ['page'],
+});
 
-  chrome.contextMenus.create({
-    id: 'link',
-    title: 'Copy [Link Content](URL)',
-    type: 'normal',
-    contexts: ['link'],
-  });
+chrome.contextMenus.create({
+  id: 'link',
+  title: 'Copy [Link Content](URL)',
+  type: 'normal',
+  contexts: ['link'],
+});
 
-  chrome.contextMenus.create({
-    id: 'image',
-    title: 'Copy ![](Image URL)', // TODO: how to fetch alt text?
-    type: 'normal',
-    contexts: ['image'],
-  });
+chrome.contextMenus.create({
+  id: 'image',
+  title: 'Copy ![](Image URL)', // TODO: how to fetch alt text?
+  type: 'normal',
+  contexts: ['image'],
 });
 
 // Listeners should be registered every time the background page is loaded.
