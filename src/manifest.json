@@ -1,7 +1,7 @@
 {
   "name": "Copy as Markdown",
-  "version": "2.4.3",
-  "version_name": "2.4.3",
+  "version": "2.4.4",
+  "version_name": "2.4.4",
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
@@ -43,9 +43,10 @@
   "options_ui": {
     "page": "./ui/options.html"
   },
-  "applications": {
+  "browser_specific_settings": {
     "gecko": {
-      "id": "jid1-tfBgelm3d4bLkQ@jetpack"
+      "id": "jid1-tfBgelm3d4bLkQ@jetpack",
+      "strict_min_version": "60.0"
     }
   }
 }
