@@ -1,29 +1,36 @@
+const STORAGE_PREFIX = 'options';
+
+const OPTION_KEYS = ['escape'];
+
+// NOTE: LocalStorage values must be serialized as string.
 const DEFAULT_OPTIONS = {
-  escape: false,
+  escape: 'no', // "yes"|"no"
 };
+
+function getStorageKey(key) {
+  return `${STORAGE_PREFIX}.${key}`;
+}
 
 export async function save(params) {
   return new Promise((resolve) => {
-    chrome.storage.sync.set(params, resolve);
+    OPTION_KEYS.forEach((key) => {
+      const value = params[key];
+      localStorage.setItem(getStorageKey(key), value);
+    });
+
+    resolve(params);
   });
 }
 
 export async function load() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get((result) => {
-      resolve(result || DEFAULT_OPTIONS);
-    });
-  });
-}
+    const result = {};
 
-export function onChange(callback) {
-  chrome.storage.onChanged.addListener((changes) => {
-    const callbackChanges = {};
-
-    Object.keys(DEFAULT_OPTIONS).forEach((key) => {
-      callbackChanges[key] = changes[key].newValue;
+    OPTION_KEYS.forEach((key) => {
+      // NOTE: LocalStorage values are always string. Storing boolean will result in 'true' | 'false'.
+      result[key] = localStorage.getItem(getStorageKey(key)) || DEFAULT_OPTIONS[key];
     });
 
-    callback(callbackChanges);
+    resolve(result);
   });
 }

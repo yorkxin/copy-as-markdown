@@ -9,22 +9,22 @@ function escapeLinkText(text) {
 
 let userOptions = {};
 
-// load options
-OptionsManager.load().then((options) => {
-  userOptions = options;
-});
+async function reloadOptions() {
+  userOptions = await OptionsManager.load();
+  console.debug(userOptions);
+}
 
-OptionsManager.onChange((changes) => {
-  Object.keys(changes).forEach((key) => {
-    userOptions[key] = changes[key];
-  });
+reloadOptions();
+
+window.addEventListener('storage', () => {
+  reloadOptions();
 });
 
 export function linkTo(title = DEFAULT_TITLE, url, { needEscape = true } = {}) {
   let normalizedTitle = title;
 
   // used for copying link-in-image
-  if (needEscape && userOptions.escape) {
+  if (needEscape && userOptions.escape === 'yes') {
     normalizedTitle = escapeLinkText(title);
   }
 

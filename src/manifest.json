@@ -7,8 +7,7 @@
   "permissions": [
     "tabs",
     "contextMenus",
-    "clipboardWrite",
-    "storage"
+    "clipboardWrite"
   ],
   "browser_action": {
     "default_icon": "./images/icon-128.png",
