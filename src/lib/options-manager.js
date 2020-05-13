@@ -27,7 +27,8 @@ export async function load() {
     const result = {};
 
     OPTION_KEYS.forEach((key) => {
-      // NOTE: LocalStorage values are always string. Storing boolean will result in 'true' | 'false'.
+      // NOTE: LocalStorage values are always string.
+      // Storing boolean will result in 'true' | 'false'.
       result[key] = localStorage.getItem(getStorageKey(key)) || DEFAULT_OPTIONS[key];
     });
 
