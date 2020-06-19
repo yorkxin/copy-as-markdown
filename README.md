@@ -4,8 +4,17 @@ Do you often type Markdown code manually for a link or image, or even all tabs i
 
 ## Download
 
-* <del>Google Chrome: [Chrome Web Store - Copy as Markdown](https://chrome.google.com/webstore/detail/copy-as-markdown/fkeaekngjflipcockcnpobkpbbfbhmdn?hl=en)</del> Currently Taken Down. See [this issue](https://github.com/chitsaou/copy-as-markdown/issues/84)
-* Firefox: [Copy as Markdown :: Add-ons for Firefox](https://addons.mozilla.org/en-us/firefox/addon/copy-as-markdown/)
+- <del>Google Chrome: [Chrome Web Store - Copy as Markdown](https://chrome.google.com/webstore/detail/copy-as-markdown/fkeaekngjflipcockcnpobkpbbfbhmdn?hl=en)</del> Currently Taken Down. See [this issue](https://github.com/chitsaou/copy-as-markdown/issues/84)
+- Firefox: [Copy as Markdown :: Add-ons for Firefox](https://addons.mozilla.org/en-us/firefox/addon/copy-as-markdown/)
+
+### Workaround to install the extension on Chrome
+
+- Download the latest zip file from [releases](https://github.com/chitsaou/copy-as-markdown/releases);
+- Unzip the file;
+- Open the Extensions page (menu _Window / Extensions_, or go to `chrome://extensions/`);
+- Check the option _"Developer mode"_ on the top right;
+- Click on the _"Load unpacked"_ button on the top left;
+- Choose the `src` directory from the extracted contents of the `.zip` file above.
 
 ## Features
 
@@ -32,7 +41,7 @@ The Keyboard Shortcuts of extensions can be found at `chrome://extensions/shortc
 
 ## Known Issues
 
-* [Chrome] When copying an image, the image code does not include the alternative text of that image. This is due to API restriction.
+- [Chrome] When copying an image, the image code does not include the alternative text of that image. This is due to API restriction.
 
 ## Development
 
