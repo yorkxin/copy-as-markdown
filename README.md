@@ -4,7 +4,7 @@ Do you often type Markdown code manually for a link or image, or even all tabs i
 
 ## Download
 
-* Google Chrome: [Chrome Web Store - Copy as Markdown](https://chrome.google.com/webstore/detail/copy-as-markdown/fkeaekngjflipcockcnpobkpbbfbhmdn?hl=en)
+* <del>Google Chrome: [Chrome Web Store - Copy as Markdown](https://chrome.google.com/webstore/detail/copy-as-markdown/fkeaekngjflipcockcnpobkpbbfbhmdn?hl=en)</del> Currently Taken Down. See [this issue](https://github.com/chitsaou/copy-as-markdown/issues/84)
 * Firefox: [Copy as Markdown :: Add-ons for Firefox](https://addons.mozilla.org/en-us/firefox/addon/copy-as-markdown/)
 
 ## Features
