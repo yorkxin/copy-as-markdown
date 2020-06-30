@@ -9,6 +9,7 @@
     "clipboardWrite"
   ],
   "optional_permissions": [
+    "activeTab",
     "tabs"
   ],
   "browser_action": {
