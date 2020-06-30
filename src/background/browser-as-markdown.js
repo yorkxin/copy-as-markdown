@@ -12,7 +12,7 @@ const tabsToResult = {
  */
 function queryTabs(query) {
   return new Promise((resolve, reject) => {
-    chrome.permissions.request({ permissions: ['tabs'] }, (granted) => {
+    chrome.permissions.contains({ permissions: ['tabs'] }, (granted) => {
       // The callback argument will be true if the user granted the permissions.
       if (granted) {
         chrome.tabs.query(query, resolve);

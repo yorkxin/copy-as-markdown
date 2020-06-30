@@ -57,11 +57,15 @@ export default async function messageHandler({ topic = '', params = {} }) {
       try {
         await handleCopy(params.action);
         await flashBadge('success');
+        return true;
       } catch (e) {
         await flashBadge('fail');
+        throw e;
       }
+    }
 
-      break;
+    case 'badge': {
+      return flashBadge(params.type);
     }
 
     default: {

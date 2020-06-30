@@ -16,11 +16,31 @@ async function doCopy(action) {
   });
 }
 
+async function showBadge(type) {
+  return sendMessageToBackgroundPage({
+    topic: 'badge',
+    params: {
+      type,
+    },
+  });
+}
+
 // Install listeners
 document.querySelectorAll('[data-action]').forEach((element) => {
   element.addEventListener('click', async (event) => {
-    await doCopy(event.currentTarget.dataset.action);
-    window.close();
+    const { action } = event.currentTarget.dataset;
+
+    // NOTE: Firefox requires permission request to happen in a user interaction callback.
+    // Do not move this to background JS.
+    chrome.permissions.request({ permissions: ['tabs'] }, async (granted) => {
+      if (granted) {
+        await doCopy(action);
+      } else {
+        await showBadge('fail');
+      }
+
+      window.close();
+    });
   });
 });
 
