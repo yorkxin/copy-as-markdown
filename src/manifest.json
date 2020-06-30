@@ -1,15 +1,15 @@
 {
   "name": "Copy as Markdown",
-  "version": "2.4.6",
-  "version_name": "2.4.6",
+  "version": "2.4.7",
+  "version_name": "2.4.7",
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
+    "activeTab",
     "contextMenus",
     "clipboardWrite"
   ],
   "optional_permissions": [
-    "activeTab",
     "tabs"
   ],
   "browser_action": {
