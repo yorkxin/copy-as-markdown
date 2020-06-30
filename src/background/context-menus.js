@@ -1,6 +1,6 @@
 import * as Markdown from './markdown.js';
 import copy from './clipboard-access.js';
-import { flashSuccessBadge } from './badge.js';
+import flashBadge from './badge.js';
 
 function tabAsMarkdown(tab) {
   return Markdown.linkTo(tab.title, tab.url);
@@ -54,5 +54,5 @@ export default async function contextMenuHandler(info, tab) {
   }
 
   await copy(markdown);
-  await flashSuccessBadge();
+  await flashBadge('success');
 }

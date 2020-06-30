@@ -3,7 +3,7 @@ const COLOR_RED = '#d11b24';
 const COLOR_OPAQUE = [0, 0, 0, 255];
 
 const TEXT_OK = '✓';
-const TEXT_ERROR = '!';
+const TEXT_ERROR = '×';
 const TEXT_EMPTY = '';
 
 const FLASH_BADGE_TIMEOUT = 3000; // ms
@@ -26,7 +26,7 @@ async function clearBadge() {
   return setBadge(TEXT_EMPTY, COLOR_OPAQUE);
 }
 
-export async function flashBadge(type) {
+export default async function flashBadge(type) {
   switch (type) {
     case 'success':
       await setBadge(TEXT_OK, COLOR_GREEN);
@@ -39,8 +39,4 @@ export async function flashBadge(type) {
   }
 
   setTimeout(clearBadge, FLASH_BADGE_TIMEOUT);
-}
-
-export function flashSuccessBadge() {
-  return flashBadge('success');
 }

@@ -16,24 +16,32 @@ async function doCopy(action) {
   });
 }
 
-async function showSuccessBadge() {
+async function showBadge(type) {
   return sendMessageToBackgroundPage({
     topic: 'badge',
     params: {
-      action: 'flashSuccess',
+      type,
     },
   });
 }
 
-function handler(event) {
-  doCopy(event.currentTarget.dataset.action);
-  showSuccessBadge();
-  window.close();
-}
-
 // Install listeners
 document.querySelectorAll('[data-action]').forEach((element) => {
-  element.addEventListener('click', handler);
+  element.addEventListener('click', async (event) => {
+    const { action } = event.currentTarget.dataset;
+
+    // NOTE: Firefox requires permission request to happen in a user interaction callback.
+    // Do not move this to background JS.
+    chrome.permissions.request({ permissions: ['tabs'] }, async (granted) => {
+      if (granted) {
+        await doCopy(action);
+      } else {
+        await showBadge('fail');
+      }
+
+      window.close();
+    });
+  });
 });
 
 document.body.classList.add('custom-popup-style');

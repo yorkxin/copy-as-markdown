@@ -5,9 +5,12 @@
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
-    "tabs",
     "contextMenus",
     "clipboardWrite"
+  ],
+  "optional_permissions": [
+    "activeTab",
+    "tabs"
   ],
   "browser_action": {
     "default_icon": "./images/icon-128.png",
