@@ -1,6 +1,6 @@
 import * as BrowserAsMarkdown from './browser-as-markdown.js';
 import copy from './clipboard-access.js';
-import { flashSuccessBadge } from './badge.js';
+import flashBadge from './badge.js';
 
 async function handleCopy(action) {
   /** @type {string} */
@@ -51,24 +51,17 @@ async function handleCopy(action) {
   return text;
 }
 
-async function handleBadge(params) {
-  switch (params.action) {
-    case 'flashSuccess':
-      return flashSuccessBadge();
-
-    default:
-      throw new TypeError(`Unknown action: ${params.action}`);
-  }
-}
-
-export default function messageHandler({ topic = '', params = {} }) {
+export default async function messageHandler({ topic = '', params = {} }) {
   switch (topic) {
     case 'copy': {
-      return handleCopy(params.action);
-    }
+      try {
+        await handleCopy(params.action);
+        await flashBadge('success');
+      } catch (e) {
+        await flashBadge('fail');
+      }
 
-    case 'badge': {
-      return handleBadge(params);
+      break;
     }
 
     default: {

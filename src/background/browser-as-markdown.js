@@ -11,7 +11,16 @@ const tabsToResult = {
  * @param {chrome.tabs.QueryInfo} query
  */
 function queryTabs(query) {
-  return new Promise((resolve) => chrome.tabs.query(query, resolve));
+  return new Promise((resolve, reject) => {
+    chrome.permissions.request({ permissions: ['tabs'] }, (granted) => {
+      // The callback argument will be true if the user granted the permissions.
+      if (granted) {
+        chrome.tabs.query(query, resolve);
+      } else {
+        reject(new Error('Permission Denied'));
+      }
+    });
+  });
 }
 
 export async function currentTab(options = {}) {

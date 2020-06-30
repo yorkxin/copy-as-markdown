@@ -1,6 +1,6 @@
 import contextMenuHandler from './context-menus.js';
 import messageHandler from './message-handler.js';
-import { flashSuccessBadge } from './badge.js';
+import flashBadge from './badge.js';
 
 // Always create context menus when running background page.
 // Since we don't use event page, this will presumably executed every time
@@ -43,7 +43,7 @@ chrome.commands.onCommand.addListener(async (command) => {
     },
   });
 
-  flashSuccessBadge();
+  await flashBadge('success');
 });
 
 // listen to messages from popup
