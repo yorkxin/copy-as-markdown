@@ -6,6 +6,7 @@ const form = document.getElementById('form');
 function save() {
   OptionsManager.save({
     escape: form.escape.checked ? 'yes' : 'no',
+    addDate: form.addDate.checked ? 'yes' : 'no',
   });
 }
 
@@ -14,6 +15,7 @@ function save() {
 function load() {
   OptionsManager.load().then((items) => {
     form.escape.checked = items.escape === 'yes';
+    form.addDate.checked = items.addDate === 'yes';
   });
 }
 
