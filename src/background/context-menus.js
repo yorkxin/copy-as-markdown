@@ -2,8 +2,25 @@ import * as Markdown from './markdown.js';
 import copy from './clipboard-access.js';
 import flashBadge from './badge.js';
 
-function tabAsMarkdown(tab) {
-  return Markdown.linkTo(tab.title, tab.url);
+async function tabAsMarkdown(info, tab) {
+  let { title } = tab;
+
+  if (!title) {
+    // Firefox does not grant activeTab automatically. Request optional permission on demand.
+    title = await new Promise((resolve, reject) => {
+      chrome.permissions.request({ permissions: ['activeTab'] }, (granted) => {
+        if (granted) {
+          chrome.tabs.getCurrent((currentTab) => {
+            resolve(currentTab.title);
+          });
+        } else {
+          reject(new Error('Permission Denied'));
+        }
+      });
+    });
+  }
+
+  return Markdown.linkTo(title, info.pageUrl);
 }
 
 function linkAsMarkdown(info) {
@@ -29,30 +46,33 @@ function imageAsMarkdown(info) {
   return Markdown.imageFor('', info.srcUrl);
 }
 
-export default async function contextMenuHandler(info, tab) {
-  let markdown;
-
+async function dispatchGetMarkdownCode(info, tab) {
   switch (info.menuItemId) {
     case 'current-page': {
-      markdown = tabAsMarkdown(tab);
-      break;
+      return tabAsMarkdown(info, tab);
     }
 
     case 'link': {
-      markdown = linkAsMarkdown(info);
-      break;
+      return linkAsMarkdown(info);
     }
 
     case 'image': {
-      markdown = imageAsMarkdown(info);
-      break;
+      return imageAsMarkdown(info);
     }
 
     default: {
       throw new TypeError(`unknown context menu: ${info}`);
     }
   }
+}
 
-  await copy(markdown);
-  await flashBadge('success');
+export default async function contextMenuHandler(info, tab) {
+  try {
+    const markdown = await dispatchGetMarkdownCode(info, tab);
+    await copy(markdown);
+    await flashBadge('success');
+  } catch (error) {
+    console.error(error);
+    await flashBadge('fail');
+  }
 }
