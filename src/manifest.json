@@ -6,10 +6,7 @@
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "contextMenus",
-    "clipboardWrite"
-  ],
-  "optional_permissions": [
-    "activeTab",
+    "clipboardWrite",
     "tabs"
   ],
   "browser_action": {
