@@ -1,10 +1,11 @@
 const STORAGE_PREFIX = 'options';
 
-const OPTION_KEYS = ['escape'];
+const OPTION_KEYS = ['escape', 'addDate'];
 
 // NOTE: LocalStorage values must be serialized as string.
 const DEFAULT_OPTIONS = {
   escape: 'no', // "yes"|"no"
+  addDate: 'no', // "yes"|"no"
 };
 
 function getStorageKey(key) {

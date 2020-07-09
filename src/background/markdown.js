@@ -7,6 +7,16 @@ function escapeLinkText(text) {
   return text.replace(ESCAPE_CHARS, '\\$1');
 }
 
+function getDateString() {
+  var date = new Date();
+  var y = date.getFullYear();
+  var m = date.getMonth() + 1;
+  m = m < 10 ? '0' + m : m;
+  var d = date.getDate();
+  d = d < 10 ? ('0' + d) : d;
+  return '[' + y + '-' + m + '-' + d + '] ';
+}
+
 let userOptions = {};
 
 async function reloadOptions() {
@@ -28,7 +38,12 @@ export function linkTo(title = DEFAULT_TITLE, url, { needEscape = true } = {}) {
     normalizedTitle = escapeLinkText(title);
   }
 
-  return `[${normalizedTitle}](${url})`;
+  let dateStr = "";
+  if (userOptions.addDate === 'yes') {
+    dateStr = getDateString();
+  }
+
+  return `[${dateStr}${normalizedTitle}](${url})`;
 }
 
 export function imageFor(title, url) {
