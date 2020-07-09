@@ -16,15 +16,6 @@ async function doCopy(action) {
   });
 }
 
-async function showBadge(type) {
-  return sendMessageToBackgroundPage({
-    topic: 'badge',
-    params: {
-      type,
-    },
-  });
-}
-
 // Install listeners
 document.querySelectorAll('[data-action]').forEach((element) => {
   element.addEventListener('click', async (event) => {
