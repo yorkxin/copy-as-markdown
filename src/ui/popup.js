@@ -30,17 +30,9 @@ document.querySelectorAll('[data-action]').forEach((element) => {
   element.addEventListener('click', async (event) => {
     const { action } = event.currentTarget.dataset;
 
-    // NOTE: Firefox requires permission request to happen in a user interaction callback.
-    // Do not move this to background JS.
-    chrome.permissions.request({ permissions: ['tabs'] }, async (granted) => {
-      if (granted) {
-        await doCopy(action);
-      } else {
-        await showBadge('fail');
-      }
+    await doCopy(action);
 
-      window.close();
-    });
+    window.close();
   });
 });
 

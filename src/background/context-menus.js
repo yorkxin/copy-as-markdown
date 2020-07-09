@@ -6,15 +6,13 @@ async function tabAsMarkdown(info, tab) {
   let { title } = tab;
 
   if (!title) {
-    // Firefox does not grant activeTab automatically. Request optional permission on demand.
+    // Firefox does not grant activeTab automatically. Find current tab from tabs API instead.
     title = await new Promise((resolve, reject) => {
-      chrome.permissions.request({ permissions: ['activeTab'] }, (granted) => {
-        if (granted) {
-          chrome.tabs.getCurrent((currentTab) => {
-            resolve(currentTab.title);
-          });
+      chrome.tabs.getCurrent((currentTab) => {
+        if (currentTab) {
+          resolve(currentTab.title);
         } else {
-          reject(new Error('Permission Denied'));
+          reject(new Error('Could not retrieve current tab'));
         }
       });
     });
