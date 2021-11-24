@@ -7,6 +7,16 @@ function escapeLinkText(text) {
   return text.replace(ESCAPE_CHARS, '\\$1');
 }
 
+function normalizeUrl(url, escapeRegex = /\s/g) {
+  // Decode encoded URL characters
+  url = decodeURI(url);
+  // Encode URL characters we still want to escape
+  return url.replace(escapeRegex, (match) => {
+    // `encodeURIComponent()` misses characters like `(`, `)`
+    return `%${match.charCodeAt(0).toString(16)}`;
+  });
+}
+
 let userOptions = {};
 
 async function reloadOptions() {
@@ -28,7 +38,8 @@ export function linkTo(title = DEFAULT_TITLE, url, { needEscape = true } = {}) {
     normalizedTitle = escapeLinkText(title);
   }
 
-  return `[${normalizedTitle}](${url})`;
+  const normalizedUrl = normalizeUrl(url, /\s|[()]/g);
+  return `[${normalizedTitle}](${normalizedUrl})`;
 }
 
 export function imageFor(title, url) {
@@ -36,7 +47,7 @@ export function imageFor(title, url) {
 }
 
 export function list(theList) {
-  return theList.map((item) => `* ${item}`).join('\n');
+  return theList.map((item) => `* ${normalizeUrl(item)}`).join('\n');
 }
 
 export function links(theLinks, options = {}) {
