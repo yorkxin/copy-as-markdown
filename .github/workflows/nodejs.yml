@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - name: Use Node.js 10
+    - name: Use Node.js
       uses: actions/setup-node@v1
       with:
-        node-version: 10
+        node-version: 16
     - name: npm install, build, and lint
       run: |
         npm install
