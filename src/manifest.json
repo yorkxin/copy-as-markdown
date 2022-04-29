@@ -5,6 +5,7 @@
   "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
+    "alarms",
     "contextMenus",
     "clipboardWrite",
     "tabs"
@@ -22,7 +23,7 @@
   },
   "background": {
     "page": "./background.html",
-    "persistent": true
+    "persistent": false
   },
   "commands": {
     "current-tab-link": {

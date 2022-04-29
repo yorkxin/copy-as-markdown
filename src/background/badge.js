@@ -38,5 +38,8 @@ export default async function flashBadge(type) {
       return; // don't know what it is. quit.
   }
 
-  setTimeout(clearBadge, FLASH_BADGE_TIMEOUT);
+  chrome.alarms.create({ when: Date.now() + FLASH_BADGE_TIMEOUT });
+  chrome.alarms.onAlarm.addListener(() => {
+    clearBadge();
+  });
 }
