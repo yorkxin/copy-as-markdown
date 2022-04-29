@@ -1,34 +1,9 @@
-import * as OptionsManager from '../lib/options-manager.js';
-
-const ESCAPE_CHARS = /([\\`*_[\]<>])/g;
 const DEFAULT_TITLE = '(No Title)';
 
-function escapeLinkText(text) {
-  return text.replace(ESCAPE_CHARS, '\\$1');
-}
+// TODO: re-implement escape feature for copying link-in-image (???)
 
-let userOptions = {};
-
-async function reloadOptions() {
-  userOptions = await OptionsManager.load();
-  console.debug(userOptions);
-}
-
-reloadOptions();
-
-window.addEventListener('storage', () => {
-  reloadOptions();
-});
-
-export function linkTo(title = DEFAULT_TITLE, url, { needEscape = true } = {}) {
-  let normalizedTitle = title;
-
-  // used for copying link-in-image
-  if (needEscape && userOptions.escape === 'yes') {
-    normalizedTitle = escapeLinkText(title);
-  }
-
-  return `[${normalizedTitle}](${url})`;
+export function linkTo(title = DEFAULT_TITLE, url) {
+  return `[${title}](${url})`;
 }
 
 export function imageFor(title, url) {

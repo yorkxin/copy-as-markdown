@@ -1,6 +1,6 @@
-import contextMenuHandler from './context-menus.js';
-import messageHandler from './message-handler.js';
-import flashBadge from './badge.js';
+import contextMenuHandler from './background/context-menus.js';
+import messageHandler from './background/message-handler.js';
+import flashBadge from './background/badge.js';
 
 // Always create context menus when running background page.
 // Since we don't use event page, this will presumably executed every time
