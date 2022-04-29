@@ -6,7 +6,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run clean && npm run build-chrome && npm run build-firefox",
     "build-chrome": "zip -r build/chrome.zip src/",
-    "build-firefox": "web-ext build -s src/ -a build/",
+    "build-firefox": "npx web-ext build -s src/ -a build/",
     "eslint": "eslint .",
     "clean": "rm -rf ./build/*",
     "convert-images": "./utils/convert-images.sh"
@@ -17,7 +17,6 @@
     "eslint": "^8.9.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.18.2",
-    "typescript": "^2.9.2",
-    "web-ext": "^6.7.0"
+    "typescript": "^2.9.2"
   }
 }
