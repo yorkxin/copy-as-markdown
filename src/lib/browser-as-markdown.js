@@ -10,11 +10,9 @@ const tabsToResult = {
 /**
  * @param {chrome.tabs.QueryInfo} query
  */
-function queryTabs(query) {
+async function queryTabs(query) {
   // optimistic -- user should have already granted 'tabs' permission on installation.
-  return new Promise((resolve) => {
-    chrome.tabs.query(query, resolve);
-  });
+  return chrome.tabs.query(query);
 }
 
 export async function currentTab(options = {}) {
@@ -31,4 +29,40 @@ export async function allTabs(contentType, options = {}) {
 export async function highlightedTabs(contentType, options = {}) {
   const tabs = await queryTabs({ currentWindow: true, highlighted: true });
   return tabsToResult[contentType](tabs, options);
+}
+
+export async function handleExport(action) {
+  switch (action) {
+    case 'current-tab-link': {
+      return currentTab();
+    }
+
+    case 'all-tabs-link-as-list': {
+      return allTabs('link');
+    }
+
+    case 'all-tabs-title-as-list': {
+      return allTabs('title');
+    }
+
+    case 'all-tabs-url-as-list': {
+      return allTabs('url');
+    }
+
+    case 'highlighted-tabs-link-as-list': {
+      return highlightedTabs('link');
+    }
+
+    case 'highlighted-tabs-title-as-list': {
+      return highlightedTabs('title');
+    }
+
+    case 'highlighted-tabs-url-as-list': {
+      return highlightedTabs('url');
+    }
+
+    default: {
+      throw new TypeError(`Unknown action: ${action}`);
+    }
+  }
 }

@@ -1,58 +1,29 @@
-import * as BrowserAsMarkdown from './browser-as-markdown.js';
-import copy from './clipboard-access.js';
+import copy from '../lib/clipboard-access.js';
 import flashBadge from './badge.js';
+import * as BrowserAsMarkdown from '../lib/browser-as-markdown.js';
 
 async function handleCopy(action) {
   /** @type {string} */
-  let text;
+  const text = await BrowserAsMarkdown.handleExport(action);
 
-  switch (action) {
-    case 'current-tab-link': {
-      text = await BrowserAsMarkdown.currentTab();
-      break;
-    }
+  const currentTab = await chrome.tabs.getCurrent();
 
-    case 'all-tabs-link-as-list': {
-      text = await BrowserAsMarkdown.allTabs('link');
-      break;
-    }
+  // TODO: insert content script here for 'copy' command
+  await chrome.scripting.executeScript({
+    target: { tabId: currentTab.id },
+    func: copy,
+    args: [text],
+  },
+  (results) => {
+    console.log(results);
+  });
 
-    case 'all-tabs-title-as-list': {
-      text = await BrowserAsMarkdown.allTabs('title');
-      break;
-    }
-
-    case 'all-tabs-url-as-list': {
-      text = await BrowserAsMarkdown.allTabs('url');
-      break;
-    }
-
-    case 'highlighted-tabs-link-as-list': {
-      text = await BrowserAsMarkdown.highlightedTabs('link');
-      break;
-    }
-
-    case 'highlighted-tabs-title-as-list': {
-      text = await BrowserAsMarkdown.highlightedTabs('title');
-      break;
-    }
-
-    case 'highlighted-tabs-url-as-list': {
-      text = await BrowserAsMarkdown.highlightedTabs('url');
-      break;
-    }
-
-    default: {
-      throw new TypeError(`Unknown action: ${action}`);
-    }
-  }
-
-  await copy(text);
   return text;
 }
 
 export default async function messageHandler({ topic = '', params = {} }) {
   switch (topic) {
+    // FIXME: 'copy' handles convert to markdown and write to clipboard. should be separated.
     case 'copy': {
       try {
         await handleCopy(params.action);

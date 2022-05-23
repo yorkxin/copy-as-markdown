@@ -1,6 +1,6 @@
-import * as Markdown from './markdown.js';
-import copy from './clipboard-access.js';
+import * as Markdown from '../lib/markdown.js';
 import flashBadge from './badge.js';
+import copy from '../lib/clipboard-access.js';
 
 async function tabAsMarkdown(info, tab) {
   let { title } = tab;
@@ -67,7 +67,16 @@ async function dispatchGetMarkdownCode(info, tab) {
 export default async function contextMenuHandler(info, tab) {
   try {
     const markdown = await dispatchGetMarkdownCode(info, tab);
-    await copy(markdown);
+
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: copy,
+      args: [markdown],
+    },
+    (results) => {
+      console.log(results);
+    });
+
     await flashBadge('success');
   } catch (error) {
     console.error(error);

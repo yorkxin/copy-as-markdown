@@ -1,29 +1,16 @@
-function sendMessageToBackgroundPage(payload) {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(payload, () => {
-      // NOTE: there will be no response content even if the execution was successful
-      resolve(true);
-    });
-  });
-}
-
-async function doCopy(action) {
-  return sendMessageToBackgroundPage({
-    topic: 'copy',
-    params: {
-      action,
-    },
-  });
-}
+import * as BrowserAsMarkdown from '../lib/browser-as-markdown.js';
+import copy from '../lib/clipboard-access.js';
 
 // Install listeners
 document.querySelectorAll('[data-action]').forEach((element) => {
   element.addEventListener('click', async (event) => {
     const { action } = event.currentTarget.dataset;
 
-    await doCopy(action);
-
-    window.close();
+    const text = await BrowserAsMarkdown.handleExport(action);
+    await copy(text);
+    await chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'success' } }, () => {
+      window.close();
+    });
   });
 });
 
