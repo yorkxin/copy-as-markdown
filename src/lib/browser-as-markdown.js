@@ -1,12 +1,6 @@
 // Convert browser items (tabs / window / etc.) to Markdown
 import * as Markdown from './markdown.js';
 
-const tabsToResult = {
-  link: (tabs, options) => Markdown.links(tabs, options),
-  title: (tabs /* , options */) => Markdown.list(tabs.map((tab) => tab.title)),
-  url: (tabs /* , options */) => Markdown.list(tabs.map((tab) => tab.url)),
-};
-
 /**
  *
  * @param info {chrome.contextMenus.OnClickData}
@@ -31,50 +25,42 @@ export function onClickLink(info) {
   return Markdown.linkTo(linkText, info.linkUrl, { needEscape });
 }
 
-export async function currentTab(options = {}) {
-  const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
-  const onlyOneTab = tabs[0];
-  return Markdown.linkTo(onlyOneTab.title, onlyOneTab.url, options);
-}
-
-export async function allTabs(contentType, options = {}) {
-  const tabs = await chrome.tabs.query({ currentWindow: true });
-  return tabsToResult[contentType](tabs, options);
-}
-
-export async function highlightedTabs(contentType, options = {}) {
-  const tabs = await chrome.tabs.query({ currentWindow: true, highlighted: true });
-  return tabsToResult[contentType](tabs, options);
-}
-
 export async function handleExport(action) {
   switch (action) {
     case 'current-tab-link': {
-      return currentTab();
+      const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
+      const onlyOneTab = tabs[0];
+      return Markdown.linkTo(onlyOneTab.title, onlyOneTab.url);
     }
 
     case 'all-tabs-link-as-list': {
-      return allTabs('link');
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+      return Markdown.links(tabs, {});
     }
 
     case 'all-tabs-title-as-list': {
-      return allTabs('title');
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+      return Markdown.list(tabs.map((tab) => tab.title));
     }
 
     case 'all-tabs-url-as-list': {
-      return allTabs('url');
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+      return Markdown.list(tabs.map((tab) => tab.url));
     }
 
     case 'highlighted-tabs-link-as-list': {
-      return highlightedTabs('link');
+      const tabs = await chrome.tabs.query({ currentWindow: true, highlighted: true });
+      return Markdown.links(tabs, {});
     }
 
     case 'highlighted-tabs-title-as-list': {
-      return highlightedTabs('title');
+      const tabs = await chrome.tabs.query({ currentWindow: true, highlighted: true });
+      return Markdown.list(tabs.map((tab) => tab.title));
     }
 
     case 'highlighted-tabs-url-as-list': {
-      return highlightedTabs('url');
+      const tabs = await chrome.tabs.query({ currentWindow: true, highlighted: true });
+      return Markdown.list(tabs.map((tab) => tab.url));
     }
 
     default: {

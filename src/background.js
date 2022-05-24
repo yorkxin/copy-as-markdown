@@ -90,7 +90,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     await flashBadge('success');
   } catch (error) {
-    console.error(error);
     await flashBadge('fail');
   }
 });
@@ -99,11 +98,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.commands.onCommand.addListener(async (command) => {
   try {
     const text = await BrowserAsMarkdown.handleExport(command);
-    const currentTab = await chrome.tabs.getCurrent();
+    const tab = await chrome.tabs.getCurrent();
 
     // Insert content script to run 'copy' command
     await chrome.scripting.executeScript({
-      target: { tabId: currentTab.id },
+      target: { tabId: tab.id },
       func: copy,
       args: [text],
     });
@@ -111,7 +110,6 @@ chrome.commands.onCommand.addListener(async (command) => {
     await flashBadge('success');
   } catch (e) {
     await flashBadge('fail');
-    throw e;
   }
 });
 
