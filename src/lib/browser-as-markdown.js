@@ -7,6 +7,30 @@ const tabsToResult = {
   url: (tabs /* , options */) => Markdown.list(tabs.map((tab) => tab.url)),
 };
 
+/**
+ *
+ * @param info {chrome.contextMenus.OnClickData}
+ * @returns {string}
+ */
+export function onClickLink(info) {
+  // auto discover image
+  let linkText;
+  let needEscape;
+
+  if (info.mediaType === 'image') {
+    needEscape = false;
+    linkText = Markdown.imageFor('', info.srcUrl);
+  } else {
+    needEscape = true;
+    // linkText for Firefox (as of 2018/03/07)
+    // selectionText for Chrome on Mac only. On Windows it does not highlight text when right-click.
+    // TODO: use linkText when Chrome supports it on stable.
+    linkText = info.selectionText ? info.selectionText : info.linkText;
+  }
+
+  return Markdown.linkTo(linkText, info.linkUrl, { needEscape });
+}
+
 export async function currentTab(options = {}) {
   const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
   const onlyOneTab = tabs[0];
