@@ -7,15 +7,13 @@ async function tabAsMarkdown(info, tab) {
 
   if (!title) {
     // Firefox does not grant activeTab automatically. Find current tab from tabs API instead.
-    title = await new Promise((resolve, reject) => {
-      chrome.tabs.getCurrent((currentTab) => {
-        if (currentTab) {
-          resolve(currentTab.title);
-        } else {
-          reject(new Error('Could not retrieve current tab'));
-        }
-      });
-    });
+    const currentTab = await chrome.tabs.getCurrent();
+
+    if (currentTab) {
+      title = currentTab.title;
+    } else {
+      throw new Error('Could not retrieve current tab');
+    }
   }
 
   return Markdown.linkTo(title, info.pageUrl);

@@ -7,27 +7,19 @@ const tabsToResult = {
   url: (tabs /* , options */) => Markdown.list(tabs.map((tab) => tab.url)),
 };
 
-/**
- * @param {chrome.tabs.QueryInfo} query
- */
-async function queryTabs(query) {
-  // optimistic -- user should have already granted 'tabs' permission on installation.
-  return chrome.tabs.query(query);
-}
-
 export async function currentTab(options = {}) {
-  const tabs = await queryTabs({ currentWindow: true, active: true });
+  const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
   const onlyOneTab = tabs[0];
   return Markdown.linkTo(onlyOneTab.title, onlyOneTab.url, options);
 }
 
 export async function allTabs(contentType, options = {}) {
-  const tabs = await queryTabs({ currentWindow: true });
+  const tabs = await chrome.tabs.query({ currentWindow: true });
   return tabsToResult[contentType](tabs, options);
 }
 
 export async function highlightedTabs(contentType, options = {}) {
-  const tabs = await queryTabs({ currentWindow: true, highlighted: true });
+  const tabs = await chrome.tabs.query({ currentWindow: true, highlighted: true });
   return tabsToResult[contentType](tabs, options);
 }
 

@@ -8,35 +8,22 @@ const TEXT_EMPTY = '';
 
 const FLASH_BADGE_TIMEOUT = 3000; // ms
 
-function setBadgeText(text) {
-  const string = String(text);
-  return new Promise((resolve) => chrome.action.setBadgeText({ text: string }, resolve));
-}
-
-function setBadgeBackgroundColor(color) {
-  return new Promise((resolve) => chrome.action.setBadgeBackgroundColor({ color }, resolve));
-}
-
-async function setBadge(text, color) {
-  await setBadgeText(text);
-  await setBadgeBackgroundColor(color);
-}
-
-async function clearBadge() {
-  return setBadge(TEXT_EMPTY, COLOR_OPAQUE);
-}
-
 export default async function flashBadge(type) {
   switch (type) {
     case 'success':
-      await setBadge(TEXT_OK, COLOR_GREEN);
+      await chrome.action.setBadgeText({ text: TEXT_OK });
+      await chrome.action.setBadgeBackgroundColor({ color: COLOR_GREEN });
       break;
     case 'fail':
-      await setBadge(TEXT_ERROR, COLOR_RED);
+      await chrome.action.setBadgeText({ text: TEXT_ERROR });
+      await chrome.action.setBadgeBackgroundColor({ color: COLOR_RED });
       break;
     default:
       return; // don't know what it is. quit.
   }
 
-  setTimeout(clearBadge, FLASH_BADGE_TIMEOUT);
+  setTimeout(async () => {
+    await chrome.action.setBadgeText({ text: TEXT_EMPTY });
+    await chrome.action.setBadgeBackgroundColor({ color: COLOR_OPAQUE });
+  }, FLASH_BADGE_TIMEOUT);
 }
