@@ -2,15 +2,21 @@
     "env": {
         "browser": true,
         "webextensions": true,
-        "es6": true
+        "es6": true,
+        "jest": true
     },
     "extends": "airbnb-base",
     "parserOptions": {
         "sourceType": "module",
         "ecmaVersion": 8
     },
+    "globals": {
+        "globalThis": false
+    },
     "rules": {
         "no-console": 0,
+        "no-underscore-dangle": 0,
+        "import/no-extraneous-dependencies": 0,
         "import/extensions": [
             "error", "always"
         ]
