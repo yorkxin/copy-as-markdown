@@ -15,7 +15,7 @@
   "devDependencies": {
     "@types/chrome": "^0.0.183",
     "eslint": "^8.9.0",
-    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.18.2",
     "typescript": "^2.9.2"
   }
