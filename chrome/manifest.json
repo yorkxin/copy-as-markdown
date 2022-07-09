@@ -13,19 +13,19 @@
   ],
   "action": {
     "default_icon": {
-      "128": "./images/icon-128.png"
+      "128": "./dist/images/icon-128.png"
     },
     "default_title": "Copy as Markdown...",
-    "default_popup": "./ui/popup.html",
+    "default_popup": "./dist/ui/popup.html",
     "browser_style": true
   },
   "icons": {
-    "16": "./images/icon-16.png",
-    "48": "./images/icon-48.png",
-    "128": "./images/icon-128.png"
+    "16": "./dist/images/icon-16.png",
+    "48": "./dist/images/icon-48.png",
+    "128": "./dist/images/icon-128.png"
   },
   "background": {
-    "service_worker": "./background.js",
+    "service_worker": "./dist/background.js",
     "type": "module"
   },
   "commands": {
@@ -43,12 +43,6 @@
     }
   },
   "options_ui": {
-    "page": "./ui/options.html"
-  },
-  "browser_specific_settings": {
-    "gecko": {
-      "id": "jid1-tfBgelm3d4bLkQ@jetpack",
-      "strict_min_version": "60.0"
-    }
+    "page": "./dist/ui/options.html"
   }
 }
