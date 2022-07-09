@@ -3,5 +3,7 @@ node_modules/
 build/*
 firefox/dist/*
 !firefox/dist/.keep
+firefox-mv2/dist/*
+!firefox-mv2/dist/.keep
 chrome/dist/*
 !chrome/dist/.keep

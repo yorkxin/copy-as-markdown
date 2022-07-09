@@ -5,12 +5,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-chrome": "sh compile.sh && zip -r build/chrome.zip chrome/",
-    "build-firefox": "sh compile.sh && npx web-ext build -s src/ -a build/",
+    "build-firefox-mv2": "sh compile.sh && npx web-ext build -s firefox-mv2/ -a build/firefox-mv2/",
+    "build-firefox": "sh compile.sh && npx web-ext build -s firefox/ -a build/firefox/",
     "watch": "npx nodemon",
     "start-chrome": "npx web-ext run -s chrome/ -t chromium --args chrome://extensions",
+    "start-firefox-mv2": "npx web-ext run -s firefox-mv2/ --url about:debugging#/runtime/this-firefox",
     "start-firefox": "npx web-ext run -s firefox/ --firefox-preview --url about:debugging#/runtime/this-firefox",
     "eslint": "eslint .",
-    "clean": "rm -rf ./build/*",
+    "clean": "rm -rf ./build/* firefox/dist/* firefox-mv2/dist/* chrome/dist/*",
     "convert-images": "./utils/convert-images.sh"
   },
   "license": "MIT",
