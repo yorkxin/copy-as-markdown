@@ -90,6 +90,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     await flashBadge('success');
   } catch (error) {
+    console.error(error);
     await flashBadge('fail');
   }
 });
@@ -109,15 +110,32 @@ chrome.commands.onCommand.addListener(async (command) => {
 
     await flashBadge('success');
   } catch (e) {
+    console.error(e);
     await flashBadge('fail');
   }
 });
 
-// listen to messages from popup (should be 'badge' only)
-chrome.runtime.onMessage.addListener(async (message) => {
+// listen to messages from popup
+// NOTE: async function will not work here
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.topic) {
     case 'badge': {
-      await flashBadge(message.params.type);
+      flashBadge(message.params.type)
+        .then(() => {
+          sendResponse({ ok: true });
+        }, (error) => {
+          sendResponse({ ok: false, error });
+        });
+      break;
+    }
+
+    case 'export': {
+      BrowserAsMarkdown.handleExport(message.params.action)
+        .then((text) => {
+          sendResponse({ ok: true, text });
+        }, (error) => {
+          sendResponse({ ok: false, error });
+        });
       break;
     }
 
@@ -126,6 +144,6 @@ chrome.runtime.onMessage.addListener(async (message) => {
     }
   }
 
-  // To avoid an error related to port closed before response
+  // Must return true to indicate async. See https://developer.chrome.com/docs/extensions/mv3/messaging/#simple
   return true;
 });

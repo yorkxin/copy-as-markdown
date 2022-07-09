@@ -1,4 +1,3 @@
-import * as BrowserAsMarkdown from '../lib/browser-as-markdown.js';
 import copy from '../lib/clipboard-access.js';
 
 // Install listeners
@@ -6,10 +5,24 @@ document.querySelectorAll('[data-action]').forEach((element) => {
   element.addEventListener('click', async (event) => {
     const { action } = event.currentTarget.dataset;
 
-    const text = await BrowserAsMarkdown.handleExport(action);
-    await copy(text);
-    await chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'success' } }, () => {
-      window.close();
+    chrome.runtime.sendMessage({ topic: 'export', params: { action } }, (response) => {
+      if (!response) {
+        console.error('[FATAL] received nil response, type:', typeof response);
+        return;
+      }
+
+      if (response.ok === false) {
+        console.error('Failed to copy message, error: ', response.error);
+        chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'error' } }, () => {
+          window.close();
+        });
+      }
+
+      copy(response.text).then(() => {
+        chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'success' } }, () => {
+          window.close();
+        });
+      });
     });
   });
 });
