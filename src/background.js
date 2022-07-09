@@ -1,6 +1,7 @@
 import * as BrowserAsMarkdown from './lib/browser-as-markdown.js';
 import * as Markdown from './lib/markdown.js';
 import copy from './lib/clipboard-access.js';
+import { asyncTabsQuery } from './lib/hacks.js';
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
@@ -99,11 +100,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.commands.onCommand.addListener(async (command) => {
   try {
     const text = await BrowserAsMarkdown.handleExport(command);
-    const tab = await chrome.tabs.getCurrent();
+    const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
+    if (tabs.length !== 1) {
+      return Promise.reject(new Error('failed to get current tab'));
+    }
+    const injectingTab = tabs[0];
 
     // Insert content script to run 'copy' command
     await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
+      target: { tabId: injectingTab.id },
       func: copy,
       args: [text],
     });
