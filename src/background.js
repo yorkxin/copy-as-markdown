@@ -14,22 +14,24 @@ const TEXT_EMPTY = '';
 const FLASH_BADGE_TIMEOUT = 3000; // ms
 
 async function flashBadge(type) {
+  const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
+
   switch (type) {
     case 'success':
-      await chrome.action.setBadgeText({ text: TEXT_OK });
-      await chrome.action.setBadgeBackgroundColor({ color: COLOR_GREEN });
+      await entrypoint.setBadgeText({ text: TEXT_OK });
+      await entrypoint.setBadgeBackgroundColor({ color: COLOR_GREEN });
       break;
     case 'fail':
-      await chrome.action.setBadgeText({ text: TEXT_ERROR });
-      await chrome.action.setBadgeBackgroundColor({ color: COLOR_RED });
+      await entrypoint.setBadgeText({ text: TEXT_ERROR });
+      await entrypoint.setBadgeBackgroundColor({ color: COLOR_RED });
       break;
     default:
       return; // don't know what it is. quit.
   }
 
   setTimeout(async () => {
-    await chrome.action.setBadgeText({ text: TEXT_EMPTY });
-    await chrome.action.setBadgeBackgroundColor({ color: COLOR_OPAQUE });
+    await entrypoint.setBadgeText({ text: TEXT_EMPTY });
+    await entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE });
   }, FLASH_BADGE_TIMEOUT);
 }
 
