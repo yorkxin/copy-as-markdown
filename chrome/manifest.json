@@ -7,7 +7,6 @@
   "permissions": [
     "activeTab",
     "contextMenus",
-    "clipboardWrite",
     "scripting",
     "tabs"
   ],
