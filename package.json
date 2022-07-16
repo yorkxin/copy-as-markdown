@@ -4,9 +4,9 @@
   "description": "Copy Link or Image as Markdown code, a Web Extension",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-chrome": "sh compile.sh && zip -r build/chrome.zip chrome/",
-    "build-firefox-mv2": "sh compile.sh && npx web-ext build -s firefox-mv2/ -a build/firefox-mv2/",
-    "build-firefox": "sh compile.sh && npx web-ext build -s firefox/ -a build/firefox/",
+    "build-chrome": "sh compile.sh chrome && zip -r build/chrome.zip chrome/",
+    "build-firefox-mv2": "sh compile.sh firefox-mv2 && npx web-ext build -s firefox-mv2/ -a build/firefox-mv2/",
+    "build-firefox": "sh compile.sh firefox && npx web-ext build -s firefox/ -a build/firefox/",
     "watch": "npx nodemon",
     "start-chrome": "npx web-ext run -s chrome/ -t chromium --args chrome://extensions",
     "start-firefox-mv2": "npx web-ext run -s firefox-mv2/ --url about:debugging#/runtime/this-firefox",

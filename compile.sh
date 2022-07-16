@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
+folder=$1
+
 # NOTE: `cp -R src/ dist/` has different behaviors in GNU cp (Linux) and macOS cp
-cp -a src/* firefox-mv2/dist/
-cp -a src/ firefox/dist/
-cp -a src/* chrome/dist/
+cp -a src/* "$folder/dist/"
