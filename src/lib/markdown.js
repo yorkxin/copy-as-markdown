@@ -2,8 +2,12 @@ const DEFAULT_TITLE = '(No Title)';
 
 // TODO: re-implement escape feature for copying link-in-image (???)
 
-export function linkTo(title = DEFAULT_TITLE, url) {
-  return `[${title}](${url})`;
+export function linkTo(title, url) {
+  let titleToUse = title;
+  if (!titleToUse) {
+    titleToUse = DEFAULT_TITLE;
+  }
+  return `[${titleToUse}](${url})`;
 }
 
 export function imageFor(title, url) {

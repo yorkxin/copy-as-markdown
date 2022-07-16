@@ -116,9 +116,11 @@ chrome.commands.onCommand.addListener(async (command) => {
     });
 
     await flashBadge('success');
+    return Promise.resolve(text);
   } catch (e) {
     console.error(e);
     await flashBadge('fail');
+    return Promise.reject(e);
   }
 });
 

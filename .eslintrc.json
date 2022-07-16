@@ -9,6 +9,7 @@
         "sourceType": "module",
         "ecmaVersion": 8
     },
+    "ignorePatterns": ["firefox/dist", "chrome/dist", "firefox-mv2/dist"],
     "rules": {
         "no-console": 0,
         "import/extensions": [
