@@ -1,33 +1,41 @@
-const DEFAULT_TITLE = '(No Title)';
-
-/**
- * check if [] are balanced
- * @param text {string}
- * @returns {boolean}
- */
-export function bracketsAreBalanced(text) {
-  const stack = [];
-
-  // using an iterator to ensure Unicode code point is considered.
-  const it = text[Symbol.iterator]();
-  let ch = it.next();
-
-  while (!ch.done) {
-    if (ch.value === '[') {
-      stack.push(ch.value);
-    } else if (ch.value === ']') {
-      if (stack.length === 0) {
-        return false;
-      }
-      stack.pop();
-    }
-    ch = it.next();
+/* eslint-disable no-underscore-dangle */
+export default class Markdown {
+  static DefaultTitle() {
+    return '(No Title)';
   }
 
-  return (stack.length === 0);
-}
+  constructor({ alwaysEscapeLinkBracket }) {
+    this._alwaysEscapeLinkBracket = alwaysEscapeLinkBracket || false;
+  }
 
-/**
+  /**
+   * check if [] are balanced
+   * @param text {string}
+   * @returns {boolean}
+   */
+  static bracketsAreBalanced(text) {
+    const stack = [];
+
+    // using an iterator to ensure Unicode code point is considered.
+    const it = text[Symbol.iterator]();
+    let ch = it.next();
+
+    while (!ch.done) {
+      if (ch.value === '[') {
+        stack.push(ch.value);
+      } else if (ch.value === ']') {
+        if (stack.length === 0) {
+          return false;
+        }
+        stack.pop();
+      }
+      ch = it.next();
+    }
+
+    return (stack.length === 0);
+  }
+
+  /**
  * Escapes link text to sanitize inline formats or unbalanced brackets.
  *
  * @param text {string}
@@ -43,72 +51,100 @@ export function bracketsAreBalanced(text) {
  *   //=> Click \*Start\* button to run \`launch()\`
  *
  */
-export function escapeLinkText(text) {
-  const shouldEscapeBrackets = !bracketsAreBalanced(text);
+  escapeLinkText(text) {
+  // runtime type checking :shrug:
+    if (typeof text !== 'string') {
+      return '';
+    }
 
-  const newString = [];
+    const shouldEscapeBrackets = (
+      this.alwaysEscapeLinkBracket // user wants \[\]
+      || !this.constructor.bracketsAreBalanced(text) // unbalanced brackets, must be escaped
+    );
 
-  // using an iterator to ensure Unicode code point is considered.
-  const it = text[Symbol.iterator]();
-  let ch = it.next();
+    const newString = [];
 
-  while (!ch.done) {
-    let chToUse = null;
+    // using an iterator to ensure Unicode code point is considered.
+    const it = text[Symbol.iterator]();
+    let ch = it.next();
 
-    switch (ch.value) {
+    while (!ch.done) {
+      let chToUse = null;
+
+      switch (ch.value) {
       // Potential unbalanced brackets
-      case '[':
-      case ']':
-        if (shouldEscapeBrackets) {
+        case '[':
+        case ']':
+          if (shouldEscapeBrackets) {
+            chToUse = `\\${ch.value}`;
+          }
+          break;
+
+          // chars that may be interpreted as inline formats
+        case '*':
+        case '_':
+        case '`':
+        case '~':
           chToUse = `\\${ch.value}`;
-        }
-        break;
+          break;
 
-      // chars that may be interpreted as inline formats
-      case '*':
-      case '_':
-      case '`':
-      case '~':
-        chToUse = `\\${ch.value}`;
-        break;
+        default:
+          break;
+      }
 
-      default:
-        break;
+      if (chToUse === null) {
+        chToUse = ch.value;
+      }
+
+      newString.push(chToUse);
+      ch = it.next();
     }
 
-    if (chToUse === null) {
-      chToUse = ch.value;
-    }
-
-    newString.push(chToUse);
-    ch = it.next();
+    return newString.join('');
   }
 
-  return newString.join('');
-}
-
-/**
+  /**
  * @param {string} title
  * @param {string} url
  */
-export function linkTo(title, url) {
-  let titleToUse;
-  if (title === '') {
-    titleToUse = DEFAULT_TITLE;
-  } else {
-    titleToUse = escapeLinkText(title);
+  linkTo(title, url) {
+    let titleToUse;
+    if (title === '') {
+      titleToUse = this.constructor.DefaultTitle();
+    } else {
+      titleToUse = this.escapeLinkText(title);
+    }
+    return `[${titleToUse}](${url})`;
   }
-  return `[${titleToUse}](${url})`;
-}
 
-export function imageFor(title, url) {
-  return `![${title}](${url})`;
-}
+  static imageFor(title, url) {
+    return `![${title}](${url})`;
+  }
 
-export function list(theList) {
-  return theList.map((item) => `* ${item}`).join('\n');
-}
+  /**
+ *
+ * @param description {string}
+ * @param url {string}
+ * @param linkURL {string}
+ * @returns {string}
+ */
+  static linkedImage(description, url, linkURL) {
+    return `[![${description}](${url})](${linkURL})`;
+  }
 
-export function links(theLinks) {
-  return list(theLinks.map((link) => linkTo(link.title, link.url)));
+  static list(theList) {
+    return theList.map((item) => `* ${item}`).join('\n');
+  }
+
+  links(theLinks) {
+    return this.constructor.list(theLinks.map((link) => this.linkTo(link.title, link.url)));
+  }
+
+  get alwaysEscapeLinkBracket() {
+    return this._alwaysEscapeLinkBracket;
+  }
+
+  set alwaysEscapeLinkBracket(value) {
+    this._alwaysEscapeLinkBracket = value;
+  }
 }

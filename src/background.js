@@ -1,5 +1,5 @@
-import * as BrowserAsMarkdown from './lib/browser-as-markdown.js';
-import * as Markdown from './lib/markdown.js';
+import Settings from './lib/settings.js';
+import Markdown from './lib/markdown.js';
 import copy from './lib/clipboard-access.js';
 import { asyncTabsQuery } from './lib/hacks.js';
 
@@ -35,6 +35,62 @@ async function flashBadge(type) {
   }, FLASH_BADGE_TIMEOUT);
 }
 
+async function handleExport(action) {
+  const markdown = new Markdown({});
+
+  try {
+    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
+  } catch (error) {
+    console.error(error);
+  }
+
+  switch (action) {
+    case 'current-tab-link': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
+      if (tabs.length !== 1) {
+        throw new Error(`Expecting exactly 1 tab, got ${tabs.length} items.`);
+      }
+
+      const onlyOneTab = tabs[0];
+      return markdown.linkTo(onlyOneTab.title, onlyOneTab.url);
+    }
+
+    case 'all-tabs-link-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true });
+      return markdown.links(tabs, {});
+    }
+
+    case 'all-tabs-title-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true });
+      return Markdown.list(tabs.map((tab) => tab.title));
+    }
+
+    case 'all-tabs-url-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true });
+      return Markdown.list(tabs.map((tab) => tab.url));
+    }
+
+    case 'highlighted-tabs-link-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
+      return markdown.links(tabs, {});
+    }
+
+    case 'highlighted-tabs-title-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
+      return Markdown.list(tabs.map((tab) => tab.title));
+    }
+
+    case 'highlighted-tabs-url-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
+      return Markdown.list(tabs.map((tab) => tab.url));
+    }
+
+    default: {
+      throw new TypeError(`Unknown action: ${action}`);
+    }
+  }
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'current-page',
@@ -61,19 +117,43 @@ chrome.runtime.onInstalled.addListener(() => {
 // NOTE: All listeners must be registered at top level scope.
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  const markdown = new Markdown({});
+
+  try {
+    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
+  } catch (error) {
+    console.error(error);
+  }
+
   let text;
   switch (info.menuItemId) {
     case 'current-page': {
-      text = Markdown.linkTo(tab.title, tab.url);
+      text = markdown.linkTo(tab.title, tab.url);
       break;
     }
 
     case 'link': {
-      text = BrowserAsMarkdown.onClickLink(info);
+      /* <a href="linkURL"><img src="srcURL" /></a> */
+      if (info.mediaType === 'image') {
+        // TODO: extract image alt text
+        text = Markdown.linkedImage('', info.srcUrl, info.linkUrl);
+        break;
+      }
+
+      /* <a href="linkURL">Text</a> */
+
+      // linkText for Firefox (as of 2018/03/07)
+      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
+      // right-click.
+      // TODO: use linkText when Chrome supports it on stable.
+      const linkText = info.selectionText || info.linkText;
+
+      text = markdown.linkTo(linkText, info.linkUrl);
       break;
     }
 
     case 'image': {
+      // TODO: extract image alt text
       text = Markdown.imageFor('', info.srcUrl);
       break;
     }
@@ -101,7 +181,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // listen to keyboard shortcuts
 chrome.commands.onCommand.addListener(async (command) => {
   try {
-    const text = await BrowserAsMarkdown.handleExport(command);
+    const text = await handleExport(command);
     const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
     if (tabs.length !== 1) {
       return Promise.reject(new Error('failed to get current tab'));
@@ -139,7 +219,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     case 'export': {
-      BrowserAsMarkdown.handleExport(message.params.action)
+      handleExport(message.params.action)
         .then((text) => {
           sendResponse({ ok: true, text });
         }, (error) => {

@@ -8,6 +8,7 @@
     "activeTab",
     "contextMenus",
     "scripting",
+    "storage",
     "tabs"
   ],
   "action": {
