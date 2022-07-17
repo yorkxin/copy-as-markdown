@@ -12,6 +12,7 @@ jobs:
       with:
         node-version: 16
     - run: npm ci
+    - run: npm test
     - run: npm run eslint
     - run: npm install -g web-ext # build tool
     - run: npm run build-chrome
