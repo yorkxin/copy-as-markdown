@@ -5,6 +5,7 @@
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "activeTab",
+    "alarms",
     "contextMenus",
     "clipboardWrite",
     "scripting",
@@ -25,7 +26,8 @@
     "128": "./dist/images/icon-128.png"
   },
   "background": {
-    "page": "background.html"
+    "page": "background.html",
+    "persistent": false
   },
   "commands": {
     "current-tab-link": {

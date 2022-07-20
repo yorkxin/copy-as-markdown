@@ -6,6 +6,7 @@
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "activeTab",
+    "alarms",
     "contextMenus",
     "scripting",
     "storage",

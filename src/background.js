@@ -29,11 +29,20 @@ async function flashBadge(type) {
       return; // don't know what it is. quit.
   }
 
-  setTimeout(async () => {
-    await entrypoint.setBadgeText({ text: TEXT_EMPTY });
-    await entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE });
-  }, FLASH_BADGE_TIMEOUT);
+  chrome.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
 }
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
+
+  if (alarm.name === 'clear') {
+    Promise.all([
+      entrypoint.setBadgeText({ text: TEXT_EMPTY }),
+      entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
+    ])
+      .then(() => console.log('cleared'));
+  }
+});
 
 async function handleExport(action) {
   const markdown = new Markdown({});
