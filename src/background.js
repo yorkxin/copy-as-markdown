@@ -40,7 +40,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       entrypoint.setBadgeText({ text: TEXT_EMPTY }),
       entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
     ])
-      .then(() => console.log('cleared'));
+      .then(() => { /* NOP */ });
   }
 });
 
