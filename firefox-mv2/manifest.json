@@ -41,6 +41,15 @@
     },
     "all-tabs-url-as-list": {
       "description": "all tabs: * url"
+    },
+    "highlighted-tabs-link-as-list": {
+      "description": "selected tabs: * [title](url)"
+    },
+    "highlighted-tabs-title-as-list": {
+      "description": "selected tabs: * title"
+    },
+    "highlighted-tabs-url-as-list": {
+      "description": "selected tabs: * url"
     }
   },
   "options_ui": {
