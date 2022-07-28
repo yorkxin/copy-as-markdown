@@ -37,21 +37,60 @@ The Keyboard Shortcuts of extensions can be found at `chrome://extensions/shortc
 
 ## Development
 
+Here is the forder structure. Platform-specific folder is used to resolve browser inconsistencies.
+
+```
+src/               # Shared Source Code
+  background.js
+  ...
+chrome/            # Chrome / Chromium files
+  dist/            # ../src will be copied here
+  mainfest.json
+  ...
+firefox-mv2/       # Firefox Manifest V2 files
+  dist/            # ../src will be copied here
+  mainfest.json
+  background.html  # Loads ESModule
+  ...
+firefox/           # Firefox Manifest V3 files
+  dist/            # ../src will be copied here
+  mainfest.json
+  background.html  # Loads ESModule
+  ...
+compile.sh         # Copies src/**/* to <platform>/dist/
+```  
+
 ### Install dependencies
 
 ```
+npm install -g web-ext
 npm install
 ```
 
 ### Debugging
 
-The source code and manifest file is under `src/` folder.
+Since the source code are copied to platform-specific folders by `compile.sh`, it is recommended to use the auto-reload test script.
 
-To debug in Chrome: [Window] Menu -> Extensions -> Load unpacked extension
+```sh
+npm debug-chrome
+npm debug-firefox
+npm debug-firefox-mv3   // Requires Firefox Developer Edition
+```
 
-To debug in Firefox: [Tools] Menu -> Add-ons -> [Gear] Icon -> Debug Add-ons -> Load Temporary Add-on
+For manual debugging without auto-reload:
 
-TODO: Unit Tests
+- Chrome: [Window] Menu -> Extensions -> Load unpacked extension
+- Firefox: [Tools] Menu -> Add-ons -> [Gear] Icon -> Debug Add-ons -> Load Temporary Add-on
+
+### Tests
+
+Unit tests are written in mocha, `./test/**/*.test.js`.
+
+To run, use `npm test`.
+
+### QA
+
+There is a [qa.html](./test/qa.html) that includes various edge test cases. Open it in the browser, then try Copy as Markdown with the content in it.
 
 ## License
 
