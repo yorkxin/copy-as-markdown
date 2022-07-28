@@ -1,29 +1,29 @@
-function sendMessageToBackgroundPage(payload) {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(payload, () => {
-      // NOTE: there will be no response content even if the execution was successful
-      resolve(true);
-    });
-  });
-}
-
-async function doCopy(action) {
-  return sendMessageToBackgroundPage({
-    topic: 'copy',
-    params: {
-      action,
-    },
-  });
-}
+import copy from '../lib/clipboard-access.js';
 
 // Install listeners
 document.querySelectorAll('[data-action]').forEach((element) => {
   element.addEventListener('click', async (event) => {
     const { action } = event.currentTarget.dataset;
 
-    await doCopy(action);
+    chrome.runtime.sendMessage({ topic: 'export', params: { action } }, (response) => {
+      if (!response) {
+        console.error('[FATAL] received nil response, type:', typeof response);
+        return;
+      }
 
-    window.close();
+      if (response.ok === false) {
+        console.error('Failed to copy message, error: ', response.error);
+        chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'error' } }, () => {
+          window.close();
+        });
+      }
+
+      copy(response.text).then(() => {
+        chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'success' } }, () => {
+          window.close();
+        });
+      });
+    });
   });
 });
 

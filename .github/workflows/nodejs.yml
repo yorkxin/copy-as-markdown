@@ -8,13 +8,13 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Use Node.js
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
-        node-version: 16
-    - name: npm install, build, and lint
-      run: |
-        npm install
-        npm run build
-        npm run eslint
-      env:
-        CI: true
+        node-version: 18
+    - run: npm ci
+    - run: npm test
+    - run: npm run eslint
+    - run: npm install -g web-ext # build tool
+    - run: npm run build-chrome
+    - run: npm run build-firefox
+    - run: npm run build-firefox-mv2

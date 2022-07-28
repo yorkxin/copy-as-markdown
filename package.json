@@ -2,22 +2,28 @@
   "name": "copy-as-markdown",
   "version": "2.0.0",
   "description": "Copy Link or Image as Markdown code, a Web Extension",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run clean && npm run build-chrome && npm run build-firefox",
-    "build-chrome": "zip -r build/chrome.zip src/",
-    "build-firefox": "npx web-ext build -s src/ -a build/",
-    "start-firefox": "npx web-ext run -s src/",
+    "test": "mocha",
+    "build-chrome": "sh compile.sh chrome && zip -r build/chrome.zip chrome/",
+    "build-firefox-mv2": "sh compile.sh firefox-mv2 && npx web-ext build -s firefox-mv2/ -a build/firefox-mv2/",
+    "build-firefox": "sh compile.sh firefox && npx web-ext build -s firefox/ -a build/firefox/",
+    "debug-chrome": "npx nodemon --exec 'sh compile.sh chrome' & npx web-ext run -s chrome/ -t chromium --args chrome://extensions",
+    "debug-firefox-mv2": "npx nodemon --exec 'sh compile.sh firefox-mv2' & npx web-ext run -s firefox-mv2/ --url about:debugging#/runtime/this-firefox",
+    "debug-firefox": "npx nodemon --exec 'sh compile.sh firefox' & npx web-ext run -s firefox/ --firefox-preview --url about:debugging#/runtime/this-firefox",
     "eslint": "eslint .",
-    "clean": "rm -rf ./build/*",
+    "clean": "rm -rf ./build/* firefox/dist/* firefox-mv2/dist/* chrome/dist/*",
     "convert-images": "./utils/convert-images.sh"
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/chrome": "0.0.89",
+    "@types/chrome": "^0.0.183",
     "eslint": "^8.9.0",
-    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.18.2",
+    "mocha": "^10.0.0",
+    "nodemon": "^2.0.19",
+    "nyc": "^15.1.0",
     "typescript": "^2.9.2"
   }
 }

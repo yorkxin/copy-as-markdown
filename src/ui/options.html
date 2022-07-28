@@ -3,15 +3,31 @@
 <head>
   <title>Copy as Markdown Options</title>
   <meta charset="utf-8" />
+  <style>
+    body {
+      font-size: 16px;
+      min-width: 320px;
+      min-height: 240px;
+    }
+  </style>
 </head>
 <body>
 
   <form id="form">
     <label>
-      <input type="checkbox" name="escape" />
-      Escape Markdown code
+      <input type="checkbox" name="link-text-always-escape-brackets" />
+      Always escape brackets in Markdown link text (<code>[]</code> becomes <code>\[\]</code>)
+      <br/>
+      <small>
+        CommonMark allows balanced brackets <code>[]</code> in link text
+        (e.g. <code>[[JIRA-123] My Project](https://link/)</code>).
+        If your Markdown processor does not support this use case, you can enable this feature
+        so that Copy as Markdown always escape brackets in the link text.
+      </small>
     </label>
   </form>
+
+  <button id="reset" type="button">Reset to Default</button>
 
   <script src="./options.js" type="module"></script>
 </body>

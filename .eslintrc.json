@@ -2,13 +2,15 @@
     "env": {
         "browser": true,
         "webextensions": true,
-        "es6": true
+        "es6": true,
+        "mocha": true
     },
     "extends": "airbnb-base",
     "parserOptions": {
         "sourceType": "module",
         "ecmaVersion": 8
     },
+    "ignorePatterns": ["firefox/dist", "chrome/dist", "firefox-mv2/dist"],
     "rules": {
         "no-console": 0,
         "import/extensions": [

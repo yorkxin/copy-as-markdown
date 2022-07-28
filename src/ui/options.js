@@ -1,21 +1,32 @@
-import * as OptionsManager from '../lib/options-manager.js';
+import Settings from '../lib/settings.js';
 
-const form = document.getElementById('form');
+const SelLinkTextAlwaysEscapeBrackets = '#form [name="link-text-always-escape-brackets"]';
 
-// Saves options to localStorage. String only.
-function save() {
-  OptionsManager.save({
-    escape: form.escape.checked ? 'yes' : 'no',
+function loadSettings() {
+  Settings.getLinkTextAlwaysEscapeBrackets().then((value) => {
+    document.querySelector(SelLinkTextAlwaysEscapeBrackets).checked = value;
   });
 }
 
-// Restores select box and checkbox state using the preferences
-// stored in localStorage. String only.
-function load() {
-  OptionsManager.load().then((items) => {
-    form.escape.checked = items.escape === 'yes';
-  });
-}
+document.addEventListener('DOMContentLoaded', loadSettings);
 
-document.addEventListener('DOMContentLoaded', load);
-document.getElementById('form').addEventListener('change', save);
+document.querySelector(SelLinkTextAlwaysEscapeBrackets)
+  .addEventListener('change', (event) => {
+    Settings.setLinkTextAlwaysEscapeBrackets(event.target.checked)
+      .then(() => {
+        console.info('settings saved');
+      }, (error) => {
+        console.error('failed to save settings:', error);
+      });
+  });
+
+document.querySelector('#reset').addEventListener('click', () => {
+  const resettings = Settings.reset()
+    .then(() => {
+      console.info('settings cleared');
+    }, (error) => {
+      console.error('failed to save settings:', error);
+    });
+
+  resettings.then(loadSettings);
+});
