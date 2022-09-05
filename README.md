@@ -82,6 +82,29 @@ For manual debugging without auto-reload:
 - Chrome: [Window] Menu -> Extensions -> Load unpacked extension
 - Firefox: [Tools] Menu -> Add-ons -> [Gear] Icon -> Debug Add-ons -> Load Temporary Add-on
 
+#### Debug with Firefox XPI Package
+
+To debug some behaviors such as Firefox restarts (for example, are context menus installed properly),
+it is necessary to build an XPI package and install it on Firefox. Temporary Add-Ons won't be enough
+because they get uninstalled after Firefox quits.
+
+Firefox checks signature when installing XPI. To do so, 
+
+1. Grab [API keys](https://addons.mozilla.org/en-US/developers/addon/api/key/) from Firefox Add-On
+2. Bump version in `manifest.json` and use something like `2.3.4b1` or `2.3.4rc1`
+3. Run:
+    ```shell
+    web-ext sign --channel=unlisted --api-key=... --api-secret=...
+    ```
+
+It'll create an XPI that is signed with your Firefox Add-Ons account. The file will also be
+uploaded to Add-On Developer Hub as unlisted.
+
+Note that Firefox Add-On keeps track of all the versions that has ever been uploaded, including
+'self-distributed' (`channel=unlisted`). That's why using a `b1` or `rc1` suffix is preferred.
+
+See https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/
+
 ### Tests
 
 Unit tests are written in mocha, `./test/**/*.test.js`.
