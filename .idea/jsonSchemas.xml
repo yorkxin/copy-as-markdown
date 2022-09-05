@@ -20,6 +20,22 @@
             </SchemaInfo>
           </value>
         </entry>
+        <entry key="WebExtensions">
+          <value>
+            <SchemaInfo>
+              <option name="name" value="WebExtensions" />
+              <option name="relativePathToSchema" value="https://json.schemastore.org/webextension.json" />
+              <option name="applicationDefined" value="true" />
+              <option name="patterns">
+                <list>
+                  <Item>
+                    <option name="path" value="firefox-mv2/manifest.json" />
+                  </Item>
+                </list>
+              </option>
+            </SchemaInfo>
+          </value>
+        </entry>
         <entry key="package.json">
           <value>
             <SchemaInfo>
