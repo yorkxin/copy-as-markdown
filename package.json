@@ -9,6 +9,7 @@
     "build-firefox-mv2": "sh compile.sh firefox-mv2 && npx web-ext build -s firefox-mv2/ -a build/firefox-mv2/",
     "build-firefox": "sh compile.sh firefox && npx web-ext build -s firefox/ -a build/firefox/",
     "debug-chrome": "npx nodemon --exec 'sh compile.sh chrome' & npx web-ext run -s chrome/ -t chromium --args chrome://extensions",
+    "debug-edge": "npx nodemon --exec 'sh compile.sh chrome' & npx web-ext run -s chrome/ -t chromium --chromium-binary '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --args chrome://extensions",
     "debug-firefox-mv2": "npx nodemon --exec 'sh compile.sh firefox-mv2' & npx web-ext run -s firefox-mv2/ --url about:debugging#/runtime/this-firefox",
     "debug-firefox": "npx nodemon --exec 'sh compile.sh firefox' & npx web-ext run -s firefox/ --firefox-preview --url about:debugging#/runtime/this-firefox",
     "eslint": "eslint .",
@@ -17,7 +18,8 @@
   },
   "license": "MIT",
   "devDependencies": {
-    "@types/chrome": "^0.0.183",
+    "@types/chrome": "^0.0.200",
+    "@types/firefox-webext-browser": "^94.0.1",
     "eslint": "^8.9.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.18.2",
