@@ -1,6 +1,6 @@
 import Settings from './lib/settings.js';
+import writeUsingContentScript from './lib/clipboard-access.js';
 import Markdown from './lib/markdown.js';
-import copy from './lib/clipboard-access.js';
 import { asyncTabsQuery } from './lib/hacks.js';
 
 const COLOR_GREEN = '#738a05';
@@ -43,6 +43,55 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       .then(() => { /* NOP */ });
   }
 });
+
+async function handleContentOfContextMenu(info, tab) {
+  const markdown = new Markdown({});
+
+  try {
+    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
+  } catch (error) {
+    console.error(error);
+  }
+
+  let text;
+  switch (info.menuItemId) {
+    case 'current-page': {
+      text = markdown.linkTo(tab.title, tab.url);
+      break;
+    }
+
+    case 'link': {
+      /* <a href="linkURL"><img src="srcURL" /></a> */
+      if (info.mediaType === 'image') {
+        // TODO: extract image alt text
+        text = Markdown.linkedImage('', info.srcUrl, info.linkUrl);
+        break;
+      }
+
+      /* <a href="linkURL">Text</a> */
+
+      // linkText for Firefox (as of 2018/03/07)
+      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
+      // right-click.
+      // TODO: use linkText when Chrome supports it on stable.
+      const linkText = info.selectionText || info.linkText;
+
+      text = markdown.linkTo(linkText, info.linkUrl);
+      break;
+    }
+
+    case 'image': {
+      // TODO: extract image alt text
+      text = Markdown.imageFor('', info.srcUrl);
+      break;
+    }
+
+    default: {
+      throw new TypeError(`unknown context menu: ${info}`);
+    }
+  }
+  return text;
+}
 
 async function handleExport(action) {
   const markdown = new Markdown({});
@@ -100,6 +149,15 @@ async function handleExport(action) {
   }
 }
 
+async function mustGetCurrentTab() {
+  const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
+  if (tabs.length !== 1) {
+    return Promise.reject(new Error('failed to get current tab'));
+  }
+
+  return Promise.resolve(tabs[0]);
+}
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'current-page',
@@ -126,86 +184,26 @@ chrome.runtime.onInstalled.addListener(() => {
 // NOTE: All listeners must be registered at top level scope.
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  const markdown = new Markdown({});
-
   try {
-    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
-  } catch (error) {
-    console.error(error);
-  }
-
-  let text;
-  switch (info.menuItemId) {
-    case 'current-page': {
-      text = markdown.linkTo(tab.title, tab.url);
-      break;
-    }
-
-    case 'link': {
-      /* <a href="linkURL"><img src="srcURL" /></a> */
-      if (info.mediaType === 'image') {
-        // TODO: extract image alt text
-        text = Markdown.linkedImage('', info.srcUrl, info.linkUrl);
-        break;
-      }
-
-      /* <a href="linkURL">Text</a> */
-
-      // linkText for Firefox (as of 2018/03/07)
-      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
-      // right-click.
-      // TODO: use linkText when Chrome supports it on stable.
-      const linkText = info.selectionText || info.linkText;
-
-      text = markdown.linkTo(linkText, info.linkUrl);
-      break;
-    }
-
-    case 'image': {
-      // TODO: extract image alt text
-      text = Markdown.imageFor('', info.srcUrl);
-      break;
-    }
-
-    default: {
-      throw new TypeError(`unknown context menu: ${info}`);
-    }
-  }
-
-  try {
-    // Insert content script to run 'copy' command
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: copy,
-      args: [text],
-    });
-
+    const text = await handleContentOfContextMenu(info, tab);
+    await writeUsingContentScript(tab, text);
     await flashBadge('success');
+    return Promise.resolve(true);
   } catch (error) {
     console.error(error);
     await flashBadge('fail');
+    return Promise.reject(error);
   }
 });
 
 // listen to keyboard shortcuts
 chrome.commands.onCommand.addListener(async (command) => {
   try {
+    const tab = await mustGetCurrentTab();
     const text = await handleExport(command);
-    const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
-    if (tabs.length !== 1) {
-      return Promise.reject(new Error('failed to get current tab'));
-    }
-    const injectingTab = tabs[0];
-
-    // Insert content script to run 'copy' command
-    await chrome.scripting.executeScript({
-      target: { tabId: injectingTab.id },
-      func: copy,
-      args: [text],
-    });
-
+    await writeUsingContentScript(tab, text);
     await flashBadge('success');
-    return Promise.resolve(text);
+    return Promise.resolve(true);
   } catch (e) {
     console.error(e);
     await flashBadge('fail');

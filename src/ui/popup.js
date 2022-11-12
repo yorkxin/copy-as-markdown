@@ -1,5 +1,3 @@
-import copy from '../lib/clipboard-access.js';
-
 // Install listeners
 document.querySelectorAll('[data-action]').forEach((element) => {
   element.addEventListener('click', async (event) => {
@@ -13,16 +11,35 @@ document.querySelectorAll('[data-action]').forEach((element) => {
 
       if (response.ok === false) {
         console.error('Failed to copy message, error: ', response.error);
-        chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'error' } }, () => {
+        chrome.runtime.sendMessage({
+          topic: 'badge',
+          params: { type: 'error' },
+        }, () => {
           window.close();
         });
       }
 
-      copy(response.text).then(() => {
-        chrome.runtime.sendMessage({ topic: 'badge', params: { type: 'success' } }, () => {
-          window.close();
-        });
-      });
+      navigator.clipboard.writeText(response.text)
+        .then(
+          () => {
+            chrome.runtime.sendMessage({
+              topic: 'badge',
+              params: { type: 'success' },
+            }, () => {
+              window.close();
+            });
+          },
+          (error) => {
+            // failed
+            console.error(error);
+            chrome.runtime.sendMessage({
+              topic: 'badge',
+              params: { type: 'fail' },
+            }, () => {
+              window.close();
+            });
+          },
+        );
     });
   });
 });
