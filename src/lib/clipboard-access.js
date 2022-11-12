@@ -7,14 +7,24 @@
 /**
  * copy writes text to system clipboard in content script.
  *
- * The returned promise value tells the caller about the mechanism being used.
+ * The returned promise will always resolve as scripting.executeScript()'s callback does not handle
+ * error result.
  *
  * NOTE: the whole function must be passed to content script as a function literal.
  * i.e. please do not extract any code to separate functions.
  * @param text
- * @returns {Promise<'navigator_api'|'textarea'>}
+ * @returns {Promise<{ok: bool, errorMessage?: string, method: 'navigator_api'|'textarea'}>}
  */
 async function copy(text) {
+  const useClipboardAPI = async (t) => {
+    try {
+      await navigator.clipboard.writeText(t);
+      return Promise.resolve({ ok: true, method: 'navigator_api' });
+    } catch (error) {
+      return Promise.resolve({ ok: false, error: `${error.name} ${error.message}`, method: 'navigator_api' });
+    }
+  };
+
   try {
     // XXX: In Chrome, clipboard-write permission is required in order to use
     // navigator.clipboard.writeText() in Content Script.
@@ -34,8 +44,7 @@ async function copy(text) {
     });
     // state will be 'granted', 'denied' or 'prompt':
     if (ret.state === 'granted') {
-      await navigator.clipboard.writeText(text);
-      return 'navigator_api';
+      return useClipboardAPI(text);
     }
     console.debug(`clipboard-write permission state: ${ret.state}`);
     // ... continue with textarea approach
@@ -44,24 +53,26 @@ async function copy(text) {
       // ... And also `clipboard-write` is not a permission that can be queried in Firefox,
       // but since navigator.clipboard.writeText() always work on Firefox as long as it is declared
       // in manifest.json, we don't even bother handling it.
-      await navigator.clipboard.writeText(text);
-      return 'navigator_api';
+      return useClipboardAPI(text);
     }
-    throw e;
+    return Promise.resolve({ ok: false, error: `${e.name} ${e.message}`, method: 'navigator_api' });
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     try {
       /** @type {HTMLTextAreaElement} */
       const textBox = document.createElement('textarea');
       document.body.append(textBox);
-      textBox.value = text;
+      textBox.innerHTML = text;
       textBox.select();
-      document.execCommand('Copy');
+      const result = document.execCommand('Copy');
       document.body.removeChild(textBox);
-      resolve('textarea');
+      if (result) {
+        resolve({ ok: true, method: 'textarea' });
+      }
+      resolve({ ok: false, error: 'document.execCommand returned false', method: 'textarea' });
     } catch (e) {
-      reject(e);
+      resolve({ ok: false, error: `${e.name} ${e.message}`, method: 'textarea' });
     }
   });
 }
@@ -73,13 +84,20 @@ async function copy(text) {
  * @returns {Promise<void>}
  */
 export default async function writeUsingContentScript(tab, text) {
-  await chrome.scripting.executeScript({
-    target: {
-      tabId: tab.id,
-    },
-    func: copy,
-    args: [text],
-  }, (results) => {
-    results.map(({ result }) => console.debug(result));
+  return new Promise((resolve, reject) => {
+    chrome.scripting.executeScript({
+      target: {
+        tabId: tab.id,
+      },
+      func: copy,
+      args: [text],
+    }, (results) => {
+      const { result } = results[0];
+      if (result.ok) {
+        resolve(true);
+      } else {
+        reject(new Error(`content script failed: ${result.error} (method = ${result.method})`));
+      }
+    });
   });
 }
