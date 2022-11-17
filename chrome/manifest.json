@@ -54,5 +54,15 @@
   },
   "options_ui": {
     "page": "./dist/ui/options.html"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "dist/iframe-copy.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
 }
