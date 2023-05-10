@@ -26,7 +26,8 @@
     "128": "./dist/images/icon-128.png"
   },
   "background": {
-    "page": "background.html"
+    "scripts": ["./dist/background.js"],
+    "type": "module"
   },
   "commands": {
     "current-tab-link": {
@@ -57,7 +58,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "jid1-tfBgelm3d4bLkQ@jetpack",
-      "strict_min_version": "60.0"
+      "strict_min_version": "112.0"
     }
   }
 }

@@ -11,7 +11,7 @@
     "debug-chrome": "npx nodemon --exec 'sh compile.sh chrome' & npx web-ext run -s chrome/ -t chromium --args chrome://extensions https://example.com",
     "debug-edge": "npx nodemon --exec 'sh compile.sh chrome' & npx web-ext run -s chrome/ -t chromium --chromium-binary '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --args chrome://extensions https://example.com",
     "debug-firefox-mv2": "npx nodemon --exec 'sh compile.sh firefox-mv2' & npx web-ext run -s firefox-mv2/ --url about:debugging#/runtime/this-firefox https://example.com",
-    "debug-firefox": "npx nodemon --exec 'sh compile.sh firefox' & npx web-ext run -s firefox/ --firefox-preview --url about:debugging#/runtime/this-firefox https://example.com",
+    "debug-firefox": "npx nodemon --exec 'sh compile.sh firefox' & npx web-ext run -s firefox/ --url about:debugging#/runtime/this-firefox https://example.com",
     "eslint": "eslint .",
     "clean": "rm -rf ./build/* firefox/dist/* firefox-mv2/dist/* chrome/dist/*",
     "convert-images": "./utils/convert-images.sh"
