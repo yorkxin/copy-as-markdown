@@ -15,6 +15,34 @@ const FLASH_BADGE_TIMEOUT = 3000; // ms
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
+const markdownInstance = new Markdown();
+
+async function refreshMarkdownInstance() {
+  try {
+    const alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
+    let unorderedListChar;
+    const style = await Settings.getStyleOfUnorderedList();
+    switch (style) {
+      case 'dash':
+        unorderedListChar = '-';
+        break;
+      case 'asterisk':
+        unorderedListChar = '*';
+        break;
+      case 'plus':
+        unorderedListChar = '+';
+        break;
+      default:
+        console.error('unrecognized style of unordered list:', style);
+        unorderedListChar = '-';
+    }
+    markdownInstance.alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
+    markdownInstance.unorderedListChar = unorderedListChar;
+  } catch (error) {
+    console.error('error getting settings', error);
+  }
+}
+
 async function flashBadge(type) {
   const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
 
@@ -51,18 +79,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 async function handleContentOfContextMenu(info, tab) {
-  const markdown = new Markdown({});
-
-  try {
-    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
-  } catch (error) {
-    console.error(error);
-  }
-
   let text;
   switch (info.menuItemId) {
     case 'current-page': {
-      text = markdown.linkTo(tab.title, tab.url);
+      text = markdownInstance.linkTo(tab.title, tab.url);
       break;
     }
 
@@ -82,7 +102,7 @@ async function handleContentOfContextMenu(info, tab) {
       // TODO: use linkText when Chrome supports it on stable.
       const linkText = info.selectionText || info.linkText;
 
-      text = markdown.linkTo(linkText, info.linkUrl);
+      text = markdownInstance.linkTo(linkText, info.linkUrl);
       break;
     }
 
@@ -100,14 +120,6 @@ async function handleContentOfContextMenu(info, tab) {
 }
 
 async function handleExport(action) {
-  const markdown = new Markdown({});
-
-  try {
-    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
-  } catch (error) {
-    console.error(error);
-  }
-
   switch (action) {
     case 'current-tab-link': {
       const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
@@ -116,37 +128,37 @@ async function handleExport(action) {
       }
 
       const onlyOneTab = tabs[0];
-      return markdown.linkTo(onlyOneTab.title, onlyOneTab.url);
+      return markdownInstance.linkTo(onlyOneTab.title, onlyOneTab.url);
     }
 
     case 'all-tabs-link-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true });
-      return markdown.links(tabs, {});
+      return markdownInstance.links(tabs, {});
     }
 
     case 'all-tabs-title-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true });
-      return Markdown.list(tabs.map((tab) => tab.title));
+      return markdownInstance.list(tabs.map((tab) => tab.title));
     }
 
     case 'all-tabs-url-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true });
-      return Markdown.list(tabs.map((tab) => tab.url));
+      return markdownInstance.list(tabs.map((tab) => tab.url));
     }
 
     case 'highlighted-tabs-link-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return markdown.links(tabs, {});
+      return markdownInstance.links(tabs, {});
     }
 
     case 'highlighted-tabs-title-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return Markdown.list(tabs.map((tab) => tab.title));
+      return markdownInstance.list(tabs.map((tab) => tab.title));
     }
 
     case 'highlighted-tabs-url-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return Markdown.list(tabs.map((tab) => tab.url));
+      return markdownInstance.list(tabs.map((tab) => tab.url));
     }
 
     default: {
@@ -250,6 +262,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     }
 
+    case 'settings-updated': {
+      refreshMarkdownInstance();
+      break;
+    }
+
     default: {
       throw TypeError(`Unknown message topic '${message.topic}'`);
     }
@@ -258,3 +275,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Must return true to indicate async. See https://developer.chrome.com/docs/extensions/mv3/messaging/#simple
   return true;
 });
+
+refreshMarkdownInstance();

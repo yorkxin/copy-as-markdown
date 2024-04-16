@@ -12,8 +12,18 @@
   </style>
 </head>
 <body>
+  <h2>Style</h2>
+  <form id='form-style-of-unordered-list'>
+    <fieldset>
+    <legend>Unordred List</legend>
+    <label><input type="radio" name="character" value="dash" /> Dashes (<mark>-</mark>)</label>
+    <label><input type="radio" name="character" value="asterisk" /> Asterisks (<mark>*</mark>)</label>
+    <label><input type="radio" name="character" value="plus" /> Plus Signs (<mark>+</mark>)</label>
+    </fieldset>
+  </form>
 
-  <form id="form">
+  <form id="form">    
+    <h2>Advanced</h2>
     <label>
       <input type="checkbox" name="link-text-always-escape-brackets" />
       Always escape brackets in Markdown link text (<code>[]</code> becomes <code>\[\]</code>)
