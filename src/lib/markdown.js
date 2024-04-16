@@ -4,8 +4,9 @@ export default class Markdown {
     return '(No Title)';
   }
 
-  constructor({ alwaysEscapeLinkBracket }) {
-    this._alwaysEscapeLinkBracket = alwaysEscapeLinkBracket || false;
+  constructor({ alwaysEscapeLinkBracket = false, unorderedListChar = '-' } = {}) {
+    this._alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
+    this._unorderedListChar = unorderedListChar;
   }
 
   /**
@@ -132,12 +133,12 @@ export default class Markdown {
     return `[![${description}](${url})](${linkURL})`;
   }
 
-  static list(theList) {
-    return theList.map((item) => `- ${item}`).join('\n');
+  list(theList) {
+    return theList.map((item) => `${this._unorderedListChar} ${item}`).join('\n');
   }
 
   links(theLinks) {
-    return this.constructor.list(theLinks.map((link) => this.linkTo(link.title, link.url)));
+    return this.list(theLinks.map((link) => this.linkTo(link.title, link.url)));
   }
 
   get alwaysEscapeLinkBracket() {
@@ -146,5 +147,13 @@ export default class Markdown {
 
   set alwaysEscapeLinkBracket(value) {
     this._alwaysEscapeLinkBracket = value;
+  }
+
+  get unorderedListChar() {
+    return this._unorderedListChar;
+  }
+
+  set unorderedListChar(value) {
+    this._unorderedListChar = value;
   }
 }

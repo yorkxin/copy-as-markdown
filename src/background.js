@@ -15,6 +15,34 @@ const FLASH_BADGE_TIMEOUT = 3000; // ms
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
+const markdownInstance = new Markdown();
+
+async function refreshMarkdownInstance() {
+  try {
+    const alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
+    let unorderedListChar;
+    const style = await Settings.getStyleOfUnorderedList();
+    switch (style) {
+      case 'dash':
+        unorderedListChar = '-';
+        break;
+      case 'asterisk':
+        unorderedListChar = '*';
+        break;
+      case 'plus':
+        unorderedListChar = '+';
+        break;
+      default:
+        console.error('unrecognized style of unordered list:', style);
+        unorderedListChar = '-';
+    }
+    markdownInstance.alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
+    markdownInstance.unorderedListChar = unorderedListChar;
+  } catch (error) {
+    console.error('error getting settings', error);
+  }
+}
+
 async function flashBadge(type) {
   const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
 
@@ -32,136 +60,6 @@ async function flashBadge(type) {
   }
 
   chrome.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
-}
-
-chrome.alarms.onAlarm.addListener((alarm) => {
-  const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
-
-  if (alarm.name === 'clear') {
-    Promise.all([
-      entrypoint.setBadgeText({ text: TEXT_EMPTY }),
-      entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
-    ])
-      .then(() => { /* NOP */ });
-  }
-
-  if (alarm.name === ALARM_REFRESH_MENU) {
-    chrome.contextMenus.removeAll(createMenus);
-  }
-});
-
-async function handleContentOfContextMenu(info, tab) {
-  const markdown = new Markdown({});
-
-  try {
-    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
-  } catch (error) {
-    console.error(error);
-  }
-
-  let text;
-  switch (info.menuItemId) {
-    case 'current-page': {
-      text = markdown.linkTo(tab.title, tab.url);
-      break;
-    }
-
-    case 'link': {
-      /* <a href="linkURL"><img src="srcURL" /></a> */
-      if (info.mediaType === 'image') {
-        // TODO: extract image alt text
-        text = Markdown.linkedImage('', info.srcUrl, info.linkUrl);
-        break;
-      }
-
-      /* <a href="linkURL">Text</a> */
-
-      // linkText for Firefox (as of 2018/03/07)
-      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
-      // right-click.
-      // TODO: use linkText when Chrome supports it on stable.
-      const linkText = info.selectionText || info.linkText;
-
-      text = markdown.linkTo(linkText, info.linkUrl);
-      break;
-    }
-
-    case 'image': {
-      // TODO: extract image alt text
-      text = Markdown.imageFor('', info.srcUrl);
-      break;
-    }
-
-    default: {
-      throw new TypeError(`unknown context menu: ${info}`);
-    }
-  }
-  return text;
-}
-
-async function handleExport(action) {
-  const markdown = new Markdown({});
-
-  try {
-    markdown.alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
-  } catch (error) {
-    console.error(error);
-  }
-
-  switch (action) {
-    case 'current-tab-link': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
-      if (tabs.length !== 1) {
-        throw new Error(`Expecting exactly 1 tab, got ${tabs.length} items.`);
-      }
-
-      const onlyOneTab = tabs[0];
-      return markdown.linkTo(onlyOneTab.title, onlyOneTab.url);
-    }
-
-    case 'all-tabs-link-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true });
-      return markdown.links(tabs, {});
-    }
-
-    case 'all-tabs-title-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true });
-      return Markdown.list(tabs.map((tab) => tab.title));
-    }
-
-    case 'all-tabs-url-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true });
-      return Markdown.list(tabs.map((tab) => tab.url));
-    }
-
-    case 'highlighted-tabs-link-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return markdown.links(tabs, {});
-    }
-
-    case 'highlighted-tabs-title-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return Markdown.list(tabs.map((tab) => tab.title));
-    }
-
-    case 'highlighted-tabs-url-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return Markdown.list(tabs.map((tab) => tab.url));
-    }
-
-    default: {
-      throw new TypeError(`Unknown action: ${action}`);
-    }
-  }
-}
-
-async function mustGetCurrentTab() {
-  const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
-  if (tabs.length !== 1) {
-    return Promise.reject(new Error('failed to get current tab'));
-  }
-
-  return Promise.resolve(tabs[0]);
 }
 
 function createMenus() {
@@ -187,13 +85,128 @@ function createMenus() {
   });
 }
 
+chrome.alarms.onAlarm.addListener((alarm) => {
+  const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
+
+  if (alarm.name === 'clear') {
+    Promise.all([
+      entrypoint.setBadgeText({ text: TEXT_EMPTY }),
+      entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
+    ])
+      .then(() => { /* NOP */ });
+  }
+
+  if (alarm.name === ALARM_REFRESH_MENU) {
+    chrome.contextMenus.removeAll(createMenus);
+  }
+});
+
+async function handleContentOfContextMenu(info, tab) {
+  let text;
+  switch (info.menuItemId) {
+    case 'current-page': {
+      text = markdownInstance.linkTo(tab.title, tab.url);
+      break;
+    }
+
+    case 'link': {
+      /* <a href="linkURL"><img src="srcURL" /></a> */
+      if (info.mediaType === 'image') {
+        // TODO: extract image alt text
+        text = Markdown.linkedImage('', info.srcUrl, info.linkUrl);
+        break;
+      }
+
+      /* <a href="linkURL">Text</a> */
+
+      // linkText for Firefox (as of 2018/03/07)
+      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
+      // right-click.
+      // TODO: use linkText when Chrome supports it on stable.
+      const linkText = info.selectionText || info.linkText;
+
+      text = markdownInstance.linkTo(linkText, info.linkUrl);
+      break;
+    }
+
+    case 'image': {
+      // TODO: extract image alt text
+      text = Markdown.imageFor('', info.srcUrl);
+      break;
+    }
+
+    default: {
+      throw new TypeError(`unknown context menu: ${info}`);
+    }
+  }
+  return text;
+}
+
+async function handleExport(action) {
+  switch (action) {
+    case 'current-tab-link': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
+      if (tabs.length !== 1) {
+        throw new Error(`Expecting exactly 1 tab, got ${tabs.length} items.`);
+      }
+
+      const onlyOneTab = tabs[0];
+      return markdownInstance.linkTo(onlyOneTab.title, onlyOneTab.url);
+    }
+
+    case 'all-tabs-link-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true });
+      return markdownInstance.links(tabs, {});
+    }
+
+    case 'all-tabs-title-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true });
+      return markdownInstance.list(tabs.map((tab) => tab.title));
+    }
+
+    case 'all-tabs-url-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true });
+      return markdownInstance.list(tabs.map((tab) => tab.url));
+    }
+
+    case 'highlighted-tabs-link-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
+      return markdownInstance.links(tabs, {});
+    }
+
+    case 'highlighted-tabs-title-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
+      return markdownInstance.list(tabs.map((tab) => tab.title));
+    }
+
+    case 'highlighted-tabs-url-as-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
+      return markdownInstance.list(tabs.map((tab) => tab.url));
+    }
+
+    default: {
+      throw new TypeError(`Unknown action: ${action}`);
+    }
+  }
+}
+
+async function mustGetCurrentTab() {
+  const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
+  if (tabs.length !== 1) {
+    return Promise.reject(new Error('failed to get current tab'));
+  }
+
+  return Promise.resolve(tabs[0]);
+}
+
 chrome.runtime.onInstalled.addListener(createMenus);
 
-if (globalThis["PERIDOCIALLY_REFRESH_MENU"] === true) {
+// eslint-disable-next-line no-undef
+if (globalThis.PERIDOCIALLY_REFRESH_MENU === true) {
   // Hack for Firefox, in which Context Menu disappears after some time.
   // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
-  console.info("Hack PERIDOCIALLY_REFRESH_MENU is enabled");
-  chrome.alarms.create("refreshMenu", { periodInMinutes: 0.5});
+  console.info('Hack PERIDOCIALLY_REFRESH_MENU is enabled');
+  chrome.alarms.create('refreshMenu', { periodInMinutes: 0.5 });
 }
 
 // NOTE: All listeners must be registered at top level scope.
@@ -250,6 +263,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     }
 
+    case 'settings-updated': {
+      refreshMarkdownInstance();
+      break;
+    }
+
     default: {
       throw TypeError(`Unknown message topic '${message.topic}'`);
     }
@@ -258,3 +276,5 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Must return true to indicate async. See https://developer.chrome.com/docs/extensions/mv3/messaging/#simple
   return true;
 });
+
+refreshMarkdownInstance();

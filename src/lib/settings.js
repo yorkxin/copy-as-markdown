@@ -1,4 +1,5 @@
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
+const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
 
 /**
  * Singleton Settings object in the chrome.storage.sync storage
@@ -17,16 +18,38 @@ export default {
 
   /**
    * @param {boolean} value
-   * @return {Promise<boolean>}
+   * @return {Promise<void>}
    * */
   async setLinkTextAlwaysEscapeBrackets(value) {
-    return chrome.storage.sync.set({
+    await chrome.storage.sync.set({
       [SKLinkTextAlwaysEscapeBrackets]: value,
+    });
+    this.publishUpdated();
+  },
+
+  async getStyleOfUnorderedList() {
+    return new Promise((resolve) => {
+      chrome.storage.sync.get(SKStyleOfUnorderedList, (data) => {
+        resolve(data[SKStyleOfUnorderedList] || 'dash');
+      });
     });
   },
 
+  async setStyleOfUnrderedList(value) {
+    await chrome.storage.sync.set({
+      [SKStyleOfUnorderedList]: value,
+    });
+    this.publishUpdated();
+  },
+
   async reset() {
-    return chrome.storage.sync.clear();
+    await chrome.storage.sync.clear();
+    this.publishUpdated();
+  },
+
+  publishUpdated() {
+    // NOTE: Do not await, or it will block
+    chrome.runtime.sendMessage({ topic: 'settings-updated' });
   },
 
   async getAll() {

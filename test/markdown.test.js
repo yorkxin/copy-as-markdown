@@ -7,6 +7,18 @@ describe('Markdown', () => {
     assert.equal(markdown.alwaysEscapeLinkBracket, false);
   });
 
+  describe('list()', () => {
+    it('defaults to dash', () => {
+      const markdown = new Markdown();
+      assert.equal(markdown.list(['a', 'b', 'c']), '- a\n- b\n- c');
+    });
+
+    it('can set a character', () => {
+      const markdown = new Markdown({ unorderedListChar: '*' });
+      assert.equal(markdown.list(['a', 'b', 'c']), '* a\n* b\n* c');
+    });
+  });
+
   describe('bracketsArePaired()', () => {
     it('cases', () => {
       assert.equal(Markdown.bracketsAreBalanced('[]'), true);
