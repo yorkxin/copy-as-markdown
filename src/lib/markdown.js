@@ -133,7 +133,7 @@ export default class Markdown {
   }
 
   static list(theList) {
-    return theList.map((item) => `* ${item}`).join('\n');
+    return theList.map((item) => `- ${item}`).join('\n');
   }
 
   links(theLinks) {
