@@ -13,6 +13,8 @@ const TEXT_EMPTY = '';
 
 const FLASH_BADGE_TIMEOUT = 3000; // ms
 
+const ALARM_REFRESH_MENU = 'refreshMenu';
+
 async function flashBadge(type) {
   const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
 
@@ -41,6 +43,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
       entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
     ])
       .then(() => { /* NOP */ });
+  }
+
+  if (alarm.name === ALARM_REFRESH_MENU) {
+    chrome.contextMenus.removeAll(createMenus);
   }
 });
 
@@ -158,7 +164,7 @@ async function mustGetCurrentTab() {
   return Promise.resolve(tabs[0]);
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+function createMenus() {
   chrome.contextMenus.create({
     id: 'current-page',
     title: 'Copy [Page Title](URL)',
@@ -179,7 +185,16 @@ chrome.runtime.onInstalled.addListener(() => {
     type: 'normal',
     contexts: ['image'],
   });
-});
+}
+
+chrome.runtime.onInstalled.addListener(createMenus);
+
+if (globalThis["PERIDOCIALLY_REFRESH_MENU"] === true) {
+  // Hack for Firefox, in which Context Menu disappears after some time.
+  // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
+  console.info("Hack PERIDOCIALLY_REFRESH_MENU is enabled");
+  chrome.alarms.create("refreshMenu", { periodInMinutes: 0.5});
+}
 
 // NOTE: All listeners must be registered at top level scope.
 
