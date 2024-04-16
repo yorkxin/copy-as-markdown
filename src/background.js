@@ -62,6 +62,29 @@ async function flashBadge(type) {
   chrome.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
 }
 
+function createMenus() {
+  chrome.contextMenus.create({
+    id: 'current-page',
+    title: 'Copy [Page Title](URL)',
+    type: 'normal',
+    contexts: ['page'],
+  });
+
+  chrome.contextMenus.create({
+    id: 'link',
+    title: 'Copy [Link Content](URL)',
+    type: 'normal',
+    contexts: ['link'],
+  });
+
+  chrome.contextMenus.create({
+    id: 'image',
+    title: 'Copy ![](Image URL)', // TODO: how to fetch alt text?
+    type: 'normal',
+    contexts: ['image'],
+  });
+}
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
 
@@ -176,36 +199,14 @@ async function mustGetCurrentTab() {
   return Promise.resolve(tabs[0]);
 }
 
-function createMenus() {
-  chrome.contextMenus.create({
-    id: 'current-page',
-    title: 'Copy [Page Title](URL)',
-    type: 'normal',
-    contexts: ['page'],
-  });
-
-  chrome.contextMenus.create({
-    id: 'link',
-    title: 'Copy [Link Content](URL)',
-    type: 'normal',
-    contexts: ['link'],
-  });
-
-  chrome.contextMenus.create({
-    id: 'image',
-    title: 'Copy ![](Image URL)', // TODO: how to fetch alt text?
-    type: 'normal',
-    contexts: ['image'],
-  });
-}
-
 chrome.runtime.onInstalled.addListener(createMenus);
 
-if (globalThis["PERIDOCIALLY_REFRESH_MENU"] === true) {
+// eslint-disable-next-line no-undef
+if (globalThis.PERIDOCIALLY_REFRESH_MENU === true) {
   // Hack for Firefox, in which Context Menu disappears after some time.
   // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
-  console.info("Hack PERIDOCIALLY_REFRESH_MENU is enabled");
-  chrome.alarms.create("refreshMenu", { periodInMinutes: 0.5});
+  console.info('Hack PERIDOCIALLY_REFRESH_MENU is enabled');
+  chrome.alarms.create('refreshMenu', { periodInMinutes: 0.5 });
 }
 
 // NOTE: All listeners must be registered at top level scope.
