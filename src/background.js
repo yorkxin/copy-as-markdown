@@ -160,6 +160,12 @@ async function handleExport(action) {
       return markdownInstance.links(tabs, {});
     }
 
+    case 'all-tabs-link-as-task-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true });
+      const links = tabs.map((tab) => markdownInstance.linkTo(tab.title, tab.url));
+      return Markdown.taskList(links);
+    }
+
     case 'all-tabs-title-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true });
       return markdownInstance.list(tabs.map((tab) => tab.title));
@@ -173,6 +179,12 @@ async function handleExport(action) {
     case 'highlighted-tabs-link-as-list': {
       const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
       return markdownInstance.links(tabs, {});
+    }
+
+    case 'highlighted-tabs-link-as-task-list': {
+      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
+      const links = tabs.map((tab) => markdownInstance.linkTo(tab.title, tab.url));
+      return Markdown.taskList(links);
     }
 
     case 'highlighted-tabs-title-as-list': {

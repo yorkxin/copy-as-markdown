@@ -19,6 +19,12 @@ describe('Markdown', () => {
     });
   });
 
+  describe('taskList()', () => {
+    it('works', () => {
+      assert.equal(Markdown.taskList(['a', 'b', 'c']), '- [ ] a\n- [ ] b\n- [ ] c');
+    });
+  });
+
   describe('bracketsArePaired()', () => {
     it('cases', () => {
       assert.equal(Markdown.bracketsAreBalanced('[]'), true);

@@ -34,22 +34,28 @@
       "description": "current tab: [title](url)"
     },
     "all-tabs-link-as-list": {
-      "description": "all tabs: * [title](url)"
+      "description": "all tabs: - [title](url)"
+    },
+    "all-tabs-link-as-task-list": {
+      "description": "all tabs: - [ ] [title](url)"
     },
     "all-tabs-title-as-list": {
-      "description": "all tabs: * title"
+      "description": "all tabs: - title"
     },
     "all-tabs-url-as-list": {
-      "description": "all tabs: * url"
+      "description": "all tabs: - url"
     },
     "highlighted-tabs-link-as-list": {
-      "description": "selected tabs: * [title](url)"
+      "description": "selected tabs: - [title](url)"
+    },
+    "highlighted-tabs-link-as-task-list": {
+      "description": "selected tabs: - [ ] [title](url)"
     },
     "highlighted-tabs-title-as-list": {
-      "description": "selected tabs: * title"
+      "description": "selected tabs: - title"
     },
     "highlighted-tabs-url-as-list": {
-      "description": "selected tabs: * url"
+      "description": "selected tabs: - url"
     }
   },
   "options_ui": {
