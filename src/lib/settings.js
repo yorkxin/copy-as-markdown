@@ -5,17 +5,6 @@ const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
  * Singleton Settings object in the chrome.storage.sync storage
  */
 export default {
-  /** @return {Promise<boolean>} */
-  async getLinkTextAlwaysEscapeBrackets() {
-    // XXX: for some reason `await chrome.StorageArea.get()` does not work in
-    // Firefox MV3 (version 102) so wrap in a Promise.
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(SKLinkTextAlwaysEscapeBrackets, (data) => {
-        resolve(data[SKLinkTextAlwaysEscapeBrackets] || false);
-      });
-    });
-  },
-
   /**
    * @param {boolean} value
    * @return {Promise<void>}
@@ -25,14 +14,6 @@ export default {
       [SKLinkTextAlwaysEscapeBrackets]: value,
     });
     this.publishUpdated();
-  },
-
-  async getStyleOfUnorderedList() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(SKStyleOfUnorderedList, (data) => {
-        resolve(data[SKStyleOfUnorderedList] || 'dash');
-      });
-    });
   },
 
   async setStyleOfUnrderedList(value) {
@@ -53,10 +34,14 @@ export default {
   },
 
   async getAll() {
-    return new Promise((resolve) => {
-      chrome.storage.sync.get(null, (data) => {
-        resolve(data);
-      });
+    const all = await chrome.storage.sync.get({
+      [SKLinkTextAlwaysEscapeBrackets]: false,
+      [SKStyleOfUnorderedList]: 'dash',
     });
+
+    return {
+      alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets],
+      styleOfUnorderedList: all[SKStyleOfUnorderedList],
+    };
   },
 };

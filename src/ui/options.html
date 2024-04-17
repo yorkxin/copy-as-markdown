@@ -16,26 +16,29 @@
   <form id='form-style-of-unordered-list'>
     <fieldset>
     <legend>Unordred List</legend>
-    <label><input type="radio" name="character" value="dash" /> Dashes (<mark>-</mark>)</label>
-    <label><input type="radio" name="character" value="asterisk" /> Asterisks (<mark>*</mark>)</label>
-    <label><input type="radio" name="character" value="plus" /> Plus Signs (<mark>+</mark>)</label>
+    <label><input type="radio" name="character" value="dash" /> Dashes (<mark><code>-</code></mark>)</label><br />
+    <label><input type="radio" name="character" value="asterisk" /> Asterisks (<mark><code>*</code></mark>)</label><br />
+    <label><input type="radio" name="character" value="plus" /> Plus Signs (<mark><code>+</code></mark>)</label>
     </fieldset>
   </form>
 
-  <form id="form">    
-    <h2>Advanced</h2>
-    <label>
-      <input type="checkbox" name="link-text-always-escape-brackets" />
-      Always escape brackets in Markdown link text (<code>[]</code> becomes <code>\[\]</code>)
-      <br/>
+  <h2>Advanced</h2>
+  <form id="form-link-text-always-escape-brackets">    
+    <fieldset>
+      <legend>Always escape brackets in link text</legend>
+      <label><input type="checkbox" name="enabled" /> Enabled (<mark><code>[]</code></mark> becomes <mark><code>\[\]</code></mark>)</label>
+      <p>
       <small>
         CommonMark allows balanced brackets <code>[]</code> in link text
         (e.g. <code>[[JIRA-123] My Project](https://link/)</code>).
         If your Markdown processor does not support this use case, you can enable this feature
         so that Copy as Markdown always escape brackets in the link text.
       </small>
-    </label>
+      </p>
+    </fieldset>
   </form>
+
+  <hr />
 
   <button id="reset" type="button">Reset to Default</button>
 
