@@ -137,6 +137,10 @@ export default class Markdown {
     return theList.map((item) => `${this._unorderedListChar} ${item}`).join('\n');
   }
 
+  static taskList(theList) {
+    return theList.map((item) => `- [ ] ${item}`).join('\n');
+  }
+
   links(theLinks) {
     return this.list(theLinks.map((link) => this.linkTo(link.title, link.url)));
   }
