@@ -1,28 +1,26 @@
 import Settings from '../lib/settings.js';
 
-const SelLinkTextAlwaysEscapeBrackets = '#form [name="link-text-always-escape-brackets"]';
-
 function loadSettings() {
-  Settings.getLinkTextAlwaysEscapeBrackets().then((value) => {
-    document.querySelector(SelLinkTextAlwaysEscapeBrackets).checked = value;
-  });
-
-  Settings.getStyleOfUnorderedList().then((value) => {
-    document.forms['form-style-of-unordered-list'].elements.character.value = value;
+  Settings.getAll().then((settings) => {
+    document.forms['form-link-text-always-escape-brackets'].elements.enabled
+      .checked = settings.alwaysEscapeLinkBrackets;
+    document.forms['form-style-of-unordered-list'].elements.character
+      .value = settings.styleOfUnorderedList;
+  }).catch((error) => {
+    console.error('error getting settings', error);
   });
 }
 
 document.addEventListener('DOMContentLoaded', loadSettings);
 
-document.querySelector(SelLinkTextAlwaysEscapeBrackets)
-  .addEventListener('change', (event) => {
-    Settings.setLinkTextAlwaysEscapeBrackets(event.target.checked)
-      .then(() => {
-        console.info('settings saved');
-      }, (error) => {
-        console.error('failed to save settings:', error);
-      });
-  });
+document.forms['form-link-text-always-escape-brackets'].addEventListener('change', (event) => {
+  Settings.setLinkTextAlwaysEscapeBrackets(event.target.checked)
+    .then(() => {
+      console.info('settings saved');
+    }, (error) => {
+      console.error('failed to save settings:', error);
+    });
+});
 
 document.forms['form-style-of-unordered-list'].addEventListener('change', (event) => {
   Settings.setStyleOfUnrderedList(event.target.value)

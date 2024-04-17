@@ -18,29 +18,30 @@ const ALARM_REFRESH_MENU = 'refreshMenu';
 const markdownInstance = new Markdown();
 
 async function refreshMarkdownInstance() {
+  let settings;
   try {
-    const alwaysEscapeLinkBracket = await Settings.getLinkTextAlwaysEscapeBrackets();
-    let unorderedListChar;
-    const style = await Settings.getStyleOfUnorderedList();
-    switch (style) {
-      case 'dash':
-        unorderedListChar = '-';
-        break;
-      case 'asterisk':
-        unorderedListChar = '*';
-        break;
-      case 'plus':
-        unorderedListChar = '+';
-        break;
-      default:
-        console.error('unrecognized style of unordered list:', style);
-        unorderedListChar = '-';
-    }
-    markdownInstance.alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
-    markdownInstance.unorderedListChar = unorderedListChar;
+    settings = await Settings.getAll();
   } catch (error) {
     console.error('error getting settings', error);
   }
+
+  let unorderedListChar = '';
+  switch (settings.styleOfUnorderedList) {
+    case 'dash':
+      unorderedListChar = '-';
+      break;
+    case 'asterisk':
+      unorderedListChar = '*';
+      break;
+    case 'plus':
+      unorderedListChar = '+';
+      break;
+    default:
+      console.error('unrecognized style of unordered list:', settings.styleOfUnorderedList);
+      unorderedListChar = '-';
+  }
+  markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
+  markdownInstance.unorderedListChar = unorderedListChar;
 }
 
 async function flashBadge(type) {
