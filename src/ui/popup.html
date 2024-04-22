@@ -1,58 +1,37 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8" /></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./bulma.min.css">
+  <style>
+  :root {
+    --bulma-body-min-width: 240px;
+  }
+
+  </style>
+  <title>Copy as Markdown Popup</title>
+</head>
 <body>
-<link rel="stylesheet" href="./popup.css">
-<div class="panel">
-  <div class="panel-section panel-section-list">
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="current-tab-link">Current tab link</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-section-separator"></div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="all-tabs-link-as-list">All tabs link (<span id="display-count-all-tabs">0</span>)</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="all-tabs-link-as-task-list">All tabs link (task list)</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="all-tabs-title-as-list">All tabs title</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="all-tabs-url-as-list">All tabs URL</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-section-separator"></div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="highlighted-tabs-link-as-list">Selected tabs link (<span id="display-count-highlighted-tabs">0</span>)</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="highlighted-tabs-link-as-task-list">Selected tabs link (task list)</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="highlighted-tabs-title-as-list">Selected tabs title</div>
-      <div class="text-shortcut"></div>
-    </div>
-    <div class="panel-list-item">
-      <div class="icon"></div>
-      <div class="text" data-action="highlighted-tabs-url-as-list">Selected tabs URL</div>
-      <div class="text-shortcut"></div>
+<div class="dropdown is-active">
+  <div class="dropdown-menu is-relative p-0" id="dropdown-menu" role="menu">
+    <div class="dropdown-content is-radiusless is-shadowless p-0">
+      <form id="form-popup-actions">
+        <button type="submit" class="dropdown-item" name="action" value="current-tab-link">Current tab link</button>
+        <hr class="dropdown-divider" />
+        <button type="submit" class="dropdown-item" name="action" value="all-tabs-link-as-list">All tabs link (<span id="display-count-all-tabs">0</span>)</button>
+        <button type="submit" class="dropdown-item" name="action" value="all-tabs-link-as-task-list">All tabs link (task list)</button>
+        <button type="submit" class="dropdown-item" name="action" value="all-tabs-title-as-list">All tabs title</button>
+        <button type="submit" class="dropdown-item" name="action" value="all-tabs-url-as-list">All tabs URL</button>
+        <hr class="dropdown-divider" />
+        <button type="submit" class="dropdown-item" name="action" value="highlighted-tabs-link-as-list">Selected tabs link (<span id="display-count-highlighted-tabs">0</span>)</button>
+        <button type="submit" class="dropdown-item" name="action" value="highlighted-tabs-link-as-task-list">Selected tabs link (task list)</button>
+        <button type="submit" class="dropdown-item" name="action" value="highlighted-tabs-title-as-list">Selected tabs title</button>
+        <button type="submit" class="dropdown-item" name="action" value="highlighted-tabs-url-as-list">Selected tabs URL</button>
+      </form>
     </div>
   </div>
 </div>
-
 <script src="./popup.js" type="module"></script>
-</body></html>
+</body>
+</html>

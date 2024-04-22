@@ -1,7 +1,8 @@
 // Install listeners
-document.querySelectorAll('[data-action]').forEach((element) => {
+document.querySelectorAll('[name="action"]').forEach((element) => {
   element.addEventListener('click', async (event) => {
-    const { action } = event.currentTarget.dataset;
+    event.preventDefault();
+    const action = event.currentTarget.value;
 
     chrome.runtime.sendMessage({ topic: 'export', params: { action } }, (response) => {
       if (!response) {
