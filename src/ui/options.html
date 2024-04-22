@@ -3,44 +3,54 @@
 <head>
   <title>Copy as Markdown Options</title>
   <meta charset="utf-8" />
-  <style>
-    body {
-      font-size: 16px;
-      min-width: 320px;
-      min-height: 240px;
-    }
-  </style>
+  <link rel="stylesheet" href="./bulma.min.css">
 </head>
 <body>
-  <h2>Style</h2>
-  <form id='form-style-of-unordered-list'>
-    <fieldset>
-    <legend>Unordred List</legend>
-    <label><input type="radio" name="character" value="dash" /> Dashes (<mark><code>-</code></mark>)</label><br />
-    <label><input type="radio" name="character" value="asterisk" /> Asterisks (<mark><code>*</code></mark>)</label><br />
-    <label><input type="radio" name="character" value="plus" /> Plus Signs (<mark><code>+</code></mark>)</label>
-    </fieldset>
+<div class="container is-fluid">
+  <h2 class="is-size-4">Style</h2>
+  <form id='form-style-of-unordered-list' class="field">
+    <label class="label">Unordered List Character</label>
+    <div class="control">
+      <label class="radio">
+        <input type="radio" name="character" value="dash" />
+        Dashes (<mark><code>-</code></mark>)
+      </label>
+    </div>
+    <div class="control">
+      <label class="radio">
+        <input type="radio" name="character" value="asterisk" />
+        Asterisks (<mark><code>*</code></mark>)
+      </label>
+    </div>
+    <div class="control">
+      <label class="radio">
+        <input type="radio" name="character" value="plus" />
+        Plus Signs (<mark><code>+</code></mark>)
+      </label>
+    </div>
   </form>
-
-  <h2>Advanced</h2>
-  <form id="form-link-text-always-escape-brackets">    
-    <fieldset>
-      <legend>Always escape brackets in link text</legend>
-      <label><input type="checkbox" name="enabled" /> Enabled (<mark><code>[]</code></mark> becomes <mark><code>\[\]</code></mark>)</label>
-      <p>
-      <small>
+  <hr/>
+  <h2 class="is-size-4">Advanced</h2>
+  <form id="form-link-text-always-escape-brackets" class="field">    
+      <label class="label">Always escape brackets in link text</label>
+      <div class="control">
+        <label class="checkbox"><input type="checkbox" name="enabled" /> Enabled (<mark><code>[]</code></mark> becomes <mark><code>\[\]</code></mark>)</label>
+      </div>
+      <p class="help">
         CommonMark allows balanced brackets <code>[]</code> in link text
         (e.g. <code>[[JIRA-123] My Project](https://link/)</code>).
         If your Markdown processor does not support this use case, you can enable this feature
         so that Copy as Markdown always escape brackets in the link text.
-      </small>
       </p>
-    </fieldset>
+
   </form>
 
   <hr />
-
-  <button id="reset" type="button">Reset to Default</button>
+  <div class="field mb-4">
+    <button id="reset" type="button" class="button is-small">Reset to Default</button>
+    <a href="about.md" target="_blank" class="button is-small is-text">About</a>
+  </div>
+</div>
 
   <script src="./options.js" type="module"></script>
 </body>
