@@ -30,6 +30,9 @@
     "type": "module"
   },
   "commands": {
+    "selection-as-markdown": {
+      "description": "Copy Selection as Markdown"
+    },
     "current-tab-link": {
       "description": "current tab: [title](url)"
     },

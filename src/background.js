@@ -84,6 +84,13 @@ function createMenus() {
     type: 'normal',
     contexts: ['image'],
   });
+
+  chrome.contextMenus.create({
+    id: 'selection-as-markdown',
+    title: 'Copy Selection as Markdown',
+    type: 'normal',
+    contexts: ['selection'],
+  });
 }
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -101,6 +108,43 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     chrome.contextMenus.removeAll(createMenus);
   }
 });
+
+// NOTE: this function should be executed in content script.
+function selectionToMarkdown(turndownOptions) {
+  // eslint-disable-next-line no-undef
+  const turndownService = new TurndownService(turndownOptions);
+  const sel = getSelection();
+  const container = document.createElement('div');
+  for (let i = 0, len = sel.rangeCount; i < len; i += 1) {
+    container.appendChild(sel.getRangeAt(i).cloneContents());
+  }
+  const html = container.innerHTML;
+  return turndownService.turndown(html);
+}
+
+function getTurndownOptions() {
+  return {
+    // For all options see https://github.com/mixmark-io/turndown?tab=readme-ov-file#options
+    headingStyle: 'atx',
+    bulletListMarker: markdownInstance.unorderedListChar,
+  };
+}
+
+async function convertSelectionInTabToMarkdown(tab) {
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id, allFrames: true },
+    files: ['dist/vendor/turndown.js'],
+  });
+  const results = await chrome.scripting.executeScript({
+    target: { tabId: tab.id, allFrames: true },
+    func: selectionToMarkdown,
+    args: [
+      getTurndownOptions(),
+    ],
+  });
+
+  return results.map((frame) => frame.result).join('\n\n');
+}
 
 async function handleContentOfContextMenu(info, tab) {
   let text;
@@ -133,6 +177,11 @@ async function handleContentOfContextMenu(info, tab) {
     case 'image': {
       // TODO: extract image alt text
       text = Markdown.imageFor('', info.srcUrl);
+      break;
+    }
+
+    case 'selection-as-markdown': {
+      text = await convertSelectionInTabToMarkdown(tab);
       break;
     }
 
@@ -241,7 +290,12 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.commands.onCommand.addListener(async (command) => {
   try {
     const tab = await mustGetCurrentTab();
-    const text = await handleExport(command);
+    let text = '';
+    if (command === 'selection-as-markdown') {
+      text = await convertSelectionInTabToMarkdown(tab);
+    } else {
+      text = await handleExport(command);
+    }
     await writeUsingContentScript(tab, text);
     await flashBadge('success');
     return Promise.resolve(true);

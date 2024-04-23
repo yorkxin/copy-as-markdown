@@ -14,7 +14,8 @@
     "debug-firefox": "npx nodemon --exec 'sh compile.sh firefox' & npx web-ext run -s firefox/ --url about:debugging#/runtime/this-firefox https://example.com",
     "eslint": "eslint .",
     "clean": "rm -rf ./build/* firefox/dist/* firefox-mv2/dist/* chrome/dist/*",
-    "convert-images": "./utils/convert-images.sh"
+    "convert-images": "./utils/convert-images.sh",
+    "postinstall": "cp node_modules/turndown/dist/turndown.js src/vendor/"
   },
   "license": "MIT",
   "devDependencies": {
@@ -27,5 +28,8 @@
     "nodemon": "^2.0.19",
     "nyc": "^15.1.0",
     "typescript": "^2.9.2"
+  },
+  "dependencies": {
+    "turndown": "^7.1.3"
   }
 }
