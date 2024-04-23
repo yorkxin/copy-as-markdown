@@ -141,11 +141,14 @@ function getTurndownOptions() {
 }
 
 async function convertSelectionInTabToMarkdown(tab) {
-  await chrome.scripting.executeScript({
+  // XXX: In Firefox MV2, executeScript() does not return results.
+  // We must use browser.scripting instead of chrome.scripting .
+  const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
+  await entrypoint.executeScript({
     target: { tabId: tab.id, allFrames: true },
     files: ['dist/vendor/turndown.js'],
   });
-  const results = await chrome.scripting.executeScript({
+  const results = await entrypoint.executeScript({
     target: { tabId: tab.id, allFrames: true },
     func: selectionToMarkdown,
     args: [

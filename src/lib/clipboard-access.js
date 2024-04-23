@@ -156,7 +156,11 @@ async function copy(text) {
  */
 export default async function writeUsingContentScript(tab, text) {
   return new Promise((resolve, reject) => {
-    chrome.scripting.executeScript({
+    // XXX: In Firefox MV2, executeScript() does not return results.
+    // We must use browser.scripting instead of chrome.scripting .
+    const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
+
+    entrypoint.executeScript({
       target: {
         tabId: tab.id,
       },
