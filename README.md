@@ -10,18 +10,23 @@ Do you often type Markdown code manually for a link or image, or even all tabs i
 
 ## Features
 
-**Copy as Markdown** is a browser extension helps you copy the following things as Markdown to your system clipboard:
+**Copy as Markdown** is a browser extension that helps you copy the following things as Markdown to your system clipboard:
+
+On the web page: 
+
+:ballot_box_with_check: Selection Text as Markdown<br>
+:ballot_box_with_check: A Link on the Page<br>
+:ballot_box_with_check: An Image on the Page, with or without wrapping link
+
+Exporting tabs in the current window, either all or highlighted tabs:
 
 :ballot_box_with_check: Current Tab as Link<br>
-:ballot_box_with_check: A Link in the Page<br>
-:ballot_box_with_check: An Image in the Page<br>
-:ballot_box_with_check: An Image that is wrapped with a Link<br>
-:ballot_box_with_check: All Tabs as a List of Links<br>
-:ballot_box_with_check: Highlighted Tabs as a List of Links
+:ballot_box_with_check: List of Links<br>
+:ballot_box_with_check: Task List (for GitHub-Flavored Markdown)
 
 ## Keyboard Shortcuts
 
-You can add keyboard shortuts for copying tab(s) as Markdown. By default, Copy as Markdown does not assign any keyboard shortcuts.
+You can add keyboard shortcuts for copying tab(s) as Markdown. By default, Copy as Markdown does not assign any keyboard shortcuts.
 
 ### Firefox
 
@@ -33,11 +38,11 @@ The Keyboard Shortcuts of extensions can be found at `chrome://extensions/shortc
 
 ## Known Issues
 
-* [Chrome] When copying an image, the image code does not include the alternative text of that image. This is due to API restriction.
+* [Chrome] When copying an image, the image code does not include the alternative text of that image. This is due to API restrictions.
 
 ## Development
 
-Here is the forder structure. Platform-specific folder is used to resolve browser inconsistencies.
+Here is the folder structure. The platform-specific folders are used to resolve browser inconsistencies.
 
 ```
 src/               # Shared Source Code
@@ -69,12 +74,12 @@ npm install
 
 ### Debugging
 
-Since the source code are copied to platform-specific folders by `compile.sh`, it is recommended to use the auto-reload test script.
+Since the source code is copied to platform-specific folders by `compile.sh`, it is recommended to use the auto-reload test script.
 
 ```sh
 npm debug-chrome
 npm debug-firefox
-npm debug-firefox-mv3   // Requires Firefox Developer Edition
+npm debug-firefox-mv2
 ```
 
 For manual debugging without auto-reload:
@@ -88,10 +93,10 @@ To debug some behaviors such as Firefox restarts (for example, are context menus
 it is necessary to build an XPI package and install it on Firefox. Temporary Add-Ons won't be enough
 because they get uninstalled after Firefox quits.
 
-Firefox checks signature when installing XPI. To do so, 
+Firefox checks the signature when installing XPI. To do so, 
 
 1. Grab [API keys](https://addons.mozilla.org/en-US/developers/addon/api/key/) from Firefox Add-On
-2. Bump version in `manifest.json`. Note that AMO only accepts version number in `X.Y.Z` format where all 3 segments are numbers without zero prefix.
+2. Bump version in `manifest.json`. Note that AMO only accepts version numbers in `X.Y.Z` format where all 3 segments are numbers without zero prefixes.
 3. Run:
     ```shell
     web-ext sign --channel=unlisted --api-key=... --api-secret=...
@@ -100,7 +105,7 @@ Firefox checks signature when installing XPI. To do so,
 It'll create an XPI that is signed with your Firefox Add-Ons account. The file will also be
 uploaded to Add-On Developer Hub as unlisted.
 
-Note that Firefox Add-On keeps track of all the versions that has ever been uploaded, including
+Note that Firefox Add-On keeps track of all the versions that have ever been uploaded, including
 'self-distributed' (`channel=unlisted`). 
 
 See https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/
