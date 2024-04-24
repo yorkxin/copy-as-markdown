@@ -2,7 +2,7 @@ const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
 const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
 
 /**
- * Singleton Settings object in the chrome.storage.sync storage
+ * Singleton Settings object in the sync storage
  */
 export default {
   /**
@@ -10,21 +10,21 @@ export default {
    * @return {Promise<void>}
    * */
   async setLinkTextAlwaysEscapeBrackets(value) {
-    await chrome.storage.sync.set({
+    await this.syncStorage.set({
       [SKLinkTextAlwaysEscapeBrackets]: value,
     });
     this.publishUpdated();
   },
 
   async setStyleOfUnrderedList(value) {
-    await chrome.storage.sync.set({
+    await this.syncStorage.set({
       [SKStyleOfUnorderedList]: value,
     });
     this.publishUpdated();
   },
 
   async reset() {
-    await chrome.storage.sync.clear();
+    await this.syncStorage.clear();
     this.publishUpdated();
   },
 
@@ -34,7 +34,7 @@ export default {
   },
 
   async getAll() {
-    const all = await chrome.storage.sync.get({
+    const all = await this.syncStorage.get({
       [SKLinkTextAlwaysEscapeBrackets]: false,
       [SKStyleOfUnorderedList]: 'dash',
     });
@@ -43,5 +43,17 @@ export default {
       alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets],
       styleOfUnorderedList: all[SKStyleOfUnorderedList],
     };
+  },
+
+  /**
+   * @returns {chrome.storage.SyncStorageArea|browser.storage.StorageArea}
+   */
+  get syncStorage() {
+    // XXX: in Firefox MV2 the implementation of chrome.storage.sync
+    // always return undefined. We must use browser.storage.sync .
+    if (typeof browser !== 'undefined') {
+      return browser.storage.sync;
+    }
+    return chrome.storage.sync;
   },
 };

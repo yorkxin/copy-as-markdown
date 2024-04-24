@@ -6,8 +6,8 @@
   "scripts": {
     "test": "mocha",
     "build-chrome": "sh compile.sh chrome && zip -r build/chrome.zip chrome/",
-    "build-firefox-mv2": "sh compile.sh firefox-mv2 && npx web-ext build -s firefox-mv2/ -a build/firefox-mv2/",
     "build-firefox": "sh compile.sh firefox && npx web-ext build -s firefox/ -a build/firefox/",
+    "build-firefox-mv3": "sh compile.sh firefox-mv3 && npx web-ext build -s firefox-mv3/ -a build/firefox-mv3/",
     "debug-chrome": "npx nodemon --exec 'sh compile.sh chrome' & npx web-ext run -s chrome/ -t chromium --args chrome://extensions https://example.com",
     "debug-edge": "npx nodemon --exec 'sh compile.sh chrome' & npx web-ext run -s chrome/ -t chromium --chromium-binary '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' --args chrome://extensions https://example.com",
     "debug-firefox-mv2": "npx nodemon --exec 'sh compile.sh firefox-mv2' & npx web-ext run -s firefox-mv2/ --url about:debugging#/runtime/this-firefox https://example.com",
