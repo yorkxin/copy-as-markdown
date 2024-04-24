@@ -1,7 +1,7 @@
 {
   "name": "Copy as Markdown",
   "version": "2.13.0",
-  "manifest_version": 3,
+  "manifest_version": 2,
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "activeTab",
@@ -12,7 +12,7 @@
     "storage",
     "tabs"
   ],
-  "action": {
+  "browser_action": {
     "default_icon": {
       "128": "./dist/images/icon-128.png"
     },
@@ -26,11 +26,8 @@
     "128": "./dist/images/icon-128.png"
   },
   "background": {
-    "scripts": [
-      "hacks.js",
-      "./dist/background.js"
-    ],
-    "type": "module"
+    "page": "background.html",
+    "persistent": true
   },
   "commands": {
     "selection-as-markdown": {
@@ -70,7 +67,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "jid1-tfBgelm3d4bLkQ@jetpack",
-      "strict_min_version": "112.0"
+      "strict_min_version": "60.0"
     }
   }
 }
