@@ -118,6 +118,16 @@ function selectionToMarkdown(turndownOptions) {
   for (let i = 0, len = sel.rangeCount; i < len; i += 1) {
     container.appendChild(sel.getRangeAt(i).cloneContents());
   }
+
+  // Fix <a href> so that they are absolute URLs
+  container.querySelectorAll('a').forEach((value) => {
+    value.setAttribute('href', value.href);
+  });
+
+  // Fix <img src> so that they are absolute URLs
+  container.querySelectorAll('img').forEach((value) => {
+    value.setAttribute('src', value.src);
+  });
   const html = container.innerHTML;
   return turndownService.turndown(html);
 }
