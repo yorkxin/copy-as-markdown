@@ -52,15 +52,14 @@ chrome/            # Chrome / Chromium files
   dist/            # ../src will be copied here
   mainfest.json
   ...
-firefox-mv2/       # Firefox Manifest V2 files
+firefox/           # Firefox Manifest V2 files
   dist/            # ../src will be copied here
   mainfest.json
   background.html  # Loads ESModule
   ...
-firefox/           # Firefox Manifest V3 files
+firefox-mv3/       # Firefox Manifest V3 files
   dist/            # ../src will be copied here
   mainfest.json
-  background.html  # Loads ESModule
   ...
 compile.sh         # Copies src/**/* to <platform>/dist/
 ```  
@@ -79,7 +78,7 @@ Since the source code is copied to platform-specific folders by `compile.sh`, it
 ```sh
 npm debug-chrome
 npm debug-firefox
-npm debug-firefox-mv2
+npm debug-firefox-mv3
 ```
 
 For manual debugging without auto-reload:
