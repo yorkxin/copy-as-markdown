@@ -10,6 +10,7 @@
     "contextMenus",
     "scripting",
     "storage",
+    "tabGroups",
     "tabs"
   ],
   "action": {

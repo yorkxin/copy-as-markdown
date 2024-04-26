@@ -2,6 +2,9 @@ import Settings from './lib/settings.js';
 import writeUsingContentScript from './lib/clipboard-access.js';
 import Markdown from './lib/markdown.js';
 import { asyncTabsQuery } from './lib/hacks.js';
+import {
+  Tab, TabGroup, TabListGrouper,
+} from './lib/tabs.js';
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
@@ -16,6 +19,15 @@ const FLASH_BADGE_TIMEOUT = 3000; // ms
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
 const markdownInstance = new Markdown();
+/**
+ *
+ * @type {Record<string, function(Tab): string>}
+ */
+const FORMAT_TO_FUNCTION = {
+  link: (tab) => `[${tab.title}](${tab.url})`,
+  title: (tab) => tab.title,
+  url: (tab) => tab.url,
+};
 
 async function refreshMarkdownInstance() {
   let settings;
@@ -66,21 +78,21 @@ async function flashBadge(type) {
 function createMenus() {
   chrome.contextMenus.create({
     id: 'current-page',
-    title: 'Copy [Page Title](URL)',
+    title: 'Copy Page Link as Markdown',
     type: 'normal',
     contexts: ['page'],
   });
 
   chrome.contextMenus.create({
     id: 'link',
-    title: 'Copy [Link Content](URL)',
+    title: 'Copy Link as Markdown',
     type: 'normal',
     contexts: ['link'],
   });
 
   chrome.contextMenus.create({
     id: 'image',
-    title: 'Copy ![](Image URL)', // TODO: how to fetch alt text?
+    title: 'Copy Image as Markdown', // TODO: how to fetch alt text?
     type: 'normal',
     contexts: ['image'],
   });
@@ -205,73 +217,86 @@ async function handleContentOfContextMenu(info, tab) {
   return text;
 }
 
-async function handleExport(action) {
-  switch (action) {
-    case 'current-tab-link': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
-      if (tabs.length !== 1) {
-        throw new Error(`Expecting exactly 1 tab, got ${tabs.length} items.`);
-      }
+/**
+ *
+ * @param format {'link'}
+ * @param tabId {number}
+ * @returns {Promise<string>}
+ */
+async function handleExportTab(format, tabId) {
+  const tab = await chrome.tabs.get(tabId);
 
-      const onlyOneTab = tabs[0];
-      return markdownInstance.linkTo(onlyOneTab.title, onlyOneTab.url);
-    }
+  switch (format) {
+    case 'link':
+      return markdownInstance.linkTo(tab.title, tab.url);
 
-    case 'all-tabs-link-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true });
-      return markdownInstance.links(tabs, {});
-    }
-
-    case 'all-tabs-link-as-task-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true });
-      const links = tabs.map((tab) => markdownInstance.linkTo(tab.title, tab.url));
-      return Markdown.taskList(links);
-    }
-
-    case 'all-tabs-title-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true });
-      return markdownInstance.list(tabs.map((tab) => tab.title));
-    }
-
-    case 'all-tabs-url-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true });
-      return markdownInstance.list(tabs.map((tab) => tab.url));
-    }
-
-    case 'highlighted-tabs-link-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return markdownInstance.links(tabs, {});
-    }
-
-    case 'highlighted-tabs-link-as-task-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      const links = tabs.map((tab) => markdownInstance.linkTo(tab.title, tab.url));
-      return Markdown.taskList(links);
-    }
-
-    case 'highlighted-tabs-title-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return markdownInstance.list(tabs.map((tab) => tab.title));
-    }
-
-    case 'highlighted-tabs-url-as-list': {
-      const tabs = await asyncTabsQuery({ currentWindow: true, highlighted: true });
-      return markdownInstance.list(tabs.map((tab) => tab.url));
-    }
-
-    default: {
-      throw new TypeError(`Unknown action: ${action}`);
-    }
+    default:
+      throw new TypeError(`invalid format: ${format}`);
   }
 }
 
-async function mustGetCurrentTab() {
-  const tabs = await asyncTabsQuery({ currentWindow: true, active: true });
-  if (tabs.length !== 1) {
-    return Promise.reject(new Error('failed to get current tab'));
-  }
+/**
+ *
+ * @param tabLists {TabList[]}
+ * @param formatter {function(Tab) : string}
+ * @returns {string[]|string[][]}
+ */
+function formatItems(tabLists, formatter) {
+  /** @type {string[]|string[][]} */
+  const items = [];
 
-  return Promise.resolve(tabs[0]);
+  tabLists.forEach((tabList) => {
+    if (tabList.groupId === TabGroup.NonGroupId) {
+      tabList.tabs.forEach((tab) => {
+        items.push(formatter(tab));
+      });
+    } else {
+      items.push(tabList.name);
+      const sublist = tabList.tabs.map(formatter);
+      items.push(sublist);
+    }
+  });
+
+  return items;
+}
+
+/**
+ *
+ * @param scope {'all'|'highlighted'}
+ * @param format {'link','title','url'}
+ * @param listType {'list','task-list'}
+ * @param windowId {number}
+ * @returns {Promise<string>}
+ */
+async function handleExportTabs(scope, format, listType, windowId) {
+  /** @type {chrome.tabs.QueryInfo} */
+  const query = {
+    highlighted: (scope === 'highlighted' ? true : undefined),
+    windowId,
+  };
+
+  /** @type {chrome.tabGroups.TabGroup[]} */
+  const crGroups = Object.hasOwn(chrome, 'tabGroups') ? await chrome.tabGroups.query({ windowId }) : [];
+  const crTabs = await asyncTabsQuery(query);
+
+  // Everything above depends on chrome|browser
+
+  /** @type {TabGroup[]} */
+  const groups = crGroups.map((group) => new TabGroup(group.title, group.id, group.color));
+  const tabs = crTabs.map((tab) => new Tab(tab.title, tab.url, tab.groupId || TabGroup.NonGroupId));
+  const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
+
+  const formatter = FORMAT_TO_FUNCTION[format];
+  const items = formatItems(tabLists, formatter);
+
+  switch (listType) {
+    case 'list':
+      return markdownInstance.list(items);
+    case 'task-list':
+      return markdownInstance.taskList(items);
+    default:
+      throw new TypeError(`unknown listType: ${listType}`);
+  }
 }
 
 chrome.runtime.onInstalled.addListener(createMenus);
@@ -300,15 +325,44 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 // listen to keyboard shortcuts
-chrome.commands.onCommand.addListener(async (command) => {
+chrome.commands.onCommand.addListener(async (command, tab) => {
   try {
-    const tab = await mustGetCurrentTab();
     let text = '';
-    if (command === 'selection-as-markdown') {
-      text = await convertSelectionInTabToMarkdown(tab);
-    } else {
-      text = await handleExport(command);
+    switch (command) {
+      case 'selection-as-markdown':
+        text = await convertSelectionInTabToMarkdown(tab);
+        break;
+      case 'current-tab-link':
+        text = await handleExportTab('link', tab.id);
+        break;
+      case 'all-tabs-link-as-list':
+        text = await handleExportTabs('all', 'link', 'list', tab.windowId);
+        break;
+      case 'all-tabs-link-as-task-list':
+        text = await handleExportTabs('all', 'link', 'task-list', tab.windowId);
+        break;
+      case 'all-tabs-title-as-list':
+        text = await handleExportTabs('all', 'title', 'list', tab.windowId);
+        break;
+      case 'all-tabs-url-as-list':
+        text = await handleExportTabs('all', 'url', 'list', tab.windowId);
+        break;
+      case 'highlighted-tabs-link-as-list':
+        text = await handleExportTabs('highlighted', 'link', 'list', tab.windowId);
+        break;
+      case 'highlighted-tabs-link-as-task-list':
+        text = await handleExportTabs('highlighted', 'link', 'task-list', tab.windowId);
+        break;
+      case 'highlighted-tabs-title-as-list':
+        text = await handleExportTabs('highlighted', 'title', 'list', tab.windowId);
+        break;
+      case 'highlighted-tabs-url-as-list':
+        text = await handleExportTabs('highlighted', 'url', 'list', tab.windowId);
+        break;
+      default:
+        throw new TypeError(`unknown keyboard command: ${command}`);
     }
+
     await writeUsingContentScript(tab, text);
     await flashBadge('success');
     return Promise.resolve(true);
@@ -333,8 +387,23 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       break;
     }
 
-    case 'export': {
-      handleExport(message.params.action)
+    case 'export-current-tab': {
+      handleExportTab(message.params.format, message.params.tabId)
+        .then((text) => {
+          sendResponse({ ok: true, text });
+        }, (error) => {
+          sendResponse({ ok: false, error });
+        });
+      break;
+    }
+
+    case 'export-tabs': {
+      handleExportTabs(
+        message.params.scope,
+        message.params.format,
+        message.params.listType,
+        message.params.windowId,
+      )
         .then((text) => {
           sendResponse({ ok: true, text });
         }, (error) => {
