@@ -12,6 +12,9 @@
       <excludeFolder url="file://$MODULE_DIR$/firefox-mv3/dist/images" />
       <excludeFolder url="file://$MODULE_DIR$/firefox-mv3/dist/lib" />
       <excludeFolder url="file://$MODULE_DIR$/firefox-mv3/dist/ui" />
+      <excludeFolder url="file://$MODULE_DIR$/chrome/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/firefox-mv3/dist" />
+      <excludeFolder url="file://$MODULE_DIR$/firefox/dist" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
