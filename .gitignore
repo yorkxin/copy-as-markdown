@@ -1,6 +1,7 @@
 .DS_Store
 node_modules/
 build/*
+!build/**/.keep
 firefox-mv3/dist/*
 !firefox-mv3/dist/.keep
 firefox/dist/*
@@ -8,3 +9,4 @@ firefox/dist/*
 chrome/dist/*
 !chrome/dist/.keep
 .nyc_output
+e2e/allure-results
