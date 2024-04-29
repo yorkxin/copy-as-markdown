@@ -70,11 +70,13 @@ if (URL_PARAMS.has('keep_open')) {
   keepOpen = true;
 }
 
-async function getCurrentWindow() {
+// NOTE: this function uses callback instead of async,
+// because chrome.windows.getCurrent() does not return Promise in Firefox MV2.
+function getCurrentWindow(callback) {
   if (URL_PARAMS.has('window')) {
-    return chrome.windows.get(parseInt(URL_PARAMS.get('window'), 10), { populate: true });
+    return chrome.windows.get(parseInt(URL_PARAMS.get('window'), 10), { populate: true }, callback);
   }
-  return chrome.windows.getCurrent({ populate: true });
+  return chrome.windows.getCurrent({ populate: true }, callback);
 }
 
 /**
@@ -96,7 +98,7 @@ async function getActiveTabId(crWindow) {
   return -1;
 }
 
-getCurrentWindow().then(async (crWindow) => {
+getCurrentWindow(async (crWindow) => {
   windowId = crWindow.id;
   tabId = await getActiveTabId(crWindow);
 
