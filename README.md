@@ -23,6 +23,7 @@ Exporting tabs in the current window, either all or highlighted tabs:
 :ballot_box_with_check: Current Tab as Link<br>
 :ballot_box_with_check: List of Links<br>
 :ballot_box_with_check: Task List (for GitHub-Flavored Markdown)
+:ballot_box_with_check: With Tab Grouping (in Chrome, Edge etc.)
 
 ## Keyboard Shortcuts
 
@@ -61,6 +62,7 @@ firefox-mv3/       # Firefox Manifest V3 files
   dist/            # ../src will be copied here
   mainfest.json
   ...
+e2e/               # E2E Tests
 compile.sh         # Copies src/**/* to <platform>/dist/
 ```  
 
@@ -109,15 +111,19 @@ Note that Firefox Add-On keeps track of all the versions that have ever been upl
 
 See https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/
 
-### Tests
+### Unit Tests
 
 Unit tests are written in mocha, `./test/**/*.test.js`.
 
 To run, use `npm test`.
 
+### E2E Tests
+
+Using Selenium (Java). Please refer to [e2e/](./e2e) folder.
+
 ### QA
 
-There is a [qa.html](./test/qa.html) that includes various edge test cases. Open it in the browser, then try Copy as Markdown with the content in it.
+There is a [qa.html](./e2e/support/pages/qa.html) that includes various edge test cases. Open it in the browser, then try Copy as Markdown with the content in it.
 
 ## License
 
