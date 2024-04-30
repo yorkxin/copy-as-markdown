@@ -22,7 +22,7 @@ Exporting tabs in the current window, either all or highlighted tabs:
 
 :ballot_box_with_check: Current Tab as Link<br>
 :ballot_box_with_check: List of Links<br>
-:ballot_box_with_check: Task List (for GitHub-Flavored Markdown)
+:ballot_box_with_check: Task List (for GitHub-Flavored Markdown)<be>
 :ballot_box_with_check: With Tab Grouping (in Chrome, Edge etc.)
 
 ## Keyboard Shortcuts
