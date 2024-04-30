@@ -13,7 +13,15 @@ document.querySelector('#open-demo').addEventListener('click', async () => {
   const winDemo = await chrome.windows.create({ url: urls });
   document.querySelector('#window-id').value = winDemo.id;
   document.querySelector('#tab-0-id').value = winDemo.tabs[0].id;
+});
 
+document.querySelector('#group-tabs').addEventListener('click', async () => {
+  const windowId = document.querySelector('#window-id').value;
+  if (windowId === '') {
+    return;
+  }
+
+  const winDemo = await chrome.windows.get(parseInt(windowId, 10), { populate: true });
   const group1 = await chrome.tabs.group({
     tabIds: [winDemo.tabs[1].id, winDemo.tabs[2].id],
     createProperties: { windowId: winDemo.id },
