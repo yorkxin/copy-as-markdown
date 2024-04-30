@@ -21,7 +21,8 @@ describe('Markdown', () => {
 
   describe('taskList()', () => {
     it('works', () => {
-      assert.equal(Markdown.taskList(['a', 'b', 'c']), '- [ ] a\n- [ ] b\n- [ ] c');
+      const markdown = new Markdown();
+      assert.equal(markdown.taskList(['a', 'b', 'c']), '- [ ] a\n- [ ] b\n- [ ] c');
     });
   });
 

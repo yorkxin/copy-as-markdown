@@ -133,16 +133,32 @@ export default class Markdown {
     return `[![${description}](${url})](${linkURL})`;
   }
 
-  list(theList) {
-    return theList.map((item) => `${this._unorderedListChar} ${item}`).join('\n');
+  list(items) {
+    return this.nestedList(items, this._unorderedListChar);
   }
 
-  static taskList(theList) {
-    return theList.map((item) => `- [ ] ${item}`).join('\n');
+  taskList(items) {
+    return this.nestedList(items, '- [ ]');
   }
 
-  links(theLinks) {
-    return this.list(theLinks.map((link) => this.linkTo(link.title, link.url)));
+  /**
+   *
+   * @param items {string[]|string[][]}
+   * @param prefix {string}
+   * @param indent {number}
+   * @return {string}
+   */
+  nestedList(items, prefix, indent = 0) {
+    let spaces = '';
+    for (let i = 0; i < indent; i += 1) {
+      spaces += ' ';
+    }
+    return items.map((item) => {
+      if (item instanceof Array) {
+        return this.nestedList(item, prefix, indent + 2);
+      }
+      return `${spaces}${prefix} ${item}`;
+    }).join('\n');
   }
 
   get alwaysEscapeLinkBracket() {
