@@ -220,12 +220,10 @@ async function handleContentOfContextMenu(info, tab) {
 /**
  *
  * @param format {'link'}
- * @param tabId {number}
+ * @param tab {chrome.tabs.Tab}
  * @returns {Promise<string>}
  */
-async function handleExportTab(format, tabId) {
-  const tab = await chrome.tabs.get(tabId);
-
+async function handleExportTab(format, tab) {
   switch (format) {
     case 'link':
       return markdownInstance.linkTo(tab.title, tab.url);
@@ -324,8 +322,28 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
+// mustGetCurrentTab() is made for Firefox in which in some
+// contexts tabs.getCurrent() returns undefined.
+async function mustGetCurrentTab() {
+  const tabs = await asyncTabsQuery({
+    currentWindow: true,
+    active: true,
+  });
+  if (tabs.length !== 1) {
+    return Promise.reject(new Error('failed to get current tab'));
+  }
+  return tabs[0];
+}
+
 // listen to keyboard shortcuts
-chrome.commands.onCommand.addListener(async (command, tab) => {
+chrome.commands.onCommand.addListener(async (command, argTab) => {
+  let tab = argTab;
+  if (typeof tab === 'undefined') {
+    // tab argument is not available on Firefox.
+    // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/onCommand
+
+    tab = await mustGetCurrentTab();
+  }
   try {
     let text = '';
     switch (command) {
@@ -333,7 +351,7 @@ chrome.commands.onCommand.addListener(async (command, tab) => {
         text = await convertSelectionInTabToMarkdown(tab);
         break;
       case 'current-tab-link':
-        text = await handleExportTab('link', tab.id);
+        text = await handleExportTab('link', tab);
         break;
       case 'all-tabs-link-as-list':
         text = await handleExportTabs('all', 'link', 'list', tab.windowId);
@@ -388,12 +406,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 
     case 'export-current-tab': {
-      handleExportTab(message.params.format, message.params.tabId)
-        .then((text) => {
-          sendResponse({ ok: true, text });
-        }, (error) => {
-          sendResponse({ ok: false, error });
-        });
+      // In Firefox, chrome.tabs.get() returns a Promise that always resolves to undefined,
+      // but callback pattern works.
+      chrome.tabs.get(message.params.tabId, (tab) => {
+        if (typeof tab === 'undefined') {
+          sendResponse({ ok: false, error: new Error('got undefined tab') });
+        } else {
+          handleExportTab(message.params.format, tab)
+            .then((text) => {
+              sendResponse({ ok: true, text });
+            }, (error) => {
+              sendResponse({ ok: false, error });
+            });
+        }
+      });
       break;
     }
 
