@@ -1,10 +1,9 @@
 package org.yorkxin.copyasmarkdown.e2e;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
+import org.testng.annotations.*;
+import static org.testng.Assert.*;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -12,10 +11,8 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class ContextMenuTest extends BaseTest {
-    @BeforeEach
+    @BeforeMethod
     public void goToQaPage() {
         driver.get("http://localhost:5566/qa.html");
     }

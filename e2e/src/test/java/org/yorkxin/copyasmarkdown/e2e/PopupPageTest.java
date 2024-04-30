@@ -1,21 +1,19 @@
 package org.yorkxin.copyasmarkdown.e2e;
 
-import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WindowType;
+import org.testng.annotations.*;
+import static org.testng.Assert.*;
 
-import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PopupPageTest extends BaseTest {
     private PopupPage popupPage;
     private String popupHandle;
 
-    @BeforeEach
+    @BeforeMethod
     public void openPopupWindow() {
         openDemoTabs();
 
@@ -30,7 +28,7 @@ public class PopupPageTest extends BaseTest {
         popupPage = new PopupPage(driver);
     }
 
-    @AfterEach
+    @AfterMethod
     public void closePopupWindow() {
         driver.switchTo().window(popupHandle).close();
         driver.switchTo().window(mainWindowHandle);

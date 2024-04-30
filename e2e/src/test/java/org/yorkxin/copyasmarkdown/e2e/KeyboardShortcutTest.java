@@ -1,9 +1,10 @@
 package org.yorkxin.copyasmarkdown.e2e;
 
 import io.github.sukgu.Shadow;
-import org.junit.jupiter.api.*;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
+import org.testng.annotations.*;
+import static org.testng.Assert.*;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -13,10 +14,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 public class KeyboardShortcutTest extends BaseTest {
-    @BeforeAll
+    @BeforeClass
     public void setUp() throws IOException, InterruptedException, AWTException {
         super.setUp();
 
@@ -85,16 +84,14 @@ public class KeyboardShortcutTest extends BaseTest {
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
     }
 
-    @Nested
-    @DisplayName("Tab Exporting")
     class TabExportingCases {
-        @BeforeEach
+        @BeforeMethod
         public void setUp() {
             openDemoTabs();
             driver.findElement(By.id("switch-to-demo")).click();
         }
 
-        @AfterEach
+        @AfterMethod
         public void teardown() {
             driver.switchTo().window(mainWindowHandle);
             driver.findElement(By.id("close-demo")).click();
