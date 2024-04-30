@@ -1,4 +1,4 @@
-package org.yorkxin.copyasmarkdown.e2e;
+package org.yorkxin.copyasmarkdown.e2e.popup;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;

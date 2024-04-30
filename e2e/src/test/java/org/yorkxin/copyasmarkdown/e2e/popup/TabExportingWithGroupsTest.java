@@ -1,54 +1,20 @@
-package org.yorkxin.copyasmarkdown.e2e;
+package org.yorkxin.copyasmarkdown.e2e.popup;
 
-import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
-import org.openqa.selenium.WindowType;
+import org.testng.annotations.*;
+import org.yorkxin.copyasmarkdown.e2e.DemoPageData;
 
-import java.awt.*;
+import static org.testng.Assert.*;
+
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-public class PopupPageTest extends BaseTest {
-    private PopupPage popupPage;
-    private String popupHandle;
-
-    @BeforeEach
-    public void openPopupWindow() {
-        openDemoTabs();
-
-        String demoWindowId = driver.findElement(By.id("window-id")).getAttribute("value");
-        String tab0Id = driver.findElement(By.id("tab-0-id")).getAttribute("value");
-
-        // Open popup
-        driver.switchTo().newWindow(WindowType.WINDOW)
-                .get("chrome-extension://"+extId+"/dist/ui/popup.html?window="+demoWindowId+"&tab="+tab0Id+"&keep_open=1");
-
-        popupHandle = driver.getWindowHandle();
-        popupPage = new PopupPage(driver);
-    }
-
-    @AfterEach
-    public void closePopupWindow() {
-        driver.switchTo().window(popupHandle).close();
-        driver.switchTo().window(mainWindowHandle);
-        driver.findElement(By.id("close-demo")).click();
-    }
-
-    @Test
-    public void counter() throws IOException, UnsupportedFlavorException {
-        assertEquals("6", popupPage.counterAll.getText());
-        assertEquals("3", popupPage.counterHighlighted.getText());
-    }
-
-    @Test
-    public void currentTabLink() throws IOException, UnsupportedFlavorException, InterruptedException {
-        popupPage.currentTabLinkButton.click();
-        Thread.sleep(1000);
-        String expected = "[Page 0 - Copy as Markdown](http://localhost:5566/0.html)";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+public class TabExportingWithGroupsTest extends org.yorkxin.copyasmarkdown.e2e.popup.BaseTest {
+    @BeforeMethod
+    public void setUp() {
+        DemoPageData dpd = openDemoTabs(true);
+        openPopupWindow(dpd);
     }
 
     @Test
@@ -64,7 +30,7 @@ public class PopupPageTest extends BaseTest {
                 - Untitled green group
                   - [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
                 - [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -80,7 +46,7 @@ public class PopupPageTest extends BaseTest {
                 - [ ] Untitled green group
                   - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
                 - [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -96,7 +62,7 @@ public class PopupPageTest extends BaseTest {
                 - Untitled green group
                   - Page 4 - Copy as Markdown
                 - Page 5 - Copy as Markdown""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -112,7 +78,7 @@ public class PopupPageTest extends BaseTest {
                 - Untitled green group
                   - http://localhost:5566/4.html
                 - http://localhost:5566/5.html""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -125,7 +91,7 @@ public class PopupPageTest extends BaseTest {
                   - [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                 - Untitled green group
                   - [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -138,7 +104,7 @@ public class PopupPageTest extends BaseTest {
                   - [ ] [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                 - [ ] Untitled green group
                   - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -151,7 +117,7 @@ public class PopupPageTest extends BaseTest {
                   - Page 2 - Copy as Markdown
                 - Untitled green group
                   - Page 4 - Copy as Markdown""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -164,6 +130,6 @@ public class PopupPageTest extends BaseTest {
                   - http://localhost:5566/2.html
                 - Untitled green group
                   - http://localhost:5566/4.html""";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 }

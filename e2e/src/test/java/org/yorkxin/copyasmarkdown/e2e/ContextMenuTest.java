@@ -1,21 +1,19 @@
 package org.yorkxin.copyasmarkdown.e2e;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
+import org.testng.annotations.*;
+import static org.testng.Assert.*;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import java.util.Objects;
 
 public class ContextMenuTest extends BaseTest {
-    @BeforeEach
+    @BeforeMethod
     public void goToQaPage() {
         driver.get("http://localhost:5566/qa.html");
     }
@@ -26,6 +24,8 @@ public class ContextMenuTest extends BaseTest {
         WebElement emptySpace = driver.findElement(By.id("empty-space"));
         actions.moveToElement(emptySpace).contextClick(emptySpace).perform();
         Robot robot = new Robot();
+        robot.waitForIdle();
+        robot.setAutoDelay(50); // type faster to avoid selecting built-in menu item
         robot.keyPress(KeyEvent.VK_C);
         robot.keyPress(KeyEvent.VK_O);
         robot.keyPress(KeyEvent.VK_P);
@@ -38,7 +38,7 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_ENTER);
         Thread.sleep(1000);
         String expected = "[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -47,8 +47,17 @@ public class ContextMenuTest extends BaseTest {
         WebElement link = driver.findElement(By.id("link-1"));
         actions.moveToElement(link).contextClick(link).perform();
         Robot robot = new Robot();
-        enterSubMenu(robot);
-        robot.delay(1000);
+        robot.waitForIdle();
+        robot.setAutoDelay(50); // type faster to avoid selecting built-in menu item
+        if (Objects.equals(browser, BROWSER_CHROME) && Platform.getCurrent().is(Platform.MAC)) {
+            // Folded on Chrome+macOS, not folded on Firefox+macOS.
+            // Because on macOS using the built-in layout engine, when you select a link, the text will also be
+            // selected, so there will be two menu items: Copy Link as Markdown, and Copy Selection as Markdown.
+            // On Firefox the text won't be selected, so there will be only one menu item.
+            //
+            // TODO: behavior unknown on Windows / Linux GTK / Linux KDE
+            enterSubMenu(robot);
+        }
         robot.keyPress(KeyEvent.VK_C);
         robot.keyPress(KeyEvent.VK_O);
         robot.keyPress(KeyEvent.VK_P);
@@ -58,10 +67,22 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_I);
         robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_K);
+        robot.keyPress(KeyEvent.VK_SPACE);
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyPress(KeyEvent.VK_S);
+        robot.keyPress(KeyEvent.VK_SPACE);
+        robot.keyPress(KeyEvent.VK_M);
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyPress(KeyEvent.VK_R);
+        robot.keyPress(KeyEvent.VK_K);
+        robot.keyPress(KeyEvent.VK_D);
+        robot.keyPress(KeyEvent.VK_O);
+        robot.keyPress(KeyEvent.VK_W);
+        robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
         Thread.sleep(1000);
         String expected = "[[APOLLO-13] Build A Rocket Engine](about:blank)";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -70,7 +91,8 @@ public class ContextMenuTest extends BaseTest {
         WebElement link = driver.findElement(By.id("img-1"));
         actions.moveToElement(link).contextClick(link).perform();
         Robot robot = new Robot();
-
+        robot.waitForIdle();
+        robot.setAutoDelay(50); // type faster to avoid selecting built-in menu item
         robot.keyPress(KeyEvent.VK_C);
         robot.keyPress(KeyEvent.VK_O);
         robot.keyPress(KeyEvent.VK_P);
@@ -96,7 +118,7 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_ENTER);
         Thread.sleep(1000);
         String expected = "![](http://localhost:5566/icon.png)";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -105,8 +127,9 @@ public class ContextMenuTest extends BaseTest {
         WebElement link = driver.findElement(By.id("img-2"));
         actions.moveToElement(link).contextClick(link).perform();
         Robot robot = new Robot();
+        robot.waitForIdle();
+        robot.setAutoDelay(50); // type faster to avoid selecting built-in menu item
         enterSubMenu(robot);
-        robot.delay(1000);
         robot.keyPress(KeyEvent.VK_C);
         robot.keyPress(KeyEvent.VK_O);
         robot.keyPress(KeyEvent.VK_P);
@@ -116,10 +139,21 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_I);
         robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_K);
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyPress(KeyEvent.VK_S);
+        robot.keyPress(KeyEvent.VK_SPACE);
+        robot.keyPress(KeyEvent.VK_M);
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyPress(KeyEvent.VK_R);
+        robot.keyPress(KeyEvent.VK_K);
+        robot.keyPress(KeyEvent.VK_D);
+        robot.keyPress(KeyEvent.VK_O);
+        robot.keyPress(KeyEvent.VK_W);
+        robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
         Thread.sleep(1000);
         String expected = "[![](http://localhost:5566/icon.png)](about:blank)";
-        assertEquals(expected,clipboard.getData(DataFlavor.stringFlavor));
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     @Test
@@ -132,6 +166,8 @@ public class ContextMenuTest extends BaseTest {
         actions.contextClick(body).perform();
 
         Robot robot = new Robot();
+        robot.waitForIdle();
+        robot.setAutoDelay(50); // type faster to avoid selecting built-in menu item
         robot.keyPress(KeyEvent.VK_C);
         robot.keyPress(KeyEvent.VK_O);
         robot.keyPress(KeyEvent.VK_P);
@@ -141,6 +177,23 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_E);
         robot.keyPress(KeyEvent.VK_L);
         robot.keyPress(KeyEvent.VK_E);
+        robot.keyPress(KeyEvent.VK_C);
+        robot.keyPress(KeyEvent.VK_T);
+        robot.keyPress(KeyEvent.VK_I);
+        robot.keyPress(KeyEvent.VK_O);
+        robot.keyPress(KeyEvent.VK_N);
+        robot.keyPress(KeyEvent.VK_SPACE);
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyPress(KeyEvent.VK_S);
+        robot.keyPress(KeyEvent.VK_SPACE);
+        robot.keyPress(KeyEvent.VK_M);
+        robot.keyPress(KeyEvent.VK_A);
+        robot.keyPress(KeyEvent.VK_R);
+        robot.keyPress(KeyEvent.VK_K);
+        robot.keyPress(KeyEvent.VK_D);
+        robot.keyPress(KeyEvent.VK_O);
+        robot.keyPress(KeyEvent.VK_W);
+        robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
         Thread.sleep(1000);
         String expected = """
