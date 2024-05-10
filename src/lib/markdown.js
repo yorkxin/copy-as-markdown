@@ -1,12 +1,25 @@
+const INDENT_STYLE_SPACES = 'spaces';
+const INDENT_STYLE_TAB = 'tab';
+
 /* eslint-disable no-underscore-dangle */
 export default class Markdown {
   static DefaultTitle() {
     return '(No Title)';
   }
 
-  constructor({ alwaysEscapeLinkBracket = false, unorderedListChar = '-' } = {}) {
+  /**
+   * @param alwaysEscapeLinkBracket {Boolean}
+   * @param unorderedListChar {'-'|'*'|'+'}
+   * @param indentation {'spaces'|'tab'}
+   */
+  constructor({
+    alwaysEscapeLinkBracket = false,
+    unorderedListChar = '-',
+    indentation = INDENT_STYLE_SPACES,
+  } = {}) {
     this._alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
     this._unorderedListChar = unorderedListChar;
+    this._indentation = indentation;
   }
 
   /**
@@ -145,19 +158,32 @@ export default class Markdown {
    *
    * @param items {string[]|string[][]}
    * @param prefix {string}
-   * @param indent {number}
+   * @param level {number}
    * @return {string}
    */
-  nestedList(items, prefix, indent = 0) {
-    let spaces = '';
-    for (let i = 0; i < indent; i += 1) {
-      spaces += ' ';
+  nestedList(items, prefix, level = 0) {
+    let renderedIndents = '';
+    let indent = '';
+    if (this._indentation === INDENT_STYLE_SPACES) {
+      // Two spaces, happens to work because we only support unordered list.
+      // It will break if we are going to support ordered list, in which the spaces to use
+      // depend on the length of prefix characters in the parent level.
+      indent = '  ';
+    } else if (this._indentation === INDENT_STYLE_TAB) {
+      indent = '\t';
+    } else {
+      throw new TypeError(`Invalid indent style ${this._indentation}`);
     }
+
+    for (let i = 0; i < level; i += 1) {
+      renderedIndents += indent;
+    }
+
     return items.map((item) => {
       if (item instanceof Array) {
-        return this.nestedList(item, prefix, indent + 2);
+        return this.nestedList(item, prefix, level + 1);
       }
-      return `${spaces}${prefix} ${item}`;
+      return `${renderedIndents}${prefix} ${item}`;
     }).join('\n');
   }
 
@@ -176,4 +202,15 @@ export default class Markdown {
   set unorderedListChar(value) {
     this._unorderedListChar = value;
   }
+
+  get nestedListIndentation() {
+    return this._indentation;
+  }
+
+  set nestedListIndentation(value) {
+    this._indentation = value;
+  }
 }
+
+Markdown.INDENT_STYLE_SPACES = INDENT_STYLE_SPACES;
+Markdown.INDENT_STYLE_TABS = INDENT_STYLE_TAB;

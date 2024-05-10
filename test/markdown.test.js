@@ -17,6 +17,18 @@ describe('Markdown', () => {
       const markdown = new Markdown({ unorderedListChar: '*' });
       assert.equal(markdown.list(['a', 'b', 'c']), '* a\n* b\n* c');
     });
+
+    describe('nested list', () => {
+      it('works', () => {
+        const markdown = new Markdown();
+        assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n  - c\n  - d\n- e\n  - f');
+      });
+
+      it('can set indentation style', () => {
+        const markdown = new Markdown({ indentation: Markdown.INDENT_STYLE_TABS });
+        assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n\t- c\n\t- d\n- e\n\t- f');
+      });
+    });
   });
 
   describe('taskList()', () => {
