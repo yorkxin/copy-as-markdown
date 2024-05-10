@@ -210,6 +210,30 @@ async function handleContentOfContextMenu(info, tab) {
       break;
     }
 
+    // Only available on Firefox
+    case 'all-tabs-list': {
+      text = await handleExportTabs('all', 'link', 'list', tab.windowId);
+      break;
+    }
+
+    // Only available on Firefox
+    case 'all-tabs-task-list': {
+      text = await handleExportTabs('all', 'link', 'task-list', tab.windowId);
+      break;
+    }
+
+    // Only available on Firefox
+    case 'highlighted-tabs-list': {
+      text = await handleExportTabs('highlighted', 'link', 'list', tab.windowId);
+      break;
+    }
+
+    // Only available on Firefox
+    case 'highlighted-tabs-task-list': {
+      text = await handleExportTabs('highlighted', 'link', 'task-list', tab.windowId);
+      break;
+    }
+
     default: {
       throw new TypeError(`unknown context menu: ${info}`);
     }
