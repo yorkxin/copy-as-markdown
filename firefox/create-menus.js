@@ -19,7 +19,10 @@ chrome.contextMenus.create({
   id: 'current-page',
   title: 'Copy Page Link as Markdown',
   type: 'normal',
-  contexts: ['page'],
+  contexts: [
+    'page',
+    'tab', // only available on Firefox
+  ],
 });
 
 chrome.contextMenus.create({
@@ -41,4 +44,46 @@ chrome.contextMenus.create({
   title: 'Copy Selection as Markdown',
   type: 'normal',
   contexts: ['selection'],
+});
+
+/* The following menu items are Firefox-only */
+
+browser.contextMenus.create({
+  id: 'separator-1',
+  type: 'separator',
+  contexts: ['tab'],
+});
+
+browser.contextMenus.create({
+  id: 'all-tabs-list',
+  title: 'Copy All Tabs',
+  type: 'normal',
+  contexts: ['tab'],
+});
+
+browser.contextMenus.create({
+  id: 'all-tabs-task-list',
+  title: 'Copy All Tabs (Task List)',
+  type: 'normal',
+  contexts: ['tab'],
+});
+
+browser.contextMenus.create({
+  id: 'separator-2',
+  type: 'separator',
+  contexts: ['tab'],
+});
+
+browser.contextMenus.create({
+  id: 'highlighted-tabs-list',
+  title: 'Copy Selected Tabs',
+  type: 'normal',
+  contexts: ['tab'],
+});
+
+browser.contextMenus.create({
+  id: 'highlighted-tabs-task-list',
+  title: 'Copy Selected Tabs (Task List)',
+  type: 'normal',
+  contexts: ['tab'],
 });

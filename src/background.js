@@ -152,87 +152,6 @@ function getTurndownOptions() {
   };
 }
 
-async function convertSelectionInTabToMarkdown(tab) {
-  // XXX: In Firefox MV2, executeScript() does not return results.
-  // We must use browser.scripting instead of chrome.scripting .
-  const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
-  await entrypoint.executeScript({
-    target: { tabId: tab.id, allFrames: true },
-    files: ['dist/vendor/turndown.js'],
-  });
-  const results = await entrypoint.executeScript({
-    target: { tabId: tab.id, allFrames: true },
-    func: selectionToMarkdown,
-    args: [
-      getTurndownOptions(),
-    ],
-  });
-
-  return results.map((frame) => frame.result).join('\n\n');
-}
-
-async function handleContentOfContextMenu(info, tab) {
-  let text;
-  switch (info.menuItemId) {
-    case 'current-page': {
-      text = markdownInstance.linkTo(tab.title, tab.url);
-      break;
-    }
-
-    case 'link': {
-      /* <a href="linkURL"><img src="srcURL" /></a> */
-      if (info.mediaType === 'image') {
-        // TODO: extract image alt text
-        text = Markdown.linkedImage('', info.srcUrl, info.linkUrl);
-        break;
-      }
-
-      /* <a href="linkURL">Text</a> */
-
-      // linkText for Firefox (as of 2018/03/07)
-      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
-      // right-click.
-      // TODO: use linkText when Chrome supports it on stable.
-      const linkText = info.selectionText || info.linkText;
-
-      text = markdownInstance.linkTo(linkText, info.linkUrl);
-      break;
-    }
-
-    case 'image': {
-      // TODO: extract image alt text
-      text = Markdown.imageFor('', info.srcUrl);
-      break;
-    }
-
-    case 'selection-as-markdown': {
-      text = await convertSelectionInTabToMarkdown(tab);
-      break;
-    }
-
-    default: {
-      throw new TypeError(`unknown context menu: ${info}`);
-    }
-  }
-  return text;
-}
-
-/**
- *
- * @param format {'link'}
- * @param tab {chrome.tabs.Tab}
- * @returns {Promise<string>}
- */
-async function handleExportTab(format, tab) {
-  switch (format) {
-    case 'link':
-      return markdownInstance.linkTo(tab.title, tab.url);
-
-    default:
-      throw new TypeError(`invalid format: ${format}`);
-  }
-}
-
 /**
  *
  * @param tabLists {TabList[]}
@@ -294,6 +213,111 @@ async function handleExportTabs(scope, format, listType, windowId) {
       return markdownInstance.taskList(items);
     default:
       throw new TypeError(`unknown listType: ${listType}`);
+  }
+}
+
+async function convertSelectionInTabToMarkdown(tab) {
+  // XXX: In Firefox MV2, executeScript() does not return results.
+  // We must use browser.scripting instead of chrome.scripting .
+  const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
+  await entrypoint.executeScript({
+    target: { tabId: tab.id, allFrames: true },
+    files: ['dist/vendor/turndown.js'],
+  });
+  const results = await entrypoint.executeScript({
+    target: { tabId: tab.id, allFrames: true },
+    func: selectionToMarkdown,
+    args: [
+      getTurndownOptions(),
+    ],
+  });
+
+  return results.map((frame) => frame.result).join('\n\n');
+}
+
+async function handleContentOfContextMenu(info, tab) {
+  let text;
+  switch (info.menuItemId) {
+    case 'current-page': {
+      text = markdownInstance.linkTo(tab.title, tab.url);
+      break;
+    }
+
+    case 'link': {
+      /* <a href="linkURL"><img src="srcURL" /></a> */
+      if (info.mediaType === 'image') {
+        // TODO: extract image alt text
+        text = Markdown.linkedImage('', info.srcUrl, info.linkUrl);
+        break;
+      }
+
+      /* <a href="linkURL">Text</a> */
+
+      // linkText for Firefox (as of 2018/03/07)
+      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
+      // right-click.
+      // TODO: use linkText when Chrome supports it on stable.
+      const linkText = info.selectionText || info.linkText;
+
+      text = markdownInstance.linkTo(linkText, info.linkUrl);
+      break;
+    }
+
+    case 'image': {
+      // TODO: extract image alt text
+      text = Markdown.imageFor('', info.srcUrl);
+      break;
+    }
+
+    case 'selection-as-markdown': {
+      text = await convertSelectionInTabToMarkdown(tab);
+      break;
+    }
+
+    // Only available on Firefox
+    case 'all-tabs-list': {
+      text = await handleExportTabs('all', 'link', 'list', tab.windowId);
+      break;
+    }
+
+    // Only available on Firefox
+    case 'all-tabs-task-list': {
+      text = await handleExportTabs('all', 'link', 'task-list', tab.windowId);
+      break;
+    }
+
+    // Only available on Firefox
+    case 'highlighted-tabs-list': {
+      text = await handleExportTabs('highlighted', 'link', 'list', tab.windowId);
+      break;
+    }
+
+    // Only available on Firefox
+    case 'highlighted-tabs-task-list': {
+      text = await handleExportTabs('highlighted', 'link', 'task-list', tab.windowId);
+      break;
+    }
+
+    default: {
+      throw new TypeError(`unknown context menu: ${info}`);
+    }
+  }
+  return text;
+}
+
+/**
+ *
+ * @param format {'link'}
+ * @param tab {chrome.tabs.Tab}
+ * @returns {Promise<string>}
+ */
+async function handleExportTab(format, tab) {
+  switch (format) {
+    case 'link':
+      return markdownInstance.linkTo(tab.title, tab.url);
+
+    default:
+      throw new TypeError(`invalid format: ${format}`);
   }
 }
 
