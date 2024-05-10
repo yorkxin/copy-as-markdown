@@ -152,6 +152,70 @@ function getTurndownOptions() {
   };
 }
 
+/**
+ *
+ * @param tabLists {TabList[]}
+ * @param formatter {function(Tab) : string}
+ * @returns {string[]|string[][]}
+ */
+function formatItems(tabLists, formatter) {
+  /** @type {string[]|string[][]} */
+  const items = [];
+
+  tabLists.forEach((tabList) => {
+    if (tabList.groupId === TabGroup.NonGroupId) {
+      tabList.tabs.forEach((tab) => {
+        items.push(formatter(tab));
+      });
+    } else {
+      items.push(tabList.name);
+      const sublist = tabList.tabs.map(formatter);
+      items.push(sublist);
+    }
+  });
+
+  return items;
+}
+
+/**
+ *
+ * @param scope {'all'|'highlighted'}
+ * @param format {'link','title','url'}
+ * @param listType {'list','task-list'}
+ * @param windowId {number}
+ * @returns {Promise<string>}
+ */
+async function handleExportTabs(scope, format, listType, windowId) {
+  /** @type {chrome.tabs.QueryInfo} */
+  const query = {
+    highlighted: (scope === 'highlighted' ? true : undefined),
+    windowId,
+  };
+
+  /** @type {chrome.tabGroups.TabGroup[]} */
+  const crGroups = Object.hasOwn(chrome, 'tabGroups') ? await chrome.tabGroups.query({ windowId }) : [];
+  const crTabs = await asyncTabsQuery(query);
+
+  // Everything above depends on chrome|browser
+
+  /** @type {TabGroup[]} */
+  const groups = crGroups.map((group) => new TabGroup(group.title, group.id, group.color));
+  const tabs = crTabs.map((tab) => new Tab(tab.title, tab.url, tab.groupId || TabGroup.NonGroupId));
+  const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
+
+  const formatter = FORMAT_TO_FUNCTION[format];
+  const items = formatItems(tabLists, formatter);
+
+  switch (listType) {
+    case 'list':
+      return markdownInstance.list(items);
+    case 'task-list':
+      return markdownInstance.taskList(items);
+    default:
+      throw new TypeError(`unknown listType: ${listType}`);
+  }
+}
+
 async function convertSelectionInTabToMarkdown(tab) {
   // XXX: In Firefox MV2, executeScript() does not return results.
   // We must use browser.scripting instead of chrome.scripting .
@@ -254,70 +318,6 @@ async function handleExportTab(format, tab) {
 
     default:
       throw new TypeError(`invalid format: ${format}`);
-  }
-}
-
-/**
- *
- * @param tabLists {TabList[]}
- * @param formatter {function(Tab) : string}
- * @returns {string[]|string[][]}
- */
-function formatItems(tabLists, formatter) {
-  /** @type {string[]|string[][]} */
-  const items = [];
-
-  tabLists.forEach((tabList) => {
-    if (tabList.groupId === TabGroup.NonGroupId) {
-      tabList.tabs.forEach((tab) => {
-        items.push(formatter(tab));
-      });
-    } else {
-      items.push(tabList.name);
-      const sublist = tabList.tabs.map(formatter);
-      items.push(sublist);
-    }
-  });
-
-  return items;
-}
-
-/**
- *
- * @param scope {'all'|'highlighted'}
- * @param format {'link','title','url'}
- * @param listType {'list','task-list'}
- * @param windowId {number}
- * @returns {Promise<string>}
- */
-async function handleExportTabs(scope, format, listType, windowId) {
-  /** @type {chrome.tabs.QueryInfo} */
-  const query = {
-    highlighted: (scope === 'highlighted' ? true : undefined),
-    windowId,
-  };
-
-  /** @type {chrome.tabGroups.TabGroup[]} */
-  const crGroups = Object.hasOwn(chrome, 'tabGroups') ? await chrome.tabGroups.query({ windowId }) : [];
-  const crTabs = await asyncTabsQuery(query);
-
-  // Everything above depends on chrome|browser
-
-  /** @type {TabGroup[]} */
-  const groups = crGroups.map((group) => new TabGroup(group.title, group.id, group.color));
-  const tabs = crTabs.map((tab) => new Tab(tab.title, tab.url, tab.groupId || TabGroup.NonGroupId));
-  const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
-
-  const formatter = FORMAT_TO_FUNCTION[format];
-  const items = formatItems(tabLists, formatter);
-
-  switch (listType) {
-    case 'list':
-      return markdownInstance.list(items);
-    case 'task-list':
-      return markdownInstance.taskList(items);
-    default:
-      throw new TypeError(`unknown listType: ${listType}`);
   }
 }
 
