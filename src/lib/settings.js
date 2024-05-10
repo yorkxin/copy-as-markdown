@@ -1,5 +1,6 @@
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
 const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
+const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
 
 /**
  * Singleton Settings object in the sync storage
@@ -12,6 +13,13 @@ export default {
   async setLinkTextAlwaysEscapeBrackets(value) {
     await this.syncStorage.set({
       [SKLinkTextAlwaysEscapeBrackets]: value,
+    });
+    this.publishUpdated();
+  },
+
+  async setStyleTabGroupIndentation(value) {
+    await this.syncStorage.set({
+      [SKStyleTabGroupIndentation]: value,
     });
     this.publishUpdated();
   },
@@ -37,11 +45,13 @@ export default {
     const all = await this.syncStorage.get({
       [SKLinkTextAlwaysEscapeBrackets]: false,
       [SKStyleOfUnorderedList]: 'dash',
+      [SKStyleTabGroupIndentation]: 'spaces',
     });
 
     return {
       alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets],
       styleOfUnorderedList: all[SKStyleOfUnorderedList],
+      styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation],
     };
   },
 

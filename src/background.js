@@ -54,6 +54,7 @@ async function refreshMarkdownInstance() {
   }
   markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
   markdownInstance.unorderedListChar = unorderedListChar;
+  markdownInstance.nestedListIndentation = settings.styleOfTabGroupIndentation;
 }
 
 async function flashBadge(type) {

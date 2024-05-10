@@ -29,6 +29,28 @@
       </label>
     </div>
   </form>
+  <form id='form-style-of-tab-group-indentation' class="field">
+    <label class="label">Tab Group Indentation</label>
+    <div class="control">
+      <label class="radio">
+        <input type="radio" name="indentation" value="spaces" />
+        Spaces
+      </label>
+    </div>
+    <div class="control">
+      <label class="radio">
+        <input type="radio" name="indentation" value="tab" />
+        Tab
+      </label>
+    </div>
+    <p class="help">
+      CommonMark uses spaces to indent nested lists, which are used when exporting tabs along with tab groups.
+      The number of spaces required depends on the leading characters of the parent item.
+      If your Markdown processor prefers <kbd>tab</kbd> (<code>\t</code>) characters for indentation,
+      choose <strong>Tab</strong> so that Copy as Markdown outputs tabs for indentation.
+      Please note that this option does not affect indentations in the output of Copy Selection as Markdown.
+    </p>
+  </form>
   <hr/>
   <h2 class="is-size-4">Advanced</h2>
   <form id="form-link-text-always-escape-brackets" class="field">    
