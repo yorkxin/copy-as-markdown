@@ -1,7 +1,7 @@
 import Settings from './lib/settings.js';
 import writeUsingContentScript from './lib/clipboard-access.js';
 import Markdown from './lib/markdown.js';
-import { asyncTabsQuery } from './lib/hacks.js';
+import { asyncBookmarksGetSubtree, asyncTabsQuery } from './lib/hacks.js';
 import {
   Tab, TabGroup, TabListGrouper,
 } from './lib/tabs.js';
@@ -236,6 +236,33 @@ async function convertSelectionInTabToMarkdown(tab) {
   return results.map((frame) => frame.result).join('\n\n');
 }
 
+/**
+ *
+ * @param bookmark {chrome.bookmarks.BookmarkTreeNode}
+ * @returns {Array<String|String[]>}
+ */
+function aggregateBookmarksAsLinks(bookmark) {
+  if (bookmark.url) {
+    // not a folder, return
+    return [markdownInstance.linkTo(bookmark.title, bookmark.url)];
+  }
+
+  // folder, traverse
+  const children = bookmark.children.map((bm) => aggregateBookmarksAsLinks(bm));
+  return [bookmark.title, children];
+}
+
+async function handleBookmark(info) {
+  const bookmarks = await asyncBookmarksGetSubtree(info.bookmarkId);
+
+  const tree = aggregateBookmarksAsLinks(bookmarks[0]);
+
+  if (tree.length === 1) {
+    return tree[0];
+  }
+  return markdownInstance.list(tree);
+}
+
 async function handleContentOfContextMenu(info, tab) {
   let text;
   switch (info.menuItemId) {
@@ -299,8 +326,13 @@ async function handleContentOfContextMenu(info, tab) {
       break;
     }
 
+    case 'bookmark-link': {
+      text = await handleBookmark(info);
+      break;
+    }
+
     default: {
-      throw new TypeError(`unknown context menu: ${info}`);
+      throw new TypeError(`unknown context menu: ${info.menuItemId}`);
     }
   }
   return text;
@@ -341,7 +373,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API === true) {
       await navigator.clipboard.writeText(text);
     } else {
-    await writeUsingContentScript(tab, text);
+      await writeUsingContentScript(tab, text);
     }
     await flashBadge('success');
     return Promise.resolve(true);
@@ -415,7 +447,7 @@ chrome.commands.onCommand.addListener(async (command, argTab) => {
     if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API) {
       await navigator.clipboard.writeText(text);
     } else {
-    await writeUsingContentScript(tab, text);
+      await writeUsingContentScript(tab, text);
     }
     await flashBadge('success');
     return Promise.resolve(true);

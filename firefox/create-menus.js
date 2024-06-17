@@ -87,3 +87,10 @@ browser.contextMenus.create({
   type: 'normal',
   contexts: ['tab'],
 });
+
+chrome.contextMenus.create({
+  id: 'bookmark-link',
+  title: 'Copy Bookmark or Folder as Markdown',
+  type: 'normal',
+  contexts: ['bookmark'],
+});
