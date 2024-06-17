@@ -337,7 +337,12 @@ if (globalThis.PERIDOCIALLY_REFRESH_MENU === true) {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await handleContentOfContextMenu(info, tab);
+    // eslint-disable-next-line no-undef
+    if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API === true) {
+      await navigator.clipboard.writeText(text);
+    } else {
     await writeUsingContentScript(tab, text);
+    }
     await flashBadge('success');
     return Promise.resolve(true);
   } catch (error) {
@@ -406,7 +411,12 @@ chrome.commands.onCommand.addListener(async (command, argTab) => {
         throw new TypeError(`unknown keyboard command: ${command}`);
     }
 
+    // eslint-disable-next-line no-undef
+    if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API) {
+      await navigator.clipboard.writeText(text);
+    } else {
     await writeUsingContentScript(tab, text);
+    }
     await flashBadge('success');
     return Promise.resolve(true);
   } catch (e) {
