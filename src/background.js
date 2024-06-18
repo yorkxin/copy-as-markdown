@@ -1,10 +1,10 @@
+import { WebExt } from './webext.js';
 import Settings from './lib/settings.js';
 import writeUsingContentScript from './lib/clipboard-access.js';
 import Markdown from './lib/markdown.js';
-import { asyncBookmarksGetSubtree, asyncTabsQuery } from './lib/hacks.js';
-import {
-  Tab, TabGroup, TabListGrouper,
-} from './lib/tabs.js';
+import { asyncTabsQuery } from './lib/hacks.js';
+import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
+import { Bookmarks } from './bookmarks.js';
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
@@ -19,6 +19,10 @@ const FLASH_BADGE_TIMEOUT = 3000; // ms
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
 const markdownInstance = new Markdown();
+const bookmarks = new Bookmarks({
+  markdown: markdownInstance,
+});
+
 /**
  *
  * @type {Record<string, function(Tab): string>}
@@ -236,33 +240,6 @@ async function convertSelectionInTabToMarkdown(tab) {
   return results.map((frame) => frame.result).join('\n\n');
 }
 
-/**
- *
- * @param bookmark {chrome.bookmarks.BookmarkTreeNode}
- * @returns {Array<String|String[]>}
- */
-function aggregateBookmarksAsLinks(bookmark) {
-  if (bookmark.url) {
-    // not a folder, return
-    return [markdownInstance.linkTo(bookmark.title, bookmark.url)];
-  }
-
-  // folder, traverse
-  const children = bookmark.children.map((bm) => aggregateBookmarksAsLinks(bm));
-  return [bookmark.title, children];
-}
-
-async function handleBookmark(info) {
-  const bookmarks = await asyncBookmarksGetSubtree(info.bookmarkId);
-
-  const tree = aggregateBookmarksAsLinks(bookmarks[0]);
-
-  if (tree.length === 1) {
-    return tree[0];
-  }
-  return markdownInstance.list(tree);
-}
-
 async function handleContentOfContextMenu(info, tab) {
   let text;
   switch (info.menuItemId) {
@@ -326,8 +303,13 @@ async function handleContentOfContextMenu(info, tab) {
       break;
     }
 
+    // Only available on Firefox
     case 'bookmark-link': {
-      text = await handleBookmark(info);
+      const bm = await WebExt.bookmarksGetSubtree(info.bookmarkId);
+      if (bm.length === 0) {
+        throw new Error('bookmark not found');
+      }
+      text = bookmarks.toMarkdown(bm[0]);
       break;
     }
 

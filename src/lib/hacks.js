@@ -23,29 +23,3 @@ export async function asyncTabsQuery(query) {
     }
   });
 }
-
-/**
- * Async wrapper around chrome.bookmarks.getSubtree() function.
- *
- * This is a workaround for Firefox MV2, whose `chrome.bookmarks.getSubtree()` does not return a
- * Promise.
- *
- * @param id {string}
- * @returns {Promise<chrome.bookmarks.BookmarkTreeNode[]>}
- */
-// eslint-disable-next-line import/prefer-default-export
-export async function asyncBookmarksGetSubtree(id) {
-  return new Promise((resolve, reject) => {
-    try {
-      chrome.bookmarks.getSubTree(id, (bookmarks) => {
-        if (!bookmarks) {
-          reject(new Error(`got nil (${typeof bookmarks})`));
-        } else {
-          resolve(bookmarks);
-        }
-      });
-    } catch (e) {
-      reject(new Error('bookmarks.getSubtree failed:', { cause: e }));
-    }
-  });
-}
