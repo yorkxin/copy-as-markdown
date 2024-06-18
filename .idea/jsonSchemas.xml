@@ -31,6 +31,12 @@
                   <Item>
                     <option name="path" value="firefox-mv2/manifest.json" />
                   </Item>
+                  <Item>
+                    <option name="path" value="firefox/manifest.json" />
+                  </Item>
+                  <Item>
+                    <option name="path" value="chrome/manifest.json" />
+                  </Item>
                 </list>
               </option>
             </SchemaInfo>

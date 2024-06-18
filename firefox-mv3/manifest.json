@@ -12,6 +12,9 @@
     "storage",
     "tabs"
   ],
+  "optional_permissions": [
+    "bookmarks"
+  ],
   "action": {
     "default_icon": {
       "128": "./dist/images/icon-128.png"

@@ -6,8 +6,8 @@
   <link rel="stylesheet" href="../vendor/bulma.css">
 </head>
 <body>
-<div class="container is-fluid">
-  <h2 class="is-size-4">Style</h2>
+<div class="container content is-fluid">
+  <h2>Style</h2>
   <form id='form-style-of-unordered-list' class="field">
     <label class="label">Unordered List Character</label>
     <div class="control">
@@ -52,7 +52,12 @@
     </p>
   </form>
   <hr/>
-  <h2 class="is-size-4">Advanced</h2>
+  <h2>Bookmarks Integration <span class="tag" data-permission-status="bookmarks">Disabled</span></h2>
+  <p>Enable context menus on bookmarks (Firefox-only).</p>
+  <button class="button is-small is-outlined is-primary" data-permission-request="bookmarks">Enable Bookmarks Integration</button>
+  <button class="button is-small is-outlined is-danger" data-permission-remove="bookmarks">Disable Bookmarks Integration</button>
+  <hr/>
+  <h2>Advanced</h2>
   <form id="form-link-text-always-escape-brackets" class="field">    
       <label class="label">Always escape brackets in link text</label>
       <div class="control">

@@ -64,6 +64,11 @@ document.forms['form-popup-actions'].addEventListener('submit', (e) => {
   });
 });
 
+document.getElementById('open-options').addEventListener('click', async () => {
+  await chrome.runtime.openOptionsPage();
+  window.close();
+});
+
 const URL_PARAMS = new URLSearchParams(window.location.search);
 
 if (URL_PARAMS.has('keep_open')) {

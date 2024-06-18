@@ -1,10 +1,10 @@
+import { WebExt } from './webext.js';
 import Settings from './lib/settings.js';
 import writeUsingContentScript from './lib/clipboard-access.js';
 import Markdown from './lib/markdown.js';
 import { asyncTabsQuery } from './lib/hacks.js';
-import {
-  Tab, TabGroup, TabListGrouper,
-} from './lib/tabs.js';
+import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
+import { Bookmarks } from './bookmarks.js';
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
@@ -19,6 +19,10 @@ const FLASH_BADGE_TIMEOUT = 3000; // ms
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
 const markdownInstance = new Markdown();
+const bookmarks = new Bookmarks({
+  markdown: markdownInstance,
+});
+
 /**
  *
  * @type {Record<string, function(Tab): string>}
@@ -299,8 +303,18 @@ async function handleContentOfContextMenu(info, tab) {
       break;
     }
 
+    // Only available on Firefox
+    case 'bookmark-link': {
+      const bm = await WebExt.bookmarksGetSubtree(info.bookmarkId);
+      if (bm.length === 0) {
+        throw new Error('bookmark not found');
+      }
+      text = bookmarks.toMarkdown(bm[0]);
+      break;
+    }
+
     default: {
-      throw new TypeError(`unknown context menu: ${info}`);
+      throw new TypeError(`unknown context menu: ${info.menuItemId}`);
     }
   }
   return text;
@@ -337,7 +351,12 @@ if (globalThis.PERIDOCIALLY_REFRESH_MENU === true) {
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await handleContentOfContextMenu(info, tab);
-    await writeUsingContentScript(tab, text);
+    // eslint-disable-next-line no-undef
+    if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API === true) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      await writeUsingContentScript(tab, text);
+    }
     await flashBadge('success');
     return Promise.resolve(true);
   } catch (error) {
@@ -406,7 +425,12 @@ chrome.commands.onCommand.addListener(async (command, argTab) => {
         throw new TypeError(`unknown keyboard command: ${command}`);
     }
 
-    await writeUsingContentScript(tab, text);
+    // eslint-disable-next-line no-undef
+    if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      await writeUsingContentScript(tab, text);
+    }
     await flashBadge('success');
     return Promise.resolve(true);
   } catch (e) {
