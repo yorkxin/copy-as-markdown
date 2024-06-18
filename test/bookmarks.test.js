@@ -8,7 +8,6 @@ describe('bookmarks.js', () => {
     const md = new Markdown();
     const bm = new Bookmarks({
       markdown: md,
-      webExtBookmarks: { },
     });
 
     it('works for one item', () => {
