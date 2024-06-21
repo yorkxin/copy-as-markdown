@@ -9,11 +9,11 @@
     "contextMenus",
     "clipboardWrite",
     "scripting",
-    "storage",
-    "tabs"
+    "storage"
   ],
   "optional_permissions": [
-    "bookmarks"
+    "bookmarks",
+    "tabs"
   ],
   "browser_action": {
     "default_icon": {
@@ -65,7 +65,8 @@
     }
   },
   "options_ui": {
-    "page": "./dist/ui/options.html"
+    "page": "./dist/ui/options.html",
+    "open_in_tab": true
   },
   "browser_specific_settings": {
     "gecko": {

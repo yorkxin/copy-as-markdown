@@ -1,4 +1,8 @@
 import Settings from '../lib/settings.js';
+import { WebExt } from '../webext.js';
+
+/** @type {Map<String,"yes"|"no"|"unavailable">} */
+const permissions = new Map();
 
 function loadSettings() {
   Settings.getAll().then((settings) => {
@@ -13,86 +17,96 @@ function loadSettings() {
   });
 }
 
-/**
- *
- * @param name {String} name of the permission
- * @return {Promise<'granted'|'notGranted'|'unavailable'>}
- */
-async function checkPermission(name) {
-  try {
-    // XXX: chrome.permissions in Firefox MV2 is broken.
-    const entrypoint = (typeof browser !== 'undefined') ? browser.permissions : chrome.permissions;
-    if (await entrypoint.contains({ permissions: [name] })) {
-      return 'granted';
-    }
-    return 'notGranted';
-  } catch (e) {
-    // contains() throws an error when the name of the permission is not supported by this browser
-    return 'unavailable';
-  }
-}
-
 async function loadPermissions() {
-  return Promise.all(['bookmarks'].map(async (permName) => {
-    const elPermRequest = document.querySelector(`[data-permission-request=${permName}]`);
-    const elPermRemove = document.querySelector(`[data-permission-remove=${permName}]`);
-    const elPermStatus = document.querySelector(`[data-permission-status=${permName}]`);
-    const status = await checkPermission(permName);
-    switch (status) {
-      case 'granted': {
-        elPermRequest.classList.add('is-hidden');
-        elPermRemove.classList.remove('is-hidden');
-        elPermStatus.classList.add('is-primary');
-        elPermStatus.innerText = 'Enabled';
-        break;
-      }
-      case 'notGranted': {
-        elPermRequest.classList.remove('is-hidden');
-        elPermRemove.classList.add('is-hidden');
-        elPermStatus.classList.remove('is-primary');
-        elPermStatus.innerText = 'Disabled';
-        break;
-      }
-      case 'unavailable': {
-        elPermRequest.classList.add('is-hidden');
-        elPermRemove.classList.add('is-hidden');
-        elPermStatus.classList.remove('is-primary');
-        elPermStatus.innerText = 'Unsupported';
-        break;
-      }
-      default:
-        console.error(`unknown checkPermission result: ${status}`);
-    }
+  /** @type {Map<String,"yes"|"no"|"unavailable">} */
+  await Promise.all(['bookmarks', 'tabs', 'tabGroups'].map(async (perm) => {
+    const status = await WebExt.permissions.contain(perm);
+    permissions.set(perm, status);
   }));
-}
 
-function hideUnsupportedFeatures() {
-  if (typeof chrome.tabGroups === 'undefined') {
-    document.forms['form-style-of-tab-group-indentation'].style.display = 'none';
-  }
+  document.querySelectorAll('[data-request-permission]').forEach((el) => {
+    const permissionToRequest = el.dataset.requestPermission;
+    const status = permissions.get(permissionToRequest);
+    if (status === 'unavailable') {
+      // eslint-disable-next-line no-param-reassign
+      el.disabled = true;
+      el.classList.remove('is-hidden', 'is-primary', 'is-outlined');
+    } else if (status === 'yes') {
+      // eslint-disable-next-line no-param-reassign
+      el.disabled = true;
+      el.classList.add('is-hidden');
+    } else if (status === 'no') {
+      // eslint-disable-next-line no-param-reassign
+      el.disabled = false;
+      el.classList.remove('is-hidden');
+      el.classList.add('is-primary');
+    }
+  });
+
+  document.querySelectorAll('[data-remove-permission]').forEach((el) => {
+    const permissionToRemove = el.dataset.removePermission;
+    const status = permissions.get(permissionToRemove);
+    if (status === 'unavailable') {
+      // eslint-disable-next-line no-param-reassign
+      el.disabled = true;
+      el.classList.add('is-hidden');
+      el.classList.remove('is-outlined');
+    } else if (status === 'yes') {
+      // permissions granted: show remove button
+      // eslint-disable-next-line no-param-reassign
+      el.disabled = false;
+      el.classList.remove('is-hidden');
+    } else if (status === 'no') {
+      // permissions not all granted: hide remove button
+      // eslint-disable-next-line no-param-reassign
+      el.disabled = true;
+      el.classList.add('is-hidden');
+    }
+  });
+
+  document.querySelectorAll('[data-hide-if-permission-contains]').forEach((el) => {
+    const status = permissions.get(el.dataset.hideIfPermissionContains);
+    if (status === 'unavailable') {
+      // eslint-disable-next-line no-param-reassign
+      el.innerText = 'Unsupported';
+    } else if (status === 'yes') {
+      // eslint-disable-next-line no-param-reassign
+      el.classList.add('is-hidden');
+    } else if (status === 'no') {
+      el.classList.remove('is-hidden');
+    }
+  });
+
+  document.querySelectorAll('[data-dependson-permissions]').forEach((el) => {
+    const dependsOn = el.dataset.dependsonPermissions.split(',');
+    const statuses = dependsOn.map((perm) => permissions.get(perm));
+    // eslint-disable-next-line no-param-reassign
+    el.disabled = !statuses.every((dep) => dep === 'yes');
+  });
 }
 
 document.addEventListener('DOMContentLoaded', loadSettings);
 document.addEventListener('DOMContentLoaded', loadPermissions);
-document.addEventListener('DOMContentLoaded', hideUnsupportedFeatures);
 
-document.querySelectorAll('[data-permission-request]').forEach((node) => {
+chrome.permissions.onAdded.addListener(async () => {
+  await loadPermissions();
+});
+
+chrome.permissions.onRemoved.addListener(async () => {
+  await loadPermissions();
+});
+
+document.querySelectorAll('[data-request-permission]').forEach((node) => {
   node.addEventListener('click', async (e) => {
     e.preventDefault();
-    // XXX: chrome.permissions in Firefox MV2 is broken.
-    const entrypoint = (typeof browser !== 'undefined') ? browser.permissions : chrome.permissions;
-    await entrypoint.request({ permissions: [node.dataset.permissionRequest] });
-    await loadPermissions();
+    await WebExt.permissions.request([e.target.dataset.requestPermission]);
   });
 });
 
-document.querySelectorAll('[data-permission-remove]').forEach((node) => {
+document.querySelectorAll('[data-remove-permission]').forEach((node) => {
   node.addEventListener('click', async (e) => {
     e.preventDefault();
-    // XXX: chrome.permissions in Firefox MV2 is broken.
-    const entrypoint = (typeof browser !== 'undefined') ? browser.permissions : chrome.permissions;
-    await entrypoint.remove({ permissions: [node.dataset.permissionRemove] });
-    await loadPermissions();
+    await WebExt.permissions.remove([e.target.dataset.removePermission]);
   });
 });
 
@@ -123,13 +137,12 @@ document.forms['form-style-of-unordered-list'].addEventListener('change', (event
     });
 });
 
-document.querySelector('#reset').addEventListener('click', () => {
-  const resettings = Settings.reset()
-    .then(() => {
-      console.info('settings cleared');
-    }, (error) => {
-      console.error('failed to save settings:', error);
-    });
-
-  resettings.then(loadSettings);
+document.querySelector('#reset').addEventListener('click', async () => {
+  await Settings.reset();
+  loadSettings();
+  const toBeRemoved = Array.from(permissions.entries())
+    .filter(([, stat]) => stat !== 'unavailable')
+    .map(([perm]) => perm);
+  await WebExt.permissions.remove(toBeRemoved);
+  await loadPermissions();
 });

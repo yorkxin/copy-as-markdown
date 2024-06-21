@@ -9,12 +9,11 @@
     "alarms",
     "contextMenus",
     "scripting",
-    "storage",
-    "tabGroups",
-    "tabs"
+    "storage"
   ],
   "optional_permissions": [
-    "bookmarks"
+    "tabGroups",
+    "tabs"
   ],
   "action": {
     "default_icon": {
@@ -66,7 +65,8 @@
     }
   },
   "options_ui": {
-    "page": "./dist/ui/options.html"
+    "page": "./dist/ui/options.html",
+    "open_in_tab": true
   },
   "web_accessible_resources": [
     {

@@ -48,6 +48,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
 
     @BeforeMethod
     public void setUp() {
+        grantPermission("tabs");
+        grantPermission("tabGroups");
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
     }

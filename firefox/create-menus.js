@@ -54,38 +54,67 @@ browser.contextMenus.create({
   contexts: ['tab'],
 });
 
-browser.contextMenus.create({
-  id: 'all-tabs-list',
-  title: 'Copy All Tabs',
-  type: 'normal',
-  contexts: ['tab'],
+function addTabsContextMenu() {
+  browser.contextMenus.create({
+    id: 'all-tabs-list',
+    title: 'Copy All Tabs',
+    type: 'normal',
+    contexts: ['tab'],
+  });
+
+  browser.contextMenus.create({
+    id: 'all-tabs-task-list',
+    title: 'Copy All Tabs (Task List)',
+    type: 'normal',
+    contexts: ['tab'],
+  });
+
+  browser.contextMenus.create({
+    id: 'separator-2',
+    type: 'separator',
+    contexts: ['tab'],
+  });
+
+  browser.contextMenus.create({
+    id: 'highlighted-tabs-list',
+    title: 'Copy Selected Tabs',
+    type: 'normal',
+    contexts: ['tab'],
+  });
+
+  browser.contextMenus.create({
+    id: 'highlighted-tabs-task-list',
+    title: 'Copy Selected Tabs (Task List)',
+    type: 'normal',
+    contexts: ['tab'],
+  });
+}
+
+async function removeTabsContextMenu() {
+  await browser.contextMenus.remove('all-tabs-list');
+  await browser.contextMenus.remove('all-tabs-task-list');
+  await browser.contextMenus.remove('separator-2');
+  await browser.contextMenus.remove('highlighted-tabs-list');
+  await browser.contextMenus.remove('highlighted-tabs-task-list');
+}
+
+browser.permissions.contains({ permissions: ['tabs'] })
+  .then((ok) => {
+    if (ok) {
+      addTabsContextMenu();
+    }
+  });
+
+browser.permissions.onAdded.addListener((e) => {
+  if (e.permissions.includes('tabs')) {
+    addTabsContextMenu();
+  }
 });
 
-browser.contextMenus.create({
-  id: 'all-tabs-task-list',
-  title: 'Copy All Tabs (Task List)',
-  type: 'normal',
-  contexts: ['tab'],
-});
-
-browser.contextMenus.create({
-  id: 'separator-2',
-  type: 'separator',
-  contexts: ['tab'],
-});
-
-browser.contextMenus.create({
-  id: 'highlighted-tabs-list',
-  title: 'Copy Selected Tabs',
-  type: 'normal',
-  contexts: ['tab'],
-});
-
-browser.contextMenus.create({
-  id: 'highlighted-tabs-task-list',
-  title: 'Copy Selected Tabs (Task List)',
-  type: 'normal',
-  contexts: ['tab'],
+browser.permissions.onRemoved.addListener(async (e) => {
+  if (e.permissions.includes('tabs')) {
+    await removeTabsContextMenu();
+  }
 });
 
 chrome.contextMenus.create({

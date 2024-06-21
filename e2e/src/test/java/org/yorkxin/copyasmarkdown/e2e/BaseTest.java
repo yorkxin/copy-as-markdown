@@ -5,8 +5,6 @@ import io.github.sukgu.Shadow;
 import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.edge.EdgeDriver;
-import org.openqa.selenium.edge.EdgeOptions;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.firefox.FirefoxProfile;
@@ -16,12 +14,12 @@ import org.testng.annotations.*;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
@@ -44,7 +42,7 @@ public class BaseTest {
 
     @Parameters("browser")
     @BeforeClass
-    public void setUp(@Optional(BROWSER_CHROME) String browserName) throws IOException {
+    public void setUp(@Optional(BROWSER_CHROME) String browserName) throws IOException, AWTException {
         browser = browserName;
         driver = getDriver(browser);
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -63,6 +61,10 @@ public class BaseTest {
 
         openE2eExtensionMainPage();
         mainWindowHandle = driver.getWindowHandle();
+
+        if (Objects.equals(browserName, BROWSER_CHROME)) {
+            preGrantAllPermissionsInChrome();
+        }
     }
 
     private WebDriver getDriver(String browser) {
@@ -78,6 +80,7 @@ public class BaseTest {
             case BROWSER_FIREFOX:
                 FirefoxProfile profile = new FirefoxProfile();
                 profile.setPreference("intl.locale.requested","en-us");
+                profile.setPreference("extensions.webextOptionalPermissionPrompts", false);
                 FirefoxOptions fo = new FirefoxOptions();
                 fo.setProfile(profile);
                 FirefoxDriver fd = new FirefoxDriver(fo);
@@ -168,6 +171,11 @@ public class BaseTest {
         clipboard.setContents(new StringSelection("========TEST SEPARATOR========"),null);
     }
 
+    @AfterMethod
+    public void reset() throws AWTException {
+        removeAllPermissions();
+    }
+
     @AfterClass
     public void tearDown() {
         driver.quit();
@@ -186,6 +194,10 @@ public class BaseTest {
 
     private void openE2eExtensionMainPage() {
         driver.get(getExtensionProtocol()+"://"+e2eExtId+"/main.html?base_url=http://localhost:5566");
+    }
+
+    protected void openOptionsPage() {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/options.html");
     }
 
     protected String getExtensionProtocol() {
@@ -212,5 +224,90 @@ public class BaseTest {
         String demoWindowId = driver.findElement(By.id("window-id")).getAttribute("value");
         String tab0Id = driver.findElement(By.id("tab-0-id")).getAttribute("value");
         return new DemoPageData(demoWindowId, tab0Id);
+    }
+
+    protected void preGrantAllPermissionsInChrome() throws AWTException  {
+        // Pre-grant all permissions for the first time when extension is installed, so that Chrome won't ask again in a dialog
+        // In Chrome, go to options page, click request permission, then use Robot to accept
+
+        // In Firefox, this is unnecessary because we can disable the prompt by setting extensions.webextOptionalPermissionPrompts = true
+
+        assert browser.equals(BROWSER_CHROME);
+
+        driver.switchTo().newWindow(WindowType.WINDOW);
+
+        openOptionsPage();
+        List<WebElement> requestButtons = driver.findElements(By.cssSelector("[data-request-permission]"));
+
+        for (WebElement button : requestButtons) {
+            if (!button.isEnabled()) {
+                continue;
+            }
+            button.click();
+            Robot robot = new Robot();
+            robot.delay(1000);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyPress(KeyEvent.VK_SPACE);
+        }
+
+        (new Robot()).delay(500);
+
+
+        // then remove all of them
+        List<WebElement> removeButtons = driver.findElements(By.cssSelector("[data-remove-permission]"));
+
+        for (WebElement button : removeButtons) {
+            if (!button.isEnabled() || !button.isDisplayed()) {
+                continue;
+            }
+            button.click();
+            (new Robot()).delay(500);
+        }
+
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
+    protected void grantPermission(String permission) {
+        // Assuming that permissions have been granted by preGrantAllPermissionsInChrome() i.e. no dialog to handle
+        // In Chrome, go to options page, then click request permission
+        driver.switchTo().newWindow(WindowType.WINDOW);
+
+        openOptionsPage();
+        driver.findElement(By.cssSelector("[data-request-permission='"+permission+"'")).click();
+
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
+    protected void removePermission(String permission) {
+        // Assuming that permissions have been granted by preGrantAllPermissionsInChrome() i.e. no dialog to handle
+        // In Chrome, go to options page, then click request permission
+        driver.switchTo().newWindow(WindowType.WINDOW);
+
+        openOptionsPage();
+        driver.findElement(By.cssSelector("[data-remove-permission='"+permission+"'")).click();
+
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
+    protected void removeAllPermissions() throws AWTException {
+        // In Chrome, go to options page, then click request permission
+        driver.switchTo().newWindow(WindowType.WINDOW);
+
+        openOptionsPage();
+        List<WebElement> buttons = driver.findElements(By.cssSelector("[data-remove-permission]"));
+
+        for (WebElement button : buttons) {
+            if (!button.isEnabled() || !button.isDisplayed()) {
+                continue;
+            }
+            button.click();
+            (new Robot()).delay(500);
+        }
+
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
     }
 }
