@@ -34,6 +34,7 @@ document.forms['form-popup-actions'].addEventListener('submit', (e) => {
           window.close();
         }
       });
+      return;
     }
 
     navigator.clipboard.writeText(response.text)
