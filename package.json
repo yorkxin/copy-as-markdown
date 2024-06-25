@@ -20,7 +20,7 @@
     "debug-firefox-mv3": "npx nodemon --exec 'sh compile.sh firefox-mv3' & npx web-ext run -s firefox-mv3/ --url about:debugging#/runtime/this-firefox https://example.com",
     "debug-firefox": "npx nodemon --exec 'sh compile.sh firefox' & npx web-ext run -s firefox/ --url about:debugging#/runtime/this-firefox https://example.com",
     "eslint": "eslint .",
-    "clean": "rm -rf ./build/* firefox/dist/* firefox-mv3/dist/* chrome/dist/*",
+    "clean": "rm -rf ./build/* firefox/dist/* firefox-mv3/dist/* chrome/dist/* firefox/_locales/* firefox-mv3/_locales/* chrome/_locales/*",
     "convert-images": "./utils/convert-images.sh",
     "postinstall": "cp node_modules/turndown/dist/turndown.js node_modules/bulma/css/bulma.css src/vendor/"
   },

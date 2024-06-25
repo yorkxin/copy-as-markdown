@@ -16,6 +16,7 @@
   "optional_permissions": [
     "bookmarks"
   ],
+  "default_locale": "en",
   "action": {
     "default_icon": {
       "128": "./dist/images/icon-128.png"

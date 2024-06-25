@@ -4,9 +4,12 @@ build/*
 !build/**/.keep
 firefox-mv3/dist/*
 !firefox-mv3/dist/.keep
+firefox-mv3/_locales/
 firefox/dist/*
 !firefox/dist/.keep
+firefox/_locales/
 chrome/dist/*
 !chrome/dist/.keep
+chrome/_locales/
 .nyc_output
 e2e/allure-results
