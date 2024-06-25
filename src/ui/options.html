@@ -6,62 +6,62 @@
   <link rel="stylesheet" href="../vendor/bulma.css">
 </head>
 <body>
-<div class="container content is-fluid">
-  <h2>Style</h2>
-  <form id='form-style-of-unordered-list' class="field">
-    <label class="label">Unordered List Character</label>
-    <div class="control">
-      <label class="radio">
-        <input type="radio" name="character" value="dash" />
-        Dashes (<code>-</code>)
-      </label>
-    </div>
-    <div class="control">
-      <label class="radio">
-        <input type="radio" name="character" value="asterisk" />
-        Asterisks (<code>*</code>)
-      </label>
-    </div>
-    <div class="control">
-      <label class="radio">
-        <input type="radio" name="character" value="plus" />
-        Plus Signs (<code>+</code>)
-      </label>
-    </div>
-  </form>
-  <form id='form-style-of-tab-group-indentation' class="field">
-    <label class="label">Tab Group Indentation</label>
-    <div class="control">
-      <label class="radio">
-        <input type="radio" name="indentation" value="spaces" />
-        Spaces
-      </label>
-    </div>
-    <div class="control">
-      <label class="radio">
-        <input type="radio" name="indentation" value="tab" />
-        Tab
-      </label>
-    </div>
-    <p class="help">
-      CommonMark uses spaces to indent nested lists, which are used when exporting tabs along with tab groups.
-      The number of spaces required depends on the leading characters of the parent item.
-      If your Markdown processor prefers <kbd>tab</kbd> (<code>\t</code>) characters for indentation,
-      choose <strong>Tab</strong> so that Copy as Markdown outputs tabs for indentation.
-      Please note that this option does not affect indentations in the output of Copy Selection as Markdown.
-    </p>
-  </form>
-  <hr/>
-  <h2>Bookmarks Integration <span class="tag" data-permission-status="bookmarks">Disabled</span></h2>
-  <p>Enable context menus on bookmarks (Firefox-only).</p>
-  <button class="button is-small is-outlined is-primary" data-permission-request="bookmarks">Enable Bookmarks Integration</button>
-  <button class="button is-small is-outlined is-danger" data-permission-remove="bookmarks">Disable Bookmarks Integration</button>
-  <hr/>
-  <h2>Advanced</h2>
-  <form id="form-link-text-always-escape-brackets" class="field">    
-      <label class="label">Always escape brackets in link text</label>
+<div class="container section content is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+  <div id="flash-error" class="notification is-danger is-hidden">
+    <p></p>
+  </div>
+  <div class="box">
+    <h2>Markdown Style</h2>
+    <form id='form-style-of-unordered-list' class="field">
+      <label class="label">Unordered List Character</label>
       <div class="control">
-        <label class="checkbox"><input type="checkbox" name="enabled" /> Enabled (<code>[]</code> becomes <code>\[\]</code>)</label>
+        <label class="radio">
+          <input type="radio" name="character" value="dash" />
+          Dashes (<code>-</code>)
+        </label>
+      </div>
+      <div class="control">
+        <label class="radio">
+          <input type="radio" name="character" value="asterisk" />
+          Asterisks (<code>*</code>)
+        </label>
+      </div>
+      <div class="control">
+        <label class="radio">
+          <input type="radio" name="character" value="plus" />
+          Plus Signs (<code>+</code>)
+        </label>
+      </div>
+    </form>
+
+    <form id='form-style-of-tab-group-indentation' class="field">
+      <label class="label">Tab Group Indentation <span class="tag" data-hide-if-permission-contains="tabGroups">Requires Permission</span></label>
+      <div class="control">
+        <label class="radio">
+          <input type="radio" name="indentation" value="spaces" data-dependson-permissions="tabGroups" />
+          Spaces
+        </label>
+      </div>
+      <div class="control">
+        <label class="radio">
+          <input type="radio" name="indentation" value="tab" data-dependson-permissions="tabGroups" />
+          Tab
+        </label>
+      </div>
+      <p class="help">
+        CommonMark uses spaces to indent nested lists, which are used when exporting tabs along with tab groups.
+        The number of spaces required depends on the leading characters of the parent item.
+        If your Markdown processor prefers <kbd>tab</kbd> (<code>\t</code>) characters for indentation,
+        choose <strong>Tab</strong> so that Copy as Markdown outputs tabs for indentation.
+        Please note that this option does not affect indentations in the output of Copy Selection as Markdown.
+      </p>
+    </form>
+
+    <h3>Escaping</h3>
+    <form id="form-link-text-always-escape-brackets" class="field">
+      <div class="control">
+        <label class="checkbox"><input type="checkbox" name="enabled" /> Always escape brackets in link text (<code>[]</code> becomes <code>\[\]</code>)</label>
       </div>
       <p class="help">
         CommonMark allows balanced brackets <code>[]</code> in link text
@@ -69,16 +69,35 @@
         If your Markdown processor does not support this use case, you can enable this feature
         so that Copy as Markdown always escape brackets in the link text.
       </p>
-
-  </form>
-
-  <hr />
-  <div class="field mb-4">
-    <button id="reset" type="button" class="button is-small">Reset to Default</button>
-    <a href="about.md" target="_blank" class="button is-small is-text">About</a>
+    </form>
   </div>
-</div>
 
+  <div class="box">
+    <h2>Additional Permissions</h2>
+    <p>Some features require additional permissions. Prompts will appear when permissions are not granted.</p>
+    <h3>Tabs <span class="tag" data-hide-if-permission-contains="tabs">Not Granted</span></h3>
+    <p>Copy all / selected tabs via the popup menu and shortcut keys. Also, via context menus on tabs (Firefox-only).</p>
+    <div class="field">
+      <button class="button is-small is-outlined is-primary" data-request-permission="tabs">Grant Tabs Permission</button>
+      <button class="button is-small is-outlined is-danger" data-remove-permission="tabs">Revoke Tabs Permission</button>
+    </div>
+
+    <h4>Tab Groups <span class="tag" data-hide-if-permission-contains="tabGroups">Not Granted</span></h4>
+    <p>(Chrome-only) Wrap tabs in your tab groups. Need to grant Tabs permission above.</p>
+    <div class="field">
+      <button class="button is-small is-outlined is-primary" data-request-permission="tabGroups">Grant Tab Groups Permission</button>
+      <button class="button is-small is-outlined is-danger" data-remove-permission="tabGroups">Revoke Tab Groups Permission</button>
+    </div>
+
+    <h3>Bookmarks <span class="tag" data-hide-if-permission-contains="bookmarks">Not Granted</span></h3>
+    <p>Enable context menus on bookmarks (Firefox-only).</p>
+    <div class="field">
+      <button class="button is-small is-outlined is-primary" data-request-permission="bookmarks">Grant Bookmarks Permission</button>
+      <button class="button is-small is-outlined is-danger" data-remove-permission="bookmarks">Revoke Bookmarks Permission</button>
+    </div>
+  </div>
+  <button id="reset" type="button" class="button is-small is-outlined is-danger">Reset to Default</button>
+</div>
   <script src="./options.js" type="module"></script>
 </body>
 </html>

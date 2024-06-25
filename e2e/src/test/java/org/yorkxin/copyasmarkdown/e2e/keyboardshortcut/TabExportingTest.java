@@ -2,6 +2,7 @@ package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebElement;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
@@ -13,7 +14,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 
-import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.*;
 
 public class TabExportingTest extends BaseTest {
     @BeforeClass
@@ -51,6 +52,7 @@ public class TabExportingTest extends BaseTest {
 
     @BeforeMethod
     public void setUp() {
+        grantPermission("tabs");
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
     }
@@ -61,9 +63,30 @@ public class TabExportingTest extends BaseTest {
         driver.findElement(By.id("close-demo")).click();
     }
 
+    private void testNoPermission(int[] modifiers, int key) throws AWTException {
+        // test that pressing keyboard shortcuts opens options page with error message,
+        // if tabs is not enabled
+        removePermission("tabs");
+        openDemoTabs(false);
+        driver.findElement(By.id("switch-to-demo")).click();
+
+        java.util.Set<String> windowsBefore = driver.getWindowHandles();
+        // smash the shortcut keys
+        runShortcutKeys(modifiers, key);
+
+        // assert that it opens one window, which is the permissions dialog
+        java.util.Set<String> windowsAfter = driver.getWindowHandles();
+        windowsAfter.removeAll(windowsBefore);
+        assertEquals(1, windowsAfter.size());
+        driver.switchTo().window(windowsAfter.iterator().next());
+        assertEquals(driver.getCurrentUrl(), getExtensionProtocol()+"://"+extId+"/dist/ui/permissions.html?permissions=tabs");
+    }
+
     @Test
     public void allTabsLink() throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_W);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+        int key = KeyEvent.VK_W;
+        runShortcutKeys(modifiers, key);
 
         String expected = """
                   - [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -74,11 +97,15 @@ public class TabExportingTest extends BaseTest {
                   - [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 
     @Test
     public void allTabsTaskList() throws AWTException, IOException, UnsupportedFlavorException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_E);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+        int key = KeyEvent.VK_E;
+        runShortcutKeys(modifiers, key);
 
         String expected = """
                   - [ ] [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -89,11 +116,15 @@ public class TabExportingTest extends BaseTest {
                   - [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 
     @Test
     public void allTabsTitle() throws AWTException, IOException, UnsupportedFlavorException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_R);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+        int key = KeyEvent.VK_R;
+        runShortcutKeys(modifiers, key);
 
         String expected = """
                   - Page 0 - Copy as Markdown
@@ -104,11 +135,15 @@ public class TabExportingTest extends BaseTest {
                   - Page 5 - Copy as Markdown""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 
     @Test
     public void allTabsUrl() throws AWTException, IOException, UnsupportedFlavorException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_T);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+        int key = KeyEvent.VK_T;
+        runShortcutKeys(modifiers, key);
 
         String expected = """
                   - http://localhost:5566/0.html
@@ -119,11 +154,15 @@ public class TabExportingTest extends BaseTest {
                   - http://localhost:5566/5.html""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 
     @Test
     public void highlightedTabsLink() throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_Y);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+        int key = KeyEvent.VK_Y;
+        runShortcutKeys(modifiers, key);
 
         String expected = """
                 - [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -131,11 +170,15 @@ public class TabExportingTest extends BaseTest {
                 - [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 
     @Test
     public void highlightedTabsTaskList() throws AWTException, IOException, UnsupportedFlavorException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_U);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+        int key = KeyEvent.VK_U;
+        runShortcutKeys(modifiers, key);
 
         String expected = """
                 - [ ] [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -143,11 +186,15 @@ public class TabExportingTest extends BaseTest {
                 - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 
     @Test
     public void highlightedTabsTitle() throws AWTException, IOException, UnsupportedFlavorException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_I);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+        int key = KeyEvent.VK_I;
+        runShortcutKeys(modifiers, key);
 
         String expected = """
                 - Page 0 - Copy as Markdown
@@ -155,11 +202,15 @@ public class TabExportingTest extends BaseTest {
                 - Page 4 - Copy as Markdown""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 
     @Test
     public void highlightedTabsUrl() throws AWTException, IOException, UnsupportedFlavorException {
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_O);
+        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
+                int key = KeyEvent.VK_O;
+                runShortcutKeys(modifiers, key);
 
         String expected = """
                 - http://localhost:5566/0.html
@@ -167,5 +218,7 @@ public class TabExportingTest extends BaseTest {
                 - http://localhost:5566/4.html""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+
+        testNoPermission(modifiers,key);
     }
 }

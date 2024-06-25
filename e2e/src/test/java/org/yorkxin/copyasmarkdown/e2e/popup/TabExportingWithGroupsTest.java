@@ -1,6 +1,5 @@
 package org.yorkxin.copyasmarkdown.e2e.popup;
 
-import org.openqa.selenium.By;
 import org.testng.annotations.*;
 import org.yorkxin.copyasmarkdown.e2e.DemoPageData;
 
@@ -13,6 +12,8 @@ import java.io.IOException;
 public class TabExportingWithGroupsTest extends org.yorkxin.copyasmarkdown.e2e.popup.BaseTest {
     @BeforeMethod
     public void setUp() {
+        grantPermission("tabs");
+        grantPermission("tabGroups");
         DemoPageData dpd = openDemoTabs(true);
         openPopupWindow(dpd);
     }

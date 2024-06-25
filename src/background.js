@@ -197,8 +197,22 @@ async function handleExportTabs(scope, format, listType, windowId) {
     windowId,
   };
 
+  if (!await WebExt.permissions.allGranted(['tabs'])) {
+    await chrome.windows.create({
+      focused: true,
+      type: 'popup',
+      width: 640,
+      height: 480,
+      url: '/dist/ui/permissions.html?permissions=tabs',
+    });
+    throw new Error('permission required');
+  }
+
   /** @type {chrome.tabGroups.TabGroup[]} */
-  const crGroups = Object.hasOwn(chrome, 'tabGroups') ? await chrome.tabGroups.query({ windowId }) : [];
+  let crGroups = [];
+  if (await WebExt.permissions.contain('tabGroups') === 'yes') {
+    crGroups = await chrome.tabGroups.query({ windowId });
+  }
   const crTabs = await asyncTabsQuery(query);
 
   // Everything above depends on chrome|browser

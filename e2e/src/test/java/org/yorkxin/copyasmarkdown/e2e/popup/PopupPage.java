@@ -40,6 +40,9 @@ public class PopupPage {
     @FindBy(id = "highlighted-tabs-url")
     public WebElement highlightedTabsUrlButton;
 
+    @FindBy(id = "enable-tabs-feature")
+    public WebElement enableTabsFeatureButton;
+
     public PopupPage(WebDriver driver) {
         PageFactory.initElements(driver, this);
     }
