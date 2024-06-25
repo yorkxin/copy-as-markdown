@@ -1,0 +1,14 @@
+:root {
+    --scheme-color: hsl(171deg,98%,29%);
+}
+
+.button.is-primary {
+    background-color: var(--scheme-color);
+    color: white;
+}
+
+.button.is-primary.is-outlined {
+    background-color: transparent;
+    color: var(--scheme-color);
+    border-color: var(--scheme-color);
+}
