@@ -4,17 +4,18 @@ import { WebExt } from '../webext.js';
 /** @type {Map<String,"yes"|"no"|"unavailable">} */
 const permissions = new Map();
 
-function loadSettings() {
-  Settings.getAll().then((settings) => {
+async function loadSettings() {
+  try {
+    const settings = await Settings.getAll();
     document.forms['form-link-text-always-escape-brackets'].elements.enabled
       .checked = settings.alwaysEscapeLinkBrackets;
     document.forms['form-style-of-unordered-list'].elements.character
       .value = settings.styleOfUnorderedList;
     document.forms['form-style-of-tab-group-indentation'].elements.indentation
       .value = settings.styleOfTabGroupIndentation;
-  }).catch((error) => {
+  } catch (error) {
     console.error('error getting settings', error);
-  });
+  }
 }
 
 async function loadPermissions() {
@@ -110,36 +111,36 @@ document.querySelectorAll('[data-remove-permission]').forEach((node) => {
   });
 });
 
-document.forms['form-link-text-always-escape-brackets'].addEventListener('change', (event) => {
-  Settings.setLinkTextAlwaysEscapeBrackets(event.target.checked)
-    .then(() => {
-      console.info('settings saved');
-    }, (error) => {
-      console.error('failed to save settings:', error);
-    });
+document.forms['form-link-text-always-escape-brackets'].addEventListener('change', async (event) => {
+  try {
+    await Settings.setLinkTextAlwaysEscapeBrackets(event.target.checked);
+    console.info('settings saved');
+  } catch (error) {
+    console.error('failed to save settings:', error);
+  }
 });
 
-document.forms['form-style-of-tab-group-indentation'].addEventListener('change', (event) => {
-  Settings.setStyleTabGroupIndentation(event.target.value)
-    .then(() => {
-      console.info('settings saved');
-    }, (error) => {
-      console.error('failed to save settings:', error);
-    });
+document.forms['form-style-of-tab-group-indentation'].addEventListener('change', async (event) => {
+  try {
+    await Settings.setStyleTabGroupIndentation(event.target.value);
+    console.info('settings saved');
+  } catch (error) {
+    console.error('failed to save settings:', error);
+  }
 });
 
-document.forms['form-style-of-unordered-list'].addEventListener('change', (event) => {
-  Settings.setStyleOfUnrderedList(event.target.value)
-    .then(() => {
-      console.info('settings saved');
-    }, (error) => {
-      console.error('failed to save settings:', error);
-    });
+document.forms['form-style-of-unordered-list'].addEventListener('change', async (event) => {
+  try {
+    await Settings.setStyleOfUnrderedList(event.target.value);
+    console.info('settings saved');
+  } catch (error) {
+    console.error('failed to save settings:', error);
+  }
 });
 
 document.querySelector('#reset').addEventListener('click', async () => {
   await Settings.reset();
-  loadSettings();
+  await loadSettings();
   const toBeRemoved = Array.from(permissions.entries())
     .filter(([, stat]) => stat !== 'unavailable')
     .map(([perm]) => perm);
