@@ -24,57 +24,6 @@ export class WebExt {
   }
 }
 
-WebExt.storage = {
-  session: {
-    /**
-     *
-     * @param keys {string|string[]}
-     * @returns {Promise<Object<string,any>>}
-     */
-    async get(keys) {
-      return new Promise((resolve, reject) => {
-        try {
-          chrome.storage.session.get(keys, (ok) => {
-            resolve(ok);
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
-    },
-    /**
-     * @param {Object<string,any>} items
-     * @return {Promise<null>}
-     */
-    async set(items) {
-      return new Promise((resolve, reject) => {
-        try {
-          chrome.storage.session.set(items, () => {
-            resolve(null);
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
-    },
-    /**
-     * @param {string|string[]} keys
-     * @return {Promise<null>}
-     */
-    async remove(keys) {
-      return new Promise((resolve, reject) => {
-        try {
-          chrome.storage.session.remove(keys, () => {
-            resolve(null);
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
-    },
-  },
-};
-
 WebExt.permissions = {
   /**
    *
