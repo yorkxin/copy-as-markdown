@@ -453,65 +453,59 @@ chrome.commands.onCommand.addListener(async (command, argTab) => {
   }
 });
 
-// listen to messages from popup
-// NOTE: async function will not work here
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  switch (message.topic) {
+/**
+ * @param topic {'badge'|'export-current-tab'|'export-tabs'|'settings-updated'}
+ * @param params {Object}
+ * @returns {Promise<string|null>}
+ */
+async function handleRuntimeMessage(topic, params) {
+  switch (topic) {
     case 'badge': {
-      flashBadge(message.params.type)
-        .then(() => {
-          sendResponse({ ok: true });
-        }, (error) => {
-          sendResponse({ ok: false, error });
-        });
-      break;
+      await flashBadge(params.type);
+      return null;
     }
 
     case 'export-current-tab': {
       // In Firefox, chrome.tabs.get() returns a Promise that always resolves to undefined,
       // but callback pattern works.
-      chrome.tabs.get(message.params.tabId, (tab) => {
-        if (typeof tab === 'undefined') {
-          sendResponse({ ok: false, error: new Error('got undefined tab') });
-        } else {
-          handleExportTab(message.params.format, tab)
-            .then((text) => {
-              sendResponse({ ok: true, text });
-            }, (error) => {
-              sendResponse({ ok: false, error });
-            });
-        }
-      });
-      break;
+      const entrypoint = (typeof browser === 'undefined') ? chrome.tabs : browser.tabs;
+      const tab = await entrypoint.get(params.tabId);
+      if (typeof tab === 'undefined') {
+        throw new Error('got undefined tab');
+      }
+      return handleExportTab(params.format, tab);
     }
 
     case 'export-tabs': {
-      handleExportTabs(
-        message.params.scope,
-        message.params.format,
-        message.params.listType,
-        message.params.windowId,
-      )
-        .then((text) => {
-          sendResponse({ ok: true, text });
-        }, (error) => {
-          sendResponse({ ok: false, error });
-        });
-      break;
+      return handleExportTabs(
+        params.scope,
+        params.format,
+        params.listType,
+        params.windowId,
+      );
     }
 
     case 'settings-updated': {
-      refreshMarkdownInstance();
-      break;
+      await refreshMarkdownInstance();
+      return null;
     }
 
     default: {
-      throw TypeError(`Unknown message topic '${message.topic}'`);
+      throw TypeError(`Unknown message topic '${topic}'`);
     }
   }
+}
+
+// listen to messages from popup
+// NOTE: async function will not work here
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  handleRuntimeMessage(message.topic, message.params)
+    .then((text) => sendResponse({ ok: true, text }))
+    .catch((error) => sendResponse({ ok: false, error: error.message }));
 
   // Must return true to indicate async. See https://developer.chrome.com/docs/extensions/mv3/messaging/#simple
   return true;
 });
 
-refreshMarkdownInstance();
+refreshMarkdownInstance()
+  .then(() => null /* NOP */);
