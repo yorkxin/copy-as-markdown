@@ -152,27 +152,24 @@ async function copy(text) {
  *
  * @param tab {chrome.tabs.Tab}
  * @param text {string}
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>}
  */
 export default async function writeUsingContentScript(tab, text) {
-  return new Promise((resolve, reject) => {
-    // XXX: In Firefox MV2, executeScript() does not return results.
-    // We must use browser.scripting instead of chrome.scripting .
-    const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
+  // XXX: In Firefox MV2, executeScript() does not return results.
+  // We must use browser.scripting instead of chrome.scripting .
+  const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
 
-    entrypoint.executeScript({
-      target: {
-        tabId: tab.id,
-      },
-      func: copy,
-      args: [text],
-    }, (results) => {
-      const { result } = results[0];
-      if (result.ok) {
-        resolve(true);
-      } else {
-        reject(new Error(`content script failed: ${result.error} (method = ${result.method})`));
-      }
-    });
+  const results = entrypoint.executeScript({
+    target: {
+      tabId: tab.id,
+    },
+    func: copy,
+    args: [text],
   });
+
+  const { result } = results[0];
+  if (result.ok) {
+    return true;
+  }
+  throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
 }
