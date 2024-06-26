@@ -100,6 +100,10 @@ export class TabListGrouper {
       return TabList.nonGroup([tab]);
     }
 
+    if (!this.groupIndex.has(tab.groupId)) {
+      return TabList.nonGroup([tab]);
+    }
+
     const group = this.groupIndex.get(tab.groupId);
 
     if (!group) {

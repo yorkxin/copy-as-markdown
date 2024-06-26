@@ -23,8 +23,7 @@ let keepOpen = false;
  * @returns {Promise<{ok: true, text: string|undefined}>}
  */
 async function sendMessage(message) {
-  const entrypoint = (typeof browser === 'undefined') ? chrome : browser;
-  const response = await entrypoint.runtime.sendMessage(message);
+  const response = await browser.runtime.sendMessage(message);
 
   if (!response) {
     throw new Error(`received nil response, type:${typeof response}`);
@@ -57,13 +56,13 @@ document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
   try {
     const response = await sendMessage(message);
     await navigator.clipboard.writeText(response.text);
-    await chrome.runtime.sendMessage({
+    await browser.runtime.sendMessage({
       topic: 'badge',
       params: { type: 'success' },
     });
   } catch (error) {
-    chrome.runtime.lastError = error;
-    await chrome.runtime.sendMessage({
+    browser.runtime.lastError = error;
+    await browser.runtime.sendMessage({
       topic: 'badge',
       params: { type: 'fail' },
     });
@@ -75,7 +74,7 @@ document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
 });
 
 document.getElementById('open-options').addEventListener('click', async () => {
-  await chrome.runtime.openOptionsPage();
+  await browser.runtime.openOptionsPage();
   window.close();
 });
 
@@ -85,18 +84,16 @@ if (URL_PARAMS.has('keep_open')) {
   keepOpen = true;
 }
 
-// NOTE: this function uses callback instead of async,
-// because chrome.windows.getCurrent() does not return Promise in Firefox MV2.
-function getCurrentWindow(callback) {
+async function getCurrentWindow() {
   if (URL_PARAMS.has('window')) {
-    return chrome.windows.get(parseInt(URL_PARAMS.get('window'), 10), { populate: true }, callback);
+    return browser.windows.get(parseInt(URL_PARAMS.get('window'), 10), { populate: true });
   }
-  return chrome.windows.getCurrent({ populate: true }, callback);
+  return browser.windows.getCurrent({ populate: true });
 }
 
 /**
  *
- * @param crWindow {chrome.windows.Window}
+ * @param crWindow {browser.windows.Window}
  * @returns {Promise<number>}
  */
 async function getActiveTabId(crWindow) {
@@ -113,7 +110,8 @@ async function getActiveTabId(crWindow) {
   return -1;
 }
 
-getCurrentWindow(async (crWindow) => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const crWindow = await getCurrentWindow();
   windowId = crWindow.id;
   tabId = await getActiveTabId(crWindow);
 

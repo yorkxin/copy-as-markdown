@@ -1,8 +1,6 @@
-import { WebExt } from './webext.js';
 import Settings from './lib/settings.js';
-import writeUsingContentScript from './lib/clipboard-access.js';
+import copy from './content-script.js';
 import Markdown from './lib/markdown.js';
-import { asyncTabsQuery } from './lib/hacks.js';
 import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
 import { Bookmarks } from './bookmarks.js';
 
@@ -62,47 +60,45 @@ async function refreshMarkdownInstance() {
 }
 
 async function flashBadge(type) {
-  const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
-
   switch (type) {
     case 'success':
-      await entrypoint.setBadgeText({ text: TEXT_OK });
-      await entrypoint.setBadgeBackgroundColor({ color: COLOR_GREEN });
+      await browser.action.setBadgeText({ text: TEXT_OK });
+      await browser.action.setBadgeBackgroundColor({ color: COLOR_GREEN });
       break;
     case 'fail':
-      await entrypoint.setBadgeText({ text: TEXT_ERROR });
-      await entrypoint.setBadgeBackgroundColor({ color: COLOR_RED });
+      await browser.action.setBadgeText({ text: TEXT_ERROR });
+      await browser.action.setBadgeBackgroundColor({ color: COLOR_RED });
       break;
     default:
       return; // don't know what it is. quit.
   }
 
-  chrome.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
+  browser.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
 }
 
 function createMenus() {
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: 'current-page',
     title: 'Copy Page Link as Markdown',
     type: 'normal',
     contexts: ['page'],
   });
 
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: 'link',
     title: 'Copy Link as Markdown',
     type: 'normal',
     contexts: ['link'],
   });
 
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: 'image',
     title: 'Copy Image as Markdown', // TODO: how to fetch alt text?
     type: 'normal',
     contexts: ['image'],
   });
 
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: 'selection-as-markdown',
     title: 'Copy Selection as Markdown',
     type: 'normal',
@@ -110,18 +106,17 @@ function createMenus() {
   });
 }
 
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
-
+browser.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'clear') {
     await Promise.all([
-      entrypoint.setBadgeText({ text: TEXT_EMPTY }),
-      entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
+      browser.action.setBadgeText({ text: TEXT_EMPTY }),
+      browser.action.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
     ]);
   }
 
   if (alarm.name === ALARM_REFRESH_MENU) {
-    await chrome.contextMenus.removeAll(createMenus);
+    await browser.contextMenus.removeAll();
+    createMenus();
   }
 });
 
@@ -183,6 +178,27 @@ function formatItems(tabLists, formatter) {
 
 /**
  *
+ * @param windowId {Number}
+ * @returns {Promise<chrome.tabGroups.TabGroup[]>}
+ */
+async function getTabGroups(windowId) {
+  let granted = false;
+  try {
+    granted = await browser.permissions.contains({ permissions: ['tabGroups'] });
+  } catch (e) {
+    // tabGroups is only supported in Chrome/Chromium
+    return [];
+  }
+
+  if (!granted) {
+    return [];
+  }
+
+  return chrome.tabGroups.query({ windowId });
+}
+
+/**
+ *
  * @param scope {'all'|'highlighted'}
  * @param format {'link','title','url'}
  * @param listType {'list','task-list'}
@@ -190,14 +206,8 @@ function formatItems(tabLists, formatter) {
  * @returns {Promise<string>}
  */
 async function handleExportTabs(scope, format, listType, windowId) {
-  /** @type {chrome.tabs.QueryInfo} */
-  const query = {
-    highlighted: (scope === 'highlighted' ? true : undefined),
-    windowId,
-  };
-
-  if (!await WebExt.permissions.allGranted(['tabs'])) {
-    await chrome.windows.create({
+  if (!await browser.permissions.contains({ permissions: ['tabs'] })) {
+    await browser.windows.create({
       focused: true,
       type: 'popup',
       width: 640,
@@ -207,16 +217,11 @@ async function handleExportTabs(scope, format, listType, windowId) {
     throw new Error('permission required');
   }
 
-  /** @type {chrome.tabGroups.TabGroup[]} */
-  let crGroups = [];
-  if (await WebExt.permissions.contain('tabGroups') === 'yes') {
-    crGroups = await chrome.tabGroups.query({ windowId });
-  }
-  const crTabs = await asyncTabsQuery(query);
-
-  // Everything above depends on chrome|browser
-
-  /** @type {TabGroup[]} */
+  const crTabs = await browser.tabs.query({
+    highlighted: (scope === 'highlighted' ? true : undefined),
+    windowId,
+  });
+  const crGroups = await getTabGroups(windowId);
   const groups = crGroups.map((group) => new TabGroup(group.title, group.id, group.color));
   const tabs = crTabs.map((tab) => new Tab(tab.title, tab.url, tab.groupId || TabGroup.NonGroupId));
   const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
@@ -235,14 +240,11 @@ async function handleExportTabs(scope, format, listType, windowId) {
 }
 
 async function convertSelectionInTabToMarkdown(tab) {
-  // XXX: In Firefox MV2, executeScript() does not return results.
-  // We must use browser.scripting instead of chrome.scripting .
-  const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
-  await entrypoint.executeScript({
+  await browser.scripting.executeScript({
     target: { tabId: tab.id, allFrames: true },
     files: ['dist/vendor/turndown.js'],
   });
-  const results = await entrypoint.executeScript({
+  const results = await browser.scripting.executeScript({
     target: { tabId: tab.id, allFrames: true },
     func: selectionToMarkdown,
     args: [
@@ -318,7 +320,7 @@ async function handleContentOfContextMenu(info, tab) {
 
     // Only available on Firefox
     case 'bookmark-link': {
-      const bm = await WebExt.bookmarksGetSubtree(info.bookmarkId);
+      const bm = await browser.bookmarks.getSubTree(info.bookmarkId);
       if (bm.length === 0) {
         throw new Error('bookmark not found');
       }
@@ -336,7 +338,7 @@ async function handleContentOfContextMenu(info, tab) {
 /**
  *
  * @param format {'link'}
- * @param tab {chrome.tabs.Tab}
+ * @param tab {browser.tabs.Tab}
  * @returns {Promise<string>}
  */
 async function handleExportTab(format, tab) {
@@ -349,26 +351,48 @@ async function handleExportTab(format, tab) {
   }
 }
 
-chrome.runtime.onInstalled.addListener(createMenus);
+/**
+ *
+ * @param tab {browser.tabs.Tab}
+ * @param text {string}
+ * @returns {Promise<boolean>}
+ */
+async function copyUsingContentScript(tab, text) {
+  const results = await browser.scripting.executeScript({
+    target: {
+      tabId: tab.id,
+    },
+    func: copy,
+    args: [text, browser.runtime.getURL('dist/iframe-copy.html')],
+  });
+
+  const { result } = results[0];
+  if (result.ok) {
+    return true;
+  }
+  throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
+}
+
+browser.runtime.onInstalled.addListener(createMenus);
 
 // eslint-disable-next-line no-undef
 if (globalThis.PERIDOCIALLY_REFRESH_MENU === true) {
   // Hack for Firefox, in which Context Menu disappears after some time.
   // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
   console.info('Hack PERIDOCIALLY_REFRESH_MENU is enabled');
-  chrome.alarms.create('refreshMenu', { periodInMinutes: 0.5 });
+  browser.alarms.create('refreshMenu', { periodInMinutes: 0.5 });
 }
 
 // NOTE: All listeners must be registered at top level scope.
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await handleContentOfContextMenu(info, tab);
     // eslint-disable-next-line no-undef
     if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API === true) {
       await navigator.clipboard.writeText(text);
     } else {
-      await writeUsingContentScript(tab, text);
+      await copyUsingContentScript(tab, text);
     }
     await flashBadge('success');
     return true;
@@ -382,7 +406,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // mustGetCurrentTab() is made for Firefox in which in some
 // contexts tabs.getCurrent() returns undefined.
 async function mustGetCurrentTab() {
-  const tabs = await asyncTabsQuery({
+  const tabs = await browser.tabs.query({
     currentWindow: true,
     active: true,
   });
@@ -393,7 +417,7 @@ async function mustGetCurrentTab() {
 }
 
 // listen to keyboard shortcuts
-chrome.commands.onCommand.addListener(async (command, argTab) => {
+browser.commands.onCommand.addListener(async (command, argTab) => {
   let tab = argTab;
   if (typeof tab === 'undefined') {
     // tab argument is not available on Firefox.
@@ -442,7 +466,7 @@ chrome.commands.onCommand.addListener(async (command, argTab) => {
     if (globalThis.ALWAYS_USE_NAVIGATOR_COPY_API) {
       await navigator.clipboard.writeText(text);
     } else {
-      await writeUsingContentScript(tab, text);
+      await copyUsingContentScript(tab, text);
     }
     await flashBadge('success');
     return true;
@@ -466,10 +490,7 @@ async function handleRuntimeMessage(topic, params) {
     }
 
     case 'export-current-tab': {
-      // In Firefox, chrome.tabs.get() returns a Promise that always resolves to undefined,
-      // but callback pattern works.
-      const entrypoint = (typeof browser === 'undefined') ? chrome.tabs : browser.tabs;
-      const tab = await entrypoint.get(params.tabId);
+      const tab = await browser.tabs.get(params.tabId);
       if (typeof tab === 'undefined') {
         throw new Error('got undefined tab');
       }
@@ -498,7 +519,7 @@ async function handleRuntimeMessage(topic, params) {
 
 // listen to messages from popup
 // NOTE: async function will not work here
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   handleRuntimeMessage(message.topic, message.params)
     .then((text) => sendResponse({ ok: true, text }))
     .catch((error) => sendResponse({ ok: false, error: error.message }));

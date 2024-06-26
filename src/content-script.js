@@ -15,10 +15,11 @@
  *
  * NOTE: the whole function must be passed to content script as a function literal.
  * i.e. please do not extract any code to separate functions.
- * @param text
+ * @param text {string}
+ * @param iframeSrc {string} URL to iframe-copy.html
  * @returns {Promise<{ok: boolean, errorMessage?: string, method: 'navigator_api'|'textarea'}>}
  */
-async function copy(text) {
+export default async function copy(text, iframeSrc) {
   class KnownFailureError extends Error {}
 
   const useClipboardAPI = async (t) => {
@@ -85,7 +86,7 @@ async function copy(text) {
 
   const useIframeTextarea = async (t) => new Promise((resolve, reject) => {
     const iframe = document.createElement('iframe');
-    iframe.src = chrome.runtime.getURL('dist/iframe-copy.html');
+    iframe.src = iframeSrc;
     iframe.width = '10';
     iframe.height = '10';
     iframe.style.position = 'absolute';
@@ -146,30 +147,4 @@ async function copy(text) {
     console.debug(error);
     return Promise.resolve({ ok: false, error: `${error.name} ${error.message}`, method: 'iframe' });
   }
-}
-
-/**
- *
- * @param tab {chrome.tabs.Tab}
- * @param text {string}
- * @returns {Promise<boolean>}
- */
-export default async function writeUsingContentScript(tab, text) {
-  // XXX: In Firefox MV2, executeScript() does not return results.
-  // We must use browser.scripting instead of chrome.scripting .
-  const entrypoint = (typeof browser !== 'undefined') ? browser.scripting : chrome.scripting;
-
-  const results = entrypoint.executeScript({
-    target: {
-      tabId: tab.id,
-    },
-    func: copy,
-    args: [text],
-  });
-
-  const { result } = results[0];
-  if (result.ok) {
-    return true;
-  }
-  throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
 }

@@ -14,7 +14,7 @@ export class Bookmarks {
 
   /**
    *
-   * @param bookmark {chrome.bookmarks.BookmarkTreeNode}
+   * @param bookmark {browser.bookmarks.BookmarkTreeNode}
    * @returns {Array<String|String[]>}
    */
   aggregate(bookmark) {
@@ -40,7 +40,7 @@ export class Bookmarks {
 
   /**
    *
-   * @param bookmark {chrome.bookmarks.BookmarkTreeNode}
+   * @param bookmark {browser.bookmarks.BookmarkTreeNode}
    * @returns {String|String[]|string}
    */
   toMarkdown(bookmark) {

@@ -1,8 +1,7 @@
 import Settings from '../lib/settings.js';
-import { WebExt } from '../webext.js';
 
 /** @type {Map<String,"yes"|"no"|"unavailable">} */
-const permissions = new Map();
+const permissionStatuses = new Map();
 
 async function loadSettings() {
   try {
@@ -21,13 +20,16 @@ async function loadSettings() {
 async function loadPermissions() {
   /** @type {Map<String,"yes"|"no"|"unavailable">} */
   await Promise.all(['bookmarks', 'tabs', 'tabGroups'].map(async (perm) => {
-    const status = await WebExt.permissions.contain(perm);
-    permissions.set(perm, status);
+    try {
+      const status = await browser.permissions.contains({ permissions: [perm] });
+      permissionStatuses.set(perm, status ? 'yes' : 'no');
+    } catch (e) {
+      permissionStatuses.set(perm, 'unavailable');
+    }
   }));
 
   document.querySelectorAll('[data-request-permission]').forEach((el) => {
-    const permissionToRequest = el.dataset.requestPermission;
-    const status = permissions.get(permissionToRequest);
+    const status = permissionStatuses.get(el.dataset.requestPermission);
     if (status === 'unavailable') {
       // eslint-disable-next-line no-param-reassign
       el.disabled = true;
@@ -45,8 +47,7 @@ async function loadPermissions() {
   });
 
   document.querySelectorAll('[data-remove-permission]').forEach((el) => {
-    const permissionToRemove = el.dataset.removePermission;
-    const status = permissions.get(permissionToRemove);
+    const status = permissionStatuses.get(el.dataset.removePermission);
     if (status === 'unavailable') {
       // eslint-disable-next-line no-param-reassign
       el.disabled = true;
@@ -66,7 +67,7 @@ async function loadPermissions() {
   });
 
   document.querySelectorAll('[data-hide-if-permission-contains]').forEach((el) => {
-    const status = permissions.get(el.dataset.hideIfPermissionContains);
+    const status = permissionStatuses.get(el.dataset.hideIfPermissionContains);
     if (status === 'unavailable') {
       // eslint-disable-next-line no-param-reassign
       el.innerText = 'Unsupported';
@@ -80,7 +81,7 @@ async function loadPermissions() {
 
   document.querySelectorAll('[data-dependson-permissions]').forEach((el) => {
     const dependsOn = el.dataset.dependsonPermissions.split(',');
-    const statuses = dependsOn.map((perm) => permissions.get(perm));
+    const statuses = dependsOn.map((perm) => permissionStatuses.get(perm));
     // eslint-disable-next-line no-param-reassign
     el.disabled = !statuses.every((dep) => dep === 'yes');
   });
@@ -89,25 +90,20 @@ async function loadPermissions() {
 document.addEventListener('DOMContentLoaded', loadSettings);
 document.addEventListener('DOMContentLoaded', loadPermissions);
 
-chrome.permissions.onAdded.addListener(async () => {
-  await loadPermissions();
-});
-
-chrome.permissions.onRemoved.addListener(async () => {
-  await loadPermissions();
-});
+browser.permissions.onAdded.addListener(loadPermissions);
+browser.permissions.onRemoved.addListener(loadPermissions);
 
 document.querySelectorAll('[data-request-permission]').forEach((node) => {
   node.addEventListener('click', async (e) => {
     e.preventDefault();
-    await WebExt.permissions.request([e.target.dataset.requestPermission]);
+    await browser.permissions.request({ permissions: [e.target.dataset.requestPermission] });
   });
 });
 
 document.querySelectorAll('[data-remove-permission]').forEach((node) => {
   node.addEventListener('click', async (e) => {
     e.preventDefault();
-    await WebExt.permissions.remove([e.target.dataset.removePermission]);
+    await browser.permissions.remove({ permissions: [e.target.dataset.removePermission] });
   });
 });
 
@@ -141,9 +137,9 @@ document.forms['form-style-of-unordered-list'].addEventListener('change', async 
 document.querySelector('#reset').addEventListener('click', async () => {
   await Settings.reset();
   await loadSettings();
-  const toBeRemoved = Array.from(permissions.entries())
+  const toBeRemoved = Array.from(permissionStatuses.entries())
     .filter(([, stat]) => stat !== 'unavailable')
     .map(([perm]) => perm);
-  await WebExt.permissions.remove(toBeRemoved);
+  await browser.permissions.remove({ permissions: toBeRemoved });
   await loadPermissions();
 });

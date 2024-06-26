@@ -1,3 +1,5 @@
+import '../vendor/browser-polyfill.js';
+
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
 const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
 const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
@@ -11,38 +13,38 @@ export default {
    * @return {Promise<void>}
    * */
   async setLinkTextAlwaysEscapeBrackets(value) {
-    await this.syncStorage.set({
+    await browser.storage.sync.set({
       [SKLinkTextAlwaysEscapeBrackets]: value,
     });
-    this.publishUpdated();
+    await this.publishUpdated();
   },
 
   async setStyleTabGroupIndentation(value) {
-    await this.syncStorage.set({
+    await browser.storage.sync.set({
       [SKStyleTabGroupIndentation]: value,
     });
-    this.publishUpdated();
+    await this.publishUpdated();
   },
 
   async setStyleOfUnrderedList(value) {
-    await this.syncStorage.set({
+    await browser.storage.sync.set({
       [SKStyleOfUnorderedList]: value,
     });
-    this.publishUpdated();
+    await this.publishUpdated();
   },
 
   async reset() {
-    await this.syncStorage.clear();
-    this.publishUpdated();
+    await browser.storage.sync.clear();
+    await this.publishUpdated();
   },
 
-  publishUpdated() {
+  async publishUpdated() {
     // NOTE: Do not await, or it will block
-    chrome.runtime.sendMessage({ topic: 'settings-updated' });
+    await browser.runtime.sendMessage({ topic: 'settings-updated' });
   },
 
   async getAll() {
-    const all = await this.syncStorage.get({
+    const all = await browser.storage.sync.get({
       [SKLinkTextAlwaysEscapeBrackets]: false,
       [SKStyleOfUnorderedList]: 'dash',
       [SKStyleTabGroupIndentation]: 'spaces',
@@ -53,17 +55,5 @@ export default {
       styleOfUnorderedList: all[SKStyleOfUnorderedList],
       styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation],
     };
-  },
-
-  /**
-   * @returns {chrome.storage.SyncStorageArea|browser.storage.StorageArea}
-   */
-  get syncStorage() {
-    // XXX: in Firefox MV2 the implementation of chrome.storage.sync
-    // always return undefined. We must use browser.storage.sync .
-    if (typeof browser !== 'undefined') {
-      return browser.storage.sync;
-    }
-    return chrome.storage.sync;
   },
 };
