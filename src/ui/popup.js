@@ -3,8 +3,23 @@ let tabId = -1;
 let keepOpen = false;
 
 /**
+ * @typedef {Object} MessageParam
+ * @property {string} format
+ * @property {string|undefined} tabId
+ * @property {string|undefined} scope
+ * @property {string|undefined} listType
+ * @property {string|undefined} windowId
+ */
+
+/**
+ * @typedef {Object} Message
+ * @property {string} topic
+ * @property {MessageParam} params
+ */
+
+/**
  *
- * @param message {{topic: string, params: { format: string, tabId: string|undefined, scope: string|undefined, listType: string|undefined, windowId: string|undefined }}}
+ * @param message {Message}
  * @returns {Promise<{ok: true, text: string|undefined}>}
  */
 async function sendMessage(message) {
@@ -28,6 +43,7 @@ document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
   const button = e.submitter;
   const action = button.value;
 
+  /** @type {Message} */
   const message = { topic: action, params: { format: button.dataset.format } };
 
   if (action === 'export-current-tab') {
