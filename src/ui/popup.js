@@ -2,8 +2,28 @@ let windowId = -1;
 let tabId = -1;
 let keepOpen = false;
 
+/**
+ *
+ * @param message {{topic: string, params: { format: string, tabId: string|undefined, scope: string|undefined, listType: string|undefined, windowId: string|undefined }}}
+ * @returns {Promise<{ok: true, text: string|undefined}>}
+ */
+async function sendMessage(message) {
+  const entrypoint = (typeof browser === 'undefined') ? chrome : browser;
+  const response = await entrypoint.runtime.sendMessage(message);
+
+  if (!response) {
+    throw new Error(`received nil response, type:${typeof response}`);
+  }
+
+  if (response.ok === false) {
+    throw new Error(`Popup received an error from runtime: ${response.error}`);
+  }
+
+  return response;
+}
+
 // Install listeners
-document.forms['form-popup-actions'].addEventListener('submit', (e) => {
+document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
   e.preventDefault();
   const button = e.submitter;
   const action = button.value;
@@ -18,51 +38,24 @@ document.forms['form-popup-actions'].addEventListener('submit', (e) => {
     message.params.windowId = windowId;
   }
 
-  chrome.runtime.sendMessage(message, (response) => {
-    if (!response) {
-      console.error('[FATAL] received nil response, type:', typeof response);
-      return;
+  try {
+    const response = await sendMessage(message);
+    await navigator.clipboard.writeText(response.text);
+    await chrome.runtime.sendMessage({
+      topic: 'badge',
+      params: { type: 'success' },
+    });
+  } catch (error) {
+    chrome.runtime.lastError = error;
+    await chrome.runtime.sendMessage({
+      topic: 'badge',
+      params: { type: 'fail' },
+    });
+  } finally {
+    if (!keepOpen) { // for tests
+      window.close();
     }
-
-    if (response.ok === false) {
-      console.error('Failed to copy message, error: ', response.error);
-      chrome.runtime.sendMessage({
-        topic: 'badge',
-        params: { type: 'error' },
-      }, () => {
-        if (!keepOpen) { // for tests
-          window.close();
-        }
-      });
-      return;
-    }
-
-    navigator.clipboard.writeText(response.text)
-      .then(
-        () => {
-          chrome.runtime.sendMessage({
-            topic: 'badge',
-            params: { type: 'success' },
-          }, () => {
-            if (!keepOpen) { // for tests
-              window.close();
-            }
-          });
-        },
-        (error) => {
-          // failed
-          console.error(error);
-          chrome.runtime.sendMessage({
-            topic: 'badge',
-            params: { type: 'fail' },
-          }, () => {
-            if (!keepOpen) { // for tests
-              window.close();
-            }
-          });
-        },
-      );
-  });
+  }
 });
 
 document.getElementById('open-options').addEventListener('click', async () => {
