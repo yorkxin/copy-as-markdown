@@ -110,19 +110,18 @@ function createMenus() {
   });
 }
 
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
   const entrypoint = chrome.action /* MV3 */ || chrome.browserAction; /* Firefox MV2 */
 
   if (alarm.name === 'clear') {
-    Promise.all([
+    await Promise.all([
       entrypoint.setBadgeText({ text: TEXT_EMPTY }),
       entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
-    ])
-      .then(() => { /* NOP */ });
+    ]);
   }
 
   if (alarm.name === ALARM_REFRESH_MENU) {
-    chrome.contextMenus.removeAll(createMenus);
+    await chrome.contextMenus.removeAll(createMenus);
   }
 });
 
@@ -372,11 +371,11 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await writeUsingContentScript(tab, text);
     }
     await flashBadge('success');
-    return Promise.resolve(true);
+    return true;
   } catch (error) {
     console.error(error);
     await flashBadge('fail');
-    return Promise.reject(error);
+    throw error;
   }
 });
 
@@ -388,7 +387,7 @@ async function mustGetCurrentTab() {
     active: true,
   });
   if (tabs.length !== 1) {
-    return Promise.reject(new Error('failed to get current tab'));
+    throw new Error('failed to get current tab');
   }
   return tabs[0];
 }
@@ -446,11 +445,11 @@ chrome.commands.onCommand.addListener(async (command, argTab) => {
       await writeUsingContentScript(tab, text);
     }
     await flashBadge('success');
-    return Promise.resolve(true);
+    return true;
   } catch (e) {
     console.error(e);
     await flashBadge('fail');
-    return Promise.reject(e);
+    throw e;
   }
 });
 
