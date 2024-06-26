@@ -2,12 +2,47 @@ let windowId = -1;
 let tabId = -1;
 let keepOpen = false;
 
+/**
+ * @typedef {Object} MessageParam
+ * @property {string} format
+ * @property {string|undefined} tabId
+ * @property {string|undefined} scope
+ * @property {string|undefined} listType
+ * @property {string|undefined} windowId
+ */
+
+/**
+ * @typedef {Object} Message
+ * @property {string} topic
+ * @property {MessageParam} params
+ */
+
+/**
+ *
+ * @param message {Message}
+ * @returns {Promise<{ok: true, text: string|undefined}>}
+ */
+async function sendMessage(message) {
+  const response = await browser.runtime.sendMessage(message);
+
+  if (!response) {
+    throw new Error(`received nil response, type:${typeof response}`);
+  }
+
+  if (response.ok === false) {
+    throw new Error(`Popup received an error from runtime: ${response.error}`);
+  }
+
+  return response;
+}
+
 // Install listeners
-document.forms['form-popup-actions'].addEventListener('submit', (e) => {
+document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
   e.preventDefault();
   const button = e.submitter;
   const action = button.value;
 
+  /** @type {Message} */
   const message = { topic: action, params: { format: button.dataset.format } };
 
   if (action === 'export-current-tab') {
@@ -18,55 +53,28 @@ document.forms['form-popup-actions'].addEventListener('submit', (e) => {
     message.params.windowId = windowId;
   }
 
-  chrome.runtime.sendMessage(message, (response) => {
-    if (!response) {
-      console.error('[FATAL] received nil response, type:', typeof response);
-      return;
+  try {
+    const response = await sendMessage(message);
+    await navigator.clipboard.writeText(response.text);
+    await browser.runtime.sendMessage({
+      topic: 'badge',
+      params: { type: 'success' },
+    });
+  } catch (error) {
+    browser.runtime.lastError = error;
+    await browser.runtime.sendMessage({
+      topic: 'badge',
+      params: { type: 'fail' },
+    });
+  } finally {
+    if (!keepOpen) { // for tests
+      window.close();
     }
-
-    if (response.ok === false) {
-      console.error('Failed to copy message, error: ', response.error);
-      chrome.runtime.sendMessage({
-        topic: 'badge',
-        params: { type: 'error' },
-      }, () => {
-        if (!keepOpen) { // for tests
-          window.close();
-        }
-      });
-      return;
-    }
-
-    navigator.clipboard.writeText(response.text)
-      .then(
-        () => {
-          chrome.runtime.sendMessage({
-            topic: 'badge',
-            params: { type: 'success' },
-          }, () => {
-            if (!keepOpen) { // for tests
-              window.close();
-            }
-          });
-        },
-        (error) => {
-          // failed
-          console.error(error);
-          chrome.runtime.sendMessage({
-            topic: 'badge',
-            params: { type: 'fail' },
-          }, () => {
-            if (!keepOpen) { // for tests
-              window.close();
-            }
-          });
-        },
-      );
-  });
+  }
 });
 
 document.getElementById('open-options').addEventListener('click', async () => {
-  await chrome.runtime.openOptionsPage();
+  await browser.runtime.openOptionsPage();
   window.close();
 });
 
@@ -76,18 +84,16 @@ if (URL_PARAMS.has('keep_open')) {
   keepOpen = true;
 }
 
-// NOTE: this function uses callback instead of async,
-// because chrome.windows.getCurrent() does not return Promise in Firefox MV2.
-function getCurrentWindow(callback) {
+async function getCurrentWindow() {
   if (URL_PARAMS.has('window')) {
-    return chrome.windows.get(parseInt(URL_PARAMS.get('window'), 10), { populate: true }, callback);
+    return browser.windows.get(parseInt(URL_PARAMS.get('window'), 10), { populate: true });
   }
-  return chrome.windows.getCurrent({ populate: true }, callback);
+  return browser.windows.getCurrent({ populate: true });
 }
 
 /**
  *
- * @param crWindow {chrome.windows.Window}
+ * @param crWindow {browser.windows.Window}
  * @returns {Promise<number>}
  */
 async function getActiveTabId(crWindow) {
@@ -104,7 +110,8 @@ async function getActiveTabId(crWindow) {
   return -1;
 }
 
-getCurrentWindow(async (crWindow) => {
+document.addEventListener('DOMContentLoaded', async () => {
+  const crWindow = await getCurrentWindow();
   windowId = crWindow.id;
   tabId = await getActiveTabId(crWindow);
 
