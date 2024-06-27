@@ -478,7 +478,7 @@ browser.commands.onCommand.addListener(async (command, argTab) => {
 });
 
 /**
- * @param topic {'badge'|'export-current-tab'|'export-tabs'|'settings-updated'}
+ * @param topic {'badge'|'export-current-tab'|'export-tabs'}
  * @param params {Object}
  * @returns {Promise<string|null>}
  */
@@ -506,11 +506,6 @@ async function handleRuntimeMessage(topic, params) {
       );
     }
 
-    case 'settings-updated': {
-      await refreshMarkdownInstance();
-      return null;
-    }
-
     default: {
       throw TypeError(`Unknown message topic '${topic}'`);
     }
@@ -526,6 +521,15 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // Must return true to indicate async. See https://developer.chrome.com/docs/extensions/mv3/messaging/#simple
   return true;
+});
+
+browser.storage.sync.onChanged.addListener(async (changes) => {
+  const hasSettingsChanged = Object.entries(changes)
+    .filter(([key]) => Settings.keys.includes(key))
+    .length > 0;
+  if (hasSettingsChanged) {
+    await refreshMarkdownInstance();
+  }
 });
 
 refreshMarkdownInstance()

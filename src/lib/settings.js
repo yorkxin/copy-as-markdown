@@ -8,6 +8,22 @@ const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
  * Singleton Settings object in the sync storage
  */
 export default {
+  SKLinkTextAlwaysEscapeBrackets,
+  SKStyleOfUnorderedList,
+  SKStyleTabGroupIndentation,
+
+  get defaultSettings() {
+    return {
+      [SKLinkTextAlwaysEscapeBrackets]: false,
+      [SKStyleOfUnorderedList]: 'dash',
+      [SKStyleTabGroupIndentation]: 'spaces',
+    };
+  },
+
+  get keys() {
+    return Object.keys(this.defaultSettings);
+  },
+
   /**
    * @param {boolean} value
    * @return {Promise<void>}
@@ -16,39 +32,26 @@ export default {
     await browser.storage.sync.set({
       [SKLinkTextAlwaysEscapeBrackets]: value,
     });
-    await this.publishUpdated();
   },
 
   async setStyleTabGroupIndentation(value) {
     await browser.storage.sync.set({
       [SKStyleTabGroupIndentation]: value,
     });
-    await this.publishUpdated();
   },
 
   async setStyleOfUnrderedList(value) {
     await browser.storage.sync.set({
       [SKStyleOfUnorderedList]: value,
     });
-    await this.publishUpdated();
   },
 
   async reset() {
-    await browser.storage.sync.clear();
-    await this.publishUpdated();
-  },
-
-  async publishUpdated() {
-    // NOTE: Do not await, or it will block
-    await browser.runtime.sendMessage({ topic: 'settings-updated' });
+    await browser.storage.sync.remove(this.keys);
   },
 
   async getAll() {
-    const all = await browser.storage.sync.get({
-      [SKLinkTextAlwaysEscapeBrackets]: false,
-      [SKStyleOfUnorderedList]: 'dash',
-      [SKStyleTabGroupIndentation]: 'spaces',
-    });
+    const all = await browser.storage.sync.get(this.defaultSettings);
 
     return {
       alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets],
