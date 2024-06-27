@@ -40,6 +40,35 @@ public class BaseTest {
     protected final static String BROWSER_CHROME = "chrome";
     protected final static String BROWSER_FIREFOX = "firefox";
 
+    @DataProvider(name = "indentationsAndListStyles")
+    public static Object[][] indentationsAndListStyles() {
+        return new Object[][] {
+                {"spaces", "dash"},
+                {"spaces", "asterisk"},
+                {"spaces", "plus"},
+                {"tab", "dash"},
+                {"tab", "asterisk"},
+                {"tab", "plus"},
+        };
+    }
+
+    @DataProvider(name = "indentations")
+    public static Object[][] indentations() {
+        return new Object[][] {
+                {"spaces"},
+                {"tab"},
+        };
+    }
+
+    @DataProvider(name = "listStyles")
+    public static Object[][] listStyles() {
+        return new Object[][] {
+                {"dash"},
+                {"asterisk"},
+                {"plus"},
+        };
+    }
+
     @Parameters("browser")
     @BeforeClass
     public void setUp(@Optional(BROWSER_CHROME) String browserName) throws IOException, AWTException {
@@ -309,5 +338,67 @@ public class BaseTest {
 
         driver.close();
         driver.switchTo().window(mainWindowHandle);
+    }
+
+    public void setTabGroupIndentation(String indentation) {
+        assert Objects.equals(indentation, "tab") || Objects.equals(indentation, "spaces");
+
+        driver.switchTo().newWindow(WindowType.WINDOW);
+        openOptionsPage();
+        String handle = driver.getWindowHandle();
+        OptionsPage optionsPage = new OptionsPage(driver);
+        if (indentation.equals("tab")) {
+            optionsPage.tabGroupIndentationTab.click();
+        } else if (indentation.equals("spaces")) {
+            optionsPage.tabGroupIndentationSpaces.click();
+        }
+        driver.switchTo().window(handle);
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
+    public void setListStyle(String style) {
+        assert Objects.equals(style, "dash") || Objects.equals(style, "asterisk") || Objects.equals(style, "plus");
+
+        driver.switchTo().newWindow(WindowType.WINDOW);
+        openOptionsPage();
+        String handle = driver.getWindowHandle();
+        OptionsPage optionsPage = new OptionsPage(driver);
+        if (style.equals("dash")) {
+            optionsPage.unorderedListCharacterDash.click();
+        } else if (style.equals("asterisk")) {
+            optionsPage.unorderedListCharacterAsterisk.click();
+        } else if (style.equals("plus")) {
+            optionsPage.unorderedListCharacterPlus.click();
+        }
+        driver.switchTo().window(handle);
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
+    public String expectedIndentation(String indentation){
+        assert Objects.equals(indentation, "tab") || Objects.equals(indentation, "spaces");
+
+        if (indentation.equals("tab")) {
+            return "\t";
+        } else if (indentation.equals("spaces")) {
+            return "  ";
+        };
+
+        throw new IllegalArgumentException();
+    }
+
+    public String expectedListStyle(String style){
+        assert Objects.equals(style, "dash") || Objects.equals(style, "asterisk") || Objects.equals(style, "plus");
+
+        if (style.equals("dash")) {
+            return "-";
+        } else if (style.equals("asterisk")) {
+            return "*";
+        } else if (style.equals("plus")) {
+            return "+";
+        };
+
+        throw new IllegalArgumentException();
     }
 }
