@@ -31,7 +31,7 @@ public class SimpleTest extends BaseTest {
         DemoPageData dpd = openDemoTabs(false);
         openPopupWindow(dpd);
         popupPage.currentTabLinkButton.click();
-        Thread.sleep(1000);
+        Thread.sleep(500);
         String expected = "[Page 0 - Copy as Markdown](http://localhost:5566/0.html)";
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
     }

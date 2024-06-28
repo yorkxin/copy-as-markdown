@@ -5,8 +5,13 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.PageFactory;
 
+import java.util.List;
+
 // page_url = https://www.jetbrains.com/
 public class PopupPage {
+    @FindBy(css = "[name='action'][value='export-tabs']")
+    public List<WebElement> allTabExportButtons;
+
     @FindBy(id = "display-count-all-tabs")
     public WebElement counterAll;
 
@@ -39,9 +44,6 @@ public class PopupPage {
 
     @FindBy(id = "highlighted-tabs-url")
     public WebElement highlightedTabsUrlButton;
-
-    @FindBy(id = "enable-tabs-feature")
-    public WebElement enableTabsFeatureButton;
 
     public PopupPage(WebDriver driver) {
         PageFactory.initElements(driver, this);

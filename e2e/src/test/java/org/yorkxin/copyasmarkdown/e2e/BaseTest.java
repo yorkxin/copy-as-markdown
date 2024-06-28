@@ -40,6 +40,50 @@ public class BaseTest {
     protected final static String BROWSER_CHROME = "chrome";
     protected final static String BROWSER_FIREFOX = "firefox";
 
+    @DataProvider(name = "indentationsAndListStyles")
+    public static Object[][] indentationsAndListStyles() {
+        return new Object[][] {
+                {"spaces", "dash"},
+                {"spaces", "asterisk"},
+                {"spaces", "plus"},
+                {"tab", "dash"},
+                {"tab", "asterisk"},
+                {"tab", "plus"},
+        };
+    }
+
+    public static String[] getAllIndentations() {
+        return new String[]{
+                "spaces",
+                "tab",
+        };
+    }
+
+    @DataProvider(name = "indentations")
+    public static Object[][] indentations() {
+        return new Object[][] {
+                {"spaces"},
+                {"tab"},
+        };
+    }
+
+    public static String[] getAllListStyles() {
+        return new String[]{
+            "dash",
+            "asterisk",
+            "plus",
+        };
+    }
+
+    @DataProvider(name = "listStyles")
+    public static Object[][] listStyles() {
+        return new Object[][] {
+                {"dash"},
+                {"asterisk"},
+                {"plus"},
+        };
+    }
+
     @Parameters("browser")
     @BeforeClass
     public void setUp(@Optional(BROWSER_CHROME) String browserName) throws IOException, AWTException {
@@ -171,11 +215,6 @@ public class BaseTest {
         clipboard.setContents(new StringSelection("========TEST SEPARATOR========"),null);
     }
 
-    @AfterMethod
-    public void reset() throws AWTException {
-        removeAllPermissions();
-    }
-
     @AfterClass
     public void tearDown() {
         driver.quit();
@@ -250,7 +289,7 @@ public class BaseTest {
             robot.keyPress(KeyEvent.VK_SPACE);
         }
 
-        (new Robot()).delay(500);
+        (new Robot()).delay(200);
 
 
         // then remove all of them
@@ -261,7 +300,6 @@ public class BaseTest {
                 continue;
             }
             button.click();
-            (new Robot()).delay(500);
         }
 
         driver.close();
@@ -280,13 +318,16 @@ public class BaseTest {
         driver.switchTo().window(mainWindowHandle);
     }
 
-    protected void removePermission(String permission) {
+    protected void removePermission(String permission) throws AWTException {
         // Assuming that permissions have been granted by preGrantAllPermissionsInChrome() i.e. no dialog to handle
         // In Chrome, go to options page, then click request permission
         driver.switchTo().newWindow(WindowType.WINDOW);
 
         openOptionsPage();
-        driver.findElement(By.cssSelector("[data-remove-permission='"+permission+"'")).click();
+        WebElement button = driver.findElement(By.cssSelector("[data-remove-permission='"+permission+"'"));
+        if (button.isEnabled()) {
+            button.click();
+        }
 
         driver.close();
         driver.switchTo().window(mainWindowHandle);
@@ -304,10 +345,71 @@ public class BaseTest {
                 continue;
             }
             button.click();
-            (new Robot()).delay(500);
         }
 
         driver.close();
         driver.switchTo().window(mainWindowHandle);
+    }
+
+    public void setTabGroupIndentation(String indentation) {
+        assert Objects.equals(indentation, "tab") || Objects.equals(indentation, "spaces");
+
+        driver.switchTo().newWindow(WindowType.WINDOW);
+        openOptionsPage();
+        String handle = driver.getWindowHandle();
+        OptionsPage optionsPage = new OptionsPage(driver);
+        if (indentation.equals("tab")) {
+            optionsPage.tabGroupIndentationTab.click();
+        } else if (indentation.equals("spaces")) {
+            optionsPage.tabGroupIndentationSpaces.click();
+        }
+        driver.switchTo().window(handle);
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
+    public void setListStyle(String style) {
+        assert Objects.equals(style, "dash") || Objects.equals(style, "asterisk") || Objects.equals(style, "plus");
+
+        driver.switchTo().newWindow(WindowType.WINDOW);
+        openOptionsPage();
+        String handle = driver.getWindowHandle();
+        OptionsPage optionsPage = new OptionsPage(driver);
+        if (style.equals("dash")) {
+            optionsPage.unorderedListCharacterDash.click();
+        } else if (style.equals("asterisk")) {
+            optionsPage.unorderedListCharacterAsterisk.click();
+        } else if (style.equals("plus")) {
+            optionsPage.unorderedListCharacterPlus.click();
+        }
+        driver.switchTo().window(handle);
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
+    public String expectedIndentation(String indentation){
+        assert Objects.equals(indentation, "tab") || Objects.equals(indentation, "spaces");
+
+        if (indentation.equals("tab")) {
+            return "\t";
+        } else if (indentation.equals("spaces")) {
+            return "  ";
+        };
+
+        throw new IllegalArgumentException();
+    }
+
+    public String expectedListStyle(String style){
+        assert Objects.equals(style, "dash") || Objects.equals(style, "asterisk") || Objects.equals(style, "plus");
+
+        if (style.equals("dash")) {
+            return "-";
+        } else if (style.equals("asterisk")) {
+            return "*";
+        } else if (style.equals("plus")) {
+            return "+";
+        };
+
+        throw new IllegalArgumentException();
     }
 }

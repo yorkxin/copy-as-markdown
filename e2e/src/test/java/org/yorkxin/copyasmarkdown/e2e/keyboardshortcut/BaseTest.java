@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.Objects;
 
 public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.BaseTest {
-    void openChromeKeyboardShortcutsPage() {
+    protected void openChromeKeyboardShortcutsPage() {
         driver.switchTo().newWindow(WindowType.WINDOW).get("chrome://extensions/shortcuts");
     }
 
-    void openFirefoxKeyboardShortcutsPage() {
+    protected void openFirefoxKeyboardShortcutsPage() {
         driver.switchTo().newWindow(WindowType.WINDOW).get("about:addons");
         driver.findElement(By.cssSelector("button[action='page-options']")).click();
 
@@ -40,7 +40,7 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.BaseTest {
         driver.findElements(By.cssSelector("button[data-l10n-id=\"shortcuts-card-expand-button\"]")).forEach(e -> e.click());
     }
 
-    static void runShortcutKeys(int[] modifiers, int key) throws AWTException {
+    protected static void runShortcutKeys(int[] modifiers, int key) throws AWTException {
         Robot robot = new Robot();
         for (int modifier : modifiers) {
             robot.keyPress(modifier);
@@ -50,10 +50,10 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.BaseTest {
         for (int modifier : modifiers) {
             robot.keyRelease(modifier);
         }
-        robot.delay(1000);
+        robot.delay(500);
     }
 
-    void setShortcutKeyInChrome(String commandName, CharSequence[] modifiers, CharSequence key) throws AWTException, InterruptedException {
+    protected void setShortcutKeyInChrome(String commandName, CharSequence[] modifiers, CharSequence key) throws AWTException, InterruptedException {
         // Max 4 shortcut keys can be specified in the manifest.json file,
         // so we have to navigate to chrome://extension/shortcuts and configure them in runtime.
 
@@ -96,7 +96,7 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.BaseTest {
         actions.perform();
     }
 
-    void setShortcutKeyInFirefox(String commandId, CharSequence[] modifiers, CharSequence key) {
+    protected void setShortcutKeyInFirefox(String commandId, CharSequence[] modifiers, CharSequence key) {
         WebElement cmdEntry = driver.findElement(By.xpath("//input[@name=\""+commandId+"\"]"));
 
         if (cmdEntry == null) {

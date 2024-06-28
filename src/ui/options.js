@@ -136,10 +136,18 @@ document.forms['form-style-of-unordered-list'].addEventListener('change', async 
 
 document.querySelector('#reset').addEventListener('click', async () => {
   await Settings.reset();
-  await loadSettings();
   const toBeRemoved = Array.from(permissionStatuses.entries())
     .filter(([, stat]) => stat !== 'unavailable')
     .map(([perm]) => perm);
   await browser.permissions.remove({ permissions: toBeRemoved });
-  await loadPermissions();
+});
+
+browser.storage.sync.onChanged.addListener(async (changes) => {
+  const hasSettingsChanged = Object.entries(changes)
+    .filter(([key]) => Settings.keys.includes(key))
+    .length > 0;
+
+  if (hasSettingsChanged) {
+    await loadSettings();
+  }
 });

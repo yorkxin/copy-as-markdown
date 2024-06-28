@@ -6,10 +6,14 @@
         <parameter name="browser" value="firefox"/>
         <classes>
             <class name="org.yorkxin.copyasmarkdown.e2e.ContextMenuTest"/>
+            <class name="org.yorkxin.copyasmarkdown.e2e.OptionsPageTest"/>
+            <class name="org.yorkxin.copyasmarkdown.e2e.PermissionsPageTest"/>
             <class name="org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.OnPageContentsTest"/>
-            <class name="org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.TabExportingTest"/>
+            <class name="org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs.TabExportingTest"/>
+            <class name="org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs.NoPermissionTest"/>
             <class name="org.yorkxin.copyasmarkdown.e2e.popup.SimpleTest"/>
             <class name="org.yorkxin.copyasmarkdown.e2e.popup.TabExportingTest"/>
+            <class name="org.yorkxin.copyasmarkdown.e2e.popup.NoPermissionTest"/>
         </classes>
     </test>
 </suite>
