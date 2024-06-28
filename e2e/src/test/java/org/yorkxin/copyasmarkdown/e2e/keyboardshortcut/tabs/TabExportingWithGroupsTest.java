@@ -1,7 +1,6 @@
-package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut;
+package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
 import org.testng.annotations.*;
 
 import java.awt.*;
@@ -15,45 +14,13 @@ import static org.testng.Assert.assertEquals;
 
 public class TabExportingWithGroupsTest extends BaseTest {
     @BeforeClass
-    public void configureKeyboardShortcuts() throws InterruptedException, AWTException {
-        switch (browser) {
-            case BROWSER_CHROME -> configureKeyboardShortcutsInChrome();
-            case BROWSER_FIREFOX -> configureKeyboardShortcutsInFirefox();
-            default -> throw new IllegalStateException("Unexpected browser: " + browser);
-        }
-    }
-
-    public void configureKeyboardShortcutsInChrome() throws InterruptedException, AWTException {
-        openChromeKeyboardShortcutsPage();
-        setShortcutKeyInChrome("all tabs: - [title](url)", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "w");
-        setShortcutKeyInChrome("all tabs: - [ ] [title](url)", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "e");
-        setShortcutKeyInChrome("all tabs: - title", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "r");
-        setShortcutKeyInChrome("all tabs: - url", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "t");
-        setShortcutKeyInChrome("selected tabs: - [title](url)", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "y");
-        setShortcutKeyInChrome("selected tabs: - [ ] [title](url)", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "u");
-        setShortcutKeyInChrome("selected tabs: - title", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "i");
-        setShortcutKeyInChrome("selected tabs: - url", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "o");
-    }
-
-    public void configureKeyboardShortcutsInFirefox() {
-        openFirefoxKeyboardShortcutsPage();
-        setShortcutKeyInFirefox("all-tabs-link-as-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "w");
-        setShortcutKeyInFirefox("all-tabs-link-as-task-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "e");
-        setShortcutKeyInFirefox("all-tabs-title-as-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "r");
-        setShortcutKeyInFirefox("all-tabs-url-as-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "t");
-        setShortcutKeyInFirefox("highlighted-tabs-link-as-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "y");
-        setShortcutKeyInFirefox("highlighted-tabs-link-as-task-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "u");
-        setShortcutKeyInFirefox("highlighted-tabs-title-as-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "i");
-        setShortcutKeyInFirefox("highlighted-tabs-url-as-list", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "o");
-    }
-
-    @BeforeMethod
-    public void setUp() {
+    public void setUp() throws InterruptedException, AWTException {
+        configureKeyboardShortcuts();
         grantPermission("tabs");
         grantPermission("tabGroups");
     }
 
-    @AfterMethod
+    @AfterClass
     public void teardown() {
         driver.switchTo().window(mainWindowHandle);
         driver.findElement(By.id("close-demo")).click();

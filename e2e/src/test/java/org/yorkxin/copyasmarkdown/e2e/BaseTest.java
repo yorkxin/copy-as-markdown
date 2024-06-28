@@ -52,11 +52,26 @@ public class BaseTest {
         };
     }
 
+    public static String[] getAllIndentations() {
+        return new String[]{
+                "spaces",
+                "tab",
+        };
+    }
+
     @DataProvider(name = "indentations")
     public static Object[][] indentations() {
         return new Object[][] {
                 {"spaces"},
                 {"tab"},
+        };
+    }
+
+    public static String[] getAllListStyles() {
+        return new String[]{
+            "dash",
+            "asterisk",
+            "plus",
         };
     }
 
@@ -200,11 +215,6 @@ public class BaseTest {
         clipboard.setContents(new StringSelection("========TEST SEPARATOR========"),null);
     }
 
-    @AfterMethod
-    public void reset() throws AWTException {
-        removeAllPermissions();
-    }
-
     @AfterClass
     public void tearDown() {
         driver.quit();
@@ -279,7 +289,7 @@ public class BaseTest {
             robot.keyPress(KeyEvent.VK_SPACE);
         }
 
-        (new Robot()).delay(500);
+        (new Robot()).delay(200);
 
 
         // then remove all of them
@@ -290,7 +300,6 @@ public class BaseTest {
                 continue;
             }
             button.click();
-            (new Robot()).delay(500);
         }
 
         driver.close();
@@ -309,13 +318,16 @@ public class BaseTest {
         driver.switchTo().window(mainWindowHandle);
     }
 
-    protected void removePermission(String permission) {
+    protected void removePermission(String permission) throws AWTException {
         // Assuming that permissions have been granted by preGrantAllPermissionsInChrome() i.e. no dialog to handle
         // In Chrome, go to options page, then click request permission
         driver.switchTo().newWindow(WindowType.WINDOW);
 
         openOptionsPage();
-        driver.findElement(By.cssSelector("[data-remove-permission='"+permission+"'")).click();
+        WebElement button = driver.findElement(By.cssSelector("[data-remove-permission='"+permission+"'"));
+        if (button.isEnabled()) {
+            button.click();
+        }
 
         driver.close();
         driver.switchTo().window(mainWindowHandle);
@@ -333,7 +345,6 @@ public class BaseTest {
                 continue;
             }
             button.click();
-            (new Robot()).delay(500);
         }
 
         driver.close();

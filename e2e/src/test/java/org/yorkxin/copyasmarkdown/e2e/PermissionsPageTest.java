@@ -4,9 +4,11 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WindowType;
 import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.awt.*;
 import java.util.List;
 import java.util.Set;
 
@@ -27,7 +29,8 @@ public class PermissionsPageTest extends BaseTest {
     }
 
     @Test
-    public void testRequestPermission() {
+    public void testRequestPermission() throws AWTException {
+        removePermission("tabs");
         openPermissionsPage();
         PermissionsPage page = new PermissionsPage(driver);
         assertTrue(page.requestButton.isDisplayed());
@@ -40,7 +43,7 @@ public class PermissionsPageTest extends BaseTest {
         JavascriptExecutor js = (JavascriptExecutor) driver;
         Boolean response = (Boolean) js.executeAsyncScript(
                 "var callback = arguments[arguments. length - 1];"+
-                "chrome.permissions.contains({ permissions: [\"tabs\"] }).then(callback);"
+                "chrome.permissions.contains({ permissions: [\"tabs\"] }, callback);"
         );
         assertTrue(response);
         driver.close();

@@ -52,7 +52,7 @@ public class OnPageContentsTest extends BaseTest{
         selectAll();
 
         runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_P);
-        Thread.sleep(1000);
+        Thread.sleep(500);
 
         String expected = """
                 # Test: Selection

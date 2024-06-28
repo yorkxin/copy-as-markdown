@@ -6,10 +6,10 @@ import java.awt.event.KeyEvent;
 import java.util.Arrays;
 
 public class CommandDescriptor {
-    final String name;
-    final String command;
-    final CharSequence[] modifiers;
-    final String key;
+    public final String name;
+    public final String command;
+    public final CharSequence[] modifiers;
+    public final String key;
     private final int[] robotModifiers;
     private final int robotKey;
 

@@ -36,7 +36,7 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_G);
         robot.keyPress(KeyEvent.VK_E);
         robot.keyPress(KeyEvent.VK_ENTER);
-        Thread.sleep(1000);
+        Thread.sleep(500);
         String expected = "[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)";
         assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
@@ -80,7 +80,7 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_W);
         robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
-        Thread.sleep(1000);
+        Thread.sleep(500);
         String expected = "[[APOLLO-13] Build A Rocket Engine](about:blank)";
         assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
@@ -116,7 +116,7 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_W);
         robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
-        Thread.sleep(1000);
+        Thread.sleep(500);
         String expected = "![](http://localhost:5566/icon.png)";
         assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
@@ -151,7 +151,7 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_W);
         robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
-        Thread.sleep(1000);
+        Thread.sleep(500);
         String expected = "[![](http://localhost:5566/icon.png)](about:blank)";
         assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
@@ -195,7 +195,7 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_W);
         robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
-        Thread.sleep(1000);
+        Thread.sleep(500);
         String expected = """
                 # Test: Selection
                                 
