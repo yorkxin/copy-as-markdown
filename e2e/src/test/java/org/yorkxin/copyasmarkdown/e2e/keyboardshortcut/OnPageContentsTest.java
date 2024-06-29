@@ -27,8 +27,8 @@ public class OnPageContentsTest extends BaseTest{
 
     public void configureKeyboardShortcutsInChrome() throws InterruptedException, AWTException {
         openChromeKeyboardShortcutsPage();
-        setShortcutKeyInChrome("current tab: [title](url)", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "q");
-        setShortcutKeyInChrome("Copy Selection as Markdown", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "p");
+        setShortcutKeyInChrome("current tab: [title](url)", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "q");
+        setShortcutKeyInChrome("Copy Selection as Markdown", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "p");
     }
 
     public void configureKeyboardShortcutsInFirefox() throws InterruptedException, AWTException {
@@ -40,7 +40,7 @@ public class OnPageContentsTest extends BaseTest{
     @Test
     public void currentTabLink() throws AWTException, IOException, UnsupportedFlavorException {
         driver.get("http://localhost:5566/qa.html");
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_Q);
+        runShortcutKeys(new int[]{KeyEvent.VK_ALT, KeyEvent.VK_SHIFT}, KeyEvent.VK_Q);
 
         String expected = "[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)";
         assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
@@ -51,7 +51,7 @@ public class OnPageContentsTest extends BaseTest{
         driver.get("http://localhost:5566/selection.html");
         selectAll();
 
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_P);
+        runShortcutKeys(new int[]{KeyEvent.VK_ALT, KeyEvent.VK_SHIFT}, KeyEvent.VK_P);
         Thread.sleep(500);
 
         String expected = """
