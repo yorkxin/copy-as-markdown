@@ -63,7 +63,6 @@ firefox-mv3/       # Firefox Manifest V3 files
   mainfest.json
   ...
 e2e/               # E2E Tests
-compile.sh         # Copies src/**/* to <platform>/dist/
 ```  
 
 ### Install dependencies
@@ -75,7 +74,7 @@ npm install
 
 ### Debugging
 
-Since the source code is copied to platform-specific folders by `compile.sh`, it is recommended to use the auto-reload test script.
+Use the script `scripts/debug.js` that runs an auto-reload process. Usage:
 
 ```sh
 npm debug-chrome
