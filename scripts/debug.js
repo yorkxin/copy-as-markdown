@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 import nodemon from 'nodemon';
 // eslint-disable-next-line camelcase
 import child_process from 'node:child_process';
