@@ -294,7 +294,9 @@ public class BaseTest {
             Robot robot = new Robot();
             robot.delay(1000);
             robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
             robot.keyPress(KeyEvent.VK_SPACE);
+            robot.keyRelease(KeyEvent.VK_SPACE);
         }
 
         (new Robot()).delay(200);

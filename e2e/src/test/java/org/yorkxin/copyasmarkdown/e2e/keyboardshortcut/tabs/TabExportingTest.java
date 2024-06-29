@@ -2,6 +2,7 @@ package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs;
 
 import org.openqa.selenium.By;
 import org.testng.annotations.*;
+import org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.CommandDescriptor;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -28,11 +29,10 @@ public class TabExportingTest extends BaseTest {
     @Test(dataProvider = "listStyles")
     public void allTabsLink(String listStyle) throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
         setListStyle(listStyle);
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-        int key = KeyEvent.VK_W;
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-link-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                   {0} [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -48,11 +48,10 @@ public class TabExportingTest extends BaseTest {
 
     @Test
     public void allTabsTaskList() throws AWTException, IOException, UnsupportedFlavorException {
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-        int key = KeyEvent.VK_E;
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-link-as-task-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = """
                   - [ ] [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -68,11 +67,10 @@ public class TabExportingTest extends BaseTest {
     @Test(dataProvider = "listStyles")
     public void allTabsTitle(String listStyle) throws AWTException, IOException, UnsupportedFlavorException {
         setListStyle(listStyle);
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-        int key = KeyEvent.VK_R;
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-title-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                   {0} Page 0 - Copy as Markdown
@@ -89,11 +87,10 @@ public class TabExportingTest extends BaseTest {
     @Test(dataProvider = "listStyles")
     public void allTabsUrl(String listStyle) throws AWTException, IOException, UnsupportedFlavorException {
         setListStyle(listStyle);
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-        int key = KeyEvent.VK_T;
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-url-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                   {0} http://localhost:5566/0.html
@@ -110,11 +107,10 @@ public class TabExportingTest extends BaseTest {
     @Test(dataProvider = "listStyles")
     public void highlightedTabsLink(String listStyle) throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
         setListStyle(listStyle);
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-        int key = KeyEvent.VK_Y;
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-link-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                 {0} [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -127,11 +123,10 @@ public class TabExportingTest extends BaseTest {
 
     @Test
     public void highlightedTabsTaskList() throws AWTException, IOException, UnsupportedFlavorException {
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-        int key = KeyEvent.VK_U;
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-link-as-task-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = """
                 - [ ] [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -144,11 +139,10 @@ public class TabExportingTest extends BaseTest {
     @Test(dataProvider = "listStyles")
     public void highlightedTabsTitle(String listStyle) throws AWTException, IOException, UnsupportedFlavorException {
         setListStyle(listStyle);
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-        int key = KeyEvent.VK_I;
         openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-                runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-title-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                 {0} Page 0 - Copy as Markdown
@@ -162,11 +156,10 @@ public class TabExportingTest extends BaseTest {
     @Test(dataProvider = "listStyles")
     public void highlightedTabsUrl(String listStyle) throws AWTException, IOException, UnsupportedFlavorException {
         setListStyle(listStyle);
-        int[] modifiers = new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT};
-                int key = KeyEvent.VK_O;
-                openDemoTabs(false);
+        openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(modifiers, key);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-url-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                 {0} http://localhost:5566/0.html

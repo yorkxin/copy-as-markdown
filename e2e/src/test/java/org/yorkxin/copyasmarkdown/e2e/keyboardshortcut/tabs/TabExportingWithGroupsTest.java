@@ -2,6 +2,7 @@ package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs;
 
 import org.openqa.selenium.By;
 import org.testng.annotations.*;
+import org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.CommandDescriptor;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -32,7 +33,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setListStyle(listStyle);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_W);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-link-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                     {1} [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -53,7 +55,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setTabGroupIndentation(indentation);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_E);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-link-as-task-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                     - [ ] [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -75,7 +78,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setListStyle(listStyle);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_R);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-title-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                     {1} Page 0 - Copy as Markdown
@@ -97,7 +101,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setListStyle(listStyle);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_T);
+        CommandDescriptor cmd = getCommandDescriptor("all-tabs-url-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                     {1} http://localhost:5566/0.html
@@ -119,7 +124,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setListStyle(listStyle);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_Y);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-link-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                 {1} [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -137,7 +143,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setTabGroupIndentation(indentation);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_U);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-link-as-task-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                 - [ ] [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
@@ -156,7 +163,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setListStyle(listStyle);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_I);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-title-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                 {1} Page 0 - Copy as Markdown
@@ -175,7 +183,8 @@ public class TabExportingWithGroupsTest extends BaseTest {
         setListStyle(listStyle);
         openDemoTabs(true);
         driver.findElement(By.id("switch-to-demo")).click();
-        runShortcutKeys(new int[]{KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT}, KeyEvent.VK_O);
+        CommandDescriptor cmd = getCommandDescriptor("highlighted-tabs-url-as-list");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = MessageFormat.format("""
                 {1} http://localhost:5566/0.html
