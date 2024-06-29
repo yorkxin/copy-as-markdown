@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -112,27 +113,34 @@ public class BaseTest {
     }
 
     private WebDriver getDriver(String browser) {
+        String workingDir = System.getProperty("user.dir");
         WebDriver wd;
         switch (browser) {
-            case BROWSER_CHROME:
+            case BROWSER_CHROME: {
+                String extensionDir = Paths.get(workingDir, "..", "chrome").toAbsolutePath().toString();
+                String e2eExtensionDir = Paths.get(workingDir, "support", "e2e-test-extension").toString();
                 ChromeOptions co = new ChromeOptions();
                 // Fix the issue https://github.com/SeleniumHQ/selenium/issues/11750
                 co.addArguments("--remote-allow-origins=*");
-                co.addArguments("--load-extension=../chrome,./support/e2e-test-extension");
+                co.addArguments("--load-extension=" + extensionDir + "," + e2eExtensionDir);
                 wd = new ChromeDriver(co);
                 break;
-            case BROWSER_FIREFOX:
+            }
+            case BROWSER_FIREFOX: {
+                Path workdir = Paths.get(workingDir);
+                Path extensionDir = workdir.resolve("../firefox").normalize();
+                Path e2eExtensionDir = workdir.resolve("support/firefox-e2e-test-extension").normalize();
                 FirefoxProfile profile = new FirefoxProfile();
-                profile.setPreference("intl.locale.requested","en-us");
+                profile.setPreference("intl.locale.requested", "en-us");
                 profile.setPreference("extensions.webextOptionalPermissionPrompts", false);
                 FirefoxOptions fo = new FirefoxOptions();
                 fo.setProfile(profile);
                 FirefoxDriver fd = new FirefoxDriver(fo);
-                fd.installExtension(Path.of("../firefox"), true);
-                fd.installExtension(Path.of("./support/firefox-e2e-test-extension"), true);
+                fd.installExtension(extensionDir, true);
+                fd.installExtension(e2eExtensionDir, true);
                 wd = fd;
                 break;
-
+            }
             default:
                 throw new IllegalArgumentException("unsupported browser: "+browser);
         }
