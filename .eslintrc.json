@@ -8,7 +8,7 @@
     "extends": "airbnb-base",
     "parserOptions": {
         "sourceType": "module",
-        "ecmaVersion": 8
+        "ecmaVersion": 2020
     },
     "ignorePatterns": ["firefox/dist", "chrome/dist", "firefox-mv3/dist", "**/vendor/", "e2e/**/*"],
     "rules": {

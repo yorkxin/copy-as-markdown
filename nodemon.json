@@ -1,5 +1,0 @@
-{
-  "watch": ["src"],
-  "ext": "*",
-  "exec": "sh compile.sh firefox && sh compile.sh firefox-mv3 && sh compile.sh chrome"
-}
