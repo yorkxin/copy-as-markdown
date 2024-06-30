@@ -2,7 +2,7 @@ async function openMain() {
     return browser.windows.create({ url: `moz-extension://${browser.runtime.id}/main.html`});
 }
 
-browser.action.onClicked.addListener(openMain);
+browser.browserAction.onClicked.addListener(openMain);
 
 browser.commands.onCommand.addListener((command) => {
     switch (command) {

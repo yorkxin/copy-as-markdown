@@ -60,14 +60,15 @@ async function refreshMarkdownInstance() {
 }
 
 async function flashBadge(type) {
+  const entrypoint = (typeof browser.browserAction !== 'undefined') ? browser.browserAction : chrome.action;
   switch (type) {
     case 'success':
-      await browser.action.setBadgeText({ text: TEXT_OK });
-      await browser.action.setBadgeBackgroundColor({ color: COLOR_GREEN });
+      await entrypoint.setBadgeText({ text: TEXT_OK });
+      await entrypoint.setBadgeBackgroundColor({ color: COLOR_GREEN });
       break;
     case 'fail':
-      await browser.action.setBadgeText({ text: TEXT_ERROR });
-      await browser.action.setBadgeBackgroundColor({ color: COLOR_RED });
+      await entrypoint.setBadgeText({ text: TEXT_ERROR });
+      await entrypoint.setBadgeBackgroundColor({ color: COLOR_RED });
       break;
     default:
       return; // don't know what it is. quit.
@@ -107,10 +108,11 @@ function createMenus() {
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
+  const entrypoint = (typeof browser.browserAction !== 'undefined') ? browser.browserAction : chrome.action;
   if (alarm.name === 'clear') {
     await Promise.all([
-      browser.action.setBadgeText({ text: TEXT_EMPTY }),
-      browser.action.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
+      entrypoint.setBadgeText({ text: TEXT_EMPTY }),
+      entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
     ]);
   }
 
