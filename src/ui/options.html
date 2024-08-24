@@ -1,19 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Copy as Markdown Options</title>
+  <title>Copy as Markdown - Options</title>
   <meta charset="utf-8" />
   <link rel="stylesheet" href="../vendor/bulma.css">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<div class="container section content is-max-desktop">
+<div class="container section is-max-desktop">
   <h1 class="title">Copy as Markdown</h1>
   <div id="flash-error" class="notification is-danger is-hidden">
     <p></p>
-  </div>
-  <div class="box">
-    <h2>Markdown Style</h2>
+    </div>
+    <div class="columns">
+      <div class="column is-narrow" style="width: 200px">
+        <aside class="menu">
+          <p class="menu-label">General</p>
+          <ul class="menu-list">
+            <li><a href="options.html" class="is-active">Markdown Style</a></li>
+            <li><a href="options-permissions.html">Permissions</a></li>
+          </ul>
+          <p class="menu-label">Custom Formats</p>
+          <ul class="menu-list">
+            <li><a href="custom-format.html?slot=1">Custom Format 1</a></li>
+            <li><a href="custom-format.html?slot=2">Custom Format 2</a></li>
+            <li><a href="custom-format.html?slot=3">Custom Format 3</a></li>
+            <li><a href="custom-format.html?slot=4">Custom Format 4</a></li>
+            <li><a href="custom-format.html?slot=5">Custom Format 5</a></li>
+            <li><a href="custom-format-help.html">Help & Examples</a></li>
+          </ul>
+          <p class="menu-label">Others</p>
+          <ul class="menu-list">
+            <li><a href="about.html">About</a></li>
+          </ul>
+        </aside>
+      </div>
+      <div class="column">
+        <div class="box content">
+    <h2 class="title is-3">Markdown Style</h2>
     <form id='form-style-of-unordered-list' class="field">
       <label class="label">Unordered List Character</label>
       <div class="control">
@@ -59,8 +83,8 @@
       </p>
     </form>
 
-    <h3>Escaping</h3>
     <form id="form-link-text-always-escape-brackets" class="field">
+      <label class="label">Escaping</label>
       <div class="control">
         <label class="checkbox"><input type="checkbox" name="enabled" /> Always escape brackets in link text (<code>[]</code> becomes <code>\[\]</code>)</label>
       </div>
@@ -72,33 +96,12 @@
       </p>
     </form>
   </div>
-
-  <div class="box">
-    <h2>Additional Permissions</h2>
-    <p>Some features require additional permissions. Prompts will appear when permissions are not granted.</p>
-    <h3>Tabs <span class="tag" data-hide-if-permission-contains="tabs">Not Granted</span></h3>
-    <p>Copy all / selected tabs via the popup menu and shortcut keys. Also, via context menus on tabs (Firefox-only).</p>
-    <div class="field">
-      <button class="button is-small is-outlined is-primary" data-request-permission="tabs">Grant Tabs Permission</button>
-      <button class="button is-small is-outlined is-danger" data-remove-permission="tabs">Revoke Tabs Permission</button>
-    </div>
-
-    <h4>Tab Groups <span class="tag" data-hide-if-permission-contains="tabGroups">Not Granted</span></h4>
-    <p>(Chrome-only) Wrap tabs in your tab groups. Need to grant Tabs permission above.</p>
-    <div class="field">
-      <button class="button is-small is-outlined is-primary" data-request-permission="tabGroups">Grant Tab Groups Permission</button>
-      <button class="button is-small is-outlined is-danger" data-remove-permission="tabGroups">Revoke Tab Groups Permission</button>
-    </div>
-
-    <h3>Bookmarks <span class="tag" data-hide-if-permission-contains="bookmarks">Not Granted</span></h3>
-    <p>Enable context menus on bookmarks (Firefox-only).</p>
-    <div class="field">
-      <button class="button is-small is-outlined is-primary" data-request-permission="bookmarks">Grant Bookmarks Permission</button>
-      <button class="button is-small is-outlined is-danger" data-remove-permission="bookmarks">Revoke Bookmarks Permission</button>
+  <div class="field is-grouped">
+    <div class="control">
+      <button id="reset" type="button" class="button is-outlined is-danger">Restore to Default</button>
     </div>
   </div>
-  <button id="reset" type="button" class="button is-small is-outlined is-danger">Reset to Default</button>
-  <a href="./about.html" target="_blank" class="button is-small">About</a>
+
 </div>
   <script src="../vendor/browser-polyfill.js"></script>
   <script src="./options.js" type="module"></script>
