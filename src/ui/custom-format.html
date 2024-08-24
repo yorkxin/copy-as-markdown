@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Copy as Markdown - Custom Format</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../vendor/bulma.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+
+  <div class="columns">
+    <div class="column is-narrow" style="width: 200px">
+      <aside class="menu">
+        <p class="menu-label">General</p>
+        <ul class="menu-list">
+          <li><a href="options.html">Markdown Style</a></li>
+          <li><a href="options-permissions.html">Permissions</a></li>
+        </ul>
+        <p class="menu-label">Custom Formats</p>
+        <ul class="menu-list">
+          <li><a data-menu-custom-format="1" href="custom-format.html?slot=1">Custom Format 1</a></li>
+          <li><a data-menu-custom-format="2" href="custom-format.html?slot=2">Custom Format 2</a></li>
+          <li><a data-menu-custom-format="3" href="custom-format.html?slot=3">Custom Format 3</a></li>
+          <li><a data-menu-custom-format="4" href="custom-format.html?slot=4">Custom Format 4</a></li>
+          <li><a data-menu-custom-format="5" href="custom-format.html?slot=5">Custom Format 5</a></li>
+          <li><a href="custom-format-help.html">Help & Examples</a></li>
+        </ul>
+        <p class="menu-label">Others</p>
+        <ul class="menu-list">
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <div class="box">
+        <h2 class="title is-3" data-placeholder="default-name">Custom Format</h2>
+        <div class="field">
+          <label class="label">Display</label>
+          <div class="control">
+            <input id="input-show-in-popup-menu" class="checkbox" type="checkbox">
+            <label for="input-show-in-popup-menu">Show in Popup Menu</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="input-name">Display Name on Menu</label>
+          <div class="control">
+            <input id="input-name" class="input" type="text" placeholder="Custom Format">
+          </div>
+          <p class="help">Leave blank to use &ldquo;<span data-placeholder="default-name">Custom Format</span>.&rdquo;</p>
+        </div>
+        <div class="field">
+          <label class="label" for="input-template">Template</label>
+          <div class="control">
+            <textarea id="input-template" class="textarea is-family-code is-size-7" rows="7"></textarea>
+          </div>
+          <p id="error-template" class="is-hidden help is-danger">Invalid template</p>
+          <details><summary>Input</summary>
+            <pre class="is-size-7"><code>{
+  "links": [
+    { "title": "Example 1", "url": "https://example.com/1", "number":1 },
+    { "title": "Example 2", "url": "https://example.com/2", "number":2 },
+    { "title": "Example 3", "url": "https://example.com/3", "number":3 }
+  ]
+}</code></pre>
+          </details>
+
+        </div>
+        <div class="field">
+          <label class="label">Preview</label>
+          <div class="control">
+            <textarea id="preview" class="textarea is-family-code is-size-7" rows="7" disabled></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <button id="save" class="button is-primary" disabled>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../vendor/browser-polyfill.js"></script>
+<script src="./custom-format.js" type="module"></script>
+</body>
+</html>

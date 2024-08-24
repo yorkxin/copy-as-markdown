@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Copy as Markdown - Custom Format Help</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../vendor/bulma.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+  <div id="flash-error" class="notification is-danger is-hidden">
+    <p></p>
+  </div>
+  <div class="columns">
+    <div class="column is-narrow" style="width: 200px">
+      <aside class="menu">
+        <p class="menu-label">General</p>
+        <ul class="menu-list">
+          <li><a href="options.html">Markdown Style</a></li>
+          <li><a href="options-permissions.html">Permissions</a></li>
+        </ul>
+        <p class="menu-label">Custom Formats</p>
+        <ul class="menu-list">
+          <li><a href="custom-format.html?slot=1">Custom Format 1</a></li>
+          <li><a href="custom-format.html?slot=2">Custom Format 2</a></li>
+          <li><a href="custom-format.html?slot=3">Custom Format 3</a></li>
+          <li><a href="custom-format.html?slot=4">Custom Format 4</a></li>
+          <li><a href="custom-format.html?slot=5">Custom Format 5</a></li>
+          <li><a href="custom-format-help.html" class="is-active">Help & Examples</a></li>
+        </ul>
+        <p class="menu-label">Others</p>
+        <ul class="menu-list">
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <div class="box content">
+        <h2 class="title is-3">Custom Format Help</h2>
+        <h2 class="title is-4">Writing Templates</h2>
+        <p>Write the template in the Mustache template language. </p>
+        <p>The input object contains 2 attributes:
+          <code>links</code> for flattened links, and <code>groups</code> for links grouped in Tab Groups
+          (supported browsers only).</p>
+        <p>Tab Groups appear in its original order.
+          For tabs that are not grouped in any Tab Group, they will be gathered in a virtual-group,
+          with <code>"is_ungrouped": true</code> and <code>"name": null</code> attributes.</p>
+        <p>In loops, use <code>{{@index}}</code> for 0-based indexes, and <code>{{number}}</code> for 1-based indexes.</p>
+        <div><details><summary>Example Input: List of links without grouping</summary>
+        <pre class="is-size-7"><code>{
+  "links": [
+    { "title": "Example 1", "url": "https://example.com/1", "number":1 },
+    { "title": "Example 2", "url": "https://example.com/2", "number":2 },
+    { "title": "Example 3", "url": "https://example.com/3", "number":3 },
+    { "title": "Example 4", "url": "https://example.com/4", "number":4 }
+  ],
+  "groups":[
+    {
+      "name": null,
+      "is_ungrouped": true,
+      "number": 1,
+      "links": [
+        { "title": "Example 1", "url": "https://example.com/1", "number":1 },
+        { "title": "Example 2", "url": "https://example.com/2", "number":2 },
+        { "title": "Example 3", "url": "https://example.com/3", "number":3 },
+        { "title": "Example 4", "url": "https://example.com/4", "number":4 }
+      ]
+    }
+  ]
+}</code></pre>
+        </details></div>
+        <div><details><summary>Example Input: List of links with grouping</summary>
+        <p class="help">Suppose tab 2 and 3 are grouped in Group A, but tab 1 and 4 are not in any group:</p>
+        <pre class="is-size-7"><code>{
+  "links": [
+    { "title": "Example 1", "url": "https://example.com/1", "number":1 },
+    { "title": "Example 2", "url": "https://example.com/2", "number":2 },
+    { "title": "Example 3", "url": "https://example.com/3", "number":3 },
+    { "title": "Example 4", "url": "https://example.com/4", "number":4 }
+  ],
+  "groups": [
+    {
+      "name": null,
+      "is_ungrouped": true,
+      "number": 1,
+      "links": [
+        { "title": "Example 1", "url": "https://example.com/1", "number":1 }
+      ]
+    },
+    {
+      "name": "Group A",
+      "is_ungrouped": false,
+      "number": 2,
+      "links": [
+        { "title": "Example 2", "url": "https://example.com/2", "number":1 },
+        { "title": "Example 3", "url": "https://example.com/3", "number":2 }
+      ]
+    },
+    {
+      "name": null,
+      "is_ungrouped": true,
+      "number": 3,
+      "links": [
+        { "title": "Example 4", "url": "https://example.com/4", "number":3 }
+      ]
+    }
+  ]
+}</code></pre>
+      </details></div>
+        <h2 class="title is-4">Example Templates</h2>
+        <p>For more examples, check out <a href="https://github.com/yorkxin/copy-as-markdown/wiki/Custom-Format-Examples" target="_blank">the official Wiki</a>.</p>
+<div class="card">
+  <header class="card-header">
+    <p class="card-header-title">Reference Style</p>
+  </header>
+  <div class="card-content">
+    <div class="columns">
+      <div class="column is-half">
+        <p>Template:</p>
+        <pre class="is-size-7 is-overflow-scroll-x"><code>{{#links}}
+- [{{title}}][{{number}}]
+{{/links}}
+
+{{#links}}
+[{{number}}]:{{url}}
+{{/links}}</code></pre>
+      </div>
+      <div class="column is-half">
+        <p>Output:</p>
+        <pre class="is-size-7 is-overflow-scroll-x"><code>- [Example 1][1]
+- [Example 2][2]
+- [Example 3][3]
+
+[1]:https://example.com/1
+[2]:https://example.com/2
+[3]:https://example.com/3</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <header class="card-header">
+    <p class="card-header-title">Groups as Ordered List</p>
+  </header>
+  <div class="card-content">
+    <div class="columns">
+      <div class="column is-half">
+        <p>Template:</p>
+<pre class="is-size-7 is-overflow-scroll-x"><code>{{#groups}}
+{{#is_ungrouped}}
+{{#links}}
+{{number}}. [{{title}}]({{url}})
+{{/links}}
+{{/is_ungrouped}}
+{{^is_ungrouped}}
+{{number}}. {{name}}
+{{#links}}
+  {{number}}. [{{title}}]({{url}})
+{{/links}}
+{{/is_ungrouped}}
+{{/groups}}</code></pre>
+      </div>
+      <div class="column is-half">
+        <p>Output:</p>
+<pre class="is-size-7 is-overflow-scroll-x"><code>1. [Example 1](https://example.com/1)
+2. Group A
+  1. [Example 2](https://example.com/2)
+  2. [Example 3](https://example.com/3)
+3. [Example 4](https://example.com/4)
+</code></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="../vendor/browser-polyfill.js"></script>
+</body>
+</html>
