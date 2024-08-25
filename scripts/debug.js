@@ -39,7 +39,7 @@ switch (browser) {
       throw new Error(`unsupported Edge platform: ${process.platform}`);
     }
     // eslint-disable-next-line camelcase
-    spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'chrome')} -t chromium --chromium-binary ${binary} --args chrome://extensions https://example.com`);
+    spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'chrome')} -t chromium --chromium-binary "${binary}" --args chrome://extensions https://example.com`);
     break;
   }
   case 'firefox':
