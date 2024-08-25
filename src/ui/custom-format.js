@@ -18,6 +18,8 @@ class UI {
     this.elPreview = doc.getElementById('preview');
     this.elErrorTemplate = doc.getElementById('error-template');
     this.elSave = doc.getElementById('save');
+    // eslint-disable-next-line no-param-reassign
+    doc.getElementById('sample-input').textContent = JSON.stringify(UI.sampleInput, null, 2);
 
     this.elInputTemplate.addEventListener('input', () => {
       this.renderPreview();
@@ -89,20 +91,52 @@ class UI {
   static get sampleInput() {
     return {
       links: [
+        { title: 'Example 1', url: 'https://example.com/1', number: 1 },
+        { title: 'Example 2', url: 'https://example.com/2', number: 2 },
+        { title: 'Example 3', url: 'https://example.com/3', number: 3 },
+        { title: 'Example 4', url: 'https://example.com/4', number: 4 },
+        { title: 'Example 5', url: 'https://example.com/5', number: 5 },
+        { title: 'Example 6', url: 'https://example.com/6', number: 6 },
+      ],
+      groups: [
         {
-          title: 'Example 1',
-          url: 'https://example.com/1',
+          name: null,
+          is_ungrouped: true,
           number: 1,
+          links: [
+            {
+              title: 'Example 1', url: 'https://example.com/1', number: 1,
+            },
+            {
+              title: 'Example 2', url: 'https://example.com/2', number: 2,
+            },
+          ],
         },
         {
-          title: 'Example 2',
-          url: 'https://example.com/2',
+          name: 'Group A',
+          is_ungrouped: false,
           number: 2,
+          links: [
+            {
+              title: 'Example 3', url: 'https://example.com/3', number: 1,
         },
         {
-          title: 'Example 3',
-          url: 'https://example.com/3',
+              title: 'Example 4', url: 'https://example.com/4', number: 2,
+            },
+          ],
+        },
+        {
+          name: null,
+          is_ungrouped: true,
           number: 3,
+          links: [
+            {
+              title: 'Example 5', url: 'https://example.com/5', number: 1,
+            },
+            {
+              title: 'Example 6', url: 'https://example.com/6', number: 2,
+            },
+          ],
         },
       ],
     };
