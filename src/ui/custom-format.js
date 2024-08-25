@@ -47,7 +47,7 @@ class UI {
    * @param customFormat {CustomFormat}
    */
   load(customFormat) {
-    this.elInputName.value = customFormat.name;
+    this.elInputName.value = customFormat.name === '' ? this.defaultName() : customFormat.name;
     this.elInputTemplate.value = customFormat.template;
     this.elShowInPopupMenu.checked = customFormat.showInPopupMenu;
     this.renderPreview();
@@ -119,8 +119,8 @@ class UI {
           links: [
             {
               title: 'Example 3', url: 'https://example.com/3', number: 1,
-        },
-        {
+            },
+            {
               title: 'Example 4', url: 'https://example.com/4', number: 2,
             },
           ],
