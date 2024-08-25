@@ -4,6 +4,7 @@ import Markdown from './lib/markdown.js';
 import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
 import { Bookmarks } from './bookmarks.js';
 import CustomFormatsStorage from './storage/custom-formats-storage.js';
+import CustomFormat from './lib/custom-format.js';
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
@@ -229,31 +230,8 @@ function renderBuiltInFormat(format, tabLists, listType) {
  */
 async function renderCustomFormat({ slot, lists }) {
   const customFormat = await CustomFormatsStorage.get(slot);
-
-  const links = lists
-    .map((list) => list.tabs.map((tab) => ({
-      title: tab.title,
-      url: tab.url,
-    })))
-    .flat()
-    .map((item, idx) => ({
-      ...item,
-      number: idx + 1,
-    }));
-
-  const groups = lists
-    .map((list, idx) => ({
-      name: list.name,
-      is_ungrouped: list.isNonGroup(),
-      number: idx + 1,
-      links: list.tabs.map((tab, jdx) => ({
-        title: tab.title,
-        url: tab.url,
-        number: jdx + 1,
-      })),
-    }));
-
-  return customFormat.render({ links, groups });
+  const input = CustomFormat.makeRenderInput(lists);
+  return customFormat.render(input);
 }
 
 /**
