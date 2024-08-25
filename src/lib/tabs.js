@@ -43,6 +43,13 @@ export class TabList {
   static nonGroup(tabs) {
     return new TabList('', TabGroup.NonGroupId, tabs);
   }
+
+  /**
+   * @return {boolean}
+   */
+  isNonGroup() {
+    return this.groupId === TabGroup.NonGroupId;
+  }
 }
 
 export class TabListGrouper {

@@ -3,6 +3,7 @@ import copy from './content-script.js';
 import Markdown from './lib/markdown.js';
 import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
 import { Bookmarks } from './bookmarks.js';
+import CustomFormatsStorage from './storage/custom-formats-storage.js';
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
@@ -201,13 +202,76 @@ async function getTabGroups(windowId) {
 
 /**
  *
- * @param scope {'all'|'highlighted'}
  * @param format {'link','title','url'}
+ * @param tabLists
+ * @param listType
+ * @returns {string}
+ */
+function renderBuiltInFormat(format, tabLists, listType) {
+  const formatter = FORMAT_TO_FUNCTION[format];
+  const items = formatItems(tabLists, formatter);
+
+  switch (listType) {
+    case 'list':
+      return markdownInstance.list(items);
+    case 'task-list':
+      return markdownInstance.taskList(items);
+    default:
+      throw new TypeError(`unknown listType: ${listType}`);
+  }
+}
+
+/**
+ *
+ * @param slot {string}
+ * @param lists {TabList[]}
+ * @returns {string}
+ */
+async function renderCustomFormat({ slot, lists }) {
+  const customFormat = await CustomFormatsStorage.get(slot);
+
+  const links = lists
+    .map((list) => list.tabs.map((tab) => ({
+      title: tab.title,
+      url: tab.url,
+    })))
+    .flat()
+    .map((item, idx) => ({
+      ...item,
+      number: idx + 1,
+    }));
+
+  const groups = lists
+    .map((list, idx) => ({
+      name: list.name,
+      is_ungrouped: list.isNonGroup(),
+      number: idx + 1,
+      links: list.tabs.map((tab, jdx) => ({
+        title: tab.title,
+        url: tab.url,
+        number: jdx + 1,
+      })),
+    }));
+
+  return customFormat.render({ links, groups });
+}
+
+/**
+ *
+ * @param scope {'all'|'highlighted'}
+ * @param format {'link','title','url','custom-format'}
+ * @param customFormatSlot {string}
  * @param listType {'list','task-list'}
  * @param windowId {number}
  * @returns {Promise<string>}
  */
-async function handleExportTabs(scope, format, listType, windowId) {
+async function handleExportTabs({
+  scope,
+  format,
+  customFormatSlot,
+  listType,
+  windowId,
+}) {
   if (!await browser.permissions.contains({ permissions: ['tabs'] })) {
     await browser.windows.create({
       focused: true,
@@ -227,18 +291,10 @@ async function handleExportTabs(scope, format, listType, windowId) {
   const groups = crGroups.map((group) => new TabGroup(group.title, group.id, group.color));
   const tabs = crTabs.map((tab) => new Tab(tab.title, tab.url, tab.groupId || TabGroup.NonGroupId));
   const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
-
-  const formatter = FORMAT_TO_FUNCTION[format];
-  const items = formatItems(tabLists, formatter);
-
-  switch (listType) {
-    case 'list':
-      return markdownInstance.list(items);
-    case 'task-list':
-      return markdownInstance.taskList(items);
-    default:
-      throw new TypeError(`unknown listType: ${listType}`);
+  if (format === 'custom-format') {
+    return renderCustomFormat({ slot: customFormatSlot, lists: tabLists });
   }
+  return renderBuiltInFormat(format, tabLists, listType);
 }
 
 async function convertSelectionInTabToMarkdown(tab) {
@@ -298,25 +354,33 @@ async function handleContentOfContextMenu(info, tab) {
 
     // Only available on Firefox
     case 'all-tabs-list': {
-      text = await handleExportTabs('all', 'link', 'list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'all', format: 'link', listType: 'list', windowId: tab.windowId,
+      });
       break;
     }
 
     // Only available on Firefox
     case 'all-tabs-task-list': {
-      text = await handleExportTabs('all', 'link', 'task-list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'all', format: 'link', listType: 'task-list', windowId: tab.windowId,
+      });
       break;
     }
 
     // Only available on Firefox
     case 'highlighted-tabs-list': {
-      text = await handleExportTabs('highlighted', 'link', 'list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'highlighted', format: 'link', listType: 'list', windowId: tab.windowId,
+      });
       break;
     }
 
     // Only available on Firefox
     case 'highlighted-tabs-task-list': {
-      text = await handleExportTabs('highlighted', 'link', 'task-list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'highlighted', format: 'link', listType: 'task-list', windowId: tab.windowId,
+      });
       break;
     }
 
@@ -437,28 +501,44 @@ browser.commands.onCommand.addListener(async (command, argTab) => {
         text = await handleExportTab('link', tab);
         break;
       case 'all-tabs-link-as-list':
-        text = await handleExportTabs('all', 'link', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'link', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'all-tabs-link-as-task-list':
-        text = await handleExportTabs('all', 'link', 'task-list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'link', listType: 'task-list', windowId: tab.windowId,
+        });
         break;
       case 'all-tabs-title-as-list':
-        text = await handleExportTabs('all', 'title', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'title', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'all-tabs-url-as-list':
-        text = await handleExportTabs('all', 'url', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'url', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-link-as-list':
-        text = await handleExportTabs('highlighted', 'link', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'link', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-link-as-task-list':
-        text = await handleExportTabs('highlighted', 'link', 'task-list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'link', listType: 'task-list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-title-as-list':
-        text = await handleExportTabs('highlighted', 'title', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'title', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-url-as-list':
-        text = await handleExportTabs('highlighted', 'url', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'url', listType: 'list', windowId: tab.windowId,
+        });
         break;
       default:
         throw new TypeError(`unknown keyboard command: ${command}`);
@@ -500,12 +580,7 @@ async function handleRuntimeMessage(topic, params) {
     }
 
     case 'export-tabs': {
-      return handleExportTabs(
-        params.scope,
-        params.format,
-        params.listType,
-        params.windowId,
-      );
+      return handleExportTabs(params);
     }
 
     default: {
