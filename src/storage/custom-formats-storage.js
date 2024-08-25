@@ -18,10 +18,19 @@ export default {
     });
 
     return new CustomFormat({
+      slot,
       name: stored[storageKeyOf(slot, 'name')],
       template: stored[storageKeyOf(slot, 'template')],
       showInPopupMenu: stored[storageKeyOf(slot, 'show_in_popup_menu')],
     });
+  },
+
+  /**
+   *
+   * @returns {Promise<CustomFormat[]>}
+   */
+  async list() {
+    return Promise.all(['1', '2', '3', '4', '5'].map((slot) => this.get(slot)));
   },
 
   /**

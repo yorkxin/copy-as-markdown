@@ -56,6 +56,7 @@ class UI {
    */
   current() {
     return new CustomFormat({
+      slot: this.slot,
       name: this.elInputName.value,
       template: this.elInputTemplate.value,
       showInPopupMenu: this.elShowInPopupMenu.checked,

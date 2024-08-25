@@ -1,3 +1,5 @@
+import CustomFormatsStorage from '../storage/custom-formats-storage.js';
+
 let windowId = -1;
 let tabId = -1;
 let keepOpen = false;
@@ -8,6 +10,7 @@ let keepOpen = false;
  * @property {string|undefined} tabId
  * @property {string|undefined} scope
  * @property {string|undefined} listType
+ * @property {string|undefined} customFormatSlot
  * @property {string|undefined} windowId
  */
 
@@ -49,6 +52,7 @@ document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
     message.params.tabId = tabId;
   } else if (action === 'export-tabs') {
     message.params.scope = button.dataset.scope;
+    message.params.customFormatSlot = button.dataset.customFormatSlot;
     message.params.listType = button.dataset.listType;
     message.params.windowId = windowId;
   }
@@ -110,6 +114,34 @@ async function getActiveTabId(crWindow) {
   return -1;
 }
 
+async function showCustomFormats() {
+  /** @type {HTMLTemplateElement} */
+  const template = document.getElementById('template-export-tabs-button');
+  const divExportAll = document.getElementById('actions-export-all');
+  const divExportHighlighted = document.getElementById('actions-export-highlighted');
+
+  const customFormats = await CustomFormatsStorage.list();
+  customFormats.forEach((customFormat) => {
+    if (!customFormat.showInPopupMenu) {
+      return;
+    }
+
+    const clone = template.content.cloneNode(true);
+
+    /** @type {HTMLButtonElement} */
+    const btnAll = clone.querySelector('button[data-scope="all"]');
+    btnAll.dataset.customFormatSlot = customFormat.slot;
+    btnAll.textContent += `(${customFormat.name})`;
+    divExportAll.appendChild(btnAll);
+
+    /** @type {HTMLButtonElement} */
+    const btnHighlighted = clone.querySelector('button[data-scope="highlighted"]');
+    btnHighlighted.dataset.customFormatSlot = customFormat.slot;
+    btnHighlighted.textContent += `(${customFormat.name})`;
+    divExportHighlighted.appendChild(btnHighlighted);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const crWindow = await getCurrentWindow();
   windowId = crWindow.id;
@@ -123,4 +155,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const displayCountOfHighlightedTabs = document.getElementById('display-count-highlighted-tabs');
   displayCountOfHighlightedTabs.textContent = String(highlightedCount);
+
+  await showCustomFormats();
 });
