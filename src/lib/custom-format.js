@@ -63,28 +63,40 @@ export default class CustomFormat {
   static makeRenderInput(lists) {
     /** @type {RenderInputLink[]} */
     const links = lists
-      .map((list) => list.tabs.map((tab) => ({
+      .flatMap((list) => list.tabs)
+      .map((tab, idx) => ({
         title: tab.title,
         url: tab.url,
-      })))
-      .flat()
-      .map((item, idx) => ({
-        ...item,
         number: idx + 1,
       }));
 
+    let ol = 1;
     /** @type {RenderInputGroup[]} */
-    const groups = lists
-      .map((list, idx) => ({
-        name: list.name,
-        is_ungrouped: list.isNonGroup(),
-        number: idx + 1,
-        links: list.tabs.map((tab, jdx) => ({
+    const groups = lists.map((group, idx) => {
+      const initialOl = ol;
+      const groupLinks = group.tabs.map((tab, jdx) => {
+        const ret = {
           title: tab.title,
           url: tab.url,
           number: jdx + 1,
-        })),
-      }));
+          ol: group.isNonGroup() ? ol : jdx + 1,
+        };
+        if (group.isNonGroup()) {
+          ol += 1;
+        }
+        return ret;
+      });
+      if (!group.isNonGroup()) {
+        ol += 1;
+      }
+      return {
+        name: group.name,
+        is_ungrouped: group.isNonGroup(),
+        number: idx + 1,
+        links: groupLinks,
+        ol: initialOl,
+      };
+    });
 
     return { links, groups };
   }

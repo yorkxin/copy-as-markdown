@@ -47,6 +47,7 @@
           For tabs that are not grouped in any Tab Group, they will be gathered in a virtual-group,
           with <code>"is_ungrouped": true</code> and <code>"name": null</code> attributes.</p>
         <p>In loops, use <code>{{@index}}</code> for 0-based indexes, and <code>{{number}}</code> for 1-based indexes.</p>
+        <p>For nested loops, use <code>{{ol}}</code> for the current 1-based index of nesting.</p>
         <div><details><summary>Example Input: List of links without grouping</summary>
         <pre class="is-size-7"><code>{
   "links": [
@@ -73,39 +74,46 @@
         <div><details><summary>Example Input: List of links with grouping</summary>
         <p class="help">Suppose tab 2 and 3 are grouped in Group A, but tab 1 and 4 are not in any group:</p>
         <pre class="is-size-7"><code>{
-  "links": [
-    { "title": "Example 1", "url": "https://example.com/1", "number":1 },
-    { "title": "Example 2", "url": "https://example.com/2", "number":2 },
-    { "title": "Example 3", "url": "https://example.com/3", "number":3 },
-    { "title": "Example 4", "url": "https://example.com/4", "number":4 }
-  ],
-  "groups": [
-    {
-      "name": null,
-      "is_ungrouped": true,
-      "number": 1,
-      "links": [
-        { "title": "Example 1", "url": "https://example.com/1", "number":1 }
-      ]
-    },
-    {
-      "name": "Group A",
-      "is_ungrouped": false,
-      "number": 2,
-      "links": [
-        { "title": "Example 2", "url": "https://example.com/2", "number":1 },
-        { "title": "Example 3", "url": "https://example.com/3", "number":2 }
-      ]
-    },
-    {
-      "name": null,
-      "is_ungrouped": true,
-      "number": 3,
-      "links": [
-        { "title": "Example 4", "url": "https://example.com/4", "number":3 }
-      ]
-    }
-  ]
+links: [
+  { title: 'Example 1', url: 'https://example.com/1', number: 1 },
+  { title: 'Example 2', url: 'https://example.com/2', number: 2 },
+  { title: 'Example 3', url: 'https://example.com/3', number: 3 },
+  { title: 'Example 4', url: 'https://example.com/4', number: 4 },
+  { title: 'Example 5', url: 'https://example.com/5', number: 5 },
+  { title: 'Example 6', url: 'https://example.com/6', number: 6 },
+],
+groups: [
+  {
+    name: '',
+    is_ungrouped: true,
+    number: 1,
+    ol: 1,
+    links: [
+      { title: 'Example 1', url: 'https://example.com/1', number: 1, ol: 1 },
+      { title: 'Example 2', url: 'https://example.com/2', number: 2, ol: 2 },
+    ],
+  },
+  {
+    name: 'My Group',
+    is_ungrouped: false,
+    number: 2,
+    ol: 3,
+    links: [
+      { title: 'Example 3', url: 'https://example.com/3', number: 1, ol: 1 },
+      { title: 'Example 4', url: 'https://example.com/4', number: 2, ol: 2 },
+    ],
+  },
+  {
+    name: '',
+    is_ungrouped: true,
+    number: 3,
+    ol: 4,
+    links: [
+      { title: 'Example 5', url: 'https://example.com/5', number: 1, ol: 4 },
+      { title: 'Example 6', url: 'https://example.com/6', number: 2, ol: 5 },
+    ],
+  },
+],
 }</code></pre>
       </details></div>
         <h2 class="title is-4">Example Templates</h2>
@@ -145,19 +153,20 @@
     <p class="card-header-title">Groups as Ordered List</p>
   </header>
   <div class="card-content">
+    <p>Use <code>{{ol}}</code> for the current 1-based index of nesting.</p>
     <div class="columns">
       <div class="column is-half">
         <p>Template:</p>
 <pre class="is-size-7 is-overflow-scroll-x"><code>{{#groups}}
 {{#is_ungrouped}}
 {{#links}}
-{{number}}. [{{title}}]({{url}})
+{{ol}}. [{{title}}]({{url}})
 {{/links}}
 {{/is_ungrouped}}
 {{^is_ungrouped}}
-{{number}}. {{name}}
+{{ol}}. {{name}}
 {{#links}}
-  {{number}}. [{{title}}]({{url}})
+   {{ol}}. [{{title}}]({{url}})
 {{/links}}
 {{/is_ungrouped}}
 {{/groups}}</code></pre>
@@ -165,10 +174,12 @@
       <div class="column is-half">
         <p>Output:</p>
 <pre class="is-size-7 is-overflow-scroll-x"><code>1. [Example 1](https://example.com/1)
-2. Group A
-  1. [Example 2](https://example.com/2)
-  2. [Example 3](https://example.com/3)
-3. [Example 4](https://example.com/4)
+2. [Example 2](https://example.com/2)
+3. My Group
+   1. [Example 3](https://example.com/3)
+   2. [Example 4](https://example.com/4)
+4. [Example 5](https://example.com/5)
+5. [Example 6](https://example.com/6)
 </code></pre>
       </div>
     </div>
