@@ -3,6 +3,8 @@ import Mustache from '../vendor/mustache.mjs';
 // disable HTML escape
 Mustache.escape = function (text) { return text; };
 
+/** @typedef {import('./tabs.js').TabList} TabList */
+
 /**
  * @typedef {Object} RenderInputLink
  * @prop {String} title
@@ -26,10 +28,11 @@ Mustache.escape = function (text) { return text; };
 
 export default class CustomFormat {
   /**
-   * @param slot {string}
-   * @param name {string}
-   * @param template {string}
-   * @param showInPopupMenu {boolean}
+   * @param {Object} params
+   * @param {string} params.slot
+   * @param {string} params.name
+   * @param {string} params.template
+   * @param {boolean} params.showInPopupMenu
    */
   constructor({
     slot,
@@ -43,13 +46,18 @@ export default class CustomFormat {
     this.showInPopupMenu = showInPopupMenu;
   }
 
+  /**
+   *
+   * @param {RenderInput} input
+   * @returns {string}
+   */
   render(input) {
     return Mustache.render(this.template, input);
   }
 
   /**
    *
-   * @param lists {TabList[]}
+   * @param {TabList[]} lists
    * @returns {RenderInput}
    */
   static makeRenderInput(lists) {
