@@ -251,6 +251,10 @@ public class BaseTest {
         driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/options-permissions.html");
     }
 
+    protected void openCustomFormatPage(String slot) {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/custom-format.html?slot="+slot);
+    }
+
     protected String getExtensionProtocol() {
         return switch (browser) {
             case BROWSER_CHROME -> "chrome-extension";
