@@ -1,4 +1,5 @@
 import Settings from '../lib/settings.js';
+import * as lib from './lib.js';
 
 async function loadSettings() {
   try {
@@ -14,7 +15,11 @@ async function loadSettings() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadSettings);
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSettings();
+  const statuses = await lib.loadPermissions();
+  lib.disableUiIfPermissionsNotGranted(statuses);
+});
 
 document.forms['form-link-text-always-escape-brackets'].addEventListener('change', async (event) => {
   try {
