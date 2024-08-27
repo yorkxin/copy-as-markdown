@@ -2,12 +2,14 @@ package org.yorkxin.copyasmarkdown.e2e;
 
 import org.testng.annotations.Test;
 
+import java.awt.*;
+
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 public class OptionsPageTest extends BaseTest {
     @Test
-    public void testFormatsUi() {
+    public void testFormatsUi() throws AWTException {
         openOptionsPage();
         OptionsPage op = new OptionsPage(driver);
 
@@ -33,7 +35,9 @@ public class OptionsPageTest extends BaseTest {
     }
 
     @Test
-    public void testTabGroupFormatUi() {
+    public void testTabGroupWithoutPermission() throws AWTException {
+        removeAllPermissions();
+
         openOptionsPage();
         OptionsPage op = new OptionsPage(driver);
 
@@ -41,15 +45,19 @@ public class OptionsPageTest extends BaseTest {
         assertTrue(op.tabGroupIndentationSpaces.isSelected());
         assertFalse(op.tabGroupIndentationTab.isEnabled());
         assertFalse(op.tabGroupIndentationSpaces.isEnabled());
+    }
 
-        if (op.requestTabGroupsPermission.isEnabled()) {
-            op.requestTabGroupsPermission.click();
-            assertTrue(op.tabGroupIndentationTab.isEnabled());
-            assertTrue(op.tabGroupIndentationSpaces.isEnabled());
+    @Test
+    public void testTabGroupWithPermission() {
+        grantPermission("tabGroups");
 
-            op.tabGroupIndentationTab.click();
-            driver.get(driver.getCurrentUrl());
-            assertTrue(op.tabGroupIndentationTab.isEnabled());
-        }
+        openOptionsPage();
+        OptionsPage op = new OptionsPage(driver);
+        assertTrue(op.tabGroupIndentationTab.isEnabled());
+        assertTrue(op.tabGroupIndentationSpaces.isEnabled());
+
+        op.tabGroupIndentationTab.click();
+        driver.get(driver.getCurrentUrl());
+        assertTrue(op.tabGroupIndentationTab.isEnabled());
     }
 }

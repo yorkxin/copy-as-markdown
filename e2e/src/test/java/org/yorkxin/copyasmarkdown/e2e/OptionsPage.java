@@ -28,18 +28,6 @@ public class OptionsPage {
     @FindBy(css = "#form-link-text-always-escape-brackets [name='enabled']")
     public WebElement enableLinkTextAlwaysEscapeBrackets;
 
-    @FindBy(css = "[data-request-permission='tabs']")
-    public WebElement requestTabsPermission;
-
-    @FindBy(css = "[data-request-permission='tabGroups']")
-    public WebElement requestTabGroupsPermission;
-
-    @FindBy(css = "[data-request-permission='bookmarks']")
-    public WebElement requestBookmarksPermission;
-
-    @FindBy(css = "[data-remove-permission]")
-    public List<WebElement> removeButtons;
-
     public OptionsPage(WebDriver driver) {
         PageFactory.initElements(driver, this);
     }

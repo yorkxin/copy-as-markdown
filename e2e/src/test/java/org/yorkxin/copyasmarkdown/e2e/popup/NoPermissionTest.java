@@ -11,9 +11,9 @@ import static org.testng.Assert.assertEquals;
 public class NoPermissionTest  extends BaseTest {
     @Test
     public void testNoPermission() throws AWTException {
-        // test that pressing keyboard shortcuts opens permissions dialog
+        // test that clicking the button opens permissions dialog
         // if tabs permission is not enabled
-        removePermission("tabs");
+        removeAllPermissions();
         DemoPageData dpd = openDemoTabs(false);
         openPopupWindow(dpd);
 

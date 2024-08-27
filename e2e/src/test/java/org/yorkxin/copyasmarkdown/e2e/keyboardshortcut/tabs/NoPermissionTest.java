@@ -15,7 +15,7 @@ public class NoPermissionTest extends BaseTest {
         configureKeyboardShortcuts();
         // test that pressing keyboard shortcuts opens permissions dialog
         // if tabs permission is not enabled
-        removePermission("tabs");
+        removeAllPermissions();
         openDemoTabs(false);
     }
 
