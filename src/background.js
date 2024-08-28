@@ -518,6 +518,56 @@ browser.commands.onCommand.addListener(async (command, argTab) => {
           scope: 'highlighted', format: 'url', listType: 'list', windowId: tab.windowId,
         });
         break;
+      case 'all-tabs-custom-format-1':
+        text = await handleExportTabs({
+          scope: 'all', format: 'custom-format', customFormatSlot: '1', windowId: tab.windowId,
+        });
+        break;
+      case 'all-tabs-custom-format-2':
+        text = await handleExportTabs({
+          scope: 'all', format: 'custom-format', customFormatSlot: '2', windowId: tab.windowId,
+        });
+        break;
+      case 'all-tabs-custom-format-3':
+        text = await handleExportTabs({
+          scope: 'all', format: 'custom-format', customFormatSlot: '3', windowId: tab.windowId,
+        });
+        break;
+      case 'all-tabs-custom-format-4':
+        text = await handleExportTabs({
+          scope: 'all', format: 'custom-format', customFormatSlot: '4', windowId: tab.windowId,
+        });
+        break;
+      case 'all-tabs-custom-format-5':
+        text = await handleExportTabs({
+          scope: 'all', format: 'custom-format', customFormatSlot: '5', windowId: tab.windowId,
+        });
+        break;
+      case 'highlighted-tabs-custom-format-1':
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'custom-format', customFormatSlot: '1', windowId: tab.windowId,
+        });
+        break;
+      case 'highlighted-tabs-custom-format-2':
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'custom-format', customFormatSlot: '2', windowId: tab.windowId,
+        });
+        break;
+      case 'highlighted-tabs-custom-format-3':
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'custom-format', customFormatSlot: '3', windowId: tab.windowId,
+        });
+        break;
+      case 'highlighted-tabs-custom-format-4':
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'custom-format', customFormatSlot: '4', windowId: tab.windowId,
+        });
+        break;
+      case 'highlighted-tabs-custom-format-5':
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'custom-format', customFormatSlot: '5', windowId: tab.windowId,
+        });
+        break;
       default:
         throw new TypeError(`unknown keyboard command: ${command}`);
     }
