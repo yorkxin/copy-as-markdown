@@ -40,7 +40,9 @@ public class TabExportingTest extends BaseTest {
                   {0} [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                   {0} [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
                   {0} [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
-                  {0} [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""",
+                  {0} [Page 5 - Copy as Markdown](http://localhost:5566/5.html)
+                  {0} [Page 6 - Copy as Markdown](http://localhost:5566/6.html)
+                  {0} [Page 7 - Copy as Markdown](http://localhost:5566/7.html)""",
                 expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -59,7 +61,9 @@ public class TabExportingTest extends BaseTest {
                   - [ ] [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                   - [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
                   - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
-                  - [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""";
+                  - [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)
+                  - [ ] [Page 6 - Copy as Markdown](http://localhost:5566/6.html)
+                  - [ ] [Page 7 - Copy as Markdown](http://localhost:5566/7.html)""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
     }
@@ -78,7 +82,9 @@ public class TabExportingTest extends BaseTest {
                   {0} Page 2 - Copy as Markdown
                   {0} Page 3 - Copy as Markdown
                   {0} Page 4 - Copy as Markdown
-                  {0} Page 5 - Copy as Markdown""",
+                  {0} Page 5 - Copy as Markdown
+                  {0} Page 6 - Copy as Markdown
+                  {0} Page 7 - Copy as Markdown""",
                 expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -98,7 +104,9 @@ public class TabExportingTest extends BaseTest {
                   {0} http://localhost:5566/2.html
                   {0} http://localhost:5566/3.html
                   {0} http://localhost:5566/4.html
-                  {0} http://localhost:5566/5.html""",
+                  {0} http://localhost:5566/5.html
+                  {0} http://localhost:5566/6.html
+                  {0} http://localhost:5566/7.html""",
                 expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -115,7 +123,7 @@ public class TabExportingTest extends BaseTest {
         String expected = MessageFormat.format("""
                 {0} [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
                 {0} [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
-                {0} [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""",
+                {0} [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""",
                 expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -131,7 +139,7 @@ public class TabExportingTest extends BaseTest {
         String expected = """
                 - [ ] [Page 0 - Copy as Markdown](http://localhost:5566/0.html)
                 - [ ] [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
-                - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""";
+                - [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""";
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
     }
@@ -147,7 +155,7 @@ public class TabExportingTest extends BaseTest {
         String expected = MessageFormat.format("""
                 {0} Page 0 - Copy as Markdown
                 {0} Page 2 - Copy as Markdown
-                {0} Page 4 - Copy as Markdown""",
+                {0} Page 5 - Copy as Markdown""",
                 expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -164,7 +172,7 @@ public class TabExportingTest extends BaseTest {
         String expected = MessageFormat.format("""
                 {0} http://localhost:5566/0.html
                 {0} http://localhost:5566/2.html
-                {0} http://localhost:5566/4.html""",
+                {0} http://localhost:5566/5.html""",
                 expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));

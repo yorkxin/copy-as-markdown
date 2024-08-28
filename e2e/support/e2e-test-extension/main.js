@@ -7,7 +7,7 @@ if (URL_PARAMS.has('base_url')) {
 }
 
 document.querySelector('#open-demo').addEventListener('click', async () => {
-  const urls = [0, 1, 2, 3, 4, 5]
+  const urls = [0, 1, 2, 3, 4, 5, 6, 7]
     .map((i) => `${baseUrl}/${i}.html`);
 
   const winDemo = await chrome.windows.create({ url: urls });
@@ -30,7 +30,7 @@ document.querySelector('#group-tabs').addEventListener('click', async () => {
   await chrome.tabGroups.update(group1, { title: 'Group 1' });
 
   const group2 = await chrome.tabs.group({
-    tabIds: [winDemo.tabs[4].id],
+    tabIds: [winDemo.tabs[5].id, winDemo.tabs[6].id],
     createProperties: { windowId: winDemo.id },
   });
 
@@ -47,7 +47,7 @@ document.querySelector('#highlight-tabs').addEventListener('click', async () => 
 
   await chrome.tabs.update(winDemo.tabs[0].id, { highlighted: true });
   await chrome.tabs.update(winDemo.tabs[2].id, { highlighted: true });
-  await chrome.tabs.update(winDemo.tabs[4].id, { highlighted: true });
+  await chrome.tabs.update(winDemo.tabs[5].id, { highlighted: true });
 });
 
 document.querySelector('#switch-to-demo').addEventListener('click', async () => {

@@ -42,9 +42,11 @@ public class TabExportingWithGroupsTest extends BaseTest {
                     {0}{1} [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
                     {0}{1} [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                     {1} [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
+                    {1} [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
                     {1} Untitled green group
-                    {0}{1} [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
-                    {1} [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""",
+                    {0}{1} [Page 5 - Copy as Markdown](http://localhost:5566/5.html)
+                    {0}{1} [Page 6 - Copy as Markdown](http://localhost:5566/6.html)
+                    {1} [Page 7 - Copy as Markdown](http://localhost:5566/7.html)""",
         expectedIndentation(indentation),expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -64,9 +66,11 @@ public class TabExportingWithGroupsTest extends BaseTest {
                     {0}- [ ] [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
                     {0}- [ ] [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                     - [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
+                    - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
                     - [ ] Untitled green group
-                    {0}- [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
-                    - [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""",
+                    {0}- [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)
+                    {0}- [ ] [Page 6 - Copy as Markdown](http://localhost:5566/6.html)
+                    - [ ] [Page 7 - Copy as Markdown](http://localhost:5566/7.html)""",
         expectedIndentation(indentation));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -87,9 +91,11 @@ public class TabExportingWithGroupsTest extends BaseTest {
                     {0}{1} Page 1 - Copy as Markdown
                     {0}{1} Page 2 - Copy as Markdown
                     {1} Page 3 - Copy as Markdown
+                    {1} Page 4 - Copy as Markdown
                     {1} Untitled green group
-                    {0}{1} Page 4 - Copy as Markdown
-                    {1} Page 5 - Copy as Markdown""",
+                    {0}{1} Page 5 - Copy as Markdown
+                    {0}{1} Page 6 - Copy as Markdown
+                    {1} Page 7 - Copy as Markdown""",
         expectedIndentation(indentation),expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -110,9 +116,11 @@ public class TabExportingWithGroupsTest extends BaseTest {
                     {0}{1} http://localhost:5566/1.html
                     {0}{1} http://localhost:5566/2.html
                     {1} http://localhost:5566/3.html
+                    {1} http://localhost:5566/4.html
                     {1} Untitled green group
-                    {0}{1} http://localhost:5566/4.html
-                    {1} http://localhost:5566/5.html""",
+                    {0}{1} http://localhost:5566/5.html
+                    {0}{1} http://localhost:5566/6.html
+                    {1} http://localhost:5566/7.html""",
         expectedIndentation(indentation),expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -132,7 +140,7 @@ public class TabExportingWithGroupsTest extends BaseTest {
                 {1} Group 1
                 {0}{1} [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                 {1} Untitled green group
-                {0}{1} [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""",
+                {0}{1} [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""",
                 expectedIndentation(indentation),expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -151,7 +159,7 @@ public class TabExportingWithGroupsTest extends BaseTest {
                 - [ ] Group 1
                 {0}- [ ] [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
                 - [ ] Untitled green group
-                {0}- [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)""",
+                {0}- [ ] [Page 5 - Copy as Markdown](http://localhost:5566/5.html)""",
                 expectedIndentation(indentation));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -171,7 +179,7 @@ public class TabExportingWithGroupsTest extends BaseTest {
                 {1} Group 1
                 {0}{1} Page 2 - Copy as Markdown
                 {1} Untitled green group
-                {0}{1} Page 4 - Copy as Markdown""",
+                {0}{1} Page 5 - Copy as Markdown""",
                 expectedIndentation(indentation),expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
@@ -191,7 +199,7 @@ public class TabExportingWithGroupsTest extends BaseTest {
                 {1} Group 1
                 {0}{1} http://localhost:5566/2.html
                 {1} Untitled green group
-                {0}{1} http://localhost:5566/4.html""",
+                {0}{1} http://localhost:5566/5.html""",
                 expectedIndentation(indentation),expectedListStyle(listStyle));
 
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));

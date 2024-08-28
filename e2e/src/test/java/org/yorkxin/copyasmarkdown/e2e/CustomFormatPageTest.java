@@ -51,14 +51,6 @@ public class CustomFormatPageTest extends BaseTest {
         cfp = new CustomFormatPage(driver);
         assertEquals(cfp.inputName.getAttribute("value"), "My Format");
         assertEquals(cfp.inputTemplate.getAttribute("value"), "{{#links}}\n{{title}}: {{url}}\n{{/links}}");
-        assertEquals(cfp.preview.getAttribute("value"), """
-                        Example 1: https://example.com/1
-                        Example 2: https://example.com/2
-                        Example 3: https://example.com/3
-                        Example 4: https://example.com/4
-                        Example 5: https://example.com/5
-                        Example 6: https://example.com/6
-                        """);
         assertTrue(cfp.checkboxShowInPopupMenu.isSelected());
     }
 

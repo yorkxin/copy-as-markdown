@@ -17,7 +17,7 @@ public class SimpleTest extends BaseTest {
         openPopupWindow(dpd);
         Assert.assertTrue(popupPage.counterAll.isDisplayed());
         Assert.assertTrue(popupPage.counterHighlighted.isDisplayed());
-        Assert.assertEquals("6", popupPage.counterAll.getText());
+        Assert.assertEquals("8", popupPage.counterAll.getText());
         Assert.assertEquals("3", popupPage.counterHighlighted.getText());
     }
 

@@ -45,6 +45,12 @@ public class PopupPage {
     @FindBy(id = "highlighted-tabs-url")
     public WebElement highlightedTabsUrlButton;
 
+    @FindBy(css = "button[value='export-tabs'][data-scope='all'][data-format='custom-format'][data-custom-format-slot='1']")
+    public WebElement allTabsCustomFormat1;
+
+    @FindBy(css = "button[value='export-tabs'][data-scope='highlighted'][data-format='custom-format'][data-custom-format-slot='2']")
+    public WebElement highlightedTabsCustomFormat2;
+
     public PopupPage(WebDriver driver) {
         PageFactory.initElements(driver, this);
     }
