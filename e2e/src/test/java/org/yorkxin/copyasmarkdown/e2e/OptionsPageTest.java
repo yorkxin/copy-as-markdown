@@ -33,31 +33,4 @@ public class OptionsPageTest extends BaseTest {
         driver.get(driver.getCurrentUrl());
         assertTrue(op.enableLinkTextAlwaysEscapeBrackets.isSelected());
     }
-
-    @Test
-    public void testTabGroupWithoutPermission() throws AWTException {
-        removeAllPermissions();
-
-        openOptionsPage();
-        OptionsPage op = new OptionsPage(driver);
-
-        // Defaults
-        assertTrue(op.tabGroupIndentationSpaces.isSelected());
-        assertFalse(op.tabGroupIndentationTab.isEnabled());
-        assertFalse(op.tabGroupIndentationSpaces.isEnabled());
-    }
-
-    @Test
-    public void testTabGroupWithPermission() {
-        grantPermission("tabGroups");
-
-        openOptionsPage();
-        OptionsPage op = new OptionsPage(driver);
-        assertTrue(op.tabGroupIndentationTab.isEnabled());
-        assertTrue(op.tabGroupIndentationSpaces.isEnabled());
-
-        op.tabGroupIndentationTab.click();
-        driver.get(driver.getCurrentUrl());
-        assertTrue(op.tabGroupIndentationTab.isEnabled());
-    }
 }

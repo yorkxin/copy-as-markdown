@@ -6,7 +6,9 @@
         <parameter name="browser" value="chrome"/>
         <classes>
             <class name="org.yorkxin.copyasmarkdown.e2e.ContextMenuTest"/>
+            <class name="org.yorkxin.copyasmarkdown.e2e.CustomFormatPageTest"/>
             <class name="org.yorkxin.copyasmarkdown.e2e.OptionsPageTest"/>
+            <class name="org.yorkxin.copyasmarkdown.e2e.OptionsPageTabGroupsTest"/>
             <class name="org.yorkxin.copyasmarkdown.e2e.PermissionsPageTest"/>
             <class name="org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.OnPageContentsTest"/>
             <class name="org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs.TabExportingTest"/>
