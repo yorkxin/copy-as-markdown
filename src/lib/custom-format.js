@@ -15,17 +15,18 @@ Mustache.escape = function (text) { return text; };
  */
 
 /**
- * @typedef {Object} RenderInputGroup
- * @prop {String} name
- * @prop {Boolean} is_ungrouped
+ * @typedef {Object} RenderInputEntry
+ * @prop {String} title
+ * @prop {String} url
+ * @prop {Boolean} isGroup
  * @prop {Number} number
- * @prop {RenderInputLink[]} links
+ * @prop {RenderInputEntry[]} links
  */
 
 /**
  * @typedef {Object} RenderInput
  * @prop {RenderInputLink[]} links
- * @prop {RenderInputGroup[]} groups
+ * @prop {RenderInputEntry[]} grouped
  */
 
 export default class CustomFormat {
@@ -75,37 +76,43 @@ export default class CustomFormat {
         number: idx + 1,
       }));
 
-    let ol = 1;
-    /** @type {RenderInputGroup[]} */
-    const groups = lists.map((group, idx) => {
-      const initialOl = ol;
-      const groupLinks = group.tabs.map((tab, jdx) => {
-        const ret = {
-          title: tab.title,
-          url: tab.url,
-          number: jdx + 1,
-          ol: group.isNonGroup() ? ol : jdx + 1,
-        };
-        if (group.isNonGroup()) {
-          ol += 1;
-        }
-        return ret;
-      });
-      if (!group.isNonGroup()) {
-        ol += 1;
+    let number = 1;
+    /** @type {RenderInputEntry[]} */
+    const grouped = [];
+
+    lists.forEach((group) => {
+      if (group.isNonGroup()) {
+        group.tabs.forEach((tab, idx) => {
+          grouped.push({
+            title: tab.title,
+            url: tab.url,
+            number: idx + number,
+            isGroup: false,
+            links: [],
+          });
+        });
+        number += group.tabs.length;
+      } else {
+        grouped.push({
+          isGroup: true,
+          title: group.name,
+          url: null,
+          number,
+          links: group.tabs.map((tab, jdx) => ({
+            title: tab.title,
+            url: tab.url,
+            number: jdx + 1,
+            isGroup: false,
+            links: [],
+          })),
+        });
+        number += 1;
       }
-      return {
-        name: group.name,
-        is_ungrouped: group.isNonGroup(),
-        number: idx + 1,
-        links: groupLinks,
-        ol: initialOl,
-      };
     });
 
     return {
       links,
-      groups,
+      grouped,
     };
   }
 }

@@ -22,23 +22,15 @@ describe('custom-format.js', () => {
           { title: 'Example 2', url: 'https://example.com/2', number: 2 },
           { title: 'Example 3', url: 'https://example.com/3', number: 3 },
         ],
-        groups: [
+        grouped: [
           {
-            name: '',
-            is_ungrouped: true,
-            number: 1,
-            ol: 1,
-            links: [
-              {
-                title: 'Example 1', url: 'https://example.com/1', number: 1, ol: 1,
-              },
-              {
-                title: 'Example 2', url: 'https://example.com/2', number: 2, ol: 2,
-              },
-              {
-                title: 'Example 3', url: 'https://example.com/3', number: 3, ol: 3,
-              },
-            ],
+            title: 'Example 1', url: 'https://example.com/1', number: 1, isGroup: false, links: [],
+          },
+          {
+            title: 'Example 2', url: 'https://example.com/2', number: 2, isGroup: false, links: [],
+          },
+          {
+            title: 'Example 3', url: 'https://example.com/3', number: 3, isGroup: false, links: [],
           },
         ],
       });
@@ -71,48 +63,32 @@ describe('custom-format.js', () => {
           { title: 'Example 5', url: 'https://example.com/5', number: 5 },
           { title: 'Example 6', url: 'https://example.com/6', number: 6 },
         ],
-        groups: [
+        grouped: [
           {
-            name: '',
-            is_ungrouped: true,
-            number: 1,
-            ol: 1,
-            links: [
-              {
-                title: 'Example 1', url: 'https://example.com/1', number: 1, ol: 1,
-              },
-              {
-                title: 'Example 2', url: 'https://example.com/2', number: 2, ol: 2,
-              },
-            ],
+            title: 'Example 1', url: 'https://example.com/1', number: 1, isGroup: false, links: [],
           },
           {
-            name: 'My Group',
-            is_ungrouped: false,
-            number: 2,
-            ol: 3,
-            links: [
-              {
-                title: 'Example 3', url: 'https://example.com/3', number: 1, ol: 1,
-              },
-              {
-                title: 'Example 4', url: 'https://example.com/4', number: 2, ol: 2,
-              },
-            ],
+            title: 'Example 2', url: 'https://example.com/2', number: 2, isGroup: false, links: [],
           },
           {
-            name: '',
-            is_ungrouped: true,
+            isGroup: true,
+            title: 'My Group',
+            url: null,
             number: 3,
-            ol: 4,
             links: [
               {
-                title: 'Example 5', url: 'https://example.com/5', number: 1, ol: 4,
+                title: 'Example 3', url: 'https://example.com/3', number: 1, isGroup: false, links: [],
               },
               {
-                title: 'Example 6', url: 'https://example.com/6', number: 2, ol: 5,
+                title: 'Example 4', url: 'https://example.com/4', number: 2, isGroup: false, links: [],
               },
             ],
+          },
+          {
+            title: 'Example 5', url: 'https://example.com/5', number: 4, isGroup: false, links: [],
+          },
+          {
+            title: 'Example 6', url: 'https://example.com/6', number: 5, isGroup: false, links: [],
           },
         ],
       });
@@ -139,32 +115,24 @@ describe('custom-format.js', () => {
           { title: 'Example 3', url: 'https://example.com/3', number: 3 },
           { title: 'Example 4', url: 'https://example.com/4', number: 4 },
         ],
-        groups: [
+        grouped: [
           {
-            name: '',
-            is_ungrouped: true,
-            number: 1,
-            ol: 1,
-            links: [
-              {
-                title: 'Example 1', url: 'https://example.com/1', number: 1, ol: 1,
-              },
-              {
-                title: 'Example 2', url: 'https://example.com/2', number: 2, ol: 2,
-              },
-            ],
+            title: 'Example 1', url: 'https://example.com/1', number: 1, isGroup: false, links: [],
           },
           {
-            name: 'My Group',
-            is_ungrouped: false,
-            number: 2,
-            ol: 3,
+            title: 'Example 2', url: 'https://example.com/2', number: 2, isGroup: false, links: [],
+          },
+          {
+            isGroup: true,
+            title: 'My Group',
+            url: null,
+            number: 3,
             links: [
               {
-                title: 'Example 3', url: 'https://example.com/3', number: 1, ol: 1,
+                title: 'Example 3', url: 'https://example.com/3', number: 1, isGroup: false, links: [],
               },
               {
-                title: 'Example 4', url: 'https://example.com/4', number: 2, ol: 2,
+                title: 'Example 4', url: 'https://example.com/4', number: 2, isGroup: false, links: [],
               },
             ],
           },

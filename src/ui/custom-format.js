@@ -113,49 +113,37 @@ class UI {
         { title: 'Example 4', url: 'https://example.com/4', number: 4 },
         { title: 'Example 5', url: 'https://example.com/5', number: 5 },
         { title: 'Example 6', url: 'https://example.com/6', number: 6 },
+        { title: 'Example 7', url: 'https://example.com/7', number: 7 },
       ],
-      groups: [
+      grouped: [
         {
-          name: '',
-          is_ungrouped: true,
-          number: 1,
-          ol: 1,
-          links: [
-            {
-              title: 'Example 1', url: 'https://example.com/1', number: 1, ol: 1,
-            },
-            {
-              title: 'Example 2', url: 'https://example.com/2', number: 2, ol: 2,
-            },
-          ],
+          title: 'Example 1', url: 'https://example.com/1', isGroup: false, number: 1, links: [],
         },
         {
-          name: 'My Group',
-          is_ungrouped: false,
-          number: 2,
-          ol: 3,
-          links: [
-            {
-              title: 'Example 3', url: 'https://example.com/3', number: 1, ol: 1,
-            },
-            {
-              title: 'Example 4', url: 'https://example.com/4', number: 2, ol: 2,
-            },
-          ],
+          title: 'Example 2', url: 'https://example.com/2', isGroup: false, number: 2, links: [],
         },
         {
-          name: '',
-          is_ungrouped: true,
+          title: 'Group 1',
+          url: null,
+          isGroup: true,
           number: 3,
-          ol: 4,
           links: [
             {
-              title: 'Example 5', url: 'https://example.com/5', number: 1, ol: 4,
+              title: 'Example 3', url: 'https://example.com/3', isGroup: false, number: 1, links: [],
             },
             {
-              title: 'Example 6', url: 'https://example.com/6', number: 2, ol: 5,
+              title: 'Example 4', url: 'https://example.com/4', isGroup: false, number: 2, links: [],
+            },
+            {
+              title: 'Example 5', url: 'https://example.com/5', isGroup: false, number: 3, links: [],
             },
           ],
+        },
+        {
+          title: 'Example 6', url: 'https://example.com/6', isGroup: false, number: 4, links: [],
+        },
+        {
+          title: 'Example 7', url: 'https://example.com/7', isGroup: false, number: 5, links: [],
         },
       ],
     };
