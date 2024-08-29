@@ -229,7 +229,7 @@ function renderBuiltInFormat(format, tabLists, listType) {
  * @returns {string}
  */
 async function renderCustomFormat({ slot, lists }) {
-  const customFormat = await CustomFormatsStorage.get(slot);
+  const customFormat = await CustomFormatsStorage.get('tabs', slot);
   const input = CustomFormat.makeRenderInput(lists);
   return customFormat.render(input);
 }

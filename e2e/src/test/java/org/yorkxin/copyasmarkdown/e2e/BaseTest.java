@@ -252,7 +252,7 @@ public class BaseTest {
     }
 
     protected void openCustomFormatPage(String slot) {
-        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/custom-format.html?slot="+slot);
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/export-tabs-custom-format.html?slot="+slot);
     }
 
     protected String getExtensionProtocol() {

@@ -5,6 +5,8 @@ Mustache.escape = function (text) { return text; };
 
 /** @typedef {import('./tabs.js').TabList} TabList */
 
+/** @typedef {'tabs'} Context */
+
 /**
  * @typedef {Object} RenderInputLink
  * @prop {String} title
@@ -29,17 +31,20 @@ Mustache.escape = function (text) { return text; };
 export default class CustomFormat {
   /**
    * @param {Object} params
+   * @param {Context} context
    * @param {string} params.slot
    * @param {string} params.name
    * @param {string} params.template
    * @param {boolean} params.showInPopupMenu
    */
   constructor({
+    context,
     slot,
     name,
     template,
     showInPopupMenu,
   }) {
+    this.context = context;
     this.slot = slot;
     this.name = name;
     this.template = template;

@@ -120,7 +120,7 @@ async function showCustomFormats() {
   const divExportAll = document.getElementById('actions-export-all');
   const divExportHighlighted = document.getElementById('actions-export-highlighted');
 
-  const customFormats = await CustomFormatsStorage.list();
+  const customFormats = await CustomFormatsStorage.list('tabs');
   customFormats.forEach((customFormat) => {
     if (!customFormat.showInPopupMenu) {
       return;

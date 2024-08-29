@@ -1,27 +1,28 @@
 import CustomFormat from '../lib/custom-format.js';
 
-function storageKeyOf(slot, attribute) {
-  return `custom_formats.${slot}.${attribute}`;
+function storageKeyOf(context, slot, attribute) {
+  return `custom_formats.${context}.${slot}.${attribute}`;
 }
 
 export default {
   /**
    *
+   * @param context {string}
    * @param slot {string}
    * @returns {Promise<CustomFormat>}
    */
-  async get(slot) {
+  async get(context, slot) {
     const stored = await browser.storage.sync.get({
-      [storageKeyOf(slot, 'name')]: '',
-      [storageKeyOf(slot, 'template')]: '',
-      [storageKeyOf(slot, 'show_in_popup_menu')]: false,
+      [storageKeyOf(context, slot, 'name')]: '',
+      [storageKeyOf(context, slot, 'template')]: '',
+      [storageKeyOf(context, slot, 'show_in_popup_menu')]: false,
     });
 
     return new CustomFormat({
       slot,
-      name: stored[storageKeyOf(slot, 'name')],
-      template: stored[storageKeyOf(slot, 'template')],
-      showInPopupMenu: stored[storageKeyOf(slot, 'show_in_popup_menu')],
+      name: stored[storageKeyOf(context, slot, 'name')],
+      template: stored[storageKeyOf(context, slot, 'template')],
+      showInPopupMenu: stored[storageKeyOf(context, slot, 'show_in_popup_menu')],
     });
   },
 
@@ -29,21 +30,22 @@ export default {
    *
    * @returns {Promise<CustomFormat[]>}
    */
-  async list() {
-    return Promise.all(['1', '2', '3', '4', '5'].map((slot) => this.get(slot)));
+  async list(context) {
+    return Promise.all(['1', '2', '3', '4', '5'].map((slot) => this.get(context, slot)));
   },
 
   /**
    *
+   * @param context {string}
    * @param slot {string}
    * @param customFormat {CustomFormat}
    * @returns {Promise<void>}
    */
-  async save(slot, customFormat) {
+  async save(context, slot, customFormat) {
     const assignments = {
-      [storageKeyOf(slot, 'name')]: customFormat.name,
-      [storageKeyOf(slot, 'template')]: customFormat.template,
-      [storageKeyOf(slot, 'show_in_popup_menu')]: customFormat.showInPopupMenu,
+      [storageKeyOf(context, slot, 'name')]: customFormat.name,
+      [storageKeyOf(context, slot, 'template')]: customFormat.template,
+      [storageKeyOf(context, slot, 'show_in_popup_menu')]: customFormat.showInPopupMenu,
     };
 
     await browser.storage.sync.set(assignments);
