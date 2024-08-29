@@ -10,6 +10,8 @@ import java.util.Objects;
 
 public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.BaseTest {
     public static CommandDescriptor[] allCommandDescriptors =  new CommandDescriptor[]{
+            new CommandDescriptor("current tab: [title](url)", "current-tab-link", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "q"),
+            new CommandDescriptor("Copy Selection as Markdown", "selection-as-markdown", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "p"),
             new CommandDescriptor("all tabs: - [title](url)", "all-tabs-link-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "w"),
             new CommandDescriptor("all tabs: - [ ] [title](url)", "all-tabs-link-as-task-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "e"),
             new CommandDescriptor("all tabs: - title", "all-tabs-title-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "r"),
@@ -61,14 +63,14 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.Ba
     public void configureKeyboardShortcutsInChrome() throws InterruptedException, AWTException {
         openChromeKeyboardShortcutsPage();
         for (CommandDescriptor cmd : allCommandDescriptors) {
-            setShortcutKeyInChrome(cmd.name, cmd.modifiers, cmd.key);
+            setShortcutKeyInChrome(cmd);
         }
     }
 
     public void configureKeyboardShortcutsInFirefox() throws InterruptedException, AWTException {
         openFirefoxKeyboardShortcutsPage();
         for (CommandDescriptor cmd : allCommandDescriptors) {
-            setShortcutKeyInFirefox(cmd.command, cmd.modifiers, cmd.key);
+            setShortcutKeyInFirefox(cmd);
         }
     }
 }

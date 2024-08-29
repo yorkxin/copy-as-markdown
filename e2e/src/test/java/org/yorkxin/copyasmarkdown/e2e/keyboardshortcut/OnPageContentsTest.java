@@ -14,6 +14,8 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 
 import static org.testng.Assert.assertEquals;
+import static org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs.BaseTest.getCommandDescriptor;
+import static org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs.BaseTest.runShortcutKeys;
 
 public class OnPageContentsTest extends BaseTest{
     @BeforeClass
@@ -27,14 +29,14 @@ public class OnPageContentsTest extends BaseTest{
 
     public void configureKeyboardShortcutsInChrome() throws InterruptedException, AWTException {
         openChromeKeyboardShortcutsPage();
-        setShortcutKeyInChrome("current tab: [title](url)", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "q");
-        setShortcutKeyInChrome("Copy Selection as Markdown", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "p");
+        setShortcutKeyInChrome(getCommandDescriptor("current-tab-link"));
+        setShortcutKeyInChrome(getCommandDescriptor("selection-as-markdown"));
     }
 
     public void configureKeyboardShortcutsInFirefox() throws InterruptedException, AWTException {
         openFirefoxKeyboardShortcutsPage();
-        setShortcutKeyInFirefox("current-tab-link", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "q");
-        setShortcutKeyInFirefox("selection-as-markdown", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "p");
+        setShortcutKeyInFirefox(getCommandDescriptor("current-tab-link"));
+        setShortcutKeyInFirefox(getCommandDescriptor("selection-as-markdown"));
     }
 
     @Test
