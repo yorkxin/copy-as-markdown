@@ -29,7 +29,7 @@ class UI {
     this.elInputName = doc.getElementById('input-name');
     this.elInputTemplate = doc.getElementById('input-template');
     /** @type {HTMLInputElement} */
-    this.elShowInPopupMenu = doc.getElementById('input-show-in-popup-menu');
+    this.elShowInMenus = doc.getElementById('input-show-in-menus');
     this.elPreview = doc.getElementById('preview');
     this.elErrorTemplate = doc.getElementById('error-template');
     this.elSave = doc.getElementById('save');
@@ -60,7 +60,7 @@ class UI {
   load(customFormat) {
     this.elInputName.value = customFormat.name === '' ? this.defaultName() : customFormat.name;
     this.elInputTemplate.value = customFormat.template;
-    this.elShowInPopupMenu.checked = customFormat.showInPopupMenu;
+    this.elShowInMenus.checked = customFormat.showInMenus;
     this.renderPreview();
   }
 
@@ -73,7 +73,7 @@ class UI {
       context: this.context,
       name: this.elInputName.value,
       template: this.elInputTemplate.value,
-      showInPopupMenu: this.elShowInPopupMenu.checked,
+      showInMenus: this.elShowInMenus.checked,
     });
   }
 

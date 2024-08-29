@@ -35,20 +35,20 @@ export default class CustomFormat {
    * @param {string} params.slot
    * @param {string} params.name
    * @param {string} params.template
-   * @param {boolean} params.showInPopupMenu
+   * @param {boolean} params.showInMenus
    */
   constructor({
     context,
     slot,
     name,
     template,
-    showInPopupMenu,
+    showInMenus,
   }) {
     this.context = context;
     this.slot = slot;
     this.name = name;
     this.template = template;
-    this.showInPopupMenu = showInPopupMenu;
+    this.showInMenus = showInMenus;
   }
 
   /**

@@ -127,7 +127,7 @@ async function showCustomFormatsForExportTabs() {
 
   const customFormats = await CustomFormatsStorage.list('multiple-tabs');
   customFormats.forEach((customFormat) => {
-    if (!customFormat.showInPopupMenu) {
+    if (!customFormat.showInMenus) {
       return;
     }
 
@@ -154,7 +154,7 @@ async function showCustomFormatsForCurrentTab() {
 
   const customFormats = await CustomFormatsStorage.list('single-tab');
   customFormats.forEach((customFormat) => {
-    if (!customFormat.showInPopupMenu) {
+    if (!customFormat.showInMenus) {
       return;
     }
 

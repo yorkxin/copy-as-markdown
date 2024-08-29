@@ -2,7 +2,7 @@ import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 
 async function setVisibility(slot, context, visible) {
   const format = await CustomFormatsStorage.get(context, slot);
-  format.showInPopupMenu = visible;
+  format.showInMenus = visible;
   await CustomFormatsStorage.save(context, format.slot, format);
 }
 
@@ -10,7 +10,7 @@ async function initCheckbox(checkbox) {
   const slot = checkbox.dataset.customFormatSlot;
   const context = checkbox.dataset.customFormatContext;
   const format = await CustomFormatsStorage.get(context, slot);
-  if (format.showInPopupMenu) {
+  if (format.showInMenus) {
     checkbox.setAttribute('checked', true);
   }
   checkbox.addEventListener('change', async (e) => {

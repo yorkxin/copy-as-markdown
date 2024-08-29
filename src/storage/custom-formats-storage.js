@@ -15,7 +15,7 @@ export default {
     const stored = await browser.storage.sync.get({
       [storageKeyOf(context, slot, 'name')]: '',
       [storageKeyOf(context, slot, 'template')]: '',
-      [storageKeyOf(context, slot, 'show_in_popup_menu')]: false,
+      [storageKeyOf(context, slot, 'show_in_menus')]: false,
     });
 
     return new CustomFormat({
@@ -23,7 +23,7 @@ export default {
       context,
       name: stored[storageKeyOf(context, slot, 'name')],
       template: stored[storageKeyOf(context, slot, 'template')],
-      showInPopupMenu: stored[storageKeyOf(context, slot, 'show_in_popup_menu')],
+      showInMenus: stored[storageKeyOf(context, slot, 'show_in_menus')],
     });
   },
 
@@ -46,7 +46,7 @@ export default {
     const assignments = {
       [storageKeyOf(context, slot, 'name')]: customFormat.name,
       [storageKeyOf(context, slot, 'template')]: customFormat.template,
-      [storageKeyOf(context, slot, 'show_in_popup_menu')]: customFormat.showInPopupMenu,
+      [storageKeyOf(context, slot, 'show_in_menus')]: customFormat.showInMenus,
     };
 
     await browser.storage.sync.set(assignments);
