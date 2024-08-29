@@ -13,28 +13,7 @@
     <p></p>
   </div>
   <div class="columns">
-    <div class="column is-narrow" style="width: 200px">
-      <aside class="menu">
-        <p class="menu-label">General</p>
-        <ul class="menu-list">
-          <li><a href="options.html">Markdown Style</a></li>
-          <li><a href="options-permissions.html" class="is-active">Permissions</a></li>
-        </ul>
-        <p class="menu-label">Custom Formats</p>
-        <ul class="menu-list">
-          <li><a href="export-tabs-custom-format.html?slot=1">Custom Format 1</a></li>
-          <li><a href="export-tabs-custom-format.html?slot=2">Custom Format 2</a></li>
-          <li><a href="export-tabs-custom-format.html?slot=3">Custom Format 3</a></li>
-          <li><a href="export-tabs-custom-format.html?slot=4">Custom Format 4</a></li>
-          <li><a href="export-tabs-custom-format.html?slot=5">Custom Format 5</a></li>
-          <li><a href="custom-format-help.html">Help & Examples</a></li>
-        </ul>
-        <p class="menu-label">Others</p>
-        <ul class="menu-list">
-          <li><a href="about.html">About</a></li>
-        </ul>
-      </aside>
-    </div>
+    <div class="column is-narrow" id="menu"></div>
     <div class="column">
       <div class="box content" id="permissions">
         <h2 class="title is-3">Additional Permissions</h2>
@@ -66,6 +45,7 @@
   </div>
 </div>
 <script src="../vendor/browser-polyfill.js"></script>
+<script src="./options-ui.js" type="module"></script>
 <script src="./options-permissions.js" type="module"></script>
 </body>
 </html>

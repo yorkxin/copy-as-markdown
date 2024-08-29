@@ -65,7 +65,7 @@ export default class CustomFormat {
    * @param {TabList[]} lists
    * @returns {RenderInput}
    */
-  static makeRenderInput(lists) {
+  static makeRenderInputForTabLists(lists) {
     /** @type {RenderInputLink[]} */
     const links = lists
       .flatMap((list) => list.tabs)
@@ -103,6 +103,9 @@ export default class CustomFormat {
       };
     });
 
-    return { links, groups };
+    return {
+      links,
+      groups,
+    };
   }
 }

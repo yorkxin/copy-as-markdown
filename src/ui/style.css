@@ -2,6 +2,10 @@
     --scheme-color: hsl(171deg,98%,29%);
 }
 
+#menu {
+    width: 220px;
+}
+
 .button.is-primary {
     background-color: var(--scheme-color);
     color: white;

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Copy as Markdown - Options</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../vendor/bulma.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+  <div id="flash-error" class="notification is-danger is-hidden">
+    <p></p>
+  </div>
+  <div class="columns">
+    <div class="column is-narrow" id="menu"></div>
+    <div class="column">
+      <div class="box content">
+        <h2 class="title is-3">Format - Single Tab</h2>
+        <form id='form-display-items' class="field">
+          <label class="label">Commands in Menus</label>
+          <p>Choose what items to show in popup menus and context menus.</p>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" disabled checked />
+              Copy as Page Link
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="custom-format-1" />
+              Copy as Custom Format 1
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="custom-format-2" />
+              Copy as Custom Format 2
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="custom-format-3" />
+              Copy as Custom Format 3
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="custom-format-4" />
+              Copy as Custom Format 4
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="custom-format-5" />
+              Copy as Custom Format 5
+            </label>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script src="../vendor/browser-polyfill.js"></script>
+    <script src="./options-ui.js" type="module"></script>
+    <script src="./options.js" type="module"></script>
+</body>
+</html>

@@ -11,31 +11,10 @@
   <h1 class="title">Copy as Markdown</h1>
 
   <div class="columns">
-    <div class="column is-narrow" style="width: 200px">
-      <aside class="menu">
-        <p class="menu-label">General</p>
-        <ul class="menu-list">
-          <li><a href="options.html">Markdown Style</a></li>
-          <li><a href="options-permissions.html">Permissions</a></li>
-        </ul>
-        <p class="menu-label">Exporting Tabs</p>
-        <ul class="menu-list">
-          <li><a data-menu-custom-format="1" href="export-tabs-custom-format.html?slot=1">Custom Format 1</a></li>
-          <li><a data-menu-custom-format="2" href="export-tabs-custom-format.html?slot=2">Custom Format 2</a></li>
-          <li><a data-menu-custom-format="3" href="export-tabs-custom-format.html?slot=3">Custom Format 3</a></li>
-          <li><a data-menu-custom-format="4" href="export-tabs-custom-format.html?slot=4">Custom Format 4</a></li>
-          <li><a data-menu-custom-format="5" href="export-tabs-custom-format.html?slot=5">Custom Format 5</a></li>
-          <li><a href="custom-format-help.html">Help & Examples</a></li>
-        </ul>
-        <p class="menu-label">Others</p>
-        <ul class="menu-list">
-          <li><a href="about.html">About</a></li>
-        </ul>
-      </aside>
-    </div>
+    <div class="column is-narrow" id="menu"></div>
     <div class="column">
       <div class="box">
-        <h2 class="title is-3" data-placeholder="default-name">Custom Format</h2>
+        <h2 class="title is-3"><span data-placeholder="default-name">Custom Format</span> (<span class="is-small" data-placeholder="context-in-header"></span>)</h2>
         <div class="field">
           <label class="label">Display</label>
           <div class="control">
@@ -78,6 +57,7 @@
   </div>
 </div>
 <script src="../vendor/browser-polyfill.js"></script>
+<script src="./options-ui.js" type="module"></script>
 <script src="./custom-format.js" type="module"></script>
 </body>
 </html>

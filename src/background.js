@@ -225,12 +225,25 @@ function renderBuiltInFormat(format, tabLists, listType) {
 /**
  *
  * @param slot {string}
+ * @param title {string}
+ * @param url {string}
+ * @returns {string}
+ */
+async function renderCustomFormatForSingleTab({ slot, title, url }) {
+  const customFormat = await CustomFormatsStorage.get('single-tab', slot);
+  const input = { title, url };
+  return customFormat.render(input);
+}
+
+/**
+ *
+ * @param slot {string}
  * @param lists {TabList[]}
  * @returns {string}
  */
-async function renderCustomFormat({ slot, lists }) {
-  const customFormat = await CustomFormatsStorage.get('tabs', slot);
-  const input = CustomFormat.makeRenderInput(lists);
+async function renderCustomFormatForMultipleTabs({ slot, lists }) {
+  const customFormat = await CustomFormatsStorage.get('multiple-tabs', slot);
+  const input = CustomFormat.makeRenderInputForTabLists(lists);
   return customFormat.render(input);
 }
 
@@ -270,7 +283,7 @@ async function handleExportTabs({
   const tabs = crTabs.map((tab) => new Tab(tab.title, tab.url, tab.groupId || TabGroup.NonGroupId));
   const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
   if (format === 'custom-format') {
-    return renderCustomFormat({ slot: customFormatSlot, lists: tabLists });
+    return renderCustomFormatForMultipleTabs({ slot: customFormatSlot, lists: tabLists });
   }
   return renderBuiltInFormat(format, tabLists, listType);
 }
@@ -381,14 +394,26 @@ async function handleContentOfContextMenu(info, tab) {
 
 /**
  *
- * @param format {'link'}
+ * @param format {'link'|'custom-format'}
+ * @param [customFormatSlot=null] {String?}
  * @param tab {browser.tabs.Tab}
  * @returns {Promise<string>}
  */
-async function handleExportTab(format, tab) {
+async function handleExportTab({
+  format,
+  customFormatSlot,
+  tab,
+}) {
   switch (format) {
     case 'link':
       return markdownInstance.linkTo(tab.title, tab.url);
+
+    case 'custom-format':
+      return renderCustomFormatForSingleTab({
+        slot: customFormatSlot,
+        title: tab.title,
+        url: tab.url,
+      });
 
     default:
       throw new TypeError(`invalid format: ${format}`);
@@ -476,7 +501,7 @@ browser.commands.onCommand.addListener(async (command, argTab) => {
         text = await convertSelectionInTabToMarkdown(tab);
         break;
       case 'current-tab-link':
-        text = await handleExportTab('link', tab);
+        text = await handleExportTab({ format: 'link', tab });
         break;
       case 'all-tabs-link-as-list':
         text = await handleExportTabs({
@@ -604,7 +629,11 @@ async function handleRuntimeMessage(topic, params) {
       if (typeof tab === 'undefined') {
         throw new Error('got undefined tab');
       }
-      return handleExportTab(params.format, tab);
+      return handleExportTab({
+        format: params.format,
+        customFormatSlot: params.customFormatSlot,
+        tab,
+      });
     }
 
     case 'export-tabs': {

@@ -20,6 +20,7 @@ export default {
 
     return new CustomFormat({
       slot,
+      context,
       name: stored[storageKeyOf(context, slot, 'name')],
       template: stored[storageKeyOf(context, slot, 'template')],
       showInPopupMenu: stored[storageKeyOf(context, slot, 'show_in_popup_menu')],

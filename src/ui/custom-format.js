@@ -10,6 +10,21 @@ class UI {
   constructor(doc) {
     const params = new URLSearchParams(document.location.search);
     this.slot = params.get('slot');
+    this.context = params.get('context');
+    this.sampleInput = {};
+    const placeholder = doc.querySelector("[data-placeholder='context-in-header']");
+    switch (this.context) {
+      case 'multiple-tabs':
+        this.sampleInput = UI.sampleInputForTabs;
+        placeholder.textContent = 'Multiple Tabs';
+        break;
+      case 'single-tab':
+        this.sampleInput = UI.sampleInputForOneLink;
+        placeholder.textContent = 'Single Tab';
+        break;
+      default:
+        throw new TypeError(`invalid context '${this.context}'`);
+    }
 
     this.elInputName = doc.getElementById('input-name');
     this.elInputTemplate = doc.getElementById('input-template');
@@ -19,7 +34,7 @@ class UI {
     this.elErrorTemplate = doc.getElementById('error-template');
     this.elSave = doc.getElementById('save');
     // eslint-disable-next-line no-param-reassign
-    doc.getElementById('sample-input').textContent = JSON.stringify(UI.sampleInput, null, 2);
+    doc.getElementById('sample-input').textContent = JSON.stringify(this.sampleInput, null, 2);
 
     this.elInputTemplate.addEventListener('input', () => {
       this.renderPreview();
@@ -28,10 +43,6 @@ class UI {
     this.elInputTemplate.addEventListener('change', () => {
       this.renderPreview();
     });
-
-    doc.querySelector(`[data-menu-custom-format="${this.slot}"]`)
-      .classList
-      .add('is-active');
 
     doc.querySelectorAll('[data-placeholder="default-name"]')
       .forEach((el) => {
@@ -59,6 +70,7 @@ class UI {
   current() {
     return new CustomFormat({
       slot: this.slot,
+      context: this.context,
       name: this.elInputName.value,
       template: this.elInputTemplate.value,
       showInPopupMenu: this.elShowInPopupMenu.checked,
@@ -73,7 +85,7 @@ class UI {
     const customFormat = this.current();
 
     try {
-      this.elPreview.value = customFormat.render(UI.sampleInput);
+      this.elPreview.value = customFormat.render(this.sampleInput);
       this.elSave.disabled = false;
     } catch (err) {
       console.error(err);
@@ -88,7 +100,11 @@ class UI {
     return `Custom Format ${this.slot}`;
   }
 
-  static get sampleInput() {
+  static get sampleInputForOneLink() {
+    return { title: 'Example 1', url: 'https://example.com/1' };
+  }
+
+  static get sampleInputForTabs() {
     return {
       links: [
         { title: 'Example 1', url: 'https://example.com/1', number: 1 },
@@ -148,10 +164,10 @@ class UI {
 
 document.addEventListener('DOMContentLoaded', async () => {
   const ui = new UI(document);
-  const customFormat = await CustomFormatsStorage.get('tabs', ui.slot);
+  const customFormat = await CustomFormatsStorage.get(ui.context, ui.slot);
   ui.load(customFormat);
 
   ui.elSave.addEventListener('click', async () => {
-    await CustomFormatsStorage.save('tabs', ui.slot, ui.current());
+    await CustomFormatsStorage.save(ui.context, ui.slot, ui.current());
   });
 });

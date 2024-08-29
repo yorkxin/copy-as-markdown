@@ -46,13 +46,18 @@ document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
   const action = button.value;
 
   /** @type {Message} */
-  const message = { topic: action, params: { format: button.dataset.format } };
+  const message = {
+    topic: action,
+    params: {
+      format: button.dataset.format,
+      customFormatSlot: button.dataset.customFormatSlot,
+    },
+  };
 
   if (action === 'export-current-tab') {
     message.params.tabId = tabId;
   } else if (action === 'export-tabs') {
     message.params.scope = button.dataset.scope;
-    message.params.customFormatSlot = button.dataset.customFormatSlot;
     message.params.listType = button.dataset.listType;
     message.params.windowId = windowId;
   }
@@ -114,13 +119,13 @@ async function getActiveTabId(crWindow) {
   return -1;
 }
 
-async function showCustomFormats() {
+async function showCustomFormatsForExportTabs() {
   /** @type {HTMLTemplateElement} */
   const template = document.getElementById('template-export-tabs-button');
   const divExportAll = document.getElementById('actions-export-all');
   const divExportHighlighted = document.getElementById('actions-export-highlighted');
 
-  const customFormats = await CustomFormatsStorage.list('tabs');
+  const customFormats = await CustomFormatsStorage.list('multiple-tabs');
   customFormats.forEach((customFormat) => {
     if (!customFormat.showInPopupMenu) {
       return;
@@ -142,6 +147,27 @@ async function showCustomFormats() {
   });
 }
 
+async function showCustomFormatsForCurrentTab() {
+  /** @type {HTMLTemplateElement} */
+  const template = document.getElementById('template-current-tab-button');
+  const divExportCurrent = document.getElementById('actions-export-current-tab');
+
+  const customFormats = await CustomFormatsStorage.list('single-tab');
+  customFormats.forEach((customFormat) => {
+    if (!customFormat.showInPopupMenu) {
+      return;
+    }
+
+    const clone = template.content.cloneNode(true);
+
+    /** @type {HTMLButtonElement} */
+    const btn = clone.querySelector('button[value="export-current-tab"]');
+    btn.dataset.customFormatSlot = customFormat.slot;
+    btn.textContent += `(${customFormat.name})`;
+    divExportCurrent.appendChild(btn);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const crWindow = await getCurrentWindow();
   windowId = crWindow.id;
@@ -156,5 +182,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const displayCountOfHighlightedTabs = document.getElementById('display-count-highlighted-tabs');
   displayCountOfHighlightedTabs.textContent = String(highlightedCount);
 
-  await showCustomFormats();
+  await showCustomFormatsForExportTabs();
+  await showCustomFormatsForCurrentTab();
 });
