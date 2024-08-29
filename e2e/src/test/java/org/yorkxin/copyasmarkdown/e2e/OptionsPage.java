@@ -28,6 +28,9 @@ public class OptionsPage {
     @FindBy(css = "#form-link-text-always-escape-brackets [name='enabled']")
     public WebElement enableLinkTextAlwaysEscapeBrackets;
 
+    @FindBy(id = "reset")
+    public WebElement resetButton;
+
     public OptionsPage(WebDriver driver) {
         PageFactory.initElements(driver, this);
     }
