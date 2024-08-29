@@ -18,7 +18,17 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.Ba
             new CommandDescriptor("selected tabs: - [ ] [title](url)", "highlighted-tabs-link-as-task-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "u"),
             new CommandDescriptor("selected tabs: - title", "highlighted-tabs-title-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "i"),
             new CommandDescriptor("selected tabs: - url", "highlighted-tabs-url-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "o"),
-    };
+            new CommandDescriptor("all tabs: custom format 1","all-tabs-custom-format-1", new CharSequence[]{Keys.ALT,Keys.SHIFT},"a"),
+            new CommandDescriptor("all tabs: custom format 2","all-tabs-custom-format-2", new CharSequence[]{Keys.ALT,Keys.SHIFT},"s"),
+            new CommandDescriptor("all tabs: custom format 3","all-tabs-custom-format-3", new CharSequence[]{Keys.ALT,Keys.SHIFT},"d"),
+            new CommandDescriptor("all tabs: custom format 4","all-tabs-custom-format-4", new CharSequence[]{Keys.ALT,Keys.SHIFT},"f"),
+            new CommandDescriptor("all tabs: custom format 5","all-tabs-custom-format-5", new CharSequence[]{Keys.ALT,Keys.SHIFT},"g"),
+            new CommandDescriptor("selected tabs: custom format 1","highlighted-tabs-custom-format-1", new CharSequence[]{Keys.ALT,Keys.SHIFT},"h"),
+            new CommandDescriptor("selected tabs: custom format 2","highlighted-tabs-custom-format-2", new CharSequence[]{Keys.ALT,Keys.SHIFT},"j"),
+            new CommandDescriptor("selected tabs: custom format 3","highlighted-tabs-custom-format-3", new CharSequence[]{Keys.ALT,Keys.SHIFT},"k"),
+            new CommandDescriptor("selected tabs: custom format 4","highlighted-tabs-custom-format-4", new CharSequence[]{Keys.ALT,Keys.SHIFT},"l"),
+            new CommandDescriptor("selected tabs: custom format 5","highlighted-tabs-custom-format-5", new CharSequence[]{Keys.ALT,Keys.SHIFT},"z"),
+        };
 
     public static CommandDescriptor getCommandDescriptor(String command) {
         // TODO: make index
