@@ -804,7 +804,8 @@ async function handleRuntimeMessage(topic, params) {
       return handleExportLink({
         format: params.format,
         customFormatSlot: params.customFormatSlot,
-        tab,
+        title: tab.title,
+        url: tab.url,
       });
     }
 
