@@ -22,8 +22,8 @@ public class CustomFormatPage {
     @FindBy(id = "preview")
     public WebElement preview;
 
-    @FindBy(id = "input-show-in-popup-menu")
-    public WebElement checkboxShowInPopupMenu;
+    @FindBy(id = "input-show-in-menus")
+    public WebElement checkboxShowInMenus;
 
     public CustomFormatPage(WebDriver driver) {
         PageFactory.initElements(driver, this);

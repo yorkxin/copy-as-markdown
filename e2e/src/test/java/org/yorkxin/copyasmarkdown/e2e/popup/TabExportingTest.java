@@ -170,7 +170,7 @@ public class TabExportingTest extends BaseTest {
 
     @Test
     public void allTabsAsCustomFormat() throws InterruptedException, IOException, UnsupportedFlavorException {
-        openCustomFormatPage("1");
+        openCustomFormatPage("multiple-links", "1");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         cfp.inputName.clear();
@@ -180,7 +180,7 @@ public class TabExportingTest extends BaseTest {
                 {{number}},'{{title}}','{{url}}'
                 {{/links}}
                 """);
-        cfp.checkboxShowInPopupMenu.click();
+        cfp.checkboxShowInMenus.click();
         cfp.saveButton.click();
 
         DemoPageData dpd = openDemoTabs(false);
@@ -205,7 +205,7 @@ public class TabExportingTest extends BaseTest {
 
     @Test
     public void highlightedTabsAsCustomFormat() throws InterruptedException, IOException, UnsupportedFlavorException {
-        openCustomFormatPage("2");
+        openCustomFormatPage("multiple-links", "2");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         cfp.inputName.clear();
@@ -215,7 +215,7 @@ public class TabExportingTest extends BaseTest {
                 {{number}},'{{title}}','{{url}}'
                 {{/links}}
                 """);
-        cfp.checkboxShowInPopupMenu.click();
+        cfp.checkboxShowInMenus.click();
         cfp.saveButton.click();
 
         DemoPageData dpd = openDemoTabs(false);

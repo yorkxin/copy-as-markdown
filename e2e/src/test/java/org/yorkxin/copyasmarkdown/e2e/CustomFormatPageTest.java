@@ -9,7 +9,7 @@ import static org.testng.Assert.*;
 public class CustomFormatPageTest extends BaseTest {
     @Test
     public void testUiDefaults() throws AWTException {
-        openCustomFormatPage("1");
+        openCustomFormatPage("multiple-links", "1");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         // Defaults
@@ -20,7 +20,7 @@ public class CustomFormatPageTest extends BaseTest {
 
     @Test
     public void testPreview() throws AWTException {
-        openCustomFormatPage("1");
+        openCustomFormatPage("multiple-links", "1");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         cfp.inputName.sendKeys("My Format");
@@ -32,31 +32,32 @@ public class CustomFormatPageTest extends BaseTest {
                         Example 4: https://example.com/4
                         Example 5: https://example.com/5
                         Example 6: https://example.com/6
+                        Example 7: https://example.com/7
                         """);
     }
 
     @Test
     public void testSave() throws AWTException {
-        openCustomFormatPage("2");
+        openCustomFormatPage("multiple-links", "2");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         cfp.inputName.clear();
         cfp.inputName.sendKeys("My Format");
         cfp.inputTemplate.sendKeys("{{#links}}\n{{title}}: {{url}}\n{{/links}}");
-        cfp.checkboxShowInPopupMenu.click();
+        cfp.checkboxShowInMenus.click();
         cfp.saveButton.click();
 
         // reload
-        openCustomFormatPage("2");
+        openCustomFormatPage("multiple-links", "2");
         cfp = new CustomFormatPage(driver);
         assertEquals(cfp.inputName.getAttribute("value"), "My Format");
         assertEquals(cfp.inputTemplate.getAttribute("value"), "{{#links}}\n{{title}}: {{url}}\n{{/links}}");
-        assertTrue(cfp.checkboxShowInPopupMenu.isSelected());
+        assertTrue(cfp.checkboxShowInMenus.isSelected());
     }
 
     @Test
     public void testTemplateError() throws AWTException {
-        openCustomFormatPage("1");
+        openCustomFormatPage("multiple-links", "1");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         cfp.inputName.sendKeys("My Format");

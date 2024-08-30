@@ -251,8 +251,8 @@ public class BaseTest {
         driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/options-permissions.html");
     }
 
-    protected void openCustomFormatPage(String slot) {
-        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/custom-format.html?slot="+slot);
+    protected void openCustomFormatPage(String context, String slot) {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/custom-format.html?context="+context+"&slot="+slot);
     }
 
     protected String getExtensionProtocol() {

@@ -192,20 +192,20 @@ public class TabExportingWithGroupsTest extends org.yorkxin.copyasmarkdown.e2e.p
 
     @Test
     public void allTabsAsCustomFormat() throws InterruptedException, IOException, UnsupportedFlavorException {
-        openCustomFormatPage("1");
+        openCustomFormatPage("multiple-links", "1");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         cfp.inputName.clear();
         cfp.inputName.sendKeys("My Format 1");
         cfp.inputTemplate.sendKeys("""
-                {{#groups}}
-                {{ol}},{{number}},'{{name}}',{{is_ungrouped}}
+                {{#grouped}}
+                {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
                 {{#links}}
-                  {{ol}},{{number}},'{{title}}','{{url}}'
+                  {{number}},title='{{title}}',url='{{url}}'
                 {{/links}}
-                {{/groups}}
+                {{/grouped}}
                 """);
-        cfp.checkboxShowInPopupMenu.click();
+        cfp.checkboxShowInMenus.click();
         cfp.saveButton.click();
 
         DemoPageData dpd = openDemoTabs(true);
@@ -216,39 +216,36 @@ public class TabExportingWithGroupsTest extends org.yorkxin.copyasmarkdown.e2e.p
         popupPage.allTabsCustomFormat1.click();
         Thread.sleep(200);
         String expected = """
-                1,1,'',true
-                  1,1,'Page 0 - Copy as Markdown','http://localhost:5566/0.html'
-                2,2,'Group 1',false
-                  1,1,'Page 1 - Copy as Markdown','http://localhost:5566/1.html'
-                  2,2,'Page 2 - Copy as Markdown','http://localhost:5566/2.html'
-                3,3,'',true
-                  3,1,'Page 3 - Copy as Markdown','http://localhost:5566/3.html'
-                  4,2,'Page 4 - Copy as Markdown','http://localhost:5566/4.html'
-                5,4,'Untitled green group',false
-                  1,1,'Page 5 - Copy as Markdown','http://localhost:5566/5.html'
-                  2,2,'Page 6 - Copy as Markdown','http://localhost:5566/6.html'
-                6,5,'',true
-                  6,1,'Page 7 - Copy as Markdown','http://localhost:5566/7.html'
+                1,title='Page 0 - Copy as Markdown',url='http://localhost:5566/0.html',isGroup=false
+                2,title='Group 1',url='',isGroup=true
+                  1,title='Page 1 - Copy as Markdown',url='http://localhost:5566/1.html'
+                  2,title='Page 2 - Copy as Markdown',url='http://localhost:5566/2.html'
+                3,title='Page 3 - Copy as Markdown',url='http://localhost:5566/3.html',isGroup=false
+                4,title='Page 4 - Copy as Markdown',url='http://localhost:5566/4.html',isGroup=false
+                5,title='Untitled green group',url='',isGroup=true
+                  1,title='Page 5 - Copy as Markdown',url='http://localhost:5566/5.html'
+                  2,title='Page 6 - Copy as Markdown',url='http://localhost:5566/6.html'
+                6,title='Page 7 - Copy as Markdown',url='http://localhost:5566/7.html',isGroup=false
                 """;
         assertEquals(clipboard.getData(DataFlavor.stringFlavor), expected);
     }
 
     @Test
     public void highlightedTabsAsCustomFormat() throws InterruptedException, IOException, UnsupportedFlavorException {
-        openCustomFormatPage("2");
+        openCustomFormatPage("multiple-links", "2");
         CustomFormatPage cfp = new CustomFormatPage(driver);
 
         cfp.inputName.clear();
         cfp.inputName.sendKeys("My Format 2");
         cfp.inputTemplate.sendKeys("""
-                {{#groups}}
-                {{ol}},{{number}},'{{name}}',{{is_ungrouped}}
+                {{#grouped}}
+                {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
                 {{#links}}
-                  {{ol}},{{number}},'{{title}}','{{url}}'
+                  {{number}},title='{{title}}',url='{{url}}'
                 {{/links}}
-                {{/groups}}
+                {{/grouped}}
                 """);
-        cfp.checkboxShowInPopupMenu.click();
+        cfp.checkboxShowInMenus.click();
         cfp.saveButton.click();
 
         DemoPageData dpd = openDemoTabs(true);
@@ -259,12 +256,11 @@ public class TabExportingWithGroupsTest extends org.yorkxin.copyasmarkdown.e2e.p
         popupPage.highlightedTabsCustomFormat2.click();
         Thread.sleep(200);
         String expected = """
-                1,1,'',true
-                  1,1,'Page 0 - Copy as Markdown','http://localhost:5566/0.html'
-                2,2,'Group 1',false
-                  1,1,'Page 2 - Copy as Markdown','http://localhost:5566/2.html'
-                3,3,'Untitled green group',false
-                  1,1,'Page 5 - Copy as Markdown','http://localhost:5566/5.html'
+                1,title='Page 0 - Copy as Markdown',url='http://localhost:5566/0.html',isGroup=false
+                2,title='Group 1',url='',isGroup=true
+                  1,title='Page 2 - Copy as Markdown',url='http://localhost:5566/2.html'
+                3,title='Untitled green group',url='',isGroup=true
+                  1,title='Page 5 - Copy as Markdown',url='http://localhost:5566/5.html'
                 """;
         assertEquals(clipboard.getData(DataFlavor.stringFlavor), expected);
     }
