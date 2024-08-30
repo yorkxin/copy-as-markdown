@@ -255,6 +255,14 @@ public class BaseTest {
         driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/custom-format.html?context="+context+"&slot="+slot);
     }
 
+    protected void openMultipleLinksOptionsPage() {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/multiple-links.html");
+    }
+
+    protected void openSingleLinkOptionsPage() {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/single-link.html");
+    }
+
     protected String getExtensionProtocol() {
         return switch (browser) {
             case BROWSER_CHROME -> "chrome-extension";
