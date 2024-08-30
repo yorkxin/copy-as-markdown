@@ -30,7 +30,12 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.Ba
             new CommandDescriptor("selected tabs: custom format 3","highlighted-tabs-custom-format-3", new CharSequence[]{Keys.ALT,Keys.SHIFT},"k"),
             new CommandDescriptor("selected tabs: custom format 4","highlighted-tabs-custom-format-4", new CharSequence[]{Keys.ALT,Keys.SHIFT},"l"),
             new CommandDescriptor("selected tabs: custom format 5","highlighted-tabs-custom-format-5", new CharSequence[]{Keys.ALT,Keys.SHIFT},"z"),
-        };
+            new CommandDescriptor("current tab: custom format 1", "current-tab-custom-format-1", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "x"),
+            new CommandDescriptor("current tab: custom format 2", "current-tab-custom-format-2", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "c"),
+            new CommandDescriptor("current tab: custom format 3", "current-tab-custom-format-3", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "v"),
+            new CommandDescriptor("current tab: custom format 4", "current-tab-custom-format-4", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "b"),
+            new CommandDescriptor("current tab: custom format 5", "current-tab-custom-format-5", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "n"),
+    };
 
     public static CommandDescriptor getCommandDescriptor(String command) {
         // TODO: make index

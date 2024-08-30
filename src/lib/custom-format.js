@@ -1,4 +1,5 @@
 import Mustache from '../vendor/mustache.mjs';
+import Markdown from './markdown.js';
 
 // disable HTML escape
 Mustache.escape = function (text) { return text; };
