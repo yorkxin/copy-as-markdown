@@ -22,7 +22,7 @@ export class TabGroup {
   }
 }
 
-TabGroup.NonGroupId = (Object.hasOwn(chrome, 'tabGroups')) ? chrome.tabGroups.TAB_GROUP_ID_NONE : -1;
+TabGroup.NonGroupId = -1;
 
 export class TabList {
   /**
@@ -42,6 +42,13 @@ export class TabList {
    */
   static nonGroup(tabs) {
     return new TabList('', TabGroup.NonGroupId, tabs);
+  }
+
+  /**
+   * @return {boolean}
+   */
+  isNonGroup() {
+    return this.groupId === TabGroup.NonGroupId;
   }
 }
 

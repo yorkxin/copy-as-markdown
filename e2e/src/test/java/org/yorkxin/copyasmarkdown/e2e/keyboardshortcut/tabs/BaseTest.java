@@ -10,6 +10,8 @@ import java.util.Objects;
 
 public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.BaseTest {
     public static CommandDescriptor[] allCommandDescriptors =  new CommandDescriptor[]{
+            new CommandDescriptor("current tab: [title](url)", "current-tab-link", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "q"),
+            new CommandDescriptor("Copy Selection as Markdown", "selection-as-markdown", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "p"),
             new CommandDescriptor("all tabs: - [title](url)", "all-tabs-link-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "w"),
             new CommandDescriptor("all tabs: - [ ] [title](url)", "all-tabs-link-as-task-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "e"),
             new CommandDescriptor("all tabs: - title", "all-tabs-title-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "r"),
@@ -18,6 +20,21 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.Ba
             new CommandDescriptor("selected tabs: - [ ] [title](url)", "highlighted-tabs-link-as-task-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "u"),
             new CommandDescriptor("selected tabs: - title", "highlighted-tabs-title-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "i"),
             new CommandDescriptor("selected tabs: - url", "highlighted-tabs-url-as-list", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "o"),
+            new CommandDescriptor("all tabs: custom format 1","all-tabs-custom-format-1", new CharSequence[]{Keys.ALT,Keys.SHIFT},"a"),
+            new CommandDescriptor("all tabs: custom format 2","all-tabs-custom-format-2", new CharSequence[]{Keys.ALT,Keys.SHIFT},"s"),
+            new CommandDescriptor("all tabs: custom format 3","all-tabs-custom-format-3", new CharSequence[]{Keys.ALT,Keys.SHIFT},"d"),
+            new CommandDescriptor("all tabs: custom format 4","all-tabs-custom-format-4", new CharSequence[]{Keys.ALT,Keys.SHIFT},"f"),
+            new CommandDescriptor("all tabs: custom format 5","all-tabs-custom-format-5", new CharSequence[]{Keys.ALT,Keys.SHIFT},"g"),
+            new CommandDescriptor("selected tabs: custom format 1","highlighted-tabs-custom-format-1", new CharSequence[]{Keys.ALT,Keys.SHIFT},"h"),
+            new CommandDescriptor("selected tabs: custom format 2","highlighted-tabs-custom-format-2", new CharSequence[]{Keys.ALT,Keys.SHIFT},"j"),
+            new CommandDescriptor("selected tabs: custom format 3","highlighted-tabs-custom-format-3", new CharSequence[]{Keys.ALT,Keys.SHIFT},"k"),
+            new CommandDescriptor("selected tabs: custom format 4","highlighted-tabs-custom-format-4", new CharSequence[]{Keys.ALT,Keys.SHIFT},"l"),
+            new CommandDescriptor("selected tabs: custom format 5","highlighted-tabs-custom-format-5", new CharSequence[]{Keys.ALT,Keys.SHIFT},"z"),
+            new CommandDescriptor("current tab: custom format 1", "current-tab-custom-format-1", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "x"),
+            new CommandDescriptor("current tab: custom format 2", "current-tab-custom-format-2", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "c"),
+            new CommandDescriptor("current tab: custom format 3", "current-tab-custom-format-3", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "v"),
+            new CommandDescriptor("current tab: custom format 4", "current-tab-custom-format-4", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "b"),
+            new CommandDescriptor("current tab: custom format 5", "current-tab-custom-format-5", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "n"),
     };
 
     public static CommandDescriptor getCommandDescriptor(String command) {
@@ -51,14 +68,14 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.Ba
     public void configureKeyboardShortcutsInChrome() throws InterruptedException, AWTException {
         openChromeKeyboardShortcutsPage();
         for (CommandDescriptor cmd : allCommandDescriptors) {
-            setShortcutKeyInChrome(cmd.name, cmd.modifiers, cmd.key);
+            setShortcutKeyInChrome(cmd);
         }
     }
 
     public void configureKeyboardShortcutsInFirefox() throws InterruptedException, AWTException {
         openFirefoxKeyboardShortcutsPage();
         for (CommandDescriptor cmd : allCommandDescriptors) {
-            setShortcutKeyInFirefox(cmd.command, cmd.modifiers, cmd.key);
+            setShortcutKeyInFirefox(cmd);
         }
     }
 }

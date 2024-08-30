@@ -247,6 +247,22 @@ public class BaseTest {
         driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/options.html");
     }
 
+    protected void openOptionsPermissionsPage() {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/options-permissions.html");
+    }
+
+    protected void openCustomFormatPage(String context, String slot) {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/custom-format.html?context="+context+"&slot="+slot);
+    }
+
+    protected void openMultipleLinksOptionsPage() {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/multiple-links.html");
+    }
+
+    protected void openSingleLinkOptionsPage() {
+        driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/single-link.html");
+    }
+
     protected String getExtensionProtocol() {
         return switch (browser) {
             case BROWSER_CHROME -> "chrome-extension";
@@ -283,10 +299,10 @@ public class BaseTest {
 
         driver.switchTo().newWindow(WindowType.WINDOW);
 
-        openOptionsPage();
-        List<WebElement> requestButtons = driver.findElements(By.cssSelector("[data-request-permission]"));
+        openOptionsPermissionsPage();
+        OptionsPermissionsPage pp = new OptionsPermissionsPage(driver);
 
-        for (WebElement button : requestButtons) {
+        for (WebElement button : pp.requestButtons) {
             if (!button.isEnabled()) {
                 continue;
             }
@@ -300,20 +316,6 @@ public class BaseTest {
         }
 
         (new Robot()).delay(200);
-
-
-        // then remove all of them
-        List<WebElement> removeButtons = driver.findElements(By.cssSelector("[data-remove-permission]"));
-
-        for (WebElement button : removeButtons) {
-            if (!button.isEnabled() || !button.isDisplayed()) {
-                continue;
-            }
-            button.click();
-        }
-
-        driver.close();
-        driver.switchTo().window(mainWindowHandle);
     }
 
     protected void grantPermission(String permission) {
@@ -321,8 +323,12 @@ public class BaseTest {
         // In Chrome, go to options page, then click request permission
         driver.switchTo().newWindow(WindowType.WINDOW);
 
-        openOptionsPage();
-        driver.findElement(By.cssSelector("[data-request-permission='"+permission+"'")).click();
+        openOptionsPermissionsPage();
+        OptionsPermissionsPage pp = new OptionsPermissionsPage(driver);
+        WebElement button = pp.getRequestButton(permission);
+        if (button.isEnabled()) {
+            button.click();
+        }
 
         driver.close();
         driver.switchTo().window(mainWindowHandle);
@@ -333,8 +339,10 @@ public class BaseTest {
         // In Chrome, go to options page, then click request permission
         driver.switchTo().newWindow(WindowType.WINDOW);
 
-        openOptionsPage();
-        WebElement button = driver.findElement(By.cssSelector("[data-remove-permission='"+permission+"'"));
+        openOptionsPermissionsPage();
+        OptionsPermissionsPage pp = new OptionsPermissionsPage(driver);
+        WebElement button = pp.getRemoveButton(permission);
+
         if (button.isEnabled()) {
             button.click();
         }
@@ -343,14 +351,13 @@ public class BaseTest {
         driver.switchTo().window(mainWindowHandle);
     }
 
-    protected void removeAllPermissions() throws AWTException {
+    public void removeAllPermissions() throws AWTException {
         // In Chrome, go to options page, then click request permission
         driver.switchTo().newWindow(WindowType.WINDOW);
 
-        openOptionsPage();
-        List<WebElement> buttons = driver.findElements(By.cssSelector("[data-remove-permission]"));
-
-        for (WebElement button : buttons) {
+        openOptionsPermissionsPage();
+        OptionsPermissionsPage pp = new OptionsPermissionsPage(driver);
+        for (WebElement button : pp.removeButtons) {
             if (!button.isEnabled() || !button.isDisplayed()) {
                 continue;
             }

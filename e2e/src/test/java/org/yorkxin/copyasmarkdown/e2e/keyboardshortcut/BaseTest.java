@@ -53,7 +53,7 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.BaseTest {
         robot.delay(500);
     }
 
-    protected void setShortcutKeyInChrome(String commandName, CharSequence[] modifiers, CharSequence key) throws AWTException, InterruptedException {
+    protected void setShortcutKeyInChrome(CommandDescriptor cmd) throws AWTException, InterruptedException {
         // Max 4 shortcut keys can be specified in the manifest.json file,
         // so we have to navigate to chrome://extension/shortcuts and configure them in runtime.
 
@@ -66,14 +66,14 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.BaseTest {
         WebElement cmdEntry = null;
         for (WebElement entry : commandEntries) {
             String name = entry.findElement(By.className("command-name")).getText() ;
-            if (Objects.equals(name, commandName)){
+            if (Objects.equals(name, cmd.name)){
                 cmdEntry = entry;
                 break;
             }
         }
 
         if (cmdEntry == null) {
-            throw new IllegalArgumentException("no such command: "+commandName);
+            throw new IllegalArgumentException("no such command: "+cmd.name);
         }
 
         WebElement editButton = shadow.findElement(cmdEntry, "#edit");
@@ -86,32 +86,38 @@ public class BaseTest extends org.yorkxin.copyasmarkdown.e2e.BaseTest {
                 .click(editButton)
                 .click(inputBox);
 
-        for (CharSequence modifier : modifiers) {
+        for (CharSequence modifier : cmd.modifiers) {
             actions = actions.keyDown(modifier);
         }
-        actions.keyDown(key);
-        for (CharSequence modifier : modifiers) {
+        actions.keyDown(cmd.key);
+        for (CharSequence modifier : cmd.modifiers) {
             actions = actions.keyUp(modifier);
         }
         actions.perform();
     }
 
-    protected void setShortcutKeyInFirefox(String commandId, CharSequence[] modifiers, CharSequence key) {
-        WebElement cmdEntry = driver.findElement(By.xpath("//input[@name=\""+commandId+"\"]"));
+    protected void setShortcutKeyInFirefox(CommandDescriptor cmd) throws AWTException {
+        WebElement cmdEntry = driver.findElement(By.xpath("//input[@name=\""+cmd.command+"\"]"));
 
         if (cmdEntry == null) {
-            throw new IllegalArgumentException("no such command: "+commandId);
+            throw new IllegalArgumentException("no such command: "+cmd.command);
         }
+
+        if (!cmdEntry.isDisplayed()) {
+            driver.findElement(By.className("expand-button")).click();
+        }
+
+        // https://stackoverflow.com/a/63420553
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(false);", cmdEntry);
+
+        new Actions(driver).scrollToElement(cmdEntry).click(cmdEntry).perform();
 
         Actions actions = new Actions(driver);
-        actions.scrollToElement(cmdEntry)
-                .click(cmdEntry);
-
-        for (CharSequence modifier : modifiers) {
+        for (CharSequence modifier : cmd.modifiers) {
             actions = actions.keyDown(modifier);
         }
-        actions.keyDown(key);
-        for (CharSequence modifier : modifiers) {
+        actions.keyDown(cmd.key);
+        for (CharSequence modifier : cmd.modifiers) {
             actions = actions.keyUp(modifier);
         }
         actions.perform();

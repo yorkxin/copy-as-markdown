@@ -39,6 +39,21 @@
     "current-tab-link": {
       "description": "current tab: [title](url)"
     },
+    "current-tab-custom-format-1": {
+      "description": "current tab: custom format 1"
+    },
+    "current-tab-custom-format-2": {
+      "description": "current tab: custom format 2"
+    },
+    "current-tab-custom-format-3": {
+      "description": "current tab: custom format 3"
+    },
+    "current-tab-custom-format-4": {
+      "description": "current tab: custom format 4"
+    },
+    "current-tab-custom-format-5": {
+      "description": "current tab: custom format 5"
+    },
     "all-tabs-link-as-list": {
       "description": "all tabs: - [title](url)"
     },
@@ -62,6 +77,36 @@
     },
     "highlighted-tabs-url-as-list": {
       "description": "selected tabs: - url"
+    },
+    "all-tabs-custom-format-1": {
+      "description": "all tabs: custom format 1"
+    },
+    "all-tabs-custom-format-2": {
+      "description": "all tabs: custom format 2"
+    },
+    "all-tabs-custom-format-3": {
+      "description": "all tabs: custom format 3"
+    },
+    "all-tabs-custom-format-4": {
+      "description": "all tabs: custom format 4"
+    },
+    "all-tabs-custom-format-5": {
+      "description": "all tabs: custom format 5"
+    },
+    "highlighted-tabs-custom-format-1": {
+      "description": "selected tabs: custom format 1"
+    },
+    "highlighted-tabs-custom-format-2": {
+      "description": "selected tabs: custom format 2"
+    },
+    "highlighted-tabs-custom-format-3": {
+      "description": "selected tabs: custom format 3"
+    },
+    "highlighted-tabs-custom-format-4": {
+      "description": "selected tabs: custom format 4"
+    },
+    "highlighted-tabs-custom-format-5": {
+      "description": "selected tabs: custom format 5"
     }
   },
   "options_ui": {

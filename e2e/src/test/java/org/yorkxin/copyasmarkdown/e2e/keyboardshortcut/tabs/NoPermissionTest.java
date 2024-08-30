@@ -6,6 +6,7 @@ import org.testng.annotations.Test;
 import org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.CommandDescriptor;
 
 import java.awt.*;
+import java.util.Objects;
 
 import static org.testng.Assert.assertEquals;
 
@@ -15,12 +16,16 @@ public class NoPermissionTest extends BaseTest {
         configureKeyboardShortcuts();
         // test that pressing keyboard shortcuts opens permissions dialog
         // if tabs permission is not enabled
-        removePermission("tabs");
+        removeAllPermissions();
         openDemoTabs(false);
     }
 
     @Test(dataProvider = "allCommands")
     public void testNoPermission(String command) throws AWTException {
+        if (Objects.equals(command, "selection-as-markdown") || Objects.equals(command, "current-tab-link") ) {
+            // these command will not be blocked by permission
+            return;
+        }
         CommandDescriptor commandDescriptor = getCommandDescriptor(command);
         driver.switchTo().window(mainWindowHandle);
         driver.findElement(By.id("switch-to-demo")).click();

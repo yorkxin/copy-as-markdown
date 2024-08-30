@@ -1,3 +1,5 @@
+import CustomFormatsStorage from '../storage/custom-formats-storage.js';
+
 let windowId = -1;
 let tabId = -1;
 let keepOpen = false;
@@ -8,6 +10,7 @@ let keepOpen = false;
  * @property {string|undefined} tabId
  * @property {string|undefined} scope
  * @property {string|undefined} listType
+ * @property {string|undefined} customFormatSlot
  * @property {string|undefined} windowId
  */
 
@@ -43,7 +46,13 @@ document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
   const action = button.value;
 
   /** @type {Message} */
-  const message = { topic: action, params: { format: button.dataset.format } };
+  const message = {
+    topic: action,
+    params: {
+      format: button.dataset.format,
+      customFormatSlot: button.dataset.customFormatSlot,
+    },
+  };
 
   if (action === 'export-current-tab') {
     message.params.tabId = tabId;
@@ -110,6 +119,55 @@ async function getActiveTabId(crWindow) {
   return -1;
 }
 
+async function showCustomFormatsForExportTabs() {
+  /** @type {HTMLTemplateElement} */
+  const template = document.getElementById('template-export-tabs-button');
+  const divExportAll = document.getElementById('actions-export-all');
+  const divExportHighlighted = document.getElementById('actions-export-highlighted');
+
+  const customFormats = await CustomFormatsStorage.list('multiple-links');
+  customFormats.forEach((customFormat) => {
+    if (!customFormat.showInMenus) {
+      return;
+    }
+
+    const clone = template.content.cloneNode(true);
+
+    /** @type {HTMLButtonElement} */
+    const btnAll = clone.querySelector('button[data-scope="all"]');
+    btnAll.dataset.customFormatSlot = customFormat.slot;
+    btnAll.textContent += `(${customFormat.displayName})`;
+    divExportAll.appendChild(btnAll);
+
+    /** @type {HTMLButtonElement} */
+    const btnHighlighted = clone.querySelector('button[data-scope="highlighted"]');
+    btnHighlighted.dataset.customFormatSlot = customFormat.slot;
+    btnHighlighted.textContent += `(${customFormat.displayName})`;
+    divExportHighlighted.appendChild(btnHighlighted);
+  });
+}
+
+async function showCustomFormatsForCurrentTab() {
+  /** @type {HTMLTemplateElement} */
+  const template = document.getElementById('template-current-tab-button');
+  const divExportCurrent = document.getElementById('actions-export-current-tab');
+
+  const customFormats = await CustomFormatsStorage.list('single-link');
+  customFormats.forEach((customFormat) => {
+    if (!customFormat.showInMenus) {
+      return;
+    }
+
+    const clone = template.content.cloneNode(true);
+
+    /** @type {HTMLButtonElement} */
+    const btn = clone.querySelector('button[value="export-current-tab"]');
+    btn.dataset.customFormatSlot = customFormat.slot;
+    btn.textContent += `(${customFormat.displayName})`;
+    divExportCurrent.appendChild(btn);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const crWindow = await getCurrentWindow();
   windowId = crWindow.id;
@@ -123,4 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const displayCountOfHighlightedTabs = document.getElementById('display-count-highlighted-tabs');
   displayCountOfHighlightedTabs.textContent = String(highlightedCount);
+
+  await showCustomFormatsForExportTabs();
+  await showCustomFormatsForCurrentTab();
 });

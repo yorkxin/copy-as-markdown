@@ -7,7 +7,7 @@ if (URL_PARAMS.has('base_url')) {
 }
 
 document.querySelector('#open-demo').addEventListener('click', async () => {
-  const urls = [0, 1, 2, 3, 4, 5]
+  const urls = [0, 1, 2, 3, 4, 5, 6, 7]
     .map((i) => `${baseUrl}/${i}.html`);
 
   const winDemo = await browser.windows.create({ url: urls });
@@ -25,7 +25,7 @@ document.querySelector('#highlight-tabs').addEventListener('click', async () => 
 
   await browser.tabs.update(winDemo.tabs[0].id, { highlighted: true });
   await browser.tabs.update(winDemo.tabs[2].id, { highlighted: true });
-  await browser.tabs.update(winDemo.tabs[4].id, { highlighted: true });
+  await browser.tabs.update(winDemo.tabs[5].id, { highlighted: true });
 });
 
 document.querySelector('#switch-to-demo').addEventListener('click', async () => {

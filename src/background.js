@@ -3,6 +3,8 @@ import copy from './content-script.js';
 import Markdown from './lib/markdown.js';
 import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
 import { Bookmarks } from './bookmarks.js';
+import CustomFormatsStorage from './storage/custom-formats-storage.js';
+import CustomFormat from './lib/custom-format.js';
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
@@ -77,9 +79,11 @@ async function flashBadge(type) {
   browser.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
 }
 
-function createMenus() {
+async function createMenus() {
+  await browser.contextMenus.removeAll();
+
   browser.contextMenus.create({
-    id: 'current-page',
+    id: 'current-tab',
     title: 'Copy Page Link as Markdown',
     type: 'normal',
     contexts: ['page'],
@@ -90,6 +94,21 @@ function createMenus() {
     title: 'Copy Link as Markdown',
     type: 'normal',
     contexts: ['link'],
+  });
+
+  const singleLinkFormats = (await CustomFormatsStorage.list('single-link'))
+    .filter((format) => format.showInMenus);
+  singleLinkFormats.forEach((format) => {
+    browser.contextMenus.create({
+      id: `current-tab-custom-format-${format.slot}`,
+      title: `Copy Page Link (${format.displayName})`,
+      contexts: ['page'],
+    });
+    browser.contextMenus.create({
+      id: `link-custom-format-${format.slot}`,
+      title: `Copy Link (${format.displayName})`,
+      contexts: ['link'],
+    });
   });
 
   browser.contextMenus.create({
@@ -105,6 +124,104 @@ function createMenus() {
     type: 'normal',
     contexts: ['selection'],
   });
+
+  /* The following menu items are Firefox-only */
+
+  try {
+    const multipleLinksFormats = (await CustomFormatsStorage.list('multiple-links'))
+      .filter((format) => format.showInMenus);
+
+    await browser.contextMenus.update('current-tab', {
+      contexts: [
+        'page',
+        'tab', // only available on Firefox
+      ],
+    });
+
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const format of singleLinkFormats) {
+      await browser.contextMenus.update(`current-tab-custom-format-${format.slot}`, {
+        contexts: [
+          'page',
+          'tab', // only available on Firefox
+        ],
+      });
+    }
+
+    browser.contextMenus.create({
+      id: 'separator-1',
+      type: 'separator',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'all-tabs-list',
+      title: 'Copy All Tabs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'all-tabs-task-list',
+      title: 'Copy All Tabs (Task List)',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const format of multipleLinksFormats) {
+      browser.contextMenus.create({
+        id: `all-tabs-custom-format-${format.slot}`,
+        title: `Copy All Tabs (${format.displayName})`,
+        type: 'normal',
+        contexts: ['tab'],
+      });
+    }
+
+    browser.contextMenus.create({
+      id: 'separator-2',
+      type: 'separator',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'highlighted-tabs-list',
+      title: 'Copy Selected Tabs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'highlighted-tabs-task-list',
+      title: 'Copy Selected Tabs (Task List)',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    // eslint-disable-next-line no-restricted-syntax
+    for await (const format of multipleLinksFormats) {
+      browser.contextMenus.create({
+        id: `highlighted-tabs-custom-format-${format.slot}`,
+        title: `Copy Selected Tabs (${format.displayName})`,
+        type: 'normal',
+        visible: format.showInMenus,
+        contexts: ['tab'],
+      });
+    }
+  } catch (error) {
+    console.info('this browser does not support context contextMenus on tab bar');
+  }
+
+  try {
+    browser.contextMenus.create({
+      id: 'bookmark-link',
+      title: 'Copy Bookmark or Folder as Markdown',
+      type: 'normal',
+      contexts: ['bookmark'],
+    });
+  } catch (error) {
+    console.info('this browser does not support context contextMenus on bookmarks');
+  }
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
@@ -201,13 +318,66 @@ async function getTabGroups(windowId) {
 
 /**
  *
- * @param scope {'all'|'highlighted'}
  * @param format {'link','title','url'}
+ * @param tabLists
+ * @param listType
+ * @returns {string}
+ */
+function renderBuiltInFormat(format, tabLists, listType) {
+  const formatter = FORMAT_TO_FUNCTION[format];
+  const items = formatItems(tabLists, formatter);
+
+  switch (listType) {
+    case 'list':
+      return markdownInstance.list(items);
+    case 'task-list':
+      return markdownInstance.taskList(items);
+    default:
+      throw new TypeError(`unknown listType: ${listType}`);
+  }
+}
+
+/**
+ *
+ * @param slot {string}
+ * @param title {string}
+ * @param url {string}
+ * @returns {string}
+ */
+async function renderCustomFormatForSingleTab({ slot, title, url }) {
+  const customFormat = await CustomFormatsStorage.get('single-link', slot);
+  const input = { title, url };
+  return customFormat.render(input);
+}
+
+/**
+ *
+ * @param slot {string}
+ * @param lists {TabList[]}
+ * @returns {string}
+ */
+async function renderCustomFormatForMultipleTabs({ slot, lists }) {
+  const customFormat = await CustomFormatsStorage.get('multiple-links', slot);
+  const input = CustomFormat.makeRenderInputForTabLists(lists);
+  return customFormat.render(input);
+}
+
+/**
+ *
+ * @param scope {'all'|'highlighted'}
+ * @param format {'link','title','url','custom-format'}
+ * @param customFormatSlot {string}
  * @param listType {'list','task-list'}
  * @param windowId {number}
  * @returns {Promise<string>}
  */
-async function handleExportTabs(scope, format, listType, windowId) {
+async function handleExportTabs({
+  scope,
+  format,
+  customFormatSlot,
+  listType,
+  windowId,
+}) {
   if (!await browser.permissions.contains({ permissions: ['tabs'] })) {
     await browser.windows.create({
       focused: true,
@@ -225,20 +395,13 @@ async function handleExportTabs(scope, format, listType, windowId) {
   });
   const crGroups = await getTabGroups(windowId);
   const groups = crGroups.map((group) => new TabGroup(group.title, group.id, group.color));
-  const tabs = crTabs.map((tab) => new Tab(tab.title, tab.url, tab.groupId || TabGroup.NonGroupId));
+  // eslint-disable-next-line max-len
+  const tabs = crTabs.map((tab) => new Tab(markdownInstance.escapeLinkText(tab.title), tab.url, tab.groupId || TabGroup.NonGroupId));
   const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
-
-  const formatter = FORMAT_TO_FUNCTION[format];
-  const items = formatItems(tabLists, formatter);
-
-  switch (listType) {
-    case 'list':
-      return markdownInstance.list(items);
-    case 'task-list':
-      return markdownInstance.taskList(items);
-    default:
-      throw new TypeError(`unknown listType: ${listType}`);
+  if (format === 'custom-format') {
+    return renderCustomFormatForMultipleTabs({ slot: customFormatSlot, lists: tabLists });
   }
+  return renderBuiltInFormat(format, tabLists, listType);
 }
 
 async function convertSelectionInTabToMarkdown(tab) {
@@ -257,10 +420,59 @@ async function convertSelectionInTabToMarkdown(tab) {
   return results.map((frame) => frame.result).join('\n\n');
 }
 
+function parseCustomFormatCommand(command) {
+  const match = /(all-tabs|highlighted-tabs|current-tab|link)-custom-format-(\d)/.exec(command);
+  if (match === null) {
+    throw new TypeError(`unknown command: ${command}`);
+  }
+  const context = match[1];
+  const slot = match[2];
+  return {
+    context,
+    slot,
+  };
+}
+
+async function handleCustomFormatCurrentPage(slot, tab) {
+  // eslint-disable-next-line no-use-before-define
+  return handleExportLink({
+    format: 'custom-format',
+    customFormatSlot: slot,
+    title: tab.title,
+    url: tab.url,
+  });
+}
+
+async function handleCustomFormatLink(slot, menuInfo) {
+  // linkText for Firefox (as of 2018/03/07)
+  // selectionText for Chrome on Mac only. On Windows it does not highlight text when
+  // right-click.
+  // TODO: use linkText when Chrome supports it on stable.
+  const linkText = menuInfo.selectionText || menuInfo.linkText;
+
+  // eslint-disable-next-line no-use-before-define
+  return handleExportLink({
+    format: 'custom-format',
+    customFormatSlot: slot,
+    title: linkText,
+    url: menuInfo.linkUrl,
+  });
+}
+
+async function handleCustomFormatTabs(scope, slot, windowId) {
+  return handleExportTabs({
+    scope,
+    format: 'custom-format',
+    customFormatSlot: slot,
+    windowId,
+  });
+}
+
 async function handleContentOfContextMenu(info, tab) {
   let text;
+
   switch (info.menuItemId) {
-    case 'current-page': {
+    case 'current-tab': {
       text = markdownInstance.linkTo(tab.title, tab.url);
       break;
     }
@@ -298,25 +510,33 @@ async function handleContentOfContextMenu(info, tab) {
 
     // Only available on Firefox
     case 'all-tabs-list': {
-      text = await handleExportTabs('all', 'link', 'list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'all', format: 'link', listType: 'list', windowId: tab.windowId,
+      });
       break;
     }
 
     // Only available on Firefox
     case 'all-tabs-task-list': {
-      text = await handleExportTabs('all', 'link', 'task-list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'all', format: 'link', listType: 'task-list', windowId: tab.windowId,
+      });
       break;
     }
 
     // Only available on Firefox
     case 'highlighted-tabs-list': {
-      text = await handleExportTabs('highlighted', 'link', 'list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'highlighted', format: 'link', listType: 'list', windowId: tab.windowId,
+      });
       break;
     }
 
     // Only available on Firefox
     case 'highlighted-tabs-task-list': {
-      text = await handleExportTabs('highlighted', 'link', 'task-list', tab.windowId);
+      text = await handleExportTabs({
+        scope: 'highlighted', format: 'link', listType: 'task-list', windowId: tab.windowId,
+      });
       break;
     }
 
@@ -331,7 +551,31 @@ async function handleContentOfContextMenu(info, tab) {
     }
 
     default: {
-      throw new TypeError(`unknown context menu: ${info.menuItemId}`);
+      const {
+        context,
+        slot,
+      } = parseCustomFormatCommand(info.menuItemId);
+
+      switch (context) {
+        case 'current-tab': {
+          text = await handleCustomFormatCurrentPage(slot, tab);
+          break;
+        }
+        case 'link': {
+          text = await handleCustomFormatLink(slot, info);
+          break;
+        }
+        case 'all-tabs': {
+          text = await handleCustomFormatTabs('all', slot, tab.windowId);
+          break;
+        }
+        case 'highlighted-tabs': {
+          text = await handleCustomFormatTabs('highlighted', slot, tab.windowId);
+          break;
+        }
+        default:
+          throw new TypeError(`unknown context menu custom format: ${info.menuItemId}`);
+      }
     }
   }
   return text;
@@ -339,14 +583,28 @@ async function handleContentOfContextMenu(info, tab) {
 
 /**
  *
- * @param format {'link'}
- * @param tab {browser.tabs.Tab}
+ * @param format {'link'|'custom-format'}
+ * @param [customFormatSlot=null] {String?}
+ * @param title {String}
+ * @param url {String}
  * @returns {Promise<string>}
  */
-async function handleExportTab(format, tab) {
+async function handleExportLink({
+  format,
+  customFormatSlot,
+  title,
+  url,
+}) {
   switch (format) {
     case 'link':
-      return markdownInstance.linkTo(tab.title, tab.url);
+      return markdownInstance.linkTo(title, url);
+
+    case 'custom-format':
+      return renderCustomFormatForSingleTab({
+        slot: customFormatSlot,
+        title: markdownInstance.escapeLinkText(title),
+        url,
+      });
 
     default:
       throw new TypeError(`invalid format: ${format}`);
@@ -375,7 +633,12 @@ async function copyUsingContentScript(tab, text) {
   throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
 }
 
-browser.runtime.onInstalled.addListener(createMenus);
+createMenus().then(() => null /* NOP */);
+browser.storage.sync.onChanged.addListener(async (changes) => {
+  if (Object.keys(changes).indexOf(CustomFormatsStorage.KeyOfLastUpdate()) !== -1) {
+    await createMenus();
+  }
+});
 
 // eslint-disable-next-line no-undef
 if (globalThis.PERIDOCIALLY_REFRESH_MENU === true) {
@@ -434,34 +697,75 @@ browser.commands.onCommand.addListener(async (command, argTab) => {
         text = await convertSelectionInTabToMarkdown(tab);
         break;
       case 'current-tab-link':
-        text = await handleExportTab('link', tab);
+        text = await handleExportLink({ format: 'link', title: tab.title, url: tab.url });
         break;
       case 'all-tabs-link-as-list':
-        text = await handleExportTabs('all', 'link', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'link', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'all-tabs-link-as-task-list':
-        text = await handleExportTabs('all', 'link', 'task-list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'link', listType: 'task-list', windowId: tab.windowId,
+        });
         break;
       case 'all-tabs-title-as-list':
-        text = await handleExportTabs('all', 'title', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'title', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'all-tabs-url-as-list':
-        text = await handleExportTabs('all', 'url', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'all', format: 'url', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-link-as-list':
-        text = await handleExportTabs('highlighted', 'link', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'link', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-link-as-task-list':
-        text = await handleExportTabs('highlighted', 'link', 'task-list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'link', listType: 'task-list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-title-as-list':
-        text = await handleExportTabs('highlighted', 'title', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'title', listType: 'list', windowId: tab.windowId,
+        });
         break;
       case 'highlighted-tabs-url-as-list':
-        text = await handleExportTabs('highlighted', 'url', 'list', tab.windowId);
+        text = await handleExportTabs({
+          scope: 'highlighted', format: 'url', listType: 'list', windowId: tab.windowId,
+        });
         break;
-      default:
-        throw new TypeError(`unknown keyboard command: ${command}`);
+      default: {
+        try {
+          const {
+            context,
+            slot,
+          } = parseCustomFormatCommand(command);
+
+          switch (context) {
+            case 'current-tab': {
+              text = await handleCustomFormatCurrentPage(slot, tab);
+              break;
+            }
+            case 'all-tabs': {
+              text = await handleCustomFormatTabs('all', slot, tab.windowId);
+              break;
+            }
+            case 'highlighted-tabs': {
+              text = await handleCustomFormatTabs('highlighted', slot, tab.windowId);
+              break;
+            }
+            default:
+              throw new TypeError(`unknown keyboard custom format: ${command}`);
+          }
+        } catch (e) {
+          throw new TypeError(`unknown keyboard command: ${command}`);
+        }
+      }
     }
 
     // eslint-disable-next-line no-undef
@@ -496,16 +800,16 @@ async function handleRuntimeMessage(topic, params) {
       if (typeof tab === 'undefined') {
         throw new Error('got undefined tab');
       }
-      return handleExportTab(params.format, tab);
+      return handleExportLink({
+        format: params.format,
+        customFormatSlot: params.customFormatSlot,
+        title: tab.title,
+        url: tab.url,
+      });
     }
 
     case 'export-tabs': {
-      return handleExportTabs(
-        params.scope,
-        params.format,
-        params.listType,
-        params.windowId,
-      );
+      return handleExportTabs(params);
     }
 
     default: {

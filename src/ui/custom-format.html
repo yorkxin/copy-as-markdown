@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Copy as Markdown - Custom Format</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../vendor/bulma.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+
+  <div class="columns">
+    <div class="column is-narrow" id="menu"></div>
+    <div class="column">
+      <div class="box">
+        <h2 class="title is-3"><span data-placeholder="default-name">Custom Format</span> (<span class="is-small" data-placeholder="context-in-header"></span>)</h2>
+        <div class="field">
+          <label class="label">Display</label>
+          <div class="control">
+            <input id="input-show-in-menus" class="checkbox" type="checkbox">
+            <label for="input-show-in-menus">Show in Popup Menu</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="input-name">Display Name on Menu</label>
+          <div class="control">
+            <input id="input-name" class="input" type="text">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="input-template">Template</label>
+          <div class="control">
+            <textarea id="input-template" class="textarea is-family-code is-size-7" rows="7"></textarea>
+          </div>
+          <p id="error-template" class="is-hidden help is-danger">Invalid template</p>
+          <details><summary>Input</summary>
+            <pre class="is-size-7"><code id="sample-input"></code></pre>
+          </details>
+
+        </div>
+        <div class="field">
+          <label class="label">Preview</label>
+          <div class="control">
+            <textarea id="preview" class="textarea is-family-code is-size-7" rows="7" disabled></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <button id="save" class="button is-primary" disabled>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../vendor/browser-polyfill.js"></script>
+<script src="./options-ui.js" type="module"></script>
+<script src="./custom-format.js" type="module"></script>
+</body>
+</html>

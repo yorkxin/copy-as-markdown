@@ -1,57 +1,59 @@
 package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WindowType;
-import org.openqa.selenium.interactions.Actions;
-import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.yorkxin.copyasmarkdown.e2e.CustomFormatPage;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 
 import static org.testng.Assert.assertEquals;
+import static org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs.BaseTest.getCommandDescriptor;
 
 public class OnPageContentsTest extends BaseTest{
-    @BeforeClass
-    public void configureKeyboardShortcuts() throws InterruptedException, AWTException {
+    public void configureKeyboardShortcuts(CommandDescriptor[] cds) throws InterruptedException, AWTException {
         switch (browser) {
-            case BROWSER_CHROME -> configureKeyboardShortcutsInChrome();
-            case BROWSER_FIREFOX -> configureKeyboardShortcutsInFirefox();
+            case BROWSER_CHROME -> configureKeyboardShortcutsInChrome(cds);
+            case BROWSER_FIREFOX -> configureKeyboardShortcutsInFirefox(cds);
             default -> throw new IllegalStateException("Unexpected browser: " + browser);
         }
     }
 
-    public void configureKeyboardShortcutsInChrome() throws InterruptedException, AWTException {
+    public void configureKeyboardShortcutsInChrome(CommandDescriptor[] commands) throws InterruptedException, AWTException {
         openChromeKeyboardShortcutsPage();
-        setShortcutKeyInChrome("current tab: [title](url)", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "q");
-        setShortcutKeyInChrome("Copy Selection as Markdown", new CharSequence[]{Keys.ALT, Keys.SHIFT}, "p");
+        for (CommandDescriptor command : commands) {
+            setShortcutKeyInChrome(command);
+        }
     }
 
-    public void configureKeyboardShortcutsInFirefox() throws InterruptedException, AWTException {
+    public void configureKeyboardShortcutsInFirefox(CommandDescriptor[] commands) throws InterruptedException, AWTException {
         openFirefoxKeyboardShortcutsPage();
-        setShortcutKeyInFirefox("current-tab-link", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "q");
-        setShortcutKeyInFirefox("selection-as-markdown", new CharSequence[]{Keys.CONTROL, Keys.SHIFT}, "p");
+        for (CommandDescriptor command : commands) {
+            setShortcutKeyInFirefox(command);
+        }
     }
 
     @Test
-    public void currentTabLink() throws AWTException, IOException, UnsupportedFlavorException {
+    public void currentTabLink() throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
+        CommandDescriptor cmd = getCommandDescriptor("current-tab-link");
+        configureKeyboardShortcuts(new CommandDescriptor[]{cmd});
+
         driver.get("http://localhost:5566/qa.html");
-        runShortcutKeys(new int[]{KeyEvent.VK_ALT, KeyEvent.VK_SHIFT}, KeyEvent.VK_Q);
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
 
         String expected = "[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)";
-        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor), expected);
     }
 
     @Test
     public void copySelectionAsMarkdown () throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
+        CommandDescriptor cmd = getCommandDescriptor("selection-as-markdown");
+        configureKeyboardShortcuts(new CommandDescriptor[]{cmd});
+
         driver.get("http://localhost:5566/selection.html");
         selectAll();
-
-        runShortcutKeys(new int[]{KeyEvent.VK_ALT, KeyEvent.VK_SHIFT}, KeyEvent.VK_P);
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
         Thread.sleep(500);
 
         String expected = """
@@ -88,4 +90,27 @@ public class OnPageContentsTest extends BaseTest{
                         molestiae odio! Ducimus ullam, nisi nostrum qui libero quidem culpa a ab.""";
         assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
     }
+
+
+    @Test
+    public void currentTabCustomFormat() throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
+        CommandDescriptor cmd = getCommandDescriptor("current-tab-custom-format-2");
+        configureKeyboardShortcuts(new CommandDescriptor[]{cmd});
+
+        openCustomFormatPage("single-link", "2");
+        CustomFormatPage cfp = new CustomFormatPage(driver);
+
+        cfp.inputName.clear();
+        cfp.inputName.sendKeys("My Format A");
+        cfp.inputTemplate.sendKeys("'{{title}}','{{url}}'");
+        cfp.checkboxShowInMenus.click();
+        cfp.saveButton.click();
+
+        driver.get("http://localhost:5566/qa.html");
+        runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());
+
+        String expected = "'[QA] \\*\\*Hello\\*\\* \\_World\\_','http://localhost:5566/qa.html'";
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor), expected);
+    }
+
 }
