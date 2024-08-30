@@ -79,7 +79,9 @@ async function flashBadge(type) {
   browser.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
 }
 
-function createMenus() {
+async function createMenus() {
+  await browser.contextMenus.removeAll();
+
   browser.contextMenus.create({
     id: 'current-page',
     title: 'Copy Page Link as Markdown',
@@ -92,6 +94,22 @@ function createMenus() {
     title: 'Copy Link as Markdown',
     type: 'normal',
     contexts: ['link'],
+  });
+
+  const singleLinkFormats = await CustomFormatsStorage.list('single-link');
+  singleLinkFormats.forEach((format) => {
+    browser.contextMenus.create({
+      id: `current-page-custom-format-${format.slot}`,
+      title: `Copy Page Link (${format.displayName})`,
+      visible: format.showInMenus,
+      contexts: ['page'],
+    });
+    browser.contextMenus.create({
+      id: `link-custom-format-${format.slot}`,
+      title: `Copy Link (${format.displayName})`,
+      visible: format.showInMenus,
+      contexts: ['link'],
+    });
   });
 
   browser.contextMenus.create({
@@ -107,6 +125,107 @@ function createMenus() {
     type: 'normal',
     contexts: ['selection'],
   });
+
+  /* The following menu items are Firefox-only */
+
+  try {
+    const multipleLinksFormats = await CustomFormatsStorage.list('multiple-links');
+
+    await browser.contextMenus.update('current-page', {
+      contexts: [
+        'page',
+        'tab', // only available on Firefox
+      ],
+    });
+
+    for await (const format of singleLinkFormats) {
+      await browser.contextMenus.update(`current-page-custom-format-${format.slot}`, {
+        contexts: [
+          'page',
+          'tab', // only available on Firefox
+        ],
+      });
+      await browser.contextMenus.update(`link-custom-format-${format.slot}`, {
+        contexts: [
+          'link',
+          'tab', // only available on Firefox
+        ],
+      });
+    }
+
+    browser.contextMenus.create({
+      id: 'separator-1',
+      type: 'separator',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'all-tabs-list',
+      title: 'Copy All Tabs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'all-tabs-task-list',
+      title: 'Copy All Tabs (Task List)',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    for await (const format of multipleLinksFormats) {
+      browser.contextMenus.create({
+        id: `all-tabs-custom-format-${format.slot}`,
+        title: `Copy All Tabs (${format.displayName})`,
+        type: 'normal',
+        visible: format.showInMenus,
+        contexts: ['tab'],
+      });
+    }
+
+    browser.contextMenus.create({
+      id: 'separator-2',
+      type: 'separator',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'highlighted-tabs-list',
+      title: 'Copy Selected Tabs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    browser.contextMenus.create({
+      id: 'highlighted-tabs-task-list',
+      title: 'Copy Selected Tabs (Task List)',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+
+    for await (const format of multipleLinksFormats) {
+      browser.contextMenus.create({
+        id: `highlighted-tabs-custom-format-${format.slot}`,
+        title: `Copy Selected Tabs (${format.displayName})`,
+        type: 'normal',
+        visible: format.showInMenus,
+        contexts: ['tab'],
+      });
+    }
+  } catch (error) {
+    console.info('this browser does not support context contextMenus on tab bar');
+  }
+
+  try {
+    browser.contextMenus.create({
+      id: 'bookmark-link',
+      title: 'Copy Bookmark or Folder as Markdown',
+      type: 'normal',
+      contexts: ['bookmark'],
+    });
+  } catch (error) {
+    console.info('this browser does not support context contextMenus on bookmarks');
+  }
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
@@ -306,6 +425,7 @@ async function convertSelectionInTabToMarkdown(tab) {
 
 async function handleContentOfContextMenu(info, tab) {
   let text;
+
   switch (info.menuItemId) {
     case 'current-page': {
       text = markdownInstance.linkTo(tab.title, tab.url);
@@ -386,7 +506,59 @@ async function handleContentOfContextMenu(info, tab) {
     }
 
     default: {
-      throw new TypeError(`unknown context menu: ${info.menuItemId}`);
+      // try to match custom format
+      const match = /(all-tabs|highlighted-tabs|current-page|link)-custom-format-(\d)/.exec(info.menuItemId);
+      if (match === null) {
+        throw new TypeError(`unknown context menu: ${info.menuItemId}`);
+      }
+      const context = match[1];
+      const slot = match[2];
+      switch (context) {
+        case 'current-page': {
+          text = await handleExportLink({
+            format: 'custom-format',
+            customFormatSlot: slot,
+            title: tab.title,
+            url: tab.url,
+          });
+          break;
+        }
+        case 'link': {
+          // linkText for Firefox (as of 2018/03/07)
+          // selectionText for Chrome on Mac only. On Windows it does not highlight text when
+          // right-click.
+          // TODO: use linkText when Chrome supports it on stable.
+          const linkText = info.selectionText || info.linkText;
+
+          text = await handleExportLink({
+            format: 'custom-format',
+            customFormatSlot: slot,
+            title: linkText,
+            url: info.linkUrl,
+          });
+          break;
+        }
+        case 'all-tabs': {
+          text = await handleExportTabs({
+            scope: 'all',
+            format: 'custom-format',
+            customFormatSlot: slot,
+            windowId: tab.windowId,
+          });
+          break;
+        }
+        case 'highlighted-tabs': {
+          text = await handleExportTabs({
+            scope: 'highlighted',
+            format: 'custom-format',
+            customFormatSlot: slot,
+            windowId: tab.windowId,
+          });
+          break;
+        }
+        default:
+          throw new TypeError(`unknown context menu custom format: ${info.menuItemId}`);
+      }
     }
   }
   return text;
@@ -396,23 +568,25 @@ async function handleContentOfContextMenu(info, tab) {
  *
  * @param format {'link'|'custom-format'}
  * @param [customFormatSlot=null] {String?}
- * @param tab {browser.tabs.Tab}
+ * @param title {String}
+ * @param url {String}
  * @returns {Promise<string>}
  */
-async function handleExportTab({
+async function handleExportLink({
   format,
   customFormatSlot,
-  tab,
+  title,
+  url,
 }) {
   switch (format) {
     case 'link':
-      return markdownInstance.linkTo(tab.title, tab.url);
+      return markdownInstance.linkTo(title, url);
 
     case 'custom-format':
       return renderCustomFormatForSingleTab({
         slot: customFormatSlot,
-        title: tab.title,
-        url: tab.url,
+        title,
+        url,
       });
 
     default:
@@ -442,7 +616,10 @@ async function copyUsingContentScript(tab, text) {
   throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
 }
 
-browser.runtime.onInstalled.addListener(createMenus);
+createMenus().then(() => null /* NOP */);
+browser.storage.sync.onChanged.addListener(async () => {
+  await createMenus();
+});
 
 // eslint-disable-next-line no-undef
 if (globalThis.PERIDOCIALLY_REFRESH_MENU === true) {
@@ -501,7 +678,7 @@ browser.commands.onCommand.addListener(async (command, argTab) => {
         text = await convertSelectionInTabToMarkdown(tab);
         break;
       case 'current-tab-link':
-        text = await handleExportTab({ format: 'link', tab });
+        text = await handleExportLink({ format: 'link', title: tab.title, url: tab.url });
         break;
       case 'all-tabs-link-as-list':
         text = await handleExportTabs({
@@ -629,7 +806,7 @@ async function handleRuntimeMessage(topic, params) {
       if (typeof tab === 'undefined') {
         throw new Error('got undefined tab');
       }
-      return handleExportTab({
+      return handleExportLink({
         format: params.format,
         customFormatSlot: params.customFormatSlot,
         tab,
