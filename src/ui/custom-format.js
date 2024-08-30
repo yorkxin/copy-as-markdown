@@ -14,9 +14,9 @@ class UI {
     this.sampleInput = {};
     const placeholder = doc.querySelector("[data-placeholder='context-in-header']");
     switch (this.context) {
-      case 'multiple-tabs':
+      case 'multiple-links':
         this.sampleInput = UI.sampleInputForTabs;
-        placeholder.textContent = 'Multiple Tabs';
+        placeholder.textContent = 'Multiple Links';
         break;
       case 'single-link':
         this.sampleInput = UI.sampleInputForOneLink;

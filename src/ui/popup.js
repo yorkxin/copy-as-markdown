@@ -125,7 +125,7 @@ async function showCustomFormatsForExportTabs() {
   const divExportAll = document.getElementById('actions-export-all');
   const divExportHighlighted = document.getElementById('actions-export-highlighted');
 
-  const customFormats = await CustomFormatsStorage.list('multiple-tabs');
+  const customFormats = await CustomFormatsStorage.list('multiple-links');
   customFormats.forEach((customFormat) => {
     if (!customFormat.showInMenus) {
       return;

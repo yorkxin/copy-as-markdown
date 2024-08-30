@@ -6,13 +6,13 @@ const menuTemplate = `
     <li><a href="options-permissions.html">Permissions</a></li>
     <p class="menu-label">Formats</p>
     <li>
-      <a href="multiple-tabs.html">Multiple Tabs</a>
-      <ul class="menu-list" data-menu-custom-format-context="multiple-tabs">
-        <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=multiple-tabs&slot=1">Custom Format 1</a></li>
-        <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=multiple-tabs&slot=2">Custom Format 2</a></li>
-        <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=multiple-tabs&slot=3">Custom Format 3</a></li>
-        <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=multiple-tabs&slot=4">Custom Format 4</a></li>
-        <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=multiple-tabs&slot=5">Custom Format 5</a></li>
+      <a href="multiple-links.html">Multiple Links</a>
+      <ul class="menu-list" data-menu-custom-format-context="multiple-links">
+        <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=multiple-links&slot=1">Custom Format 1</a></li>
+        <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=multiple-links&slot=2">Custom Format 2</a></li>
+        <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=multiple-links&slot=3">Custom Format 3</a></li>
+        <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=multiple-links&slot=4">Custom Format 4</a></li>
+        <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=multiple-links&slot=5">Custom Format 5</a></li>
       </ul>
     </li>
     <li>
