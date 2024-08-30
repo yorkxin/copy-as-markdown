@@ -61,6 +61,14 @@ export default class CustomFormat {
     return Mustache.render(this.template, input);
   }
 
+  get displayName() {
+    return this.name.length !== 0 ? this.name : this.defaultName;
+  }
+
+  get defaultName() {
+    return `Custom Format ${this.slot}`;
+  }
+
   /**
    *
    * @param {TabList[]} lists
