@@ -29,6 +29,6 @@ async function checkCustomFormats(context) {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await checkCustomFormats('single-tab');
+  await checkCustomFormats('single-link');
   await checkCustomFormats('multiple-tabs');
 });

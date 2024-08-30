@@ -18,9 +18,9 @@ class UI {
         this.sampleInput = UI.sampleInputForTabs;
         placeholder.textContent = 'Multiple Tabs';
         break;
-      case 'single-tab':
+      case 'single-link':
         this.sampleInput = UI.sampleInputForOneLink;
-        placeholder.textContent = 'Single Tab';
+        placeholder.textContent = 'Single Link';
         break;
       default:
         throw new TypeError(`invalid context '${this.context}'`);

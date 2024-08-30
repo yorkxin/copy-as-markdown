@@ -16,13 +16,13 @@ const menuTemplate = `
       </ul>
     </li>
     <li>
-      <a href="single-tab.html">Single Tab</a>
-      <ul class="menu-list" data-menu-custom-format-context="single-tab">
-        <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=single-tab&slot=1">Custom Format 1</a></li>
-        <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=single-tab&slot=2">Custom Format 2</a></li>
-        <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=single-tab&slot=3">Custom Format 3</a></li>
-        <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=single-tab&slot=4">Custom Format 4</a></li>
-        <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=single-tab&slot=5">Custom Format 5</a></li>
+      <a href="single-link.html">Single Link</a>
+      <ul class="menu-list" data-menu-custom-format-context="single-link">
+        <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=single-link&slot=1">Custom Format 1</a></li>
+        <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=single-link&slot=2">Custom Format 2</a></li>
+        <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=single-link&slot=3">Custom Format 3</a></li>
+        <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=single-link&slot=4">Custom Format 4</a></li>
+        <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=single-link&slot=5">Custom Format 5</a></li>
       </ul>
     </li>
   </ul>

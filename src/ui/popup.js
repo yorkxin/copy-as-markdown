@@ -136,13 +136,13 @@ async function showCustomFormatsForExportTabs() {
     /** @type {HTMLButtonElement} */
     const btnAll = clone.querySelector('button[data-scope="all"]');
     btnAll.dataset.customFormatSlot = customFormat.slot;
-    btnAll.textContent += `(${customFormat.name})`;
+    btnAll.textContent += `(${customFormat.displayName})`;
     divExportAll.appendChild(btnAll);
 
     /** @type {HTMLButtonElement} */
     const btnHighlighted = clone.querySelector('button[data-scope="highlighted"]');
     btnHighlighted.dataset.customFormatSlot = customFormat.slot;
-    btnHighlighted.textContent += `(${customFormat.name})`;
+    btnHighlighted.textContent += `(${customFormat.displayName})`;
     divExportHighlighted.appendChild(btnHighlighted);
   });
 }
@@ -152,7 +152,7 @@ async function showCustomFormatsForCurrentTab() {
   const template = document.getElementById('template-current-tab-button');
   const divExportCurrent = document.getElementById('actions-export-current-tab');
 
-  const customFormats = await CustomFormatsStorage.list('single-tab');
+  const customFormats = await CustomFormatsStorage.list('single-link');
   customFormats.forEach((customFormat) => {
     if (!customFormat.showInMenus) {
       return;
@@ -163,7 +163,7 @@ async function showCustomFormatsForCurrentTab() {
     /** @type {HTMLButtonElement} */
     const btn = clone.querySelector('button[value="export-current-tab"]');
     btn.dataset.customFormatSlot = customFormat.slot;
-    btn.textContent += `(${customFormat.name})`;
+    btn.textContent += `(${customFormat.displayName})`;
     divExportCurrent.appendChild(btn);
   });
 }

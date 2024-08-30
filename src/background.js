@@ -230,7 +230,7 @@ function renderBuiltInFormat(format, tabLists, listType) {
  * @returns {string}
  */
 async function renderCustomFormatForSingleTab({ slot, title, url }) {
-  const customFormat = await CustomFormatsStorage.get('single-tab', slot);
+  const customFormat = await CustomFormatsStorage.get('single-link', slot);
   const input = { title, url };
   return customFormat.render(input);
 }
