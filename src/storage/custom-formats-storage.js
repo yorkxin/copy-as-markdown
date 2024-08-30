@@ -50,5 +50,14 @@ export default {
     };
 
     await browser.storage.sync.set(assignments);
+    await this.touch();
+  },
+
+  async touch() {
+    await browser.storage.sync.set({ [this.KeyOfLastUpdate()]: new Date().getTime() });
+  },
+
+  KeyOfLastUpdate() {
+    return 'custom_formats.updated_at';
   },
 };

@@ -96,18 +96,17 @@ async function createMenus() {
     contexts: ['link'],
   });
 
-  const singleLinkFormats = await CustomFormatsStorage.list('single-link');
+  const singleLinkFormats = (await CustomFormatsStorage.list('single-link'))
+    .filter((format) => format.showInMenus);
   singleLinkFormats.forEach((format) => {
     browser.contextMenus.create({
       id: `current-page-custom-format-${format.slot}`,
       title: `Copy Page Link (${format.displayName})`,
-      visible: format.showInMenus,
       contexts: ['page'],
     });
     browser.contextMenus.create({
       id: `link-custom-format-${format.slot}`,
       title: `Copy Link (${format.displayName})`,
-      visible: format.showInMenus,
       contexts: ['link'],
     });
   });
@@ -129,7 +128,8 @@ async function createMenus() {
   /* The following menu items are Firefox-only */
 
   try {
-    const multipleLinksFormats = await CustomFormatsStorage.list('multiple-links');
+    const multipleLinksFormats = (await CustomFormatsStorage.list('multiple-links'))
+      .filter((format) => format.showInMenus);
 
     await browser.contextMenus.update('current-page', {
       contexts: [
@@ -142,12 +142,6 @@ async function createMenus() {
       await browser.contextMenus.update(`current-page-custom-format-${format.slot}`, {
         contexts: [
           'page',
-          'tab', // only available on Firefox
-        ],
-      });
-      await browser.contextMenus.update(`link-custom-format-${format.slot}`, {
-        contexts: [
-          'link',
           'tab', // only available on Firefox
         ],
       });
@@ -178,7 +172,6 @@ async function createMenus() {
         id: `all-tabs-custom-format-${format.slot}`,
         title: `Copy All Tabs (${format.displayName})`,
         type: 'normal',
-        visible: format.showInMenus,
         contexts: ['tab'],
       });
     }
@@ -617,8 +610,10 @@ async function copyUsingContentScript(tab, text) {
 }
 
 createMenus().then(() => null /* NOP */);
-browser.storage.sync.onChanged.addListener(async () => {
-  await createMenus();
+browser.storage.sync.onChanged.addListener(async (changes) => {
+  if (Object.keys(changes).indexOf(CustomFormatsStorage.KeyOfLastUpdate()) !== -1) {
+    await createMenus();
+  }
 });
 
 // eslint-disable-next-line no-undef
