@@ -242,7 +242,7 @@ async function renderCustomFormatForSingleTab({ slot, title, url }) {
  * @returns {string}
  */
 async function renderCustomFormatForMultipleTabs({ slot, lists }) {
-  const customFormat = await CustomFormatsStorage.get('multiple-tabs', slot);
+  const customFormat = await CustomFormatsStorage.get('multiple-links', slot);
   const input = CustomFormat.makeRenderInputForTabLists(lists);
   return customFormat.render(input);
 }
