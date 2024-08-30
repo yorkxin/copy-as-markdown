@@ -138,6 +138,7 @@ async function createMenus() {
       ],
     });
 
+    // eslint-disable-next-line no-restricted-syntax
     for await (const format of singleLinkFormats) {
       await browser.contextMenus.update(`current-tab-custom-format-${format.slot}`, {
         contexts: [
@@ -167,6 +168,7 @@ async function createMenus() {
       contexts: ['tab'],
     });
 
+    // eslint-disable-next-line no-restricted-syntax
     for await (const format of multipleLinksFormats) {
       browser.contextMenus.create({
         id: `all-tabs-custom-format-${format.slot}`,
@@ -196,6 +198,7 @@ async function createMenus() {
       contexts: ['tab'],
     });
 
+    // eslint-disable-next-line no-restricted-syntax
     for await (const format of multipleLinksFormats) {
       browser.contextMenus.create({
         id: `highlighted-tabs-custom-format-${format.slot}`,
@@ -392,6 +395,7 @@ async function handleExportTabs({
   });
   const crGroups = await getTabGroups(windowId);
   const groups = crGroups.map((group) => new TabGroup(group.title, group.id, group.color));
+  // eslint-disable-next-line max-len
   const tabs = crTabs.map((tab) => new Tab(markdownInstance.escapeLinkText(tab.title), tab.url, tab.groupId || TabGroup.NonGroupId));
   const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
   if (format === 'custom-format') {
@@ -430,6 +434,7 @@ function parseCustomFormatCommand(command) {
 }
 
 async function handleCustomFormatCurrentPage(slot, tab) {
+  // eslint-disable-next-line no-use-before-define
   return handleExportLink({
     format: 'custom-format',
     customFormatSlot: slot,
@@ -445,6 +450,7 @@ async function handleCustomFormatLink(slot, menuInfo) {
   // TODO: use linkText when Chrome supports it on stable.
   const linkText = menuInfo.selectionText || menuInfo.linkText;
 
+  // eslint-disable-next-line no-use-before-define
   return handleExportLink({
     format: 'custom-format',
     customFormatSlot: slot,

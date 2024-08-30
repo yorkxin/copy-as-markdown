@@ -1,7 +1,7 @@
 import Mustache from '../vendor/mustache.mjs';
-import Markdown from './markdown.js';
 
 // disable HTML escape
+// eslint-disable-next-line func-names
 Mustache.escape = function (text) { return text; };
 
 /** @typedef {import('./tabs.js').TabList} TabList */
