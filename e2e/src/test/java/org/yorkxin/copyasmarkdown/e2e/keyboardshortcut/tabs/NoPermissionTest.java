@@ -22,7 +22,7 @@ public class NoPermissionTest extends BaseTest {
 
     @Test(dataProvider = "allCommands")
     public void testNoPermission(String command) throws AWTException {
-        if (Objects.equals(command, "selection-as-markdown") || Objects.equals(command, "current-tab-link") ) {
+        if (Objects.equals(command, "selection-as-markdown") || Objects.equals(command, "current-tab-link") || command.startsWith("current-tab-custom-format-") ) {
             // these command will not be blocked by permission
             return;
         }
