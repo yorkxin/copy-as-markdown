@@ -2,7 +2,6 @@ package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.tabs;
 
 import org.openqa.selenium.By;
 import org.testng.annotations.*;
-import org.yorkxin.copyasmarkdown.e2e.CustomFormatPage;
 import org.yorkxin.copyasmarkdown.e2e.DemoPageData;
 import org.yorkxin.copyasmarkdown.e2e.keyboardshortcut.CommandDescriptor;
 
@@ -182,18 +181,11 @@ public class TabExportingTest extends BaseTest {
 
     @Test
     public void allTabsAsCustomFormat() throws IOException, UnsupportedFlavorException, AWTException {
-        openCustomFormatPage("multiple-links", "1");
-        CustomFormatPage cfp = new CustomFormatPage(driver);
-
-        cfp.inputName.clear();
-        cfp.inputName.sendKeys("My Format 1");
-        cfp.inputTemplate.sendKeys("""
+        configureCustomFormat("multiple-links", "1", "My Format 1", """
                 {{#links}}
                 {{number}},'{{title}}','{{url}}'
                 {{/links}}
                 """);
-        cfp.checkboxShowInMenus.click();
-        cfp.saveButton.click();
 
         DemoPageData dpd = openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();
@@ -214,18 +206,11 @@ public class TabExportingTest extends BaseTest {
 
     @Test
     public void highlightedTabsAsCustomFormat() throws IOException, UnsupportedFlavorException, AWTException {
-        openCustomFormatPage("multiple-links", "2");
-        CustomFormatPage cfp = new CustomFormatPage(driver);
-
-        cfp.inputName.clear();
-        cfp.inputName.sendKeys("My Format 2");
-        cfp.inputTemplate.sendKeys("""
+        configureCustomFormat("multiple-links", "2", "My Format 2", """
                 {{#links}}
                 {{number}},'{{title}}','{{url}}'
                 {{/links}}
                 """);
-        cfp.checkboxShowInMenus.click();
-        cfp.saveButton.click();
 
         DemoPageData dpd = openDemoTabs(false);
         driver.findElement(By.id("switch-to-demo")).click();

@@ -255,6 +255,19 @@ public class BaseTest {
         driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/custom-format.html?context="+context+"&slot="+slot);
     }
 
+    protected void configureCustomFormat(String context, String slot, String name, String template) {
+        driver.switchTo().newWindow(WindowType.WINDOW);
+        openCustomFormatPage(context, slot);
+        CustomFormatPage cfp = new CustomFormatPage(driver);
+        cfp.inputName.clear();
+        cfp.inputName.sendKeys(name);
+        cfp.inputTemplate.sendKeys(template);
+        cfp.checkboxShowInMenus.click();
+        cfp.saveButton.click();
+        driver.close();
+        driver.switchTo().window(mainWindowHandle);
+    }
+
     protected void openMultipleLinksOptionsPage() {
         driver.get(getExtensionProtocol()+"://"+extId+"/dist/ui/multiple-links.html");
     }

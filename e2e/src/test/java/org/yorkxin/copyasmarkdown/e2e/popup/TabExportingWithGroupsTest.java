@@ -192,21 +192,14 @@ public class TabExportingWithGroupsTest extends org.yorkxin.copyasmarkdown.e2e.p
 
     @Test
     public void allTabsAsCustomFormat() throws InterruptedException, IOException, UnsupportedFlavorException {
-        openCustomFormatPage("multiple-links", "1");
-        CustomFormatPage cfp = new CustomFormatPage(driver);
-
-        cfp.inputName.clear();
-        cfp.inputName.sendKeys("My Format 1");
-        cfp.inputTemplate.sendKeys("""
-                {{#grouped}}
-                {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
-                {{#links}}
-                  {{number}},title='{{title}}',url='{{url}}'
-                {{/links}}
-                {{/grouped}}
-                """);
-        cfp.checkboxShowInMenus.click();
-        cfp.saveButton.click();
+        configureCustomFormat("multiple-links", "1", "My Format 1", """
+        {{#grouped}}
+        {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
+        {{#links}}
+          {{number}},title='{{title}}',url='{{url}}'
+        {{/links}}
+        {{/grouped}}
+        """);
 
         DemoPageData dpd = openDemoTabs(true);
         openPopupWindow(dpd);
@@ -232,21 +225,14 @@ public class TabExportingWithGroupsTest extends org.yorkxin.copyasmarkdown.e2e.p
 
     @Test
     public void highlightedTabsAsCustomFormat() throws InterruptedException, IOException, UnsupportedFlavorException {
-        openCustomFormatPage("multiple-links", "2");
-        CustomFormatPage cfp = new CustomFormatPage(driver);
-
-        cfp.inputName.clear();
-        cfp.inputName.sendKeys("My Format 2");
-        cfp.inputTemplate.sendKeys("""
-                {{#grouped}}
-                {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
-                {{#links}}
-                  {{number}},title='{{title}}',url='{{url}}'
-                {{/links}}
-                {{/grouped}}
-                """);
-        cfp.checkboxShowInMenus.click();
-        cfp.saveButton.click();
+        configureCustomFormat("multiple-links", "2", "My Format 2", """
+        {{#grouped}}
+        {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
+        {{#links}}
+          {{number}},title='{{title}}',url='{{url}}'
+        {{/links}}
+        {{/grouped}}
+        """);
 
         DemoPageData dpd = openDemoTabs(true);
         openPopupWindow(dpd);

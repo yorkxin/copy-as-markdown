@@ -1,7 +1,6 @@
 package org.yorkxin.copyasmarkdown.e2e.keyboardshortcut;
 
 import org.testng.annotations.Test;
-import org.yorkxin.copyasmarkdown.e2e.CustomFormatPage;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -73,14 +72,7 @@ public class OnPageContentsTest extends BaseTest{
         CommandDescriptor cmd = getCommandDescriptor("current-tab-custom-format-2");
         configureKeyboardShortcuts(new CommandDescriptor[]{cmd});
 
-        openCustomFormatPage("single-link", "2");
-        CustomFormatPage cfp = new CustomFormatPage(driver);
-
-        cfp.inputName.clear();
-        cfp.inputName.sendKeys("My Format A");
-        cfp.inputTemplate.sendKeys("'{{title}}','{{url}}'");
-        cfp.checkboxShowInMenus.click();
-        cfp.saveButton.click();
+        configureCustomFormat("single-link","2","My Format A", "'{{title}}','{{url}}'");
 
         driver.get("http://localhost:5566/qa.html");
         runShortcutKeys(cmd.getRobotModifiers(), cmd.getRobotKey());

@@ -2,7 +2,6 @@ package org.yorkxin.copyasmarkdown.e2e.popup;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
-import org.yorkxin.copyasmarkdown.e2e.CustomFormatPage;
 import org.yorkxin.copyasmarkdown.e2e.DemoPageData;
 
 import java.awt.datatransfer.DataFlavor;
@@ -30,16 +29,9 @@ public class CurrentTabTest extends BaseTest {
 
     @Test
     public void currentTabAsCustomFormat() throws InterruptedException, IOException, UnsupportedFlavorException {
-        openCustomFormatPage("single-link", "1");
-        CustomFormatPage cfp = new CustomFormatPage(driver);
-
-        cfp.inputName.clear();
-        cfp.inputName.sendKeys("My Format A");
-        cfp.inputTemplate.sendKeys("""
-                '{{title}}','{{url}}'
-                """);
-        cfp.checkboxShowInMenus.click();
-        cfp.saveButton.click();
+        configureCustomFormat("single-link", "1", "My Format A", """
+        {{title}},{{url}}
+        """);
 
         DemoPageData dpd = openDemoTabs(false);
         openPopupWindow(dpd);
