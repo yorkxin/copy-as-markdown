@@ -10,6 +10,9 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Objects;
 
 public class ContextMenuTest extends BaseTest {
@@ -158,6 +161,9 @@ public class ContextMenuTest extends BaseTest {
 
     @Test
     public void onPageSelection() throws AWTException, InterruptedException, IOException, UnsupportedFlavorException {
+        Path filePath = Paths.get("support/pages/selection.md");
+        String expected = Files.readString(filePath);
+
         // navigate to selection.html
         driver.findElement(By.id("go-to-selection")).click();
         selectAll();
@@ -196,39 +202,9 @@ public class ContextMenuTest extends BaseTest {
         robot.keyPress(KeyEvent.VK_N);
         robot.keyPress(KeyEvent.VK_ENTER);
         Thread.sleep(500);
-        String expected = """
-                # Test: Selection
-                                
-                ## Header 2
-                                
-                ### Header 3
-                                
-                #### Header 4
-                                
-                ##### Header 5
-                                
-                ###### Header 6
-                                
-                Lorem _ipsum_ **dolor sit** _amet_ **consectetur** **_adipisicing_** [elit](https://example.com/). `Corrupti fugit` officia ![ICON](http://localhost:5566/icon.png) nemo porro nam ipsam dignissimos aliquid harum officiis consectetur quasi quaerat quis repellat minus eveniet aspernatur, ratione dolorum natus.
-                                
-                * * *
-                                
-                -   Lorem
-                -   _ipsum_
-                -   **dolor sit**
-                -   _amet_
-                -   xyz
-                    1.  **consectetur**
-                    2.  **_adipisicing_**
-                    3.  [elit](https://example.com/)
-                                
-                > Lorem _ipsum_ **dolor sit** _amet_ **consectetur** **_adipisicing_** [elit](https://example.com/). `Corrupti fugit` officia nemo porro nam ipsam dignissimos aliquid harum officiis consectetur quasi quaerat quis repellat minus eveniet aspernatur, ratione dolorum natus.
-                                
-                   \s
-                        Lorem ipsum dolor sit, amet consectetur adipisicing elit.\s
-                        Ratione nobis aperiam unde magni libero minima eaque at placeat\s
-                        molestiae odio! Ducimus ullam, nisi nostrum qui libero quidem culpa a ab.""";
-        assertEquals(expected, clipboard.getData(DataFlavor.stringFlavor));
+        // NOTE: in the selection.md file, there is a line with only four space chars right below a code block.
+        // This is expected and is part of the test case, because the original <pre><code> is ended with a new line.
+        assertEquals(clipboard.getData(DataFlavor.stringFlavor),expected);
     }
 
     // In Chrome, context menu items more than 1 will be folded in a sub menu with extension's name.

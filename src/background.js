@@ -242,7 +242,9 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
 // NOTE: this function should be executed in content script.
 function selectionToMarkdown(turndownOptions) {
   // eslint-disable-next-line no-undef
-  const turndownService = new TurndownService(turndownOptions);
+  const turndownService = new TurndownService(turndownOptions)
+    .remove('script')
+    .remove('style');
   const sel = getSelection();
   const container = document.createElement('div');
   for (let i = 0, len = sel.rangeCount; i < len; i += 1) {
