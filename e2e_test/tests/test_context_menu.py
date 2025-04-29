@@ -82,19 +82,50 @@ def find_phrase_in_ocr(text_data: Dict, target_phrase: str) -> Tuple[bool, Optio
     
     return False, None
 
+def get_window_bbox(win_pos: Dict, win_size: Dict) -> Tuple[int, int, int, int]:
+    """Get the bounding box for the entire window."""
+    return (win_pos['x'], win_pos['y'], 
+            win_pos['x'] + win_size['width'], 
+            win_pos['y'] + win_size['height'])
+
+def get_submenu_bbox(win_pos: Dict, win_size: Dict, coords: Dict) -> Tuple[int, int, int, int]:
+    """Get the bounding box for the submenu area (right side of parent menu)."""
+    return (win_pos['x'] + coords['left'] + coords['width'],  # Start from right edge of parent menu
+            win_pos['y'],                                     # Top of window
+            win_pos['x'] + win_size['width'],                 # Right edge of window
+            win_pos['y'] + win_size['height'])                # Bottom of window
+
+def enhance_image_contrast(image: Image.Image) -> Image.Image:
+    """Enhance image contrast for better OCR."""
+    image = image.convert('L')  # Convert to grayscale
+    return image.point(lambda x: 0 if x < 128 else 255, '1')  # Convert to binary image
+
+def save_debug_image(image: Image.Image, filename: str, marker_coords: Optional[Dict] = None):
+    """Save an image with optional marker for debugging."""
+    if marker_coords:
+        debug_img = image.copy()
+        draw = ImageDraw.Draw(debug_img)
+        draw.ellipse([marker_coords['x']-5, marker_coords['y']-5, 
+                     marker_coords['x']+5, marker_coords['y']+5], fill='red')
+        debug_img.save(f"{filename}_with_marker.png")
+    image.save(filename)
+
+def move_and_click(screen_x: int, screen_y: int):
+    """Move mouse to coordinates and click."""
+    print(f"Moving mouse to screen coordinates: x={screen_x}, y={screen_y}")
+    pyautogui.moveTo(screen_x, screen_y, duration=0.2)
+    pyautogui.click()
+
 MENU_ITEM_TEXT = "Copy as Markdown"       # The text on your context menu
 SUBMENU_ITEM_TEXT = "Copy Link as Markdown"  # The text on the submenu
 
 pyautogui.FAILSAFE = False  # Optional: disables moving mouse to screen corner to abort
 
-
 def clear_clipboard():
     pyperclip.copy('')  # Clear clipboard
 
-
 def read_clipboard():
     return pyperclip.paste()
-
 
 def test_extension_context_menu(driver: WebDriver, fixture_server):
     win_pos = driver.get_window_position()
@@ -102,7 +133,6 @@ def test_extension_context_menu(driver: WebDriver, fixture_server):
     print(f"Window position: {win_pos}, size: {win_size}")
 
     driver.get(fixture_server.url+"/qa.html")
-
     time.sleep(2)  # wait for page to load
 
     # Clear clipboard before testing
@@ -113,14 +143,13 @@ def test_extension_context_menu(driver: WebDriver, fixture_server):
     link = driver.find_element(By.ID, "link-1")
     actions = ActionChains(driver)
     actions.context_click(link).perform()
-
     time.sleep(1)  # wait for context menu to show
 
-    # Screenshot the full screen
-    bbox = (win_pos['x'], win_pos['y'], win_pos['x'] + win_size['width'], win_pos['y'] + win_size['height'])
+    # Take screenshot of the full window
+    bbox = get_window_bbox(win_pos, win_size)
     print(f"Bounding box: {bbox}")
     screen = ImageGrab.grab(bbox=bbox)
-    screen.save("context_menu_debug.png")
+    save_debug_image(screen, "context_menu_debug.png")
 
     # OCR to find the menu item
     text_data = pytesseract.image_to_data(screen, output_type=pytesseract.Output.DICT)
@@ -131,36 +160,22 @@ def test_extension_context_menu(driver: WebDriver, fixture_server):
     assert found, f"Context menu item '{MENU_ITEM_TEXT}' not found by OCR."
     
     # Add visual debugging
-    debug_img = screen.copy()
-    draw = ImageDraw.Draw(debug_img)
-    draw.ellipse([coords['x']-5, coords['y']-5, coords['x']+5, coords['y']+5], fill='red')
-    debug_img.save("context_menu_debug_with_marker.png")
+    save_debug_image(screen, "context_menu_debug_marker.png", coords)
     
     # Move to and click the menu item
     screen_x = win_pos['x'] + coords['x']
     screen_y = win_pos['y'] + coords['y']
-    print(f"Moving mouse to screen coordinates: x={screen_x}, y={screen_y}")
-    pyautogui.moveTo(screen_x, screen_y, duration=0.2)
+    move_and_click(screen_x, screen_y)
 
     # Wait for submenu to appear
     time.sleep(1)
 
-    # Take a screenshot of only the right side of the window (where the submenu should be)
-    right_bbox = (
-        win_pos['x'] + coords['left'] + coords['width'],  # Start from right edge of parent menu
-        win_pos['y'],                                     # Top of window
-        win_pos['x'] + win_size['width'],                 # Right edge of window
-        win_pos['y'] + win_size['height']                 # Bottom of window
-    )
-    print(f"Right side bounding box: {right_bbox}")
-    screen = ImageGrab.grab(bbox=right_bbox)
-    
-    # Convert to grayscale and enhance contrast
-    screen = screen.convert('L')  # Convert to grayscale
-    # Enhance contrast using point operation
-    screen = screen.point(lambda x: 0 if x < 128 else 255, '1')  # Convert to binary image
-    
-    screen.save("submenu_debug.png")
+    # Take screenshot of the submenu area
+    submenu_bbox = get_submenu_bbox(win_pos, win_size, coords)
+    print(f"Submenu bounding box: {submenu_bbox}")
+    screen = ImageGrab.grab(bbox=submenu_bbox)
+    screen = enhance_image_contrast(screen)
+    save_debug_image(screen, "submenu_debug.png")
 
     # OCR to find the submenu item
     text_data = pytesseract.image_to_data(screen, output_type=pytesseract.Output.DICT)
@@ -171,19 +186,12 @@ def test_extension_context_menu(driver: WebDriver, fixture_server):
     assert found, f"Submenu item '{SUBMENU_ITEM_TEXT}' not found by OCR."
     
     # Add visual debugging for submenu
-    debug_img = screen.copy()
-    draw = ImageDraw.Draw(debug_img)
-    draw.ellipse([submenu_coords['x']-5, submenu_coords['y']-5, 
-                 submenu_coords['x']+5, submenu_coords['y']+5], fill='red')
-    debug_img.save("submenu_debug_with_marker.png")
+    save_debug_image(screen, "submenu_debug_marker.png", submenu_coords)
     
     # Move to and click the submenu item
-    # Add the right_bbox origin to the coordinates
-    screen_x = right_bbox[0] + submenu_coords['x']
-    screen_y = right_bbox[1] + submenu_coords['y']
-    print(f"Moving mouse to submenu item at screen coordinates: x={screen_x}, y={screen_y}")
-    pyautogui.moveTo(screen_x, screen_y, duration=0.2)
-    pyautogui.click()
+    screen_x = submenu_bbox[0] + submenu_coords['x']
+    screen_y = submenu_bbox[1] + submenu_coords['y']
+    move_and_click(screen_x, screen_y)
 
     # Wait for clipboard to update
     time.sleep(1)
