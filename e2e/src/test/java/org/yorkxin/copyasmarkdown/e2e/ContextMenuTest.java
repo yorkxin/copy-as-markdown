@@ -161,7 +161,7 @@ public class ContextMenuTest extends BaseTest {
 
     @Test
     public void onPageSelection() throws AWTException, InterruptedException, IOException, UnsupportedFlavorException {
-        Path filePath = Paths.get("support/pages/selection.md");
+        Path filePath = Paths.get("../fixtures/selection.md");
         String expected = Files.readString(filePath);
 
         // navigate to selection.html

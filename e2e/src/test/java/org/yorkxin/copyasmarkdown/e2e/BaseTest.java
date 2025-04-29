@@ -99,7 +99,7 @@ public class BaseTest {
         System.out.printf("Extension ID of E2E Test: %s\n", e2eExtId);
 
         server = HttpServer.create(new InetSocketAddress(5566), 0);
-        server.createContext("/", createFileHandler(Path.of(new File("./support/pages/").getCanonicalPath())));
+        server.createContext("/", createFileHandler(Path.of(new File("../fixtures/").getCanonicalPath())));
         server.setExecutor(null);
         server.start();
         System.out.printf("started serving on %s\n", server.getAddress());

@@ -51,7 +51,7 @@ public class OnPageContentsTest extends BaseTest{
 
     @Test
     public void copySelectionAsMarkdown () throws AWTException, IOException, UnsupportedFlavorException, InterruptedException {
-        Path filePath = Paths.get("support/pages/selection.md");
+        Path filePath = Paths.get("../fixtures/selection.md");
         String expected = Files.readString(filePath);
 
         CommandDescriptor cmd = getCommandDescriptor("selection-as-markdown");
