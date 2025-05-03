@@ -12,7 +12,7 @@ EXTENSION_PATHS = {
 }
 
 # @pytest.fixture(params=["chrome", "firefox"])
-@pytest.fixture(params=["chrome"])
+@pytest.fixture(params=["chrome"], scope="class")
 def driver(request):
     browser = request.param
 
@@ -82,8 +82,7 @@ class FixtureServer:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def fixture_server():
     with FixtureServer() as server:
         yield server
-    
