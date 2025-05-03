@@ -15,7 +15,8 @@ SUBMENU_ITEM_TEXT = "Copy Link as Markdown"  # The text on the submenu
 pyautogui.FAILSAFE = False  # Optional: disables moving mouse to screen corner to abort
 
 class TestContextMenu:
-    def test_extension_context_menu(self, driver: WebDriver, fixture_server):
+    def test_extension_context_menu(self, browser_environment, fixture_server):
+        driver = browser_environment.driver
         win_pos = driver.get_window_position()
         win_size = driver.get_window_size()
         print(f"Window position: {win_pos}, size: {win_size}")

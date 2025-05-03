@@ -22,9 +22,10 @@ class TestKeyboardShortcuts:
         cls.all_keyboard_shortcuts = cls._init_keyboard_shortcuts()
 
     @pytest.fixture(scope="class", autouse=True)
-    def setup_keyboard_shortcuts(self, driver):
+    def setup_keyboard_shortcuts(self, browser_environment):
         """Configure keyboard shortcuts for the extension"""
         print("Setting up keyboard tests...")
+        driver = browser_environment.driver
         
         driver.get("chrome://extensions/shortcuts")
         shadow = Shadow(driver)
@@ -74,18 +75,18 @@ class TestKeyboardShortcuts:
 
         return index_shortcuts
 
-    def test_current_tab(self, driver: WebDriver, fixture_server):
+    def test_current_tab(self, browser_environment, fixture_server):
         Clipboard.clear()
-        driver.get(fixture_server.url + "/qa.html")
+        browser_environment.driver.get(fixture_server.url + "/qa.html")
         self.__class__.all_keyboard_shortcuts.get_by_manifest_key("current-tab-link").press()
         time.sleep(1)
         clipboard_text = Clipboard.read()
         assert clipboard_text == f"[[QA] \*\*Hello\*\* \_World\_]({fixture_server.url}/qa.html)"
 
-    def test_all_tabs(self, driver: WebDriver):
+    def test_all_tabs(self, browser_environment):
         pass
 
-    def test_highlighted_tabs(self, driver: WebDriver):
+    def test_highlighted_tabs(self, browser_environment):
         pass
 
 

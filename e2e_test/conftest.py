@@ -2,6 +2,8 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
+from pyshadow.main import Shadow
+from dataclasses import dataclass
 import os
 import socket
 
@@ -11,30 +13,68 @@ EXTENSION_PATHS = {
     "firefox": "/absolute/path/to/your/firefox_addon.xpi", # xpi file for Firefox
 }
 
-# @pytest.fixture(params=["chrome", "firefox"])
+@dataclass
+class BrowserEnvironment:
+    extension_id: str
+    brand: str # chrome or firefox
+    driver: webdriver.Chrome|webdriver.Firefox
+    _extension_base_url: str
+
+    def __init__(self, extension_id, brand, driver):
+        self.extension_id = extension_id
+        self.brand = brand
+        self.driver = driver
+        if brand == "chrome":
+            self._extension_base_url = f"chrome-extension://{extension_id}"
+        else:
+            raise ValueError(f"Unsupported browser: {brand}")
+
+    def options_page_url(self):
+        return f"{self._extension_base_url}/dist/ui/options.html"
+
+    def permissions_page_url(self):
+        return f"{self._extension_base_url()}/dist/ui/permissions.html"
+
+
 @pytest.fixture(params=["chrome"], scope="class")
-def driver(request):
-    browser = request.param
+def browser_environment(request):
+    try:
+        browser = request.param
 
-    if browser == "chrome":
-        options = webdriver.ChromeOptions()
-        # options.add_argument("--headless=new")  # use headless new mode
-        options.add_argument("--disable-gpu")
-        options.add_argument(f"--load-extension={EXTENSION_PATHS['chrome']}")
-        driver = webdriver.Chrome(options=options)
+        if browser == "chrome":
+            options = webdriver.ChromeOptions()
+            # options.add_argument("--headless=new")  # use headless new mode
+            options.add_argument("--disable-gpu")
+            options.add_argument(f"--load-extension={EXTENSION_PATHS['chrome']}")
+            driver = webdriver.Chrome(options=options)
 
-    elif browser == "firefox":
-        options = webdriver.FirefoxOptions()
-        options.add_argument("--headless")
-        profile = webdriver.FirefoxProfile()
-        driver = webdriver.Firefox(options=options, firefox_profile=profile)
-        driver.install_addon(EXTENSION_PATHS['firefox'], temporary=True)
+            driver.get("chrome://extensions/")
+            shadow = Shadow(driver)
 
-    else:
-        raise ValueError(f"Unsupported browser: {browser}")
+            extension_id = None
+            # find extension id
+            for element in shadow.find_elements("extensions-item"):
+                # scroll to element
+                if shadow.find_element(element, "#name").text == "Copy as Markdown":
+                    extension_id = element.get_attribute("id")
+                    break
 
-    yield driver
-    driver.quit()
+            if extension_id is None:
+                raise ValueError("Extension ID not found")
+
+        elif browser == "firefox":
+            options = webdriver.FirefoxOptions()
+            options.add_argument("--headless")
+            profile = webdriver.FirefoxProfile()
+            driver = webdriver.Firefox(options=options, firefox_profile=profile)
+            driver.install_addon(EXTENSION_PATHS['firefox'], temporary=True)
+
+        else:
+            raise ValueError(f"Unsupported browser: {browser}")
+
+        yield BrowserEnvironment(extension_id, browser, driver)
+    finally:
+        driver.quit()
 
 class FixtureServer:
     def __init__(self):
