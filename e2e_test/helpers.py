@@ -3,7 +3,8 @@ from PIL import Image, ImageDraw
 from typing import Dict, Optional, Tuple
 import pyautogui
 import pyperclip
-
+from PIL import ImageGrab
+import pytesseract
 class Coords:
     _x: int
     _y: int
@@ -93,6 +94,36 @@ class Window:
         """Convert coordinates relative to the window to screen coordinates."""
         return Coords(self._origin.x() + coords.x(), self._origin.y() + coords.y())
 
+    def find_phrase_with_ocr(self, target_phrase: str) -> Tuple[bool, Optional[BoundingBox]]:
+        """Find a phrase in the window using OCR."""
+
+        # Conver the target phrase to a name that can be used for filenames
+        filename_token = sanitize_filename(target_phrase)
+
+        # Take screenshot of the full window
+        screen = ImageGrab.grab(bbox=self.bbox().to_tuple())
+        OCR.save_debug_image(screen, f"ocr_debug_{filename_token}.png")
+
+        # Enhance image contrast
+        screen_contrast = OCR.enhance_image_contrast(screen)
+        # OCR.save_debug_image(screen_contrast, f"ocr_debug_{filename_token}_enhanced.png")
+
+        # OCR to find the menu item
+        text_data = pytesseract.image_to_data(screen_contrast, output_type=pytesseract.Output.DICT)
+
+        # Find the menu item
+        found, coords_bbox = OCR.find_phrase_in_ocr(text_data, target_phrase)
+        
+        if found:
+            OCR.save_debug_image(screen, f"ocr_debug_{filename_token}_marker.png", coords_bbox.center())
+
+        return found, coords_bbox
+
+    def move_to(self, coords: Coords):
+        """Move the mouse to the coordinates relative to the window."""
+        screen_coords = self.screen_coords(coords)
+        pyautogui.moveTo(screen_coords.x(), screen_coords.y(), duration=0.2)
+
     def click(self, coords: Coords):
         """Click on the coordinates relative to the window."""
         screen_coords = self.screen_coords(coords)
@@ -164,7 +195,7 @@ class OCR:
             draw = ImageDraw.Draw(debug_img)
             draw.ellipse([marker_coords.x()-5, marker_coords.y()-5,
                         marker_coords.x()+5, marker_coords.y()+5], fill='red')
-            debug_img.save(f"{filename}_with_marker.png")
+            image = debug_img
         image.save(filename)
 
 class Clipboard:
@@ -175,3 +206,11 @@ class Clipboard:
     @staticmethod
     def read():
         return pyperclip.paste()
+    
+def sanitize_filename(s: str) -> str:
+    # Create a translation table that maps invalid characters to underscores
+    invalid_chars = '<>:"/\\|?*'  # Windows invalid filename characters
+    translation_table = str.maketrans(invalid_chars, '_' * len(invalid_chars))
+    
+    # Replace invalid characters and convert to lowercase
+    return s.translate(translation_table).lower().replace(' ', '_')
