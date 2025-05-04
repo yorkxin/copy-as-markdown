@@ -8,7 +8,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 
 from e2e_test.conftest import BrowserEnvironment
-from e2e_test.helpers import GUI, OCR, Clipboard, Window
+from e2e_test.helpers import OCR, Clipboard, Window
 
 MENU_ITEM_TEXT = "Copy as Markdown"       # The text on your context menu
 SUBMENU_ITEM_TEXT = "Copy Link as Markdown"  # The text on the submenu
@@ -52,8 +52,7 @@ class TestContextMenu:
         OCR.save_debug_image(screen, "context_menu_debug_marker.png", coords_bbox.center())
         
         # Move to and click the menu item
-        screen_coords = win.screen_coords(coords_bbox.center())
-        GUI.move_and_click(screen_coords)
+        win.click(coords_bbox.center())
 
         # Wait for submenu to appear
         time.sleep(1)
@@ -75,8 +74,7 @@ class TestContextMenu:
         OCR.save_debug_image(screen, "submenu_debug_marker.png", submenu_coords_bbox.center())
         
         # Move to and click the submenu item
-        screen_coords = win.screen_coords(submenu_coords_bbox.center())
-        GUI.move_and_click(screen_coords)
+        win.click(submenu_coords_bbox.center())
 
         # Wait for clipboard to update
         time.sleep(1)

@@ -93,6 +93,11 @@ class Window:
         """Convert coordinates relative to the window to screen coordinates."""
         return Coords(self._origin.x() + coords.x(), self._origin.y() + coords.y())
 
+    def click(self, coords: Coords):
+        """Click on the coordinates relative to the window."""
+        screen_coords = self.screen_coords(coords)
+        pyautogui.click(screen_coords.x(), screen_coords.y(), duration=0.2)
+
 class OCR:
     @staticmethod
     def find_phrase_in_ocr(text_data: Dict, target_phrase: str) -> Tuple[bool, Optional[BoundingBox]]:
@@ -161,16 +166,6 @@ class OCR:
                         marker_coords.x()+5, marker_coords.y()+5], fill='red')
             debug_img.save(f"{filename}_with_marker.png")
         image.save(filename)
-
-
-class GUI:
-    @staticmethod
-    def move_and_click(screen_coords: Coords):
-        """Move mouse to coordinates and click."""
-        print(f"Moving mouse to screen coordinates: x={screen_coords.x()}, y={screen_coords.y()}")
-        pyautogui.moveTo(screen_coords.x(), screen_coords.y(), duration=0.2)
-        pyautogui.click()
-
 
 class Clipboard:
     @staticmethod
