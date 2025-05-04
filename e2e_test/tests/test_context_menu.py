@@ -7,7 +7,8 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 
-from e2e_test.helpers import GUI, OCR, Clipboard
+from e2e_test.conftest import BrowserEnvironment
+from e2e_test.helpers import GUI, OCR, Clipboard, Window
 
 MENU_ITEM_TEXT = "Copy as Markdown"       # The text on your context menu
 SUBMENU_ITEM_TEXT = "Copy Link as Markdown"  # The text on the submenu
@@ -15,10 +16,11 @@ SUBMENU_ITEM_TEXT = "Copy Link as Markdown"  # The text on the submenu
 pyautogui.FAILSAFE = False  # Optional: disables moving mouse to screen corner to abort
 
 class TestContextMenu:
-    def test_extension_context_menu(self, browser_environment, fixture_server):
+    def test_extension_context_menu(self, browser_environment: BrowserEnvironment, fixture_server):
         driver = browser_environment.driver
         win_pos = driver.get_window_position()
         win_size = driver.get_window_size()
+        win = Window(win_pos['y'], win_pos['x'], win_size['width'], win_size['height'])
         print(f"Window position: {win_pos}, size: {win_size}")
 
         driver.get(fixture_server.url+"/qa.html")
@@ -35,9 +37,7 @@ class TestContextMenu:
         time.sleep(1)  # wait for context menu to show
 
         # Take screenshot of the full window
-        bbox = OCR.get_window_bbox(win_pos, win_size)
-        print(f"Bounding box: {bbox}")
-        screen = ImageGrab.grab(bbox=bbox)
+        screen = ImageGrab.grab(bbox=win.bbox().to_tuple())
         OCR.save_debug_image(screen, "context_menu_debug.png")
 
         # OCR to find the menu item
@@ -45,24 +45,21 @@ class TestContextMenu:
         print(f"Text data: {text_data}")
 
         # Find the menu item
-        found, coords = OCR.find_phrase_in_ocr(text_data, MENU_ITEM_TEXT)
+        found, coords_bbox = OCR.find_phrase_in_ocr(text_data, MENU_ITEM_TEXT)
         assert found, f"Context menu item '{MENU_ITEM_TEXT}' not found by OCR."
         
         # Add visual debugging
-        OCR.save_debug_image(screen, "context_menu_debug_marker.png", coords)
+        OCR.save_debug_image(screen, "context_menu_debug_marker.png", coords_bbox.center())
         
         # Move to and click the menu item
-        screen_x = win_pos['x'] + coords['x']
-        screen_y = win_pos['y'] + coords['y']
-        GUI.move_and_click(screen_x, screen_y)
+        screen_coords = win.screen_coords(coords_bbox.center())
+        GUI.move_and_click(screen_coords)
 
         # Wait for submenu to appear
         time.sleep(1)
 
         # Take screenshot of the submenu area
-        submenu_bbox = OCR.get_submenu_bbox(win_pos, win_size, coords)
-        print(f"Submenu bounding box: {submenu_bbox}")
-        screen = ImageGrab.grab(bbox=submenu_bbox)
+        screen = ImageGrab.grab(bbox=win.bbox().to_tuple())
         screen = OCR.enhance_image_contrast(screen)
         OCR.save_debug_image(screen, "submenu_debug.png")
 
@@ -71,16 +68,15 @@ class TestContextMenu:
         print(f"Submenu text data: {text_data}")
 
         # Find the submenu item
-        found, submenu_coords = OCR.find_phrase_in_ocr(text_data, SUBMENU_ITEM_TEXT)
+        found, submenu_coords_bbox = OCR.find_phrase_in_ocr(text_data, SUBMENU_ITEM_TEXT)
         assert found, f"Submenu item '{SUBMENU_ITEM_TEXT}' not found by OCR."
         
         # Add visual debugging for submenu
-        OCR.save_debug_image(screen, "submenu_debug_marker.png", submenu_coords)
+        OCR.save_debug_image(screen, "submenu_debug_marker.png", submenu_coords_bbox.center())
         
         # Move to and click the submenu item
-        screen_x = submenu_bbox[0] + submenu_coords['x']
-        screen_y = submenu_bbox[1] + submenu_coords['y']
-        GUI.move_and_click(screen_x, screen_y)
+        screen_coords = win.screen_coords(submenu_coords_bbox.center())
+        GUI.move_and_click(screen_coords)
 
         # Wait for clipboard to update
         time.sleep(1)
