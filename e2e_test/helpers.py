@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import time
 from PIL import Image, ImageDraw
 from typing import Dict, Optional, Tuple
 import pyautogui
@@ -7,6 +8,8 @@ from PIL import ImageGrab
 import pytesseract
 import cv2
 import numpy as np
+
+MAIN_MENU_ITEM_TEXT = "Copy as Markdown"
 
 class Coords:
     _x: int
@@ -130,6 +133,28 @@ class Window:
             OCR.save_debug_image(screen, f"ocr_debug_{filename_token}_marker.png", coords_bbox)
 
         return found, coords_bbox
+
+    def find_and_click_menu_item(self, menu_item_text: str, try_main_menu=True) -> bool:
+        # Find the menu item
+        found, coords_bbox = self.find_phrase_with_ocr(menu_item_text)
+
+        if found:
+            self.click(coords_bbox.center())
+            return True
+        
+        if try_main_menu == False:
+            raise Exception(f"Menu item '{menu_item_text}' not found")
+        
+        # try main menu
+        found = self.find_and_click_menu_item(MAIN_MENU_ITEM_TEXT, try_main_menu=False)
+        if found == False:
+            raise Exception(f"Main menu item '{MAIN_MENU_ITEM_TEXT}' not found")
+        
+        # wait for submenu to appear
+        time.sleep(1)
+
+        # try find the menu item in the submenu
+        return self.find_and_click_menu_item(menu_item_text, try_main_menu=False)
 
     def move_to(self, coords: Coords):
         """Move the mouse to the coordinates relative to the window."""
