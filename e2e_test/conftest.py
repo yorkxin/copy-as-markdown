@@ -1,3 +1,4 @@
+import time
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -37,8 +38,50 @@ class BrowserEnvironment:
     def options_page_url(self):
         return f"{self._extension_base_url}/dist/ui/options.html"
 
-    def permissions_page_url(self):
-        return f"{self._extension_base_url()}/dist/ui/permissions.html"
+    def options_permissions_page_url(self):
+        return f"{self._extension_base_url}/dist/ui/options-permissions.html"
+
+    def request_permission_page_url(self, permission: str):
+        return f"{self._extension_base_url}/dist/ui/permissions.html?permissions={permission}"
+
+    def macro_grant_permission(self, permission: str) -> bool:
+        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
+        element = self.driver.find_element(By.CSS_SELECTOR, f"[data-request-permission='{permission}']")
+        if element.is_displayed() == False or element.is_enabled() == False:
+            return False
+
+        element.click()
+
+        # Wait for the allow button to appear
+        time.sleep(0.5)
+        
+        found, bbox = self.window.find_phrase_with_ocr("Allow")
+        if found:
+            self.window.click(bbox.center())
+            # move to somewhere so that the next screenshot can be recognized by OCR
+            self.window.move_to(Coords(0, 0))
+            return True
+        else:
+            raise Exception("Allow button not found")
+
+    def macro_revoke_permission(self, permission: str) -> bool:
+        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
+        element = self.driver.find_element(By.CSS_SELECTOR, f"[data-remove-permission='{permission}']")
+        if element.is_displayed() == False or element.is_enabled() == False:
+            return False
+
+        element.click()
+        return True
+
+    def macro_grant_permissions(self):
+        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
+        for permission in ["tabs", "tabGroups"]:
+            self.macro_grant_permission(permission)
+
+    def macro_revoke_permissions(self):
+        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
+        for permission in ["tabs", "tabGroups"]:
+            self.macro_revoke_permission(permission)
 
 
 @pytest.fixture(params=["chrome"], scope="class")
