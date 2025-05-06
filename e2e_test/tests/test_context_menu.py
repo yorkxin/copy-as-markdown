@@ -18,9 +18,7 @@ pyautogui.FAILSAFE = False  # Optional: disables moving mouse to screen corner t
 class TestContextMenu:
     def test_extension_context_menu(self, browser_environment: BrowserEnvironment, fixture_server):
         driver = browser_environment.driver
-        win_pos = driver.get_window_position()
-        win_size = driver.get_window_size()
-        win = Window(win_pos['y'], win_pos['x'], win_size['width'], win_size['height'])
+        win = browser_environment.window
 
         driver.get(fixture_server.url+"/qa.html")
         time.sleep(1)  # wait for page to load

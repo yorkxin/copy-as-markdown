@@ -7,17 +7,19 @@ from dataclasses import dataclass
 import os
 import socket
 
+from e2e_test.helpers import Coords, Window
+
 # Paths to your extensions
 EXTENSION_PATHS = {
     "chrome": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "chrome"),  # unpacked folder for Chrome
     "firefox": "/absolute/path/to/your/firefox_addon.xpi", # xpi file for Firefox
 }
 
-@dataclass
 class BrowserEnvironment:
     extension_id: str
     brand: str # chrome or firefox
     driver: webdriver.Chrome|webdriver.Firefox
+    window: Window
     _extension_base_url: str
 
     def __init__(self, extension_id, brand, driver):
@@ -28,6 +30,9 @@ class BrowserEnvironment:
             self._extension_base_url = f"chrome-extension://{extension_id}"
         else:
             raise ValueError(f"Unsupported browser: {brand}")
+        win_pos = driver.get_window_position()
+        win_size = driver.get_window_size()
+        self.window = Window(win_pos['y'], win_pos['x'], win_size['width'], win_size['height'])
 
     def options_page_url(self):
         return f"{self._extension_base_url}/dist/ui/options.html"
