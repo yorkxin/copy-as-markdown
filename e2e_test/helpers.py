@@ -5,6 +5,9 @@ import pyautogui
 import pyperclip
 from PIL import ImageGrab
 import pytesseract
+import cv2
+import numpy as np
+
 class Coords:
     _x: int
     _y: int
@@ -104,18 +107,27 @@ class Window:
         screen = ImageGrab.grab(bbox=self.bbox().to_tuple())
         OCR.save_debug_image(screen, f"ocr_debug_{filename_token}.png")
 
-        # Enhance image contrast
-        screen_contrast = OCR.enhance_image_contrast(screen)
-        # OCR.save_debug_image(screen_contrast, f"ocr_debug_{filename_token}_enhanced.png")
+        # Enhance image contrast (with enlargement)
+        scale_factor = 2  # Must match the factor in enhance_image_contrast
+        screen_contrast = OCR.enhance_image_contrast(screen, scale_factor)
+        OCR.save_debug_image(screen_contrast, f"ocr_debug_{filename_token}_enhanced.png")
 
-        # OCR to find the menu item
-        text_data = pytesseract.image_to_data(screen_contrast, output_type=pytesseract.Output.DICT)
+        # OCR to find the menu item. Use psm=11 to get the best results for UI.
+        text_data = pytesseract.image_to_data(screen_contrast, config='--psm 11', output_type=pytesseract.Output.DICT)
 
         # Find the menu item
         found, coords_bbox = OCR.find_phrase_in_ocr(text_data, target_phrase)
         
-        if found:
-            OCR.save_debug_image(screen, f"ocr_debug_{filename_token}_marker.png", coords_bbox.center())
+        # If found, scale bbox back to original size
+        if found and coords_bbox is not None:
+            # scale bbox back to original size
+            coords_bbox = BoundingBox(
+                top=coords_bbox.top() // scale_factor,
+                left=coords_bbox.left() // scale_factor,
+                width=coords_bbox.width() // scale_factor,
+                height=coords_bbox.height() // scale_factor
+            )
+            OCR.save_debug_image(screen, f"ocr_debug_{filename_token}_marker.png", coords_bbox)
 
         return found, coords_bbox
 
@@ -182,21 +194,33 @@ class OCR:
         return False, None
 
     @staticmethod
-    def enhance_image_contrast(image: Image.Image) -> Image.Image:
-        """Enhance image contrast for better OCR."""
-        image = image.convert('L')  # Convert to grayscale
-        return image.point(lambda x: 0 if x < 128 else 255, '1')  # Convert to binary image
-
+    def enhance_image_contrast(image: Image.Image, scale_factor: int = 1) -> Image.Image:
+        """Enhance image contrast for better OCR using OpenCV adaptive thresholding."""
+        # Convert PIL image to numpy array (grayscale)
+        image_np = np.array(image.convert('L'))
+        # Optionally resize for small text
+        image_np = cv2.resize(image_np, (image_np.shape[1]*scale_factor, image_np.shape[0]*scale_factor), interpolation=cv2.INTER_LANCZOS4)
+        # Apply adaptive thresholding
+        image_np = cv2.adaptiveThreshold(
+            image_np, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 10
+        )
+        # Convert back to PIL Image
+        return Image.fromarray(image_np)
+    
     @staticmethod
-    def save_debug_image(image: Image.Image, filename: str, marker_coords: Optional[Coords] = None):
+    def save_debug_image(image: Image.Image, filename: str, bbox: Optional[BoundingBox] = None):
         """Save an image with optional marker for debugging."""
-        if marker_coords:
+        if bbox: 
+            marker_coords = bbox.center()
             debug_img = image.copy()
             draw = ImageDraw.Draw(debug_img)
+            # draw the marker
             draw.ellipse([marker_coords.x()-5, marker_coords.y()-5,
                         marker_coords.x()+5, marker_coords.y()+5], fill='red')
+            # draw the box
+            draw.rectangle([bbox.left(), bbox.top(), bbox.right(), bbox.bottom()], outline='red', width=2)
             image = debug_img
-        image.save(filename)
+        image.save(filename)    
 
 class Clipboard:
     @staticmethod
