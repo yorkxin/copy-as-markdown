@@ -25,8 +25,16 @@ brew install tesseract
 pip install -r requirements.txt
 ```
 
-### Run Tests
+## Run Tests
 
 ```
 pytest
 ```
+
+## Known issues
+
+### macOS
+
+OCR fails when the system appearance is set to Dark mode.
+
+Workaround: Set the system appearance to Light mode and run OCR-related tests.
