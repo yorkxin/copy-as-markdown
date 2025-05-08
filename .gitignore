@@ -6,6 +6,8 @@ firefox-mv3/dist/*
 !firefox-mv3/dist/.keep
 firefox/dist/*
 !firefox/dist/.keep
+firefox-deved/dist/*
+!firefox-deved/dist/.keep
 chrome/dist/*
 !chrome/dist/.keep
 .nyc_output

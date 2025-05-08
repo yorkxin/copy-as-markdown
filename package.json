@@ -19,6 +19,7 @@
     "debug-edge": "node scripts/debug.js edge",
     "debug-firefox-mv3": "node scripts/debug.js firefox-mv3",
     "debug-firefox": "node scripts/debug.js firefox",
+    "debug-firefox-deved": "node scripts/debug.js firefox-deved",
     "eslint": "eslint .",
     "clean": "rm -rf ./build/* firefox/dist/* firefox-mv3/dist/* chrome/dist/*",
     "convert-images": "./scripts/convert-images.sh",
