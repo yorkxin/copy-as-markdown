@@ -300,7 +300,7 @@ function formatItems(tabLists, formatter) {
 /**
  *
  * @param windowId {Number}
- * @returns {Promise<chrome.tabGroups.TabGroup[]>}
+ * @returns {Promise<browser.tabGroups.TabGroup[]>}
  */
 async function getTabGroups(windowId) {
   let granted = false;
@@ -315,7 +315,7 @@ async function getTabGroups(windowId) {
     return [];
   }
 
-  return chrome.tabGroups.query({ windowId });
+  return browser.tabGroups.query({ windowId });
 }
 
 /**
