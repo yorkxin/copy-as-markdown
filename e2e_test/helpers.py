@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import os
+import sys
 import time
 from PIL import Image, ImageDraw
 from typing import Dict, Optional, Tuple
@@ -165,6 +167,21 @@ class Window:
         """Click on the coordinates relative to the window."""
         screen_coords = self.screen_coords(coords)
         pyautogui.click(screen_coords.x(), screen_coords.y(), duration=0.2)
+
+    def select_all(self):
+        """Select all text in the window."""
+        if sys.platform == 'darwin':
+            pyautogui.hotkey('command', 'a')
+        else:
+            pyautogui.hotkey('ctrl', 'a')
+
+    def poll_clipboard_content(self):
+        for _ in range(10):
+            time.sleep(1)
+            clipboard_content = Clipboard.read()
+            if clipboard_content != '':
+                return clipboard_content
+        raise Exception("Clipboard was empty after 10 seconds.")
 
 class OCR:
     @staticmethod

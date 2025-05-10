@@ -1,9 +1,11 @@
 import ctypes
+import sys
 import time
 import pytesseract
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from pyshadow.main import Shadow
 from dataclasses import dataclass
@@ -97,6 +99,9 @@ class BrowserEnvironment:
         for permission in ["tabs", "tabGroups"]:
             self.macro_revoke_permission(permission)
 
+    def select_all(self):
+        mod = Keys.COMMAND if sys.platform == 'darwin' else Keys.CONTROL
+        self.driver.find_element(By.TAG_NAME, "body").send_keys(mod + "a")
 
 @pytest.fixture(params=["chrome"], scope="class")
 def browser_environment(request):
