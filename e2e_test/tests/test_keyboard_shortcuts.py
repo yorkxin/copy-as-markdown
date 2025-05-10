@@ -1,3 +1,4 @@
+import os
 import time
 from typing import List
 import pyautogui
@@ -10,6 +11,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from dataclasses import dataclass
 import pytest
 
+from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 
 
@@ -75,13 +77,22 @@ class TestKeyboardShortcuts:
 
         return index_shortcuts
 
-    def test_current_tab(self, browser_environment, fixture_server):
+    def test_current_tab(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
         Clipboard.clear()
         browser_environment.driver.get(fixture_server.url + "/qa.html")
         self.__class__.all_keyboard_shortcuts.get_by_manifest_key("current-tab-link").press()
-        time.sleep(1)
-        clipboard_text = Clipboard.read()
+        clipboard_text = browser_environment.window.poll_clipboard_content()
         assert clipboard_text == f"[[QA] \*\*Hello\*\* \_World\_]({fixture_server.url}/qa.html)"
+
+    def test_selection_as_markdown(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+        Clipboard.clear()
+        browser_environment.driver.get(fixture_server.url + "/selection.html")
+        browser_environment.select_all()
+        self.__class__.all_keyboard_shortcuts.get_by_manifest_key("selection-as-markdown").press()
+        clipboard_text = browser_environment.window.poll_clipboard_content()
+        expected_content = open(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "selection.md")).read()
+        expected_content = expected_content.replace("http://localhost:5566", fixture_server.url)
+        assert clipboard_text == expected_content
 
     def test_all_tabs(self, browser_environment):
         pass
