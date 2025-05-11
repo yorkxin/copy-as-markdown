@@ -7,6 +7,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 from pyshadow.main import Shadow
 from dataclasses import dataclass
 import os
@@ -20,19 +23,25 @@ EXTENSION_PATHS = {
     "firefox": "/absolute/path/to/your/firefox_addon.xpi", # xpi file for Firefox
 }
 
+E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
+
 # Set the path to the Tesseract OCR executable
 if os.name == 'nt':  # Check if running on Windows
     pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
 
 class BrowserEnvironment:
     extension_id: str
+    helper_extension_id: str
     brand: str # chrome or firefox
     driver: webdriver.Chrome|webdriver.Firefox
     window: Window
     _extension_base_url: str
+    _test_helper_window_handle: str
+    _demo_window_handle: str
 
-    def __init__(self, extension_id, brand, driver):
+    def __init__(self, extension_id, helper_extension_id, brand, driver):
         self.extension_id = extension_id
+        self.helper_extension_id = helper_extension_id
         self.brand = brand
         self.driver = driver
         if brand == "chrome":
@@ -61,24 +70,36 @@ class BrowserEnvironment:
         return f"{self._extension_base_url}/dist/ui/permissions.html?permissions={permission}"
 
     def macro_grant_permission(self, permission: str) -> bool:
-        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
+        self.driver.switch_to.new_window('tab')
+        handler = self.driver.current_window_handle
+        self.driver.get(self.options_permissions_page_url())
         element = self.driver.find_element(By.CSS_SELECTOR, f"[data-request-permission='{permission}']")
         if element.is_displayed() == False or element.is_enabled() == False:
             return False
 
         element.click()
 
-        # Wait for the allow button to appear
-        time.sleep(0.5)
-        
-        found, bbox = self.window.find_phrase_with_ocr("Allow")
-        if found:
-            self.window.click(bbox.center())
-            # move to somewhere so that the next screenshot can be recognized by OCR
-            self.window.move_to(Coords(0, 0))
-            return True
-        else:
-            raise Exception("Allow button not found")
+        for _ in range(10):
+            # check if the permission is granted by calling browser API
+            result = self.driver.execute_script(f"return browser.permissions.contains({{permissions: ['{permission}']}});")
+            if result:
+                return True
+
+            # Try OCR
+            # There is a delay until the allow button is clickable
+            # so we need to check the button periodically
+            time.sleep(0.2)
+            
+            found, bbox = self.window.find_phrase_with_ocr("Allow")
+            if found:
+                self.window.click(bbox.center())
+                # move the mouse out of the bbox so that the next screenshot can be recognized by OCR
+                self.window.move_to(Coords(bbox.right() + 100, bbox.bottom() + 100))
+
+        # move to somewhere so that the next screenshot can be recognized by OCR
+        self.window.move_to(Coords(0, 0))
+    
+        raise Exception("Allow button not found")
 
     def macro_revoke_permission(self, permission: str) -> bool:
         assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
@@ -103,6 +124,27 @@ class BrowserEnvironment:
         mod = Keys.COMMAND if sys.platform == 'darwin' else Keys.CONTROL
         self.driver.find_element(By.TAG_NAME, "body").send_keys(mod + "a")
 
+    def open_test_helper_window(self, base_url: str) -> str:
+        self.driver.switch_to.new_window('tab')
+        self.driver.get(f"chrome-extension://{self.helper_extension_id}/main.html?base_url={base_url}")
+        self._test_helper_window_handle = self.driver.current_window_handle
+        return self._test_helper_window_handle
+
+    def open_demo_window(self) -> str:
+        self.driver.switch_to.window(self._test_helper_window_handle)
+        self.driver.find_element(By.ID, "open-demo").click()
+        wait = WebDriverWait(self.driver, 10)
+        wait.until(EC.new_window_is_opened)
+        self._demo_window_handle = self.driver.window_handles[-1]
+        self.driver.switch_to.window(self._demo_window_handle)
+        return self._demo_window_handle
+
+    def close_demo_window(self):
+        self.driver.switch_to.window(self._demo_window_handle)
+        self.driver.close()
+        self._demo_window_handle = None
+        self.driver.switch_to.window(self._test_helper_window_handle)
+
 @pytest.fixture(params=["chrome"], scope="class")
 def browser_environment(request):
     try:
@@ -113,23 +155,20 @@ def browser_environment(request):
             # options.add_argument("--headless=new")  # use headless new mode
             options.add_argument("--disable-gpu")
             options.add_argument("--lang=en-US")
-            options.add_argument(f"--load-extension={EXTENSION_PATHS['chrome']}")
+            options.add_argument(f"--load-extension={EXTENSION_PATHS['chrome']},{E2E_HELPER_EXTENSION_PATH}")
             driver = webdriver.Chrome(options=options)
-
-            driver.get("chrome://extensions/")
-            shadow = Shadow(driver)
 
             extension_id = None
             # find extension id
-            for element in shadow.find_elements("extensions-item"):
-                # scroll to element
-                if shadow.find_element(element, "#name").text == "Copy as Markdown":
-                    extension_id = element.get_attribute("id")
-                    break
 
+            extension_id = _find_extension_id_for_chrome("Copy as Markdown", driver)
             if extension_id is None:
                 raise ValueError("Extension ID not found")
 
+            helper_extension_id = _find_extension_id_for_chrome("Copy as Markdown E2E Test Helper", driver)
+            if helper_extension_id is None:
+                raise ValueError("Helper extension ID not found")
+            
         elif browser == "firefox":
             options = webdriver.FirefoxOptions()
             options.add_argument("--headless")
@@ -140,9 +179,20 @@ def browser_environment(request):
         else:
             raise ValueError(f"Unsupported browser: {browser}")
 
-        yield BrowserEnvironment(extension_id, browser, driver)
+        yield BrowserEnvironment(extension_id, helper_extension_id, browser, driver)
     finally:
         driver.quit()
+
+def _find_extension_id_for_chrome(name: str, driver: webdriver.Chrome):
+    assert isinstance(driver, webdriver.Chrome), "This function is only for Chrome"
+    
+    driver.get("chrome://extensions/")
+    shadow = Shadow(driver)
+
+    for element in shadow.find_elements("extensions-item"):
+        if shadow.find_element(element, "#name").text == name:
+            return element.get_attribute("id")
+    return None
 
 class FixtureServer:
     def __init__(self):
