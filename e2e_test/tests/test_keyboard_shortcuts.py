@@ -10,6 +10,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from dataclasses import dataclass
 import pytest
+from textwrap import dedent
 
 from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
@@ -94,8 +95,26 @@ class TestKeyboardShortcuts:
         expected_content = expected_content.replace("http://localhost:5566", fixture_server.url)
         assert clipboard_text == expected_content
 
-    def test_all_tabs(self, browser_environment):
-        pass
+    def test_all_tabs(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+        try:
+            Clipboard.clear()
+            browser_environment.macro_grant_permission("tabs")
+            browser_environment.open_test_helper_window(fixture_server.url)
+            browser_environment.open_demo_window()
+            self.__class__.all_keyboard_shortcuts.get_by_manifest_key("all-tabs-link-as-list").press()
+            clipboard_text = browser_environment.window.poll_clipboard_content()
+            assert clipboard_text == dedent(f"""
+            - [Page 0 - Copy as Markdown]({fixture_server.url}/0.html)
+            - [Page 1 - Copy as Markdown]({fixture_server.url}/1.html)
+            - [Page 2 - Copy as Markdown]({fixture_server.url}/2.html)
+            - [Page 3 - Copy as Markdown]({fixture_server.url}/3.html)
+            - [Page 4 - Copy as Markdown]({fixture_server.url}/4.html)
+            - [Page 5 - Copy as Markdown]({fixture_server.url}/5.html)
+            - [Page 6 - Copy as Markdown]({fixture_server.url}/6.html)
+            - [Page 7 - Copy as Markdown]({fixture_server.url}/7.html)
+            """).strip()
+        finally:
+            browser_environment.close_demo_window()
 
     def test_highlighted_tabs(self, browser_environment):
         pass
