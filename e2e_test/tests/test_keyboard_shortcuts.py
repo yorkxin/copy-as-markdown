@@ -62,6 +62,16 @@ class TestKeyboardShortcuts:
             - {url}/6.html
             - {url}/7.html
             """).strip(),
+        "all-tabs-custom-format-1": dedent("""
+            1,'Page 0 - Copy as Markdown','{url}/0.html'
+            2,'Page 1 - Copy as Markdown','{url}/1.html'
+            3,'Page 2 - Copy as Markdown','{url}/2.html'
+            4,'Page 3 - Copy as Markdown','{url}/3.html'
+            5,'Page 4 - Copy as Markdown','{url}/4.html'
+            6,'Page 5 - Copy as Markdown','{url}/5.html'
+            7,'Page 6 - Copy as Markdown','{url}/6.html'
+            8,'Page 7 - Copy as Markdown','{url}/7.html'
+            """).lstrip(),
     }
 
     HIGHLIGHTED_TABS_FORMATS = {
@@ -85,6 +95,11 @@ class TestKeyboardShortcuts:
             - {url}/2.html
             - {url}/5.html
             """).strip(),
+        "highlighted-tabs-custom-format-1": dedent("""
+            1,'Page 0 - Copy as Markdown','{url}/0.html'
+            2,'Page 2 - Copy as Markdown','{url}/2.html'
+            3,'Page 5 - Copy as Markdown','{url}/5.html'
+            """).lstrip(),
     }
 
     @classmethod
@@ -257,6 +272,7 @@ class TestKeyboardShortcuts:
         "all-tabs-link-as-task-list",
         "all-tabs-title-as-list",
         "all-tabs-url-as-list",
+        "all-tabs-custom-format-1",
     ])
     def test_tab_list_formats(self, manifest_key: str):
         Clipboard.clear()
@@ -265,30 +281,12 @@ class TestKeyboardShortcuts:
         expected_output = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
         assert clipboard_text == expected_output
 
-    def test_all_tabs_custom_format(self):
-        """Test copying all tabs with a custom format"""
-        # Build expected output
-        expected_output = dedent("""
-            1,'Page 0 - Copy as Markdown','{url}/0.html'
-            2,'Page 1 - Copy as Markdown','{url}/1.html'
-            3,'Page 2 - Copy as Markdown','{url}/2.html'
-            4,'Page 3 - Copy as Markdown','{url}/3.html'
-            5,'Page 4 - Copy as Markdown','{url}/4.html'
-            6,'Page 5 - Copy as Markdown','{url}/5.html'
-            7,'Page 6 - Copy as Markdown','{url}/6.html'
-            8,'Page 7 - Copy as Markdown','{url}/7.html'
-        """).lstrip().replace("{url}", self.__class__.fixture_server.url)
-        
-        Clipboard.clear()
-        self.__class__.all_keyboard_shortcuts.get_by_manifest_key("all-tabs-custom-format-1").press()
-        clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-        assert clipboard_text == expected_output
-
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
         "highlighted-tabs-link-as-task-list",
         "highlighted-tabs-title-as-list",
         "highlighted-tabs-url-as-list",
+        "highlighted-tabs-custom-format-1",
     ])
     def test_highlighted_tabs(self, manifest_key: str):
         Clipboard.clear()
@@ -308,7 +306,7 @@ class TestKeyboardShortcuts:
         # Press the keyboard shortcut
         self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
         clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-        expected_output = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        expected_output = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url) 
         assert clipboard_text == expected_output
 
     def test_current_tab_custom_format(self):
@@ -330,7 +328,6 @@ class TestKeyboardShortcuts:
             self.__class__.browser.driver.close()
             # Switch back to the demo window
             self.__class__.browser.driver.switch_to.window(self.__class__.browser._demo_window_handle)
-
 
 class KeyboardShortcuts:
     def __init__(self):
