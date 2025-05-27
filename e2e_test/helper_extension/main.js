@@ -46,8 +46,13 @@ document.querySelector('#highlight-tabs').addEventListener('click', async () => 
   const winDemo = await chrome.windows.get(parseInt(windowId, 10), { populate: true });
 
   await chrome.tabs.update(winDemo.tabs[0].id, { highlighted: true });
+  await chrome.tabs.update(winDemo.tabs[1].id, { highlighted: false });
   await chrome.tabs.update(winDemo.tabs[2].id, { highlighted: true });
+  await chrome.tabs.update(winDemo.tabs[3].id, { highlighted: false });
+  await chrome.tabs.update(winDemo.tabs[4].id, { highlighted: false });
   await chrome.tabs.update(winDemo.tabs[5].id, { highlighted: true });
+  await chrome.tabs.update(winDemo.tabs[6].id, { highlighted: false });
+  await chrome.tabs.update(winDemo.tabs[7].id, { highlighted: false });
 });
 
 document.querySelector('#switch-to-demo').addEventListener('click', async () => {

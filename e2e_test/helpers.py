@@ -176,12 +176,13 @@ class Window:
             pyautogui.hotkey('ctrl', 'a')
 
     def poll_clipboard_content(self):
-        for _ in range(10):
+        n=3
+        for _ in range(n):
             time.sleep(1)
             clipboard_content = Clipboard.read()
             if clipboard_content != '':
                 return clipboard_content
-        raise Exception("Clipboard was empty after 10 seconds.")
+        raise Exception(f"Clipboard was empty after {n} seconds.")
 
 class OCR:
     @staticmethod

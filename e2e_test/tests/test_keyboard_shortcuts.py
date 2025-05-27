@@ -19,14 +19,85 @@ from e2e_test.helpers import Clipboard
 class TestKeyboardShortcuts:
     """Test keyboard shortcuts for the extension"""
     all_keyboard_shortcuts = None
+    browser = None
+    fixture_server = None
+    TAB_LIST_FORMATS = {
+        "all-tabs-link-as-list": dedent("""
+            - [Page 0 - Copy as Markdown]({url}/0.html)
+            - [Page 1 - Copy as Markdown]({url}/1.html)
+            - [Page 2 - Copy as Markdown]({url}/2.html)
+            - [Page 3 - Copy as Markdown]({url}/3.html)
+            - [Page 4 - Copy as Markdown]({url}/4.html)
+            - [Page 5 - Copy as Markdown]({url}/5.html)
+            - [Page 6 - Copy as Markdown]({url}/6.html)
+            - [Page 7 - Copy as Markdown]({url}/7.html)
+            """).strip(),
+        "all-tabs-link-as-task-list": dedent("""
+            - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
+            - [ ] [Page 1 - Copy as Markdown]({url}/1.html)
+            - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
+            - [ ] [Page 3 - Copy as Markdown]({url}/3.html)
+            - [ ] [Page 4 - Copy as Markdown]({url}/4.html)
+            - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
+            - [ ] [Page 6 - Copy as Markdown]({url}/6.html)
+            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)
+            """).strip(),
+        "all-tabs-title-as-list": dedent("""
+            - Page 0 - Copy as Markdown
+            - Page 1 - Copy as Markdown
+            - Page 2 - Copy as Markdown
+            - Page 3 - Copy as Markdown
+            - Page 4 - Copy as Markdown
+            - Page 5 - Copy as Markdown
+            - Page 6 - Copy as Markdown
+            - Page 7 - Copy as Markdown
+            """).strip(),
+        "all-tabs-url-as-list": dedent("""
+            - {url}/0.html
+            - {url}/1.html
+            - {url}/2.html
+            - {url}/3.html
+            - {url}/4.html
+            - {url}/5.html
+            - {url}/6.html
+            - {url}/7.html
+            """).strip(),
+    }
+
+    HIGHLIGHTED_TABS_FORMATS = {
+        "highlighted-tabs-link-as-list": dedent("""
+            - [Page 0 - Copy as Markdown]({url}/0.html)
+            - [Page 2 - Copy as Markdown]({url}/2.html)
+            - [Page 5 - Copy as Markdown]({url}/5.html)
+            """).strip(),
+        "highlighted-tabs-link-as-task-list": dedent("""
+            - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
+            - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
+            - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
+            """).strip(),
+        "highlighted-tabs-title-as-list": dedent("""
+            - Page 0 - Copy as Markdown
+            - Page 2 - Copy as Markdown
+            - Page 5 - Copy as Markdown
+            """).strip(),
+        "highlighted-tabs-url-as-list": dedent("""
+            - {url}/0.html
+            - {url}/2.html
+            - {url}/5.html
+            """).strip(),
+    }
 
     @classmethod
     def setup_class(cls):
         cls.all_keyboard_shortcuts = cls._init_keyboard_shortcuts()
 
     @pytest.fixture(scope="class", autouse=True)
-    def setup_keyboard_shortcuts(self, browser_environment):
-        """Configure keyboard shortcuts for the extension"""
+    def setup_browser(self, browser_environment, fixture_server):
+        """Setup browser environment for all tests"""
+        self.__class__.browser = browser_environment
+        self.__class__.fixture_server = fixture_server
+        
+        # Configure keyboard shortcuts
         print("Setting up keyboard tests...")
         driver = browser_environment.driver
         
@@ -40,6 +111,23 @@ class TestKeyboardShortcuts:
             key = shortcut.keystroke
             actions = ActionChains(driver)
             actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(key).key_up(Keys.SHIFT).key_up(Keys.ALT).perform()
+
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_tab_test_environment(self):
+        """Setup environment for tab-related tests"""
+        self.__class__.browser.macro_grant_permission("tabs")
+        
+        # Open test helper window
+        self.__class__.browser.open_test_helper_window(self.__class__.fixture_server.url)
+        
+        # Open demo window which will create the test pages
+        self.__class__.browser.open_demo_window()
+        
+        yield
+        
+        # Cleanup: close demo window and switch back to test helper window
+        if self.__class__.browser._demo_window_handle:
+            self.__class__.browser.close_demo_window()
 
     @classmethod
     def _init_keyboard_shortcuts(cls):
@@ -78,46 +166,84 @@ class TestKeyboardShortcuts:
 
         return index_shortcuts
 
-    def test_current_tab(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+    def test_current_tab(self):
         Clipboard.clear()
-        browser_environment.driver.get(fixture_server.url + "/qa.html")
-        self.__class__.all_keyboard_shortcuts.get_by_manifest_key("current-tab-link").press()
-        clipboard_text = browser_environment.window.poll_clipboard_content()
-        assert clipboard_text == f"[[QA] \*\*Hello\*\* \_World\_]({fixture_server.url}/qa.html)"
-
-    def test_selection_as_markdown(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
-        Clipboard.clear()
-        browser_environment.driver.get(fixture_server.url + "/selection.html")
-        browser_environment.select_all()
-        self.__class__.all_keyboard_shortcuts.get_by_manifest_key("selection-as-markdown").press()
-        clipboard_text = browser_environment.window.poll_clipboard_content()
-        expected_content = open(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "selection.md")).read()
-        expected_content = expected_content.replace("http://localhost:5566", fixture_server.url)
-        assert clipboard_text == expected_content
-
-    def test_all_tabs(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+        current_url = self.__class__.fixture_server.url
+        # Open qa.html in a new tab
+        self.__class__.browser.driver.switch_to.new_window('tab')
+        qa_tab = self.__class__.browser.driver.current_window_handle
         try:
-            Clipboard.clear()
-            browser_environment.macro_grant_permission("tabs")
-            browser_environment.open_test_helper_window(fixture_server.url)
-            browser_environment.open_demo_window()
-            self.__class__.all_keyboard_shortcuts.get_by_manifest_key("all-tabs-link-as-list").press()
-            clipboard_text = browser_environment.window.poll_clipboard_content()
-            assert clipboard_text == dedent(f"""
-            - [Page 0 - Copy as Markdown]({fixture_server.url}/0.html)
-            - [Page 1 - Copy as Markdown]({fixture_server.url}/1.html)
-            - [Page 2 - Copy as Markdown]({fixture_server.url}/2.html)
-            - [Page 3 - Copy as Markdown]({fixture_server.url}/3.html)
-            - [Page 4 - Copy as Markdown]({fixture_server.url}/4.html)
-            - [Page 5 - Copy as Markdown]({fixture_server.url}/5.html)
-            - [Page 6 - Copy as Markdown]({fixture_server.url}/6.html)
-            - [Page 7 - Copy as Markdown]({fixture_server.url}/7.html)
-            """).strip()
+            self.__class__.browser.driver.get(current_url + "/qa.html")
+            self.__class__.all_keyboard_shortcuts.get_by_manifest_key("current-tab-link").press()
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            expected_text = f"[[QA] \*\*Hello\*\* \_World\_]({current_url}/qa.html)"
+            assert clipboard_text == expected_text
         finally:
-            browser_environment.close_demo_window()
+            # Close the qa.html tab
+            self.__class__.browser.driver.switch_to.window(qa_tab)
+            self.__class__.browser.driver.close()
+            # Switch back to the demo window
+            self.__class__.browser.driver.switch_to.window(self.__class__.browser._demo_window_handle)
 
-    def test_highlighted_tabs(self, browser_environment):
-        pass
+    def test_selection_as_markdown(self):
+        Clipboard.clear()
+        # Open selection.html in a new tab
+        self.__class__.browser.driver.switch_to.new_window('tab')
+        selection_tab = self.__class__.browser.driver.current_window_handle
+        try:
+            self.__class__.browser.driver.get(self.__class__.fixture_server.url + "/selection.html")
+            self.__class__.browser.select_all()
+            self.__class__.all_keyboard_shortcuts.get_by_manifest_key("selection-as-markdown").press()
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            expected_content = open(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "selection.md")).read()
+            expected_content = expected_content.replace("http://localhost:5566", self.__class__.fixture_server.url)
+            assert clipboard_text == expected_content
+        finally:
+            # Close the selection.html tab
+            self.__class__.browser.driver.switch_to.window(selection_tab)
+            self.__class__.browser.driver.close()
+            # Switch back to the demo window
+            self.__class__.browser.driver.switch_to.window(self.__class__.browser._demo_window_handle)
+
+    @pytest.mark.parametrize("manifest_key", [
+        "all-tabs-link-as-list",
+        "all-tabs-link-as-task-list",
+        "all-tabs-title-as-list",
+        "all-tabs-url-as-list",
+    ])
+    def test_tab_list_formats(self, manifest_key: str):
+        Clipboard.clear()
+        self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
+        clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+        expected_output = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        assert clipboard_text == expected_output
+
+    @pytest.mark.parametrize("manifest_key", [
+        "highlighted-tabs-link-as-list",
+        "highlighted-tabs-link-as-task-list",
+        "highlighted-tabs-title-as-list",
+        "highlighted-tabs-url-as-list",
+    ])
+    def test_highlighted_tabs(self, manifest_key: str):
+        Clipboard.clear()
+        # Switch to the test helper window and click the highlight tabs button
+        driver = self.__class__.browser.driver
+        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
+        highlight_button = driver.find_element(By.ID, "highlight-tabs")
+        highlight_button.click()
+        
+        # Wait a moment for the highlight operation to complete
+        time.sleep(1)
+        
+        # Use the helper extension's button to switch to demo window
+        switch_button = driver.find_element(By.ID, "switch-to-demo")
+        switch_button.click()
+        
+        # Press the keyboard shortcut
+        self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
+        clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+        expected_output = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        assert clipboard_text == expected_output
 
 
 class KeyboardShortcuts:
