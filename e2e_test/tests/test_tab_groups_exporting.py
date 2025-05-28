@@ -19,89 +19,108 @@ from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
 from e2e_test.tests.custom_format_setup import setup_all_custom_formats, run_test_popup_menu_action
 
 
-class TestTabsExporting:
+class TestTabGroupsExporting:
     """Test keyboard shortcuts for the extension"""
     all_keyboard_shortcuts = None
     browser = None
     fixture_server = None
-    TAB_LIST_FORMATS = {
+
+    ALL_TABS_GROUPED_FORMATS = {
         "all-tabs-link-as-list": dedent("""
             - [Page 0 - Copy as Markdown]({url}/0.html)
-            - [Page 1 - Copy as Markdown]({url}/1.html)
-            - [Page 2 - Copy as Markdown]({url}/2.html)
+            - Group 1
+              - [Page 1 - Copy as Markdown]({url}/1.html)
+              - [Page 2 - Copy as Markdown]({url}/2.html)
             - [Page 3 - Copy as Markdown]({url}/3.html)
             - [Page 4 - Copy as Markdown]({url}/4.html)
-            - [Page 5 - Copy as Markdown]({url}/5.html)
-            - [Page 6 - Copy as Markdown]({url}/6.html)
-            - [Page 7 - Copy as Markdown]({url}/7.html)
-            """).strip(),
+            - Untitled green group
+              - [Page 5 - Copy as Markdown]({url}/5.html)
+              - [Page 6 - Copy as Markdown]({url}/6.html)
+            - [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
         "all-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
-            - [ ] [Page 1 - Copy as Markdown]({url}/1.html)
-            - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
+            - [ ] Group 1
+              - [ ] [Page 1 - Copy as Markdown]({url}/1.html)
+              - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
             - [ ] [Page 3 - Copy as Markdown]({url}/3.html)
             - [ ] [Page 4 - Copy as Markdown]({url}/4.html)
-            - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
-            - [ ] [Page 6 - Copy as Markdown]({url}/6.html)
-            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)
-            """).strip(),
+            - [ ] Untitled green group
+              - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
+              - [ ] [Page 6 - Copy as Markdown]({url}/6.html)
+            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
         "all-tabs-title-as-list": dedent("""
             - Page 0 - Copy as Markdown
-            - Page 1 - Copy as Markdown
-            - Page 2 - Copy as Markdown
+            - Group 1
+              - Page 1 - Copy as Markdown
+              - Page 2 - Copy as Markdown
             - Page 3 - Copy as Markdown
             - Page 4 - Copy as Markdown
-            - Page 5 - Copy as Markdown
-            - Page 6 - Copy as Markdown
+            - Untitled green group
+              - Page 5 - Copy as Markdown
+              - Page 6 - Copy as Markdown
             - Page 7 - Copy as Markdown
             """).strip(),
         "all-tabs-url-as-list": dedent("""
             - {url}/0.html
-            - {url}/1.html
-            - {url}/2.html
+            - Group 1
+              - {url}/1.html
+              - {url}/2.html
             - {url}/3.html
             - {url}/4.html
-            - {url}/5.html
-            - {url}/6.html
+            - Untitled green group
+              - {url}/5.html
+              - {url}/6.html
             - {url}/7.html
             """).strip(),
-        "all-tabs-custom-format-1": dedent("""
-            1,'Page 0 - Copy as Markdown','{url}/0.html'
-            2,'Page 1 - Copy as Markdown','{url}/1.html'
-            3,'Page 2 - Copy as Markdown','{url}/2.html'
-            4,'Page 3 - Copy as Markdown','{url}/3.html'
-            5,'Page 4 - Copy as Markdown','{url}/4.html'
-            6,'Page 5 - Copy as Markdown','{url}/5.html'
-            7,'Page 6 - Copy as Markdown','{url}/6.html'
-            8,'Page 7 - Copy as Markdown','{url}/7.html'
+        "all-tabs-custom-format-2": dedent("""
+            1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
+            2,title='Group 1',url='',isGroup=true
+                1,title='Page 1 - Copy as Markdown',url='{url}/1.html'
+                2,title='Page 2 - Copy as Markdown',url='{url}/2.html'
+            3,title='Page 3 - Copy as Markdown',url='{url}/3.html',isGroup=false
+            4,title='Page 4 - Copy as Markdown',url='{url}/4.html',isGroup=false
+            5,title='Untitled green group',url='',isGroup=true
+                1,title='Page 5 - Copy as Markdown',url='{url}/5.html'
+                2,title='Page 6 - Copy as Markdown',url='{url}/6.html'
+            6,title='Page 7 - Copy as Markdown',url='{url}/7.html',isGroup=false
             """).lstrip(),
     }
 
-    HIGHLIGHTED_TABS_FORMATS = {
+    HIGHLIGHTED_TABS_GROUPED_FORMATS = {
         "highlighted-tabs-link-as-list": dedent("""
             - [Page 0 - Copy as Markdown]({url}/0.html)
-            - [Page 2 - Copy as Markdown]({url}/2.html)
-            - [Page 5 - Copy as Markdown]({url}/5.html)
+            - Group 1
+              - [Page 2 - Copy as Markdown]({url}/2.html)
+            - Untitled green group
+              - [Page 5 - Copy as Markdown]({url}/5.html)
             """).strip(),
         "highlighted-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
-            - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
-            - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
+            - [ ] Group 1
+              - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
+            - [ ] Untitled green group
+              - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
             """).strip(),
         "highlighted-tabs-title-as-list": dedent("""
             - Page 0 - Copy as Markdown
-            - Page 2 - Copy as Markdown
-            - Page 5 - Copy as Markdown
+            - Group 1
+              - Page 2 - Copy as Markdown
+            - Untitled green group
+              - Page 5 - Copy as Markdown
             """).strip(),
         "highlighted-tabs-url-as-list": dedent("""
             - {url}/0.html
-            - {url}/2.html
-            - {url}/5.html
+            - Group 1
+              - {url}/2.html
+            - Untitled green group
+              - {url}/5.html
             """).strip(),
-        "highlighted-tabs-custom-format-1": dedent("""
-            1,'Page 0 - Copy as Markdown','{url}/0.html'
-            2,'Page 2 - Copy as Markdown','{url}/2.html'
-            3,'Page 5 - Copy as Markdown','{url}/5.html'
+        "highlighted-tabs-custom-format-2": dedent("""
+            1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
+            2,title='Group 1',url='',isGroup=true
+                1,title='Page 2 - Copy as Markdown',url='{url}/2.html'
+            3,title='Untitled green group',url='',isGroup=true
+                1,title='Page 5 - Copy as Markdown',url='{url}/5.html'
             """).lstrip(),
     }
 
@@ -126,13 +145,23 @@ class TestTabsExporting:
 
         # Setup tab test environment
         self.__class__.browser.macro_grant_permission("tabs")
+        self.__class__.browser.macro_grant_permission("tabGroups")
         
         # Open test helper window
         self.__class__.browser.open_test_helper_window(self.__class__.fixture_server.url)
         
         # Open demo window which will create the test pages
         self.__class__.browser.open_demo_window()
-        
+
+        # group tabs
+        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
+        group_button = driver.find_element(By.ID, "group-tabs")
+        group_button.click()
+
+        # Use the helper extension's button to switch to demo window
+        switch_button = driver.find_element(By.ID, "switch-to-demo")
+        switch_button.click()
+
         yield
         
         # Cleanup: close demo window and switch back to test helper window
@@ -144,13 +173,14 @@ class TestTabsExporting:
         "all-tabs-link-as-task-list",
         "all-tabs-title-as-list",
         "all-tabs-url-as-list",
-        "all-tabs-custom-format-1",
+        "all-tabs-custom-format-2",
     ])
     def test_all_tabs_keyboard_shortcut(self, manifest_key: str):
         Clipboard.clear()
-        self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
+        kbs = self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
+        kbs.press()
         clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-        expected_output = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        expected_output = self.__class__.ALL_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
         assert clipboard_text == expected_output
 
     @pytest.mark.parametrize("manifest_key", [
@@ -158,7 +188,7 @@ class TestTabsExporting:
         "highlighted-tabs-link-as-task-list",
         "highlighted-tabs-title-as-list",
         "highlighted-tabs-url-as-list",
-        "highlighted-tabs-custom-format-1",
+        "highlighted-tabs-custom-format-2",
     ])
     def test_highlighted_tabs_keyboard_shortcut(self, manifest_key: str):
         Clipboard.clear()
@@ -178,7 +208,7 @@ class TestTabsExporting:
         # Press the keyboard shortcut
         self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
         clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-        expected_output = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url) 
+        expected_output = self.__class__.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url) 
         assert clipboard_text == expected_output
 
     @pytest.mark.parametrize("manifest_key", [
@@ -186,10 +216,10 @@ class TestTabsExporting:
         "all-tabs-link-as-task-list",
         "all-tabs-title-as-list",
         "all-tabs-url-as-list",
-        "all-tabs-custom-format-1",
+        "all-tabs-custom-format-2",
     ])
     def test_all_tabs_popup_menu(self, manifest_key: str):
-        expected_text = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        expected_text = self.__class__.ALL_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
         run_test_popup_menu_action(
             self.__class__.browser.driver,
             self.__class__.browser._test_helper_window_handle,
@@ -203,7 +233,7 @@ class TestTabsExporting:
         "highlighted-tabs-link-as-task-list",
         "highlighted-tabs-title-as-list",
         "highlighted-tabs-url-as-list",
-        "highlighted-tabs-custom-format-1",
+        "highlighted-tabs-custom-format-2",
     ])
     def test_highlighted_tabs_popup_menu(self, manifest_key: str):
         # First highlight the tabs
@@ -214,7 +244,7 @@ class TestTabsExporting:
         driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
 
         # Then test the popup menu action
-        expected_text = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        expected_text = self.__class__.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
         run_test_popup_menu_action(
             self.__class__.browser.driver,
             self.__class__.browser._test_helper_window_handle,

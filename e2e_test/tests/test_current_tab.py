@@ -14,7 +14,7 @@ from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.custom_format_setup import setup_all_custom_formats, test_popup_menu_action
+from e2e_test.tests.custom_format_setup import setup_all_custom_formats, run_test_popup_menu_action
 
 
 class TestCurrentTab:
@@ -123,8 +123,9 @@ class TestCurrentTab:
     def test_popup_current_tab(self):
         """Test copying the current tab to the clipboard from popup menu"""
         expected_text = f"[Page 0 - Copy as Markdown]({self.__class__.fixture_server.url}/0.html)"
-        test_popup_menu_action(
+        run_test_popup_menu_action(
             self.__class__.browser.driver,
+            self.__class__.browser._test_helper_window_handle,
             self.__class__.browser._extension_base_url,
             "current-tab-link",
             expected_text
@@ -133,8 +134,9 @@ class TestCurrentTab:
     def test_popup_current_tab_custom_format(self):
         """Test copying the current tab to the clipboard from popup menu with a custom format"""
         expected_text = f"Page 0 - Copy as Markdown,{self.__class__.fixture_server.url}/0.html"
-        test_popup_menu_action(
+        run_test_popup_menu_action(
             self.__class__.browser.driver,
+            self.__class__.browser._test_helper_window_handle,
             self.__class__.browser._extension_base_url,
             "current-tab-custom-format-1",
             expected_text

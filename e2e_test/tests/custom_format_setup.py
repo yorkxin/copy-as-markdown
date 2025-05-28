@@ -21,28 +21,39 @@ def setup_custom_format(driver: WebDriver, extension_base_url: str, context: str
     time.sleep(1)
     driver.close()
 
-def setup_multiple_links_custom_format(driver: WebDriver, extension_base_url: str, slot: int, show_in_popup: bool = True):
+def setup_multiple_links_custom_format(driver: WebDriver, extension_base_url: str, template: str, slot: int, show_in_popup: bool = True):
     """Setup custom format for multiple links in the specified slot."""
-    setup_custom_format(driver, extension_base_url, "multiple-links", dedent("""
-        {{#links}}
-        {{number}},'{{title}}','{{url}}'
-        {{/links}}
-        """).strip(), slot, show_in_popup)
+    setup_custom_format(driver, extension_base_url, "multiple-links", template, slot, show_in_popup)
 
-def setup_single_link_custom_format(driver: WebDriver, extension_base_url: str, slot: int, show_in_popup: bool = True):
+def setup_single_link_custom_format(driver: WebDriver, extension_base_url: str, template: str, slot: int, show_in_popup: bool = True):
     """Setup custom format for single link in the specified slot."""
-    setup_custom_format(driver, extension_base_url, "single-link", "{{title}},{{url}}", slot, show_in_popup)
+    setup_custom_format(driver, extension_base_url, "single-link", template, slot, show_in_popup)
 
 def setup_all_custom_formats(driver: WebDriver, extension_base_url: str):
     """Setup all custom formats used in tests."""
     original_window = driver.current_window_handle
     
     # Setup single link custom format (slot 1)
-    setup_single_link_custom_format(driver, extension_base_url, slot=1)
+    setup_single_link_custom_format(driver, extension_base_url, "{{title}},{{url}}", slot=1)
     driver.switch_to.window(original_window)
     
     # Setup multiple links custom format (slot 1)
-    setup_multiple_links_custom_format(driver, extension_base_url, slot=1)
+    setup_multiple_links_custom_format(driver, extension_base_url, dedent("""
+        {{#links}}
+        {{number}},'{{title}}','{{url}}'
+        {{/links}}
+        """).strip(), slot=1)
+    driver.switch_to.window(original_window)
+
+    # Setup multiple links custom format with groups (slot 2)
+    setup_multiple_links_custom_format(driver, extension_base_url, dedent("""
+        {{#grouped}}
+        {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
+        {{#links}}
+            {{number}},title='{{title}}',url='{{url}}'
+        {{/links}}
+        {{/grouped}}
+        """).strip(), slot=2)
     driver.switch_to.window(original_window)
 
 def get_popup_url(driver: WebDriver, extension_base_url: str, window_id: str, tab_id: str) -> str:
@@ -55,7 +66,7 @@ def get_window_and_tab_ids(driver: WebDriver) -> Tuple[str, str]:
     tab_id = driver.find_element(By.ID, "tab-0-id").get_attribute("value")
     return window_id, tab_id
 
-def test_popup_menu_action(driver: WebDriver, extension_base_url: str, button_id: str, expected_text: str) -> None:
+def run_test_popup_menu_action(driver: WebDriver, test_helper_window_id: str, extension_base_url: str, button_id: str, expected_text: str) -> None:
     """Test a popup menu action and verify the clipboard content.
     
     Args:
@@ -65,7 +76,7 @@ def test_popup_menu_action(driver: WebDriver, extension_base_url: str, button_id
         expected_text: The expected text in the clipboard after clicking
     """
     Clipboard.clear()
-    driver.switch_to.window(driver.find_element(By.ID, "test-helper").get_attribute("value"))
+    driver.switch_to.window(test_helper_window_id)
     window_id, tab_id = get_window_and_tab_ids(driver)
     popup_url = get_popup_url(driver, extension_base_url, window_id, tab_id)
     driver.switch_to.new_window('window')
@@ -77,5 +88,6 @@ def test_popup_menu_action(driver: WebDriver, extension_base_url: str, button_id
         clipboard_text = Clipboard.read()
         assert clipboard_text == expected_text
     finally:
-        # No need to close the popup window, it closes itself
-        driver.switch_to.window(driver.find_element(By.ID, "test-helper").get_attribute("value"))
+        # closes the popup window
+        driver.close()
+        driver.switch_to.window(test_helper_window_id)
