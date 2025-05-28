@@ -124,9 +124,7 @@ class TestCurrentTab:
         """Test copying the current tab to the clipboard from popup menu"""
         expected_text = f"[Page 0 - Copy as Markdown]({self.__class__.fixture_server.url}/0.html)"
         run_test_popup_menu_action(
-            self.__class__.browser.driver,
-            self.__class__.browser._test_helper_window_handle,
-            self.__class__.browser._extension_base_url,
+            self.__class__.browser,
             "current-tab-link",
             expected_text
         )
@@ -135,9 +133,7 @@ class TestCurrentTab:
         """Test copying the current tab to the clipboard from popup menu with a custom format"""
         expected_text = f"Page 0 - Copy as Markdown,{self.__class__.fixture_server.url}/0.html"
         run_test_popup_menu_action(
-            self.__class__.browser.driver,
-            self.__class__.browser._test_helper_window_handle,
-            self.__class__.browser._extension_base_url,
+            self.__class__.browser,
             "current-tab-custom-format-1",
             expected_text
         )
