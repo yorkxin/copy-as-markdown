@@ -14,7 +14,7 @@ from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.custom_format_setup import setup_all_custom_formats
+from e2e_test.tests.custom_format_setup import setup_all_custom_formats, test_popup_menu_action
 
 
 class TestCurrentTab:
@@ -122,42 +122,20 @@ class TestCurrentTab:
 
     def test_popup_current_tab(self):
         """Test copying the current tab to the clipboard from popup menu"""
-        Clipboard.clear()
-        driver = self.__class__.browser.driver
-        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
-        window_id = driver.find_element(By.ID, "window-id").get_attribute("value")
-        tab_id = driver.find_element(By.ID, "tab-0-id").get_attribute("value")
-        popup_url = f"{self.__class__.browser._extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open=1"
-        driver.switch_to.new_window('window')
-        try:
-            driver.get(popup_url)
-            copy_button = driver.find_element(By.ID, "current-tab-link")
-            copy_button.click()
-            time.sleep(1)
-            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-            expected_text = f"[Page 0 - Copy as Markdown]({self.__class__.fixture_server.url}/0.html)"
-            assert clipboard_text == expected_text
-        finally:
-            # No need to close the popup window, it closes itself
-            driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
+        expected_text = f"[Page 0 - Copy as Markdown]({self.__class__.fixture_server.url}/0.html)"
+        test_popup_menu_action(
+            self.__class__.browser.driver,
+            self.__class__.browser._extension_base_url,
+            "current-tab-link",
+            expected_text
+        )
 
     def test_popup_current_tab_custom_format(self):
         """Test copying the current tab to the clipboard from popup menu with a custom format"""
-        Clipboard.clear()
-        driver = self.__class__.browser.driver
-        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
-        window_id = driver.find_element(By.ID, "window-id").get_attribute("value")
-        tab_id = driver.find_element(By.ID, "tab-0-id").get_attribute("value")
-        popup_url = f"{self.__class__.browser._extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open=1"
-        driver.switch_to.new_window('window')
-        try:
-            driver.get(popup_url)
-            copy_button = driver.find_element(By.ID, "current-tab-custom-format-1")
-            copy_button.click()
-            time.sleep(1)
-            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-            expected_text = f"Page 0 - Copy as Markdown,{self.__class__.fixture_server.url}/0.html"
-            assert clipboard_text == expected_text
-        finally:
-            # No need to close the popup window, it closes itself
-            driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
+        expected_text = f"Page 0 - Copy as Markdown,{self.__class__.fixture_server.url}/0.html"
+        test_popup_menu_action(
+            self.__class__.browser.driver,
+            self.__class__.browser._extension_base_url,
+            "current-tab-custom-format-1",
+            expected_text
+        )

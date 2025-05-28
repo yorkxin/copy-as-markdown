@@ -16,7 +16,7 @@ from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.custom_format_setup import setup_all_custom_formats
+from e2e_test.tests.custom_format_setup import setup_all_custom_formats, test_popup_menu_action
 
 
 class TestTabsExporting:
@@ -189,24 +189,13 @@ class TestTabsExporting:
         "all-tabs-custom-format-1",
     ])
     def test_all_tabs_popup_menu(self, manifest_key: str):
-        Clipboard.clear()
-        driver = self.__class__.browser.driver
-        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
-        window_id = driver.find_element(By.ID, "window-id").get_attribute("value")
-        tab_id = driver.find_element(By.ID, "tab-0-id").get_attribute("value")
-        popup_url = f"{self.__class__.browser._extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open=1"
-        driver.switch_to.new_window('window')
-        try:
-            driver.get(popup_url)
-            copy_button = driver.find_element(By.ID, manifest_key)
-            copy_button.click()
-            time.sleep(1)
-            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-            expected_text = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-            assert clipboard_text == expected_text
-        finally:
-            # No need to close the popup window, it closes itself
-            driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
+        expected_text = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        test_popup_menu_action(
+            self.__class__.browser.driver,
+            self.__class__.browser._extension_base_url,
+            manifest_key,
+            expected_text
+        )
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -216,24 +205,18 @@ class TestTabsExporting:
         "highlighted-tabs-custom-format-1",
     ])
     def test_highlighted_tabs_popup_menu(self, manifest_key: str):
-        Clipboard.clear()
+        # First highlight the tabs
         driver = self.__class__.browser.driver
         driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
         highlight_button = driver.find_element(By.ID, "highlight-tabs")
         highlight_button.click()
         driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
-        window_id = driver.find_element(By.ID, "window-id").get_attribute("value")
-        tab_id = driver.find_element(By.ID, "tab-0-id").get_attribute("value")
-        popup_url = f"{self.__class__.browser._extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open=1"
-        driver.switch_to.new_window('window')
-        try:
-            driver.get(popup_url)
-            copy_button = driver.find_element(By.ID, manifest_key)
-            copy_button.click()
-            time.sleep(1)
-            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-            expected_text = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-            assert clipboard_text == expected_text
-        finally:
-            # No need to close the popup window, it closes itself
-            driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
+
+        # Then test the popup menu action
+        expected_text = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        test_popup_menu_action(
+            self.__class__.browser.driver,
+            self.__class__.browser._extension_base_url,
+            manifest_key,
+            expected_text
+        )
