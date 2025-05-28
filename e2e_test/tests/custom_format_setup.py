@@ -19,7 +19,6 @@ def setup_custom_format(driver: WebDriver, extension_base_url: str, context: str
         show_in_popup_checkbox.click()
     save_button = driver.find_element(By.ID, "save")
     save_button.click()
-    time.sleep(1)
     driver.close()
 
 def setup_multiple_links_custom_format(driver: WebDriver, extension_base_url: str, template: str, slot: int, show_in_popup: bool = True):
