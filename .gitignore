@@ -10,6 +10,7 @@ chrome/dist/*
 !chrome/dist/.keep
 .nyc_output
 e2e/allure-results
+ocr_debug_*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
