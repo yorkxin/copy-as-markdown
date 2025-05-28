@@ -140,10 +140,9 @@ class BrowserEnvironment:
         return self._demo_window_handle
 
     def close_demo_window(self):
-        self.driver.switch_to.window(self._demo_window_handle)
-        self.driver.close()
-        self._demo_window_handle = None
         self.driver.switch_to.window(self._test_helper_window_handle)
+        self.driver.find_element(By.ID, "close-demo").click()
+        self._demo_window_handle = None
 
 @pytest.fixture(params=["chrome"], scope="class")
 def browser_environment(request):

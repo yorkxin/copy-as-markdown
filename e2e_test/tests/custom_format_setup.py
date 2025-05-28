@@ -5,6 +5,7 @@ from textwrap import dedent
 from typing import Optional, Tuple
 
 from e2e_test.helpers import Clipboard
+from e2e_test.conftest import BrowserEnvironment
 
 def setup_custom_format(driver: WebDriver, extension_base_url: str, context: str, template: str, slot: int, show_in_popup: bool = True):
     """Setup custom format for the specified context in the specified slot."""
@@ -66,7 +67,7 @@ def get_window_and_tab_ids(driver: WebDriver) -> Tuple[str, str]:
     tab_id = driver.find_element(By.ID, "tab-0-id").get_attribute("value")
     return window_id, tab_id
 
-def run_test_popup_menu_action(driver: WebDriver, test_helper_window_id: str, extension_base_url: str, button_id: str, expected_text: str) -> None:
+def run_test_popup_menu_action(browser_environment: BrowserEnvironment, button_id: str, expected_text: str) -> None:
     """Test a popup menu action and verify the clipboard content.
     
     Args:
@@ -76,18 +77,18 @@ def run_test_popup_menu_action(driver: WebDriver, test_helper_window_id: str, ex
         expected_text: The expected text in the clipboard after clicking
     """
     Clipboard.clear()
-    driver.switch_to.window(test_helper_window_id)
+    driver = browser_environment.driver
+    driver.switch_to.window(browser_environment._test_helper_window_handle)
     window_id, tab_id = get_window_and_tab_ids(driver)
-    popup_url = get_popup_url(driver, extension_base_url, window_id, tab_id)
+    popup_url = get_popup_url(driver, browser_environment._extension_base_url, window_id, tab_id)
     driver.switch_to.new_window('window')
     try:
         driver.get(popup_url)
         copy_button = driver.find_element(By.ID, button_id)
         copy_button.click()
-        time.sleep(1)
-        clipboard_text = Clipboard.read()
+        clipboard_text = browser_environment.window.poll_clipboard_content()
         assert clipboard_text == expected_text
     finally:
         # closes the popup window
         driver.close()
-        driver.switch_to.window(test_helper_window_id)
+        driver.switch_to.window(browser_environment._test_helper_window_handle)

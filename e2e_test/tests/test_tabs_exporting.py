@@ -1,6 +1,6 @@
 import os
 import time
-from typing import List
+from typing import List, Optional, TypedDict
 import pyautogui
 import pyperclip
 from pyshadow.main import Shadow
@@ -17,13 +17,13 @@ from e2e_test.helpers import Clipboard
 from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
 from e2e_test.tests.custom_format_setup import setup_all_custom_formats, run_test_popup_menu_action
-
+from e2e_test.tests.demo_window_context import DemoWindowContext
 
 class TestTabsExporting:
     """Test keyboard shortcuts for the extension"""
     all_keyboard_shortcuts = None
-    browser = None
-    fixture_server = None
+    browser: Optional[BrowserEnvironment] = None
+    fixture_server: Optional[FixtureServer] = None
     TAB_LIST_FORMATS = {
         "all-tabs-link-as-list": dedent("""
             - [Page 0 - Copy as Markdown]({url}/0.html)
@@ -105,13 +105,113 @@ class TestTabsExporting:
             """).lstrip(),
     }
 
+    ALL_TABS_GROUPED_FORMATS = {
+        "all-tabs-link-as-list": dedent("""
+            - [Page 0 - Copy as Markdown]({url}/0.html)
+            - Group 1
+              - [Page 1 - Copy as Markdown]({url}/1.html)
+              - [Page 2 - Copy as Markdown]({url}/2.html)
+            - [Page 3 - Copy as Markdown]({url}/3.html)
+            - [Page 4 - Copy as Markdown]({url}/4.html)
+            - Untitled green group
+              - [Page 5 - Copy as Markdown]({url}/5.html)
+              - [Page 6 - Copy as Markdown]({url}/6.html)
+            - [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
+        "all-tabs-link-as-task-list": dedent("""
+            - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
+            - [ ] Group 1
+              - [ ] [Page 1 - Copy as Markdown]({url}/1.html)
+              - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
+            - [ ] [Page 3 - Copy as Markdown]({url}/3.html)
+            - [ ] [Page 4 - Copy as Markdown]({url}/4.html)
+            - [ ] Untitled green group
+              - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
+              - [ ] [Page 6 - Copy as Markdown]({url}/6.html)
+            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
+        "all-tabs-title-as-list": dedent("""
+            - Page 0 - Copy as Markdown
+            - Group 1
+              - Page 1 - Copy as Markdown
+              - Page 2 - Copy as Markdown
+            - Page 3 - Copy as Markdown
+            - Page 4 - Copy as Markdown
+            - Untitled green group
+              - Page 5 - Copy as Markdown
+              - Page 6 - Copy as Markdown
+            - Page 7 - Copy as Markdown
+            """).strip(),
+        "all-tabs-url-as-list": dedent("""
+            - {url}/0.html
+            - Group 1
+              - {url}/1.html
+              - {url}/2.html
+            - {url}/3.html
+            - {url}/4.html
+            - Untitled green group
+              - {url}/5.html
+              - {url}/6.html
+            - {url}/7.html
+            """).strip(),
+        "all-tabs-custom-format-2": dedent("""
+            1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
+            2,title='Group 1',url='',isGroup=true
+                1,title='Page 1 - Copy as Markdown',url='{url}/1.html'
+                2,title='Page 2 - Copy as Markdown',url='{url}/2.html'
+            3,title='Page 3 - Copy as Markdown',url='{url}/3.html',isGroup=false
+            4,title='Page 4 - Copy as Markdown',url='{url}/4.html',isGroup=false
+            5,title='Untitled green group',url='',isGroup=true
+                1,title='Page 5 - Copy as Markdown',url='{url}/5.html'
+                2,title='Page 6 - Copy as Markdown',url='{url}/6.html'
+            6,title='Page 7 - Copy as Markdown',url='{url}/7.html',isGroup=false
+            """).lstrip(),
+    }
+
+    HIGHLIGHTED_TABS_GROUPED_FORMATS = {
+        "highlighted-tabs-link-as-list": dedent("""
+            - [Page 0 - Copy as Markdown]({url}/0.html)
+            - Group 1
+              - [Page 2 - Copy as Markdown]({url}/2.html)
+            - Untitled green group
+              - [Page 5 - Copy as Markdown]({url}/5.html)
+            """).strip(),
+        "highlighted-tabs-link-as-task-list": dedent("""
+            - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
+            - [ ] Group 1
+              - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
+            - [ ] Untitled green group
+              - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
+            """).strip(),
+        "highlighted-tabs-title-as-list": dedent("""
+            - Page 0 - Copy as Markdown
+            - Group 1
+              - Page 2 - Copy as Markdown
+            - Untitled green group
+              - Page 5 - Copy as Markdown
+            """).strip(),
+        "highlighted-tabs-url-as-list": dedent("""
+            - {url}/0.html
+            - Group 1
+              - {url}/2.html
+            - Untitled green group
+              - {url}/5.html
+            """).strip(),
+        "highlighted-tabs-custom-format-2": dedent("""
+            1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
+            2,title='Group 1',url='',isGroup=true
+                1,title='Page 2 - Copy as Markdown',url='{url}/2.html'
+            3,title='Untitled green group',url='',isGroup=true
+                1,title='Page 5 - Copy as Markdown',url='{url}/5.html'
+            """).lstrip(),
+    }
+
+
     @classmethod
     def setup_class(cls):
         # Initialize all keyboard shortcuts since this test class tests all of them
         cls.all_keyboard_shortcuts = init_keyboard_shortcuts()
 
     @pytest.fixture(scope="class", autouse=True)
-    def setup_browser(self, browser_environment, fixture_server):
+    def setup_browser(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
         """Setup browser environment for all tests"""
         self.__class__.browser = browser_environment
         self.__class__.fixture_server = fixture_server
@@ -126,19 +226,13 @@ class TestTabsExporting:
 
         # Setup tab test environment
         self.__class__.browser.macro_grant_permission("tabs")
+        self.__class__.browser.macro_grant_permission("tabGroups")
         
         # Open test helper window
         self.__class__.browser.open_test_helper_window(self.__class__.fixture_server.url)
-        
-        # Open demo window which will create the test pages
-        self.__class__.browser.open_demo_window()
-        
-        yield
-        
-        # Cleanup: close demo window and switch back to test helper window
-        if self.__class__.browser._demo_window_handle:
-            self.__class__.browser.close_demo_window()
 
+        yield
+ 
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
         "all-tabs-link-as-task-list",
@@ -148,10 +242,11 @@ class TestTabsExporting:
     ])
     def test_all_tabs_keyboard_shortcut(self, manifest_key: str):
         Clipboard.clear()
-        self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
-        clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-        expected_output = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-        assert clipboard_text == expected_output
+        with DemoWindowContext(self.__class__.browser):
+            self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            expected_output = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+            assert clipboard_text == expected_output
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -162,24 +257,11 @@ class TestTabsExporting:
     ])
     def test_highlighted_tabs_keyboard_shortcut(self, manifest_key: str):
         Clipboard.clear()
-        # Switch to the test helper window and click the highlight tabs button
-        driver = self.__class__.browser.driver
-        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
-        highlight_button = driver.find_element(By.ID, "highlight-tabs")
-        highlight_button.click()
-        
-        # Wait a moment for the highlight operation to complete
-        time.sleep(1)
-        
-        # Use the helper extension's button to switch to demo window
-        switch_button = driver.find_element(By.ID, "switch-to-demo")
-        switch_button.click()
-        
-        # Press the keyboard shortcut
-        self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
-        clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-        expected_output = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url) 
-        assert clipboard_text == expected_output
+        with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True):
+            self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            expected_output = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+            assert clipboard_text == expected_output
 
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -190,13 +272,12 @@ class TestTabsExporting:
     ])
     def test_all_tabs_popup_menu(self, manifest_key: str):
         expected_text = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-        run_test_popup_menu_action(
-            self.__class__.browser.driver,
-            self.__class__.browser._test_helper_window_handle,
-            self.__class__.browser._extension_base_url,
-            manifest_key,
-            expected_text
-        )
+        with DemoWindowContext(self.__class__.browser):
+            run_test_popup_menu_action(
+                self.__class__.browser,
+                manifest_key,
+                expected_text
+            )
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -206,19 +287,72 @@ class TestTabsExporting:
         "highlighted-tabs-custom-format-1",
     ])
     def test_highlighted_tabs_popup_menu(self, manifest_key: str):
-        # First highlight the tabs
-        driver = self.__class__.browser.driver
-        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
-        highlight_button = driver.find_element(By.ID, "highlight-tabs")
-        highlight_button.click()
-        driver.switch_to.window(self.__class__.browser._test_helper_window_handle)
-
-        # Then test the popup menu action
         expected_text = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-        run_test_popup_menu_action(
-            self.__class__.browser.driver,
-            self.__class__.browser._test_helper_window_handle,
-            self.__class__.browser._extension_base_url,
-            manifest_key,
-            expected_text
-        )
+        with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True):
+            run_test_popup_menu_action(
+                self.__class__.browser,
+                manifest_key,
+                expected_text
+            )
+   
+    @pytest.mark.parametrize("manifest_key", [
+        "all-tabs-link-as-list",
+        "all-tabs-link-as-task-list",
+        "all-tabs-title-as-list",
+        "all-tabs-url-as-list",
+        "all-tabs-custom-format-2",
+    ])
+    def test_all_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
+        Clipboard.clear()
+        with DemoWindowContext(self.__class__.browser, set_grouped_tabs=True):
+            self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            expected_output = self.__class__.ALL_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+            assert clipboard_text == expected_output
+
+    @pytest.mark.parametrize("manifest_key", [
+        "highlighted-tabs-link-as-list",
+        "highlighted-tabs-link-as-task-list",
+        "highlighted-tabs-title-as-list",
+        "highlighted-tabs-url-as-list",
+        "highlighted-tabs-custom-format-2",
+    ])
+    def test_highlighted_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
+        Clipboard.clear()
+        with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True, set_grouped_tabs=True):
+            self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            expected_output = self.__class__.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+            assert clipboard_text == expected_output
+
+    @pytest.mark.parametrize("manifest_key", [
+        "all-tabs-link-as-list",
+        "all-tabs-link-as-task-list",
+        "all-tabs-title-as-list",
+        "all-tabs-url-as-list",
+        "all-tabs-custom-format-2",
+    ])
+    def test_all_tabs_grouped_popup_menu(self, manifest_key: str):
+        expected_text = self.__class__.ALL_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        with DemoWindowContext(self.__class__.browser, set_grouped_tabs=True):
+            run_test_popup_menu_action(
+                self.__class__.browser,
+                manifest_key,
+                expected_text
+            )
+
+    @pytest.mark.parametrize("manifest_key", [
+        "highlighted-tabs-link-as-list",
+        "highlighted-tabs-link-as-task-list",
+        "highlighted-tabs-title-as-list",
+        "highlighted-tabs-url-as-list",
+        "highlighted-tabs-custom-format-2",
+    ])
+    def test_highlighted_tabs_grouped_popup_menu(self, manifest_key: str):
+        expected_text = self.__class__.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
+        with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True, set_grouped_tabs=True):
+            run_test_popup_menu_action(
+                self.__class__.browser,
+                manifest_key,
+                expected_text
+            )
