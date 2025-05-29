@@ -14,9 +14,9 @@ from textwrap import dedent
 
 from e2e_test.conftest import BrowserEnvironment, CustomFormatConfig, FixtureServer
 from e2e_test.helpers import Clipboard
-from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
-from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.custom_format_setup import run_test_popup_menu_action
+from e2e_test.keyboard_setup import setup_keyboard_shortcuts
+from e2e_test.keyboard_shortcuts import init_keyboard_shortcuts
+from e2e_test.custom_format_setup import run_test_popup_menu_action
 
 class TestTabsExporting:
     """Test keyboard shortcuts for the extension"""

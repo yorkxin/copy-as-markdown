@@ -1,8 +1,8 @@
 import time
 import pytest
 from e2e_test.conftest import BrowserEnvironment, FixtureServer
-from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
+from e2e_test.keyboard_shortcuts import init_keyboard_shortcuts
+from e2e_test.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.helpers import Clipboard
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait

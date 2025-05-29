@@ -110,7 +110,7 @@ class TestContextMenu:
         found = win.find_and_click_menu_item(COPY_SELECTION_AS_MARKDOWN)
         assert found, f"Submenu item '{COPY_SELECTION_AS_MARKDOWN}' not found by OCR."
 
-        expected_content = open(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "selection.md")).read()
+        expected_content = open(os.path.join(os.path.dirname(__file__), "..", "fixtures", "selection.md")).read()
         expected_content = expected_content.replace("http://localhost:5566", fixture_server.url)
 
         clipboard_content = win.poll_clipboard_content()

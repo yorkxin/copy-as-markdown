@@ -12,9 +12,9 @@ from typing import Optional
 
 from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
-from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
-from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.custom_format_setup import run_test_popup_menu_action
+from e2e_test.keyboard_setup import setup_keyboard_shortcuts
+from e2e_test.keyboard_shortcuts import init_keyboard_shortcuts
+from e2e_test.custom_format_setup import run_test_popup_menu_action
 
 
 class TestCurrentTab:
@@ -71,7 +71,7 @@ class TestCurrentTab:
             self.__class__.browser.select_all()
             self.__class__.all_keyboard_shortcuts.get_by_manifest_key("selection-as-markdown").press()
             clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-            expected_content = open(os.path.join(os.path.dirname(__file__), "..", "..", "fixtures", "selection.md")).read()
+            expected_content = open(os.path.join(os.path.dirname(__file__), "..", "fixtures", "selection.md")).read()
             expected_content = expected_content.replace("http://localhost:5566", self.__class__.fixture_server.url)
             assert clipboard_text == expected_content
         finally:
