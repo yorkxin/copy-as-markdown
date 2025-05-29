@@ -16,7 +16,6 @@ from e2e_test.conftest import BrowserEnvironment, CustomFormatConfig, FixtureSer
 from e2e_test.helpers import Clipboard
 from e2e_test.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.custom_format_setup import run_test_popup_menu_action
 
 class TestTabsExporting:
     """Test keyboard shortcuts for the extension"""
@@ -309,11 +308,10 @@ class TestTabsExporting:
             self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
             expected_text = expected_format.format(url=self.__class__.fixture_server.url, prefix=prefix)
             self.__class__.browser.switch_to_demo_window()
-            run_test_popup_menu_action(
-                self.__class__.browser,
-                manifest_key,
-                expected_text
-            )
+            Clipboard.clear()
+            self.__class__.browser.trigger_popup_menu(manifest_key)
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix"
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -329,11 +327,10 @@ class TestTabsExporting:
             self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
             expected_text = expected_format.format(url=self.__class__.fixture_server.url, prefix=prefix)
             self.__class__.browser.switch_to_demo_window()
-            run_test_popup_menu_action(
-                self.__class__.browser,
-                manifest_key,
-                expected_text
-            )
+            Clipboard.clear()
+            self.__class__.browser.trigger_popup_menu(manifest_key)
+            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+            assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix"
    
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -396,11 +393,10 @@ class TestTabsExporting:
                 self.__class__.browser.macro_change_tab_groups_indentation(indent_style)
                 expected_text = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation, prefix=prefix)
                 self.__class__.browser.switch_to_demo_window()
-                run_test_popup_menu_action(
-                    self.__class__.browser,
-                    manifest_key,
-                    expected_text
-                )
+                Clipboard.clear()
+                self.__class__.browser.trigger_popup_menu(manifest_key)
+                clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+                assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix and {indent_style} indentation"
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -419,10 +415,9 @@ class TestTabsExporting:
                 self.__class__.browser.macro_change_tab_groups_indentation(indent_style)
                 expected_text = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation, prefix=prefix)
                 self.__class__.browser.switch_to_demo_window()
-                run_test_popup_menu_action(
-                    self.__class__.browser,
-                    manifest_key,
-                    expected_text
-                )
+                Clipboard.clear()
+                self.__class__.browser.trigger_popup_menu(manifest_key)
+                clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+                assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix and {indent_style} indentation"
 
     
