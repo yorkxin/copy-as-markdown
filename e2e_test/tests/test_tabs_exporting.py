@@ -30,16 +30,22 @@ class TestTabsExporting:
         "spaces": "  ", # two spaces
     }
 
+    ALL_UNORDERED_LIST_STYLES = {
+        "dash": "-",
+        "asterisk": "*",
+        "plus": "+",
+    }
+
     TAB_LIST_FORMATS = {
         "all-tabs-link-as-list": dedent("""
-            - [Page 0 - Copy as Markdown]({url}/0.html)
-            - [Page 1 - Copy as Markdown]({url}/1.html)
-            - [Page 2 - Copy as Markdown]({url}/2.html)
-            - [Page 3 - Copy as Markdown]({url}/3.html)
-            - [Page 4 - Copy as Markdown]({url}/4.html)
-            - [Page 5 - Copy as Markdown]({url}/5.html)
-            - [Page 6 - Copy as Markdown]({url}/6.html)
-            - [Page 7 - Copy as Markdown]({url}/7.html)
+            {prefix} [Page 0 - Copy as Markdown]({url}/0.html)
+            {prefix} [Page 1 - Copy as Markdown]({url}/1.html)
+            {prefix} [Page 2 - Copy as Markdown]({url}/2.html)
+            {prefix} [Page 3 - Copy as Markdown]({url}/3.html)
+            {prefix} [Page 4 - Copy as Markdown]({url}/4.html)
+            {prefix} [Page 5 - Copy as Markdown]({url}/5.html)
+            {prefix} [Page 6 - Copy as Markdown]({url}/6.html)
+            {prefix} [Page 7 - Copy as Markdown]({url}/7.html)
             """).strip(),
         "all-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
@@ -50,26 +56,26 @@ class TestTabsExporting:
             - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
             - [ ] [Page 6 - Copy as Markdown]({url}/6.html)
             - [ ] [Page 7 - Copy as Markdown]({url}/7.html)
-            """).strip(),
+            """).strip(), # Task List must have - [ ] prefix
         "all-tabs-title-as-list": dedent("""
-            - Page 0 - Copy as Markdown
-            - Page 1 - Copy as Markdown
-            - Page 2 - Copy as Markdown
-            - Page 3 - Copy as Markdown
-            - Page 4 - Copy as Markdown
-            - Page 5 - Copy as Markdown
-            - Page 6 - Copy as Markdown
-            - Page 7 - Copy as Markdown
+            {prefix} Page 0 - Copy as Markdown
+            {prefix} Page 1 - Copy as Markdown
+            {prefix} Page 2 - Copy as Markdown
+            {prefix} Page 3 - Copy as Markdown
+            {prefix} Page 4 - Copy as Markdown
+            {prefix} Page 5 - Copy as Markdown
+            {prefix} Page 6 - Copy as Markdown
+            {prefix} Page 7 - Copy as Markdown
             """).strip(),
         "all-tabs-url-as-list": dedent("""
-            - {url}/0.html
-            - {url}/1.html
-            - {url}/2.html
-            - {url}/3.html
-            - {url}/4.html
-            - {url}/5.html
-            - {url}/6.html
-            - {url}/7.html
+            {prefix} {url}/0.html
+            {prefix} {url}/1.html
+            {prefix} {url}/2.html
+            {prefix} {url}/3.html
+            {prefix} {url}/4.html
+            {prefix} {url}/5.html
+            {prefix} {url}/6.html
+            {prefix} {url}/7.html
             """).strip(),
         "all-tabs-custom-format-1": dedent("""
             1,'Page 0 - Copy as Markdown','{url}/0.html'
@@ -85,24 +91,24 @@ class TestTabsExporting:
 
     HIGHLIGHTED_TABS_FORMATS = {
         "highlighted-tabs-link-as-list": dedent("""
-            - [Page 0 - Copy as Markdown]({url}/0.html)
-            - [Page 2 - Copy as Markdown]({url}/2.html)
-            - [Page 5 - Copy as Markdown]({url}/5.html)
+            {prefix} [Page 0 - Copy as Markdown]({url}/0.html)
+            {prefix} [Page 2 - Copy as Markdown]({url}/2.html)
+            {prefix} [Page 5 - Copy as Markdown]({url}/5.html)
             """).strip(),
         "highlighted-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
             - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
             - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
-            """).strip(),
+            """).strip(), # Task List must have - [ ] prefix
         "highlighted-tabs-title-as-list": dedent("""
-            - Page 0 - Copy as Markdown
-            - Page 2 - Copy as Markdown
-            - Page 5 - Copy as Markdown
+            {prefix} Page 0 - Copy as Markdown
+            {prefix} Page 2 - Copy as Markdown
+            {prefix} Page 5 - Copy as Markdown
             """).strip(),
         "highlighted-tabs-url-as-list": dedent("""
-            - {url}/0.html
-            - {url}/2.html
-            - {url}/5.html
+            {prefix} {url}/0.html
+            {prefix} {url}/2.html
+            {prefix} {url}/5.html
             """).strip(),
         "highlighted-tabs-custom-format-1": dedent("""
             1,'Page 0 - Copy as Markdown','{url}/0.html'
@@ -113,16 +119,16 @@ class TestTabsExporting:
 
     ALL_TABS_GROUPED_FORMATS = {
         "all-tabs-link-as-list": dedent("""
-            - [Page 0 - Copy as Markdown]({url}/0.html)
-            - Group 1
-            {indentation}- [Page 1 - Copy as Markdown]({url}/1.html)
-            {indentation}- [Page 2 - Copy as Markdown]({url}/2.html)
-            - [Page 3 - Copy as Markdown]({url}/3.html)
-            - [Page 4 - Copy as Markdown]({url}/4.html)
-            - Untitled green group
-            {indentation}- [Page 5 - Copy as Markdown]({url}/5.html)
-            {indentation}- [Page 6 - Copy as Markdown]({url}/6.html)
-            - [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
+            {prefix} [Page 0 - Copy as Markdown]({url}/0.html)
+            {prefix} Group 1
+            {indentation}{prefix} [Page 1 - Copy as Markdown]({url}/1.html)
+            {indentation}{prefix} [Page 2 - Copy as Markdown]({url}/2.html)
+            {prefix} [Page 3 - Copy as Markdown]({url}/3.html)
+            {prefix} [Page 4 - Copy as Markdown]({url}/4.html)
+            {prefix} Untitled green group
+            {indentation}{prefix} [Page 5 - Copy as Markdown]({url}/5.html)
+            {indentation}{prefix} [Page 6 - Copy as Markdown]({url}/6.html)
+            {prefix} [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
         "all-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
             - [ ] Group 1
@@ -133,30 +139,30 @@ class TestTabsExporting:
             - [ ] Untitled green group
             {indentation}- [ ] [Page 5 - Copy as Markdown]({url}/5.html)
             {indentation}- [ ] [Page 6 - Copy as Markdown]({url}/6.html)
-            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
+            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)""").strip(), # Task List must have - [ ] prefix
         "all-tabs-title-as-list": dedent("""
-            - Page 0 - Copy as Markdown
-            - Group 1
-            {indentation}- Page 1 - Copy as Markdown
-            {indentation}- Page 2 - Copy as Markdown
-            - Page 3 - Copy as Markdown
-            - Page 4 - Copy as Markdown
-            - Untitled green group
-            {indentation}- Page 5 - Copy as Markdown
-            {indentation}- Page 6 - Copy as Markdown
-            - Page 7 - Copy as Markdown
+            {prefix} Page 0 - Copy as Markdown
+            {prefix} Group 1
+            {indentation}{prefix} Page 1 - Copy as Markdown
+            {indentation}{prefix} Page 2 - Copy as Markdown
+            {prefix} Page 3 - Copy as Markdown
+            {prefix} Page 4 - Copy as Markdown
+            {prefix} Untitled green group
+            {indentation}{prefix} Page 5 - Copy as Markdown
+            {indentation}{prefix} Page 6 - Copy as Markdown
+            {prefix} Page 7 - Copy as Markdown
             """).strip(),
         "all-tabs-url-as-list": dedent("""
-            - {url}/0.html
-            - Group 1
-            {indentation}- {url}/1.html
-            {indentation}- {url}/2.html
-            - {url}/3.html
-            - {url}/4.html
-            - Untitled green group
-            {indentation}- {url}/5.html
-            {indentation}- {url}/6.html
-            - {url}/7.html
+            {prefix} {url}/0.html
+            {prefix} Group 1
+            {indentation}{prefix} {url}/1.html
+            {indentation}{prefix} {url}/2.html
+            {prefix} {url}/3.html
+            {prefix} {url}/4.html
+            {prefix} Untitled green group
+            {indentation}{prefix} {url}/5.html
+            {indentation}{prefix} {url}/6.html
+            {prefix} {url}/7.html
             """).strip(),
         "all-tabs-custom-format-2": dedent("""
             1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
@@ -174,11 +180,11 @@ class TestTabsExporting:
 
     HIGHLIGHTED_TABS_GROUPED_FORMATS = {
         "highlighted-tabs-link-as-list": dedent("""
-            - [Page 0 - Copy as Markdown]({url}/0.html)
-            - Group 1
-            {indentation}- [Page 2 - Copy as Markdown]({url}/2.html)
-            - Untitled green group
-            {indentation}- [Page 5 - Copy as Markdown]({url}/5.html)
+            {prefix} [Page 0 - Copy as Markdown]({url}/0.html)
+            {prefix} Group 1
+            {indentation}{prefix} [Page 2 - Copy as Markdown]({url}/2.html)
+            {prefix} Untitled green group
+            {indentation}{prefix} [Page 5 - Copy as Markdown]({url}/5.html)
             """).strip(),
         "highlighted-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
@@ -186,20 +192,20 @@ class TestTabsExporting:
             {indentation}- [ ] [Page 2 - Copy as Markdown]({url}/2.html)
             - [ ] Untitled green group
             {indentation}- [ ] [Page 5 - Copy as Markdown]({url}/5.html)
-            """).strip(),
+            """).strip(), # Task List must have - [ ] prefix
         "highlighted-tabs-title-as-list": dedent("""
-            - Page 0 - Copy as Markdown
-            - Group 1
-            {indentation}- Page 2 - Copy as Markdown
-            - Untitled green group
-            {indentation}- Page 5 - Copy as Markdown
+            {prefix} Page 0 - Copy as Markdown
+            {prefix} Group 1
+            {indentation}{prefix} Page 2 - Copy as Markdown
+            {prefix} Untitled green group
+            {indentation}{prefix} Page 5 - Copy as Markdown
             """).strip(),
         "highlighted-tabs-url-as-list": dedent("""
-            - {url}/0.html
-            - Group 1
-            {indentation}- {url}/2.html
-            - Untitled green group
-            {indentation}- {url}/5.html
+            {prefix} {url}/0.html
+            {prefix} Group 1
+            {indentation}{prefix} {url}/2.html
+            {prefix} Untitled green group
+            {indentation}{prefix} {url}/5.html
             """).strip(),
         "highlighted-tabs-custom-format-2": dedent("""
             1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
@@ -247,12 +253,16 @@ class TestTabsExporting:
         "all-tabs-custom-format-1",
     ])
     def test_all_tabs_keyboard_shortcut(self, manifest_key: str):
-        Clipboard.clear()
-        with DemoWindowContext(self.__class__.browser):
-            self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
-            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-            expected_output = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-            assert clipboard_text == expected_output
+        kbd = self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
+        expected_format = self.__class__.TAB_LIST_FORMATS[manifest_key]
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            expected_output = expected_format.format(url=self.__class__.fixture_server.url, prefix=prefix)
+            with DemoWindowContext(self.__class__.browser):
+                Clipboard.clear()
+                kbd.press()
+                clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+                assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix"
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -262,12 +272,16 @@ class TestTabsExporting:
         "highlighted-tabs-custom-format-1",
     ])
     def test_highlighted_tabs_keyboard_shortcut(self, manifest_key: str):
-        Clipboard.clear()
-        with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True):
-            self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key).press()
-            clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-            expected_output = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-            assert clipboard_text == expected_output
+        kbd = self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
+        expected_format = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key]
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            expected_output = expected_format.format(url=self.__class__.fixture_server.url, prefix=prefix)
+            with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True):
+                Clipboard.clear()
+                kbd.press()
+                clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+                assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix"
 
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -277,13 +291,16 @@ class TestTabsExporting:
         "all-tabs-custom-format-1",
     ])
     def test_all_tabs_popup_menu(self, manifest_key: str):
-        expected_text = self.__class__.TAB_LIST_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-        with DemoWindowContext(self.__class__.browser):
-            run_test_popup_menu_action(
-                self.__class__.browser,
-                manifest_key,
-                expected_text
-            )
+        expected_format = self.__class__.TAB_LIST_FORMATS[manifest_key]
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            expected_text = expected_format.format(url=self.__class__.fixture_server.url, prefix=prefix)
+            with DemoWindowContext(self.__class__.browser):
+                run_test_popup_menu_action(
+                    self.__class__.browser,
+                    manifest_key,
+                    expected_text
+                )
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -293,13 +310,16 @@ class TestTabsExporting:
         "highlighted-tabs-custom-format-1",
     ])
     def test_highlighted_tabs_popup_menu(self, manifest_key: str):
-        expected_text = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key].format(url=self.__class__.fixture_server.url)
-        with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True):
-            run_test_popup_menu_action(
-                self.__class__.browser,
-                manifest_key,
-                expected_text
-            )
+        expected_format = self.__class__.HIGHLIGHTED_TABS_FORMATS[manifest_key]
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            expected_text = expected_format.format(url=self.__class__.fixture_server.url, prefix=prefix)
+            with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True):
+                run_test_popup_menu_action(
+                    self.__class__.browser,
+                    manifest_key,
+                    expected_text
+                )
    
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -311,14 +331,16 @@ class TestTabsExporting:
     def test_all_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
         kbd = self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.__class__.ALL_TABS_GROUPED_FORMATS[manifest_key]
-        for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
-            self.__class__.browser.macro_change_tab_groups_indentation(style)
-            expected_output = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation)
-            with DemoWindowContext(self.__class__.browser, set_grouped_tabs=True):
-                Clipboard.clear()
-                kbd.press()
-                clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-                assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {style} indentation"
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
+                self.__class__.browser.macro_change_tab_groups_indentation(style)
+                expected_output = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation, prefix=prefix)
+                with DemoWindowContext(self.__class__.browser, set_grouped_tabs=True):
+                    Clipboard.clear()
+                    kbd.press()
+                    clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+                    assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix and {style} indentation"
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -330,14 +352,16 @@ class TestTabsExporting:
     def test_highlighted_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
         kbd = self.__class__.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.__class__.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
-        for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
-            self.__class__.browser.macro_change_tab_groups_indentation(style)
-            expected_output = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation)
-            with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True, set_grouped_tabs=True):
-                Clipboard.clear()
-                kbd.press()
-                clipboard_text = self.__class__.browser.window.poll_clipboard_content()
-                assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {style} indentation"
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
+                self.__class__.browser.macro_change_tab_groups_indentation(style)
+                expected_output = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation, prefix=prefix)
+                with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True, set_grouped_tabs=True):
+                    Clipboard.clear()
+                    kbd.press()
+                    clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+                    assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix and {style} indentation"
 
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -348,15 +372,17 @@ class TestTabsExporting:
     ])
     def test_all_tabs_grouped_popup_menu(self, manifest_key: str):
         expected_format = self.__class__.ALL_TABS_GROUPED_FORMATS[manifest_key]
-        for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
-            self.__class__.browser.macro_change_tab_groups_indentation(style)
-            expected_text = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation)
-            with DemoWindowContext(self.__class__.browser, set_grouped_tabs=True):
-                run_test_popup_menu_action(
-                    self.__class__.browser,
-                    manifest_key,
-                    expected_text
-                )
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
+                self.__class__.browser.macro_change_tab_groups_indentation(style)
+                expected_text = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation, prefix=prefix)
+                with DemoWindowContext(self.__class__.browser, set_grouped_tabs=True):
+                    run_test_popup_menu_action(
+                        self.__class__.browser,
+                        manifest_key,
+                        expected_text
+                    )
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -367,12 +393,14 @@ class TestTabsExporting:
     ])
     def test_highlighted_tabs_grouped_popup_menu(self, manifest_key: str):
         expected_format = self.__class__.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
-        for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
-            self.__class__.browser.macro_change_tab_groups_indentation(style)
-            expected_text = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation)
-            with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True, set_grouped_tabs=True):
-                run_test_popup_menu_action(
-                    self.__class__.browser,
-                    manifest_key,
-                    expected_text
-                )
+        for ul_style, prefix in self.__class__.ALL_UNORDERED_LIST_STYLES.items():
+            self.__class__.browser.macro_change_unordered_list_prefix_style(ul_style)
+            for style, indentation in self.__class__.ALL_INDENTATION_STYLES.items():
+                self.__class__.browser.macro_change_tab_groups_indentation(style)
+                expected_text = expected_format.format(url=self.__class__.fixture_server.url, indentation=indentation, prefix=prefix)
+                with DemoWindowContext(self.__class__.browser, set_highlighted_tabs=True, set_grouped_tabs=True):
+                    run_test_popup_menu_action(
+                        self.__class__.browser,
+                        manifest_key,
+                        expected_text
+                    )
