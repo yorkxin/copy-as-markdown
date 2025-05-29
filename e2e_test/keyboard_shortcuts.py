@@ -1,24 +1,6 @@
 import pyautogui
 from dataclasses import dataclass
 
-class KeyboardShortcuts:
-    def __init__(self):
-        self.items = []
-        self.by_label = {}
-        self.by_manifest_key = {}
-
-    def append(self, item):
-        self.items.append(item)
-        self.by_label[item.label] = item
-        self.by_manifest_key[item.manifest_key] = item
-
-    def get_by_label(self, label):
-        return self.by_label.get(label)
-
-    def get_by_manifest_key(self, manifest_key):
-        return self.by_manifest_key.get(manifest_key)
-
-
 @dataclass
 class Shortcut:
     label: str
@@ -29,6 +11,24 @@ class Shortcut:
         with pyautogui.hold('shift'):
             with pyautogui.hold('alt'):
                 pyautogui.press(self.keystroke)
+
+
+class KeyboardShortcuts:
+    def __init__(self):
+        self.items: list[Shortcut] = []
+        self.by_label: dict[str, Shortcut] = {}
+        self.by_manifest_key: dict[str, Shortcut] = {}
+
+    def append(self, item: Shortcut):
+        self.items.append(item)
+        self.by_label[item.label] = item
+        self.by_manifest_key[item.manifest_key] = item
+
+    def get_by_label(self, label):
+        return self.by_label.get(label)
+
+    def get_by_manifest_key(self, manifest_key):
+        return self.by_manifest_key.get(manifest_key)
 
 
 # Define all available shortcuts
