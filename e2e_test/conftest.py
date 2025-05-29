@@ -1,5 +1,6 @@
 import ctypes
 import sys
+from textwrap import dedent
 import time
 import pytesseract
 import pytest
@@ -14,6 +15,7 @@ from pyshadow.main import Shadow
 from dataclasses import dataclass
 import os
 import socket
+from typing import TypedDict, List
 
 from e2e_test.helpers import Coords, Window
 
@@ -29,6 +31,19 @@ E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file_
 if os.name == 'nt':  # Check if running on Windows
     pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
 
+@dataclass
+class CustomFormatConfig:
+    context: str
+    template: str
+    slot: int
+    show_in_popup: bool
+
+    def __init__(self, context: str, template: str, slot: int, show_in_popup: bool = False):
+        self.context = context
+        self.template = template
+        self.slot = slot
+        self.show_in_popup = show_in_popup
+
 class BrowserEnvironment:
     extension_id: str
     helper_extension_id: str
@@ -38,6 +53,7 @@ class BrowserEnvironment:
     _extension_base_url: str
     _test_helper_window_handle: str
     _demo_window_handle: str
+    _popup_window_handle: str
 
     def __init__(self, extension_id, helper_extension_id, brand, driver):
         self.extension_id = extension_id
@@ -68,6 +84,9 @@ class BrowserEnvironment:
 
     def request_permission_page_url(self, permission: str):
         return f"{self._extension_base_url}/dist/ui/permissions.html?permissions={permission}"
+
+    def custom_format_page_url(self, context: str, slot: int):
+        return f"{self._extension_base_url}/dist/ui/custom-format.html?context={context}&slot={slot}"
 
     def popup_url(self, window_id: str, tab_id: str, keep_open: bool = False):
         return f"{self._extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open={keep_open and '1' or '0'}"
@@ -160,6 +179,56 @@ class BrowserEnvironment:
         
         self.driver.find_element(By.CSS_SELECTOR, f"[name=indentation][value='{style}']").click()
         self.driver.close()
+        self.driver.switch_to.window(original_window)
+
+    def setup_all_custom_formats(self):
+        self.macro_setup_custom_formats([
+            CustomFormatConfig(context="single-link", template="{{title}},{{url}}", slot=1, show_in_popup=True),
+            CustomFormatConfig(context="multiple-links", template=dedent("""
+                {{#links}}
+                {{number}},'{{title}}','{{url}}'
+                {{/links}}
+                """).strip(), slot=1, show_in_popup=True),
+            CustomFormatConfig(context="multiple-links", template=dedent("""
+                {{#grouped}}
+                {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
+                {{#links}}
+                    {{number}},title='{{title}}',url='{{url}}'
+                {{/links}}
+                {{/grouped}}
+                """).strip(), slot=2, show_in_popup=True),
+        ])
+
+    def macro_setup_custom_formats(self, custom_formats: List[CustomFormatConfig]):
+        """Setup custom format for the specified context in the specified slot.
+        
+        Args:
+            custom_formats: A list of CustomFormatConfig dictionaries containing
+                context, template, slot, and show_in_popup settings
+        """
+        original_window = self.driver.current_window_handle
+        self.driver.switch_to.new_window('tab')
+
+        # Process each format
+        for fmt in custom_formats:
+            self.driver.get(self.custom_format_page_url(fmt.context, fmt.slot))
+            textarea = self.driver.find_element(By.ID, "input-template")
+            textarea.clear()
+            textarea.send_keys(fmt.template)
+            if fmt.show_in_popup:
+                show_in_popup_checkbox = self.driver.find_element(By.ID, "input-show-in-menus")
+                show_in_popup_checkbox.click()
+            save_button = self.driver.find_element(By.ID, "save")
+            save_button.click()
+
+        self.driver.close()
+        self.driver.switch_to.window(original_window)
+
+    def trigger_popup_menu(self, manifest_key: str):
+        assert self._popup_window_handle, "Popup window not opened"
+        original_window = self.driver.current_window_handle
+        self.switch_to_popup()
+        self.driver.find_element(By.ID, manifest_key).click()
         self.driver.switch_to.window(original_window)
 
     def select_all(self):

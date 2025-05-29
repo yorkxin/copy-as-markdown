@@ -14,7 +14,7 @@ from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.custom_format_setup import setup_all_custom_formats, run_test_popup_menu_action
+from e2e_test.tests.custom_format_setup import run_test_popup_menu_action
 
 
 class TestCurrentTab:
@@ -41,7 +41,7 @@ class TestCurrentTab:
         original_window = setup_keyboard_shortcuts(driver, self.all_keyboard_shortcuts)
 
         # Setup custom formats using shared helper
-        setup_all_custom_formats(driver, self.__class__.browser._extension_base_url)
+        self.__class__.browser.setup_all_custom_formats()
         driver.switch_to.window(original_window)
 
         # Grant tabs permission
@@ -123,17 +123,15 @@ class TestCurrentTab:
     def test_popup_current_tab(self):
         """Test copying the current tab to the clipboard from popup menu"""
         expected_text = f"[Page 0 - Copy as Markdown]({self.__class__.fixture_server.url}/0.html)"
-        run_test_popup_menu_action(
-            self.__class__.browser,
-            "current-tab-link",
-            expected_text
-        )
+        self.__class__.browser.open_popup()
+        self.__class__.browser.trigger_popup_menu("current-tab-link")
+        clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
 
     def test_popup_current_tab_custom_format(self):
         """Test copying the current tab to the clipboard from popup menu with a custom format"""
         expected_text = f"Page 0 - Copy as Markdown,{self.__class__.fixture_server.url}/0.html"
-        run_test_popup_menu_action(
-            self.__class__.browser,
-            "current-tab-custom-format-1",
-            expected_text
-        )
+        self.__class__.browser.open_popup()
+        self.__class__.browser.trigger_popup_menu("current-tab-custom-format-1")
+        clipboard_text = self.__class__.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text

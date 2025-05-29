@@ -7,7 +7,6 @@ from e2e_test.helpers import Clipboard
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from typing import Optional
-from e2e_test.tests.custom_format_setup import setup_all_custom_formats
 
 class TestNoPermission:
     all_keyboard_shortcuts = None
@@ -30,7 +29,7 @@ class TestNoPermission:
         original_window = setup_keyboard_shortcuts(driver, self.all_keyboard_shortcuts)
 
         # setup all the custom formats
-        setup_all_custom_formats(driver, self.__class__.browser._extension_base_url)
+        self.__class__.browser.setup_all_custom_formats()
 
         # Open test helper window
         self.__class__.browser.open_test_helper_window(self.__class__.fixture_server.url)

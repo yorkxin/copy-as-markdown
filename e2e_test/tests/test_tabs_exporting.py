@@ -12,11 +12,11 @@ from dataclasses import dataclass
 import pytest
 from textwrap import dedent
 
-from e2e_test.conftest import BrowserEnvironment, FixtureServer
+from e2e_test.conftest import BrowserEnvironment, CustomFormatConfig, FixtureServer
 from e2e_test.helpers import Clipboard
 from e2e_test.tests.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.tests.keyboard_shortcuts import init_keyboard_shortcuts
-from e2e_test.tests.custom_format_setup import setup_all_custom_formats, run_test_popup_menu_action
+from e2e_test.tests.custom_format_setup import run_test_popup_menu_action
 
 class TestTabsExporting:
     """Test keyboard shortcuts for the extension"""
@@ -232,7 +232,7 @@ class TestTabsExporting:
         original_window = setup_keyboard_shortcuts(driver, self.all_keyboard_shortcuts)
 
         # Setup custom formats using shared helper
-        setup_all_custom_formats(driver, self.__class__.browser._extension_base_url)
+        self.__class__.browser.setup_all_custom_formats()
         driver.switch_to.window(original_window)
 
         # Setup tab test environment
@@ -242,14 +242,15 @@ class TestTabsExporting:
         # Open test helper window
         self.__class__.browser.open_test_helper_window(self.__class__.fixture_server.url)
 
-        # Open demo window
         self.__class__.browser.open_demo_window()
+        self.__class__.browser.open_popup()
         
         # Switch to test helper window to set up tabs
         self.browser.driver.switch_to.window(self.browser._test_helper_window_handle)
 
         yield
 
+        self.__class__.browser.close_popup()
         self.__class__.browser.close_demo_window()
         if original_window:
             self.__class__.browser.driver.switch_to.window(original_window) 
