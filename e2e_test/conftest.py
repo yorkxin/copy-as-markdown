@@ -18,6 +18,7 @@ import socket
 from typing import TypedDict, List
 
 from e2e_test.helpers import Coords, Window
+from e2e_test.keyboard_shortcuts import KeyboardShortcuts
 
 # Paths to your extensions
 EXTENSION_PATHS = {
@@ -178,6 +179,25 @@ class BrowserEnvironment:
         self.driver.get(self.options_page_url())
         
         self.driver.find_element(By.CSS_SELECTOR, f"[name=indentation][value='{style}']").click()
+        self.driver.close()
+        self.driver.switch_to.window(original_window)
+
+    def setup_keyboard_shortcuts(self, keyboard_shortcuts: KeyboardShortcuts):
+        # Store the original window handle
+        original_window = self.driver.current_window_handle
+        self.driver.switch_to.new_window('tab')
+
+        self.driver.get("chrome://extensions/shortcuts")
+        shadow = Shadow(self.driver)
+
+        for shortcut in keyboard_shortcuts.items:
+            element = shadow.find_element(f"[aria-label=\"Edit shortcut {shortcut.label} for Copy as Markdown\"]")
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            element.click()
+            key = shortcut.keystroke
+            actions = ActionChains(self.driver)
+            actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(key).key_up(Keys.SHIFT).key_up(Keys.ALT).perform()
+        
         self.driver.close()
         self.driver.switch_to.window(original_window)
 

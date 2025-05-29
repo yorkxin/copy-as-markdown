@@ -12,7 +12,6 @@ from typing import Optional
 
 from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
-from e2e_test.keyboard_setup import setup_keyboard_shortcuts
 from e2e_test.keyboard_shortcuts import init_keyboard_shortcuts
 
 
@@ -35,13 +34,10 @@ class TestCurrentTab:
         self.__class__.browser = browser_environment
         self.__class__.fixture_server = fixture_server
         
-        # Configure keyboard shortcuts using shared helper
-        driver = browser_environment.driver
-        original_window = setup_keyboard_shortcuts(driver, self.all_keyboard_shortcuts)
+        self.__class__.browser.setup_keyboard_shortcuts(self.__class__.all_keyboard_shortcuts)
 
         # Setup custom formats using shared helper
         self.__class__.browser.setup_all_custom_formats()
-        driver.switch_to.window(original_window)
 
         # Grant tabs permission
         # XXX: because the popup is using chrome.tabs.query() to get tab with id from parameter,
