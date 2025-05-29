@@ -124,7 +124,7 @@ class BrowserEnvironment:
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
         self.driver.get(self.options_page_url())
-        
+
         self.driver.find_element(By.CSS_SELECTOR, f"[name=character][value='{style}']").click()
         self.driver.close()
         self.driver.switch_to.window(original_window)
@@ -156,6 +156,11 @@ class BrowserEnvironment:
         self._demo_window_handle = self.driver.window_handles[-1]
         self.driver.switch_to.window(self._demo_window_handle)
         return self._demo_window_handle
+
+    def switch_to_demo_window(self):
+        """Switch to the demo window via the test helper window"""
+        self.driver.switch_to.window(self._test_helper_window_handle)
+        self.driver.find_element(By.ID, "switch-to-demo").click()
 
     def close_demo_window(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
