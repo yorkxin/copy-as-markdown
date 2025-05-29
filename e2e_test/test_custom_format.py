@@ -7,17 +7,16 @@ import pytest
 class TestCustomFormat:
     browser: Optional[BrowserEnvironment] = None
     fixture_server: Optional[FixtureServer] = None
-    all_keyboard_shortcuts = None
 
     @pytest.fixture(scope="class", autouse=True)
-    def setup_browser(self, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
-        self.__class__.browser = browser_environment
-        self.__class__.fixture_server = fixture_server
+    def setup_browser(self, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+        request.cls.browser = browser_environment
+        request.cls.fixture_server = fixture_server
 
     def test_custom_format_single_link(self):
-        driver = self.__class__.browser.driver
+        driver = self.browser.driver
         # go to the custom format page
-        driver.get(self.__class__.browser.custom_format_page_url("single-link", 1))
+        driver.get(self.browser.custom_format_page_url("single-link", 1))
 
         # set the name
         driver.find_element(By.ID, "input-name").clear()
@@ -69,9 +68,9 @@ class TestCustomFormat:
             [7]:https://example.com/7
         """).lstrip()
 
-        driver = self.__class__.browser.driver
+        driver = self.browser.driver
         # go to the custom format page
-        driver.get(self.__class__.browser.custom_format_page_url("multiple-links", 1))
+        driver.get(self.browser.custom_format_page_url("multiple-links", 1))
 
         # set the name
         driver.find_element(By.ID, "input-name").clear()
