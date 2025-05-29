@@ -10,7 +10,7 @@
         "sourceType": "module",
         "ecmaVersion": 2020
     },
-    "ignorePatterns": ["firefox/dist", "chrome/dist", "firefox-mv3/dist", "**/vendor/", "e2e/**/*"],
+    "ignorePatterns": ["firefox/dist", "chrome/dist", "firefox-mv3/dist", "**/vendor/", "e2e_test/**/*"],
     "rules": {
         "no-console": 0,
         "import/extensions": [

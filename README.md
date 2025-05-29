@@ -62,7 +62,7 @@ firefox-mv3/       # Firefox Manifest V3 files
   dist/            # ../src will be copied here
   mainfest.json
   ...
-e2e/               # E2E Tests
+e2e_test/          # E2E Tests
 ```  
 
 ### Install dependencies
@@ -118,11 +118,11 @@ To run, use `npm test`.
 
 ### E2E Tests
 
-Using Selenium (Java). Please refer to [e2e/](./e2e) folder.
+Using Selenium (Python). Please refer to [e2e_test/](./e2e_test) folder.
 
 ### QA
 
-There is a [qa.html](./e2e/support/pages/qa.html) that includes various edge test cases. Open it in the browser, then try Copy as Markdown with the content in it.
+There is a [qa.html](./fixtures/qa.html) that includes various edge test cases. Open it in the browser, then try Copy as Markdown with the content in it.
 
 ## License
 

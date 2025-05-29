@@ -1,0 +1,30 @@
+{
+  "name": "Copy as Markdown E2E Test Helper",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "description": "E2E Test no tame no Extension",
+  "permissions": [
+    "tabGroups",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
+  },
+  "action": {
+    "default_title": "Open E2E Test Main Page"
+  },
+  "options_ui": {
+    "page": "main.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "open": {
+      "description": "Open E2E Test Main Page",
+      "suggested_key": {
+        "default": "Ctrl+Shift+Z",
+        "mac": "MacCtrl+Shift+Z"
+      }
+    }
+  }
+}

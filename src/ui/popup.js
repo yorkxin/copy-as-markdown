@@ -137,12 +137,14 @@ async function showCustomFormatsForExportTabs() {
     const btnAll = clone.querySelector('button[data-scope="all"]');
     btnAll.dataset.customFormatSlot = customFormat.slot;
     btnAll.textContent += `(${customFormat.displayName})`;
+    btnAll.id = `all-tabs-custom-format-${customFormat.slot}`;
     divExportAll.appendChild(btnAll);
 
     /** @type {HTMLButtonElement} */
     const btnHighlighted = clone.querySelector('button[data-scope="highlighted"]');
     btnHighlighted.dataset.customFormatSlot = customFormat.slot;
     btnHighlighted.textContent += `(${customFormat.displayName})`;
+    btnHighlighted.id = `highlighted-tabs-custom-format-${customFormat.slot}`;
     divExportHighlighted.appendChild(btnHighlighted);
   });
 }
@@ -163,6 +165,7 @@ async function showCustomFormatsForCurrentTab() {
     /** @type {HTMLButtonElement} */
     const btn = clone.querySelector('button[value="export-current-tab"]');
     btn.dataset.customFormatSlot = customFormat.slot;
+    btn.id = `current-tab-custom-format-${customFormat.slot}`;
     btn.textContent += `(${customFormat.displayName})`;
     divExportCurrent.appendChild(btn);
   });
