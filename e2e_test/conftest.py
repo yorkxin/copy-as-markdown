@@ -1,4 +1,5 @@
 import ctypes
+import re
 import sys
 from textwrap import dedent
 import time
@@ -10,6 +11,9 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from pyshadow.main import Shadow
 from dataclasses import dataclass
@@ -22,7 +26,7 @@ from e2e_test.keyboard_shortcuts import KeyboardShortcuts
 # Paths to your extensions
 EXTENSION_PATHS = {
     "chrome": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "chrome"),  # unpacked folder for Chrome
-    "firefox": "/absolute/path/to/your/firefox_addon.xpi", # xpi file for Firefox
+    "firefox": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "firefox"), # unpacked folder for Firefox
 }
 
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
@@ -62,6 +66,8 @@ class BrowserEnvironment:
         self.driver = driver
         if brand == "chrome":
             self._extension_base_url = f"chrome-extension://{extension_id}"
+        elif brand == "firefox":
+            self._extension_base_url = f"moz-extension://{extension_id}"
         else:
             raise ValueError(f"Unsupported browser: {brand}")
         win_pos = driver.get_window_position()
@@ -121,6 +127,10 @@ class BrowserEnvironment:
             return False
 
         element.click()
+
+        # No need to check for allow button in Firefox, because the permission is granted automatically.
+        if self.brand == "firefox":
+            return True
 
         for _ in range(10):
             # check if the permission is granted by calling browser API
@@ -182,6 +192,14 @@ class BrowserEnvironment:
         self.driver.switch_to.window(original_window)
 
     def setup_keyboard_shortcuts(self, keyboard_shortcuts: KeyboardShortcuts):
+        if self.brand == "chrome":
+            self.setup_keyboard_shortcuts_chrome(keyboard_shortcuts)
+        elif self.brand == "firefox":
+            self.setup_keyboard_shortcuts_firefox(keyboard_shortcuts)
+        else:
+            raise ValueError(f"Unsupported browser: {self.brand}")
+
+    def setup_keyboard_shortcuts_chrome(self, keyboard_shortcuts: KeyboardShortcuts):
         # Store the original window handle
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
@@ -197,6 +215,45 @@ class BrowserEnvironment:
             actions = ActionChains(self.driver)
             actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(key).key_up(Keys.SHIFT).key_up(Keys.ALT).perform()
         
+        self.driver.close()
+        self.driver.switch_to.window(original_window)
+
+    def setup_keyboard_shortcuts_firefox(self, keyboard_shortcuts: KeyboardShortcuts):
+        original_window = self.driver.current_window_handle
+        self.driver.switch_to.new_window('tab')
+
+        self.driver.get("about:addons")
+        # Click the page options button
+        self.driver.find_element(By.CSS_SELECTOR, "button[action='page-options']").click()
+
+        # Send multiple DOWN keys and ENTER in one chain
+        ActionChains(self.driver).send_keys(
+            Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + 
+            Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.ENTER
+        ).perform()
+
+        # Click all expand buttons for keyboard shortcuts
+        for button in self.driver.find_elements(By.CSS_SELECTOR, "button[data-l10n-id='shortcuts-card-expand-button']"):
+            button.click()
+        
+        # Expand all shortcuts
+        expand_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button[data-l10n-id='shortcuts-card-expand-button']")
+        for button in expand_buttons:
+            self.driver.execute_script("arguments[0].scrollIntoView(false);", button)
+            button.click()
+
+        for shortcut in keyboard_shortcuts.items:
+            cmd_entry = self.driver.find_element(By.XPATH, f"//input[@name='{shortcut.manifest_key}']")
+
+            # Scroll and click.
+            # NOTE: must use ActionChains.click() instead of cmd_entry.click()
+            self.driver.execute_script("arguments[0].scrollIntoView(false);", cmd_entry)
+            ActionChains(self.driver).click(cmd_entry).perform()
+
+            # Execute key combination
+            actions = ActionChains(self.driver)
+            actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(shortcut.keystroke).key_up(Keys.SHIFT).key_up(Keys.ALT).perform()
+
         self.driver.close()
         self.driver.switch_to.window(original_window)
 
@@ -256,7 +313,15 @@ class BrowserEnvironment:
 
     def open_test_helper_window(self, base_url: str) -> str:
         self.driver.switch_to.new_window('tab')
-        self.driver.get(f"chrome-extension://{self.helper_extension_id}/main.html?base_url={base_url}")
+        if self.brand == "chrome":
+            proto = "chrome-extension://"
+        elif self.brand == "firefox":
+            proto = "moz-extension://"
+        else:
+            raise ValueError(f"Unsupported browser: {self.brand}")
+        
+        # Open the test helper window
+        self.driver.get(f"{proto}{self.helper_extension_id}/main.html?base_url={base_url}")
         self._test_helper_window_handle = self.driver.current_window_handle
         return self._test_helper_window_handle
 
@@ -297,7 +362,7 @@ class BrowserEnvironment:
         self.driver.find_element(By.ID, "close-demo").click()
         self._demo_window_handle = None
 
-@pytest.fixture(params=["chrome"], scope="class")
+@pytest.fixture(params=["chrome","firefox"], scope="class")
 def browser_environment(request):
     try:
         browser = request.param
@@ -325,12 +390,33 @@ def browser_environment(request):
                 raise ValueError("Helper extension ID not found")
             
         elif browser == "firefox":
-            options = webdriver.FirefoxOptions()
-            options.add_argument("--headless")
-            profile = webdriver.FirefoxProfile()
-            driver = webdriver.Firefox(options=options, firefox_profile=profile)
-            driver.install_addon(EXTENSION_PATHS['firefox'], temporary=True)
+            # Create Firefox profile
+            profile = FirefoxProfile()
 
+            # Set language preferences to match labels in the test
+            profile.set_preference("intl.accept_languages", "en-US,en")
+            profile.set_preference("intl.locale.requested", "en-US")
+            profile.set_preference("browser.locale", "en-US")
+
+            # Disable permission prompts to avoid the test from being blocked by the permission prompt
+            profile.set_preference("extensions.webextOptionalPermissionPrompts", False)
+
+            # Create Firefox options and set the profile
+            firefox_options = Options()
+            firefox_options.profile = profile
+            
+            # options.add_argument("--headless")
+            driver = webdriver.Firefox(options=firefox_options)
+            driver.install_addon(EXTENSION_PATHS['firefox'], temporary=True)
+            driver.install_addon(E2E_HELPER_EXTENSION_PATH, temporary=True)
+
+            extension_id = _find_extension_id_for_firefox("Copy as Markdown", driver)
+            if extension_id is None:
+                raise ValueError("Extension ID not found")
+
+            helper_extension_id = _find_extension_id_for_firefox("Copy as Markdown E2E Test Helper", driver)
+            if helper_extension_id is None:
+                raise ValueError("Helper extension ID not found")
         else:
             raise ValueError(f"Unsupported browser: {browser}")
 
@@ -348,6 +434,43 @@ def _find_extension_id_for_chrome(name: str, driver: webdriver.Chrome):
         if shadow.find_element(element, "#name").text == name:
             return element.get_attribute("id")
     return None
+
+def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefox):
+    assert isinstance(driver, webdriver.Firefox), "This function is only for Firefox"
+    driver.get("about:debugging#/runtime/this-firefox")
+    
+    my_extension = None
+    # wait until the extensions are loaded
+    wait = WebDriverWait(driver, 3)
+    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "debug-target-item")))
+
+    extensions = driver.find_elements(By.CLASS_NAME, "debug-target-item")
+    
+    for ext in extensions:
+        try:
+            name = ext.find_element(By.CLASS_NAME, "debug-target-item__name").text
+            if name == extension_name:
+                my_extension = ext
+                break
+        except NoSuchElementException:
+            continue
+    
+    if my_extension is None:
+        raise ValueError(f"extension not found: {extension_name}")
+    
+    try:
+        manifest_link = my_extension.find_element(By.XPATH, ".//a[contains(@href,'moz-extension')]")
+    except NoSuchElementException:
+        raise RuntimeError("could not find extension ID by looking for a link to manifest.json")
+    
+    pattern = r"^moz-extension://([A-Za-z0-9\-]+)/.+$"
+    href = manifest_link.get_attribute("href")
+    match = re.match(pattern, href)
+    
+    if not match:
+        raise RuntimeError("could not find extension ID by matching the link to manifest.json")
+    
+    return match.group(1)
 
 class FixtureServer:
     def __init__(self):

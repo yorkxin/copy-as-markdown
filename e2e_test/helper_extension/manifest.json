@@ -8,7 +8,8 @@
     "tabs"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
   },
   "action": {
     "default_title": "Open E2E Test Main Page"
