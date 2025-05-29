@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import os
 import sys
 import time
 from PIL import Image, ImageDraw

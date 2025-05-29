@@ -1,12 +1,4 @@
 import os
-import time
-from dataclasses import dataclass
-import pyautogui
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from textwrap import dedent
-from pyshadow.main import Shadow
 import pytest
 from typing import Optional
 

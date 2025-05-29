@@ -14,8 +14,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from pyshadow.main import Shadow
 from dataclasses import dataclass
 import os
-import socket
-from typing import TypedDict, List
+from typing import List
 
 from e2e_test.helpers import Coords, Window
 from e2e_test.keyboard_shortcuts import KeyboardShortcuts

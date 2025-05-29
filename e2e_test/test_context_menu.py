@@ -1,16 +1,12 @@
 import os
 import time
 import pyautogui
-import pytesseract
-import pyperclip
-from PIL import ImageGrab
 import pytest
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 
 from e2e_test.conftest import BrowserEnvironment, FixtureServer
-from e2e_test.helpers import Clipboard, Window
+from e2e_test.helpers import Clipboard
 
 MAIN_MENU_ITEM_TEXT = "Copy as Markdown"
 MENU_ITEM_COPY_LINK_AS_MARKDOWN = "Copy Link as Markdown"

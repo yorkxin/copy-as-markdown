@@ -1,14 +1,4 @@
-import os
-import time
-from typing import List, Optional, TypedDict
-import pyautogui
-import pyperclip
-from pyshadow.main import Shadow
-from selenium.webdriver.remote.webdriver import WebDriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
-from dataclasses import dataclass
+from typing import Optional
 import pytest
 from textwrap import dedent
 

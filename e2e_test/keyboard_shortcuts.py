@@ -1,7 +1,5 @@
 import pyautogui
 from dataclasses import dataclass
-from typing import List
-
 
 class KeyboardShortcuts:
     def __init__(self):

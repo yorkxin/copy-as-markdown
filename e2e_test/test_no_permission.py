@@ -1,4 +1,3 @@
-import time
 import pytest
 from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.keyboard_shortcuts import KeyboardShortcuts, init_keyboard_shortcuts
