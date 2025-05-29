@@ -20,10 +20,11 @@ class TestContextMenu:
     @pytest.fixture(scope="class", autouse=True)
     def _load_page(self, browser_environment: BrowserEnvironment, fixture_server):
         browser_environment.driver.get(fixture_server.url+"/qa.html")
-        time.sleep(1)  # wait for page to load
     
     @pytest.fixture(scope="function", autouse=True)
-    def _clear_clipboard(self):
+    def _reset(self, browser_environment: BrowserEnvironment):
+        # dismiss any context menu that may be open
+        browser_environment.window.click_center()
         Clipboard.clear()
         assert Clipboard.read() == '', "Clipboard was not empty at start of test."
 
