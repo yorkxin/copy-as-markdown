@@ -36,6 +36,10 @@ class TestPermissions:
     def test_grant_permission_close_button(self, browser_environment: BrowserEnvironment):
         driver = browser_environment.driver
         
+        if browser_environment.brand == "firefox":
+            # Firefox closes the window from JavaScript only when the window was opened by JavaScript.
+            pytest.skip("Firefox does not support this test")
+
         driver.get(browser_environment.request_permission_page_url('tabs'))
         original_window = driver.current_window_handle
 
