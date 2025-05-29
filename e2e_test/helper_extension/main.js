@@ -55,6 +55,18 @@ document.querySelector('#highlight-tabs').addEventListener('click', async () => 
   await chrome.tabs.update(winDemo.tabs[7].id, { highlighted: false });
 });
 
+document.querySelector('#ungroup-tabs').addEventListener('click', async () => {
+  const windowId = document.querySelector('#window-id').value;
+  if (windowId === '') {
+    return;
+  }
+
+  const winDemo = await chrome.windows.get(parseInt(windowId, 10), { populate: true });
+
+  const tabIds = winDemo.tabs.map((tab) => tab.id);
+  await Promise.all(tabIds.map((tabId) => chrome.tabs.ungroup(tabId)));
+});
+
 document.querySelector('#switch-to-demo').addEventListener('click', async () => {
   const windowId = document.querySelector('#window-id').value;
   if (windowId === '') {
