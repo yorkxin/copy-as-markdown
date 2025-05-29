@@ -272,7 +272,8 @@ class OCR:
             # draw the box
             draw.rectangle([bbox.left(), bbox.top(), bbox.right(), bbox.bottom()], outline='red', width=2)
             image = debug_img
-        image.save(filename)    
+
+        image.save(f"tmp/{filename}")    
 
 class Clipboard:
     @staticmethod

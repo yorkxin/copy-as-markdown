@@ -9,7 +9,7 @@ firefox/dist/*
 chrome/dist/*
 !chrome/dist/.keep
 .nyc_output
-ocr_debug_*.png
+tmp/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
