@@ -120,6 +120,15 @@ class BrowserEnvironment:
         for permission in ["tabs", "tabGroups"]:
             self.macro_revoke_permission(permission)
 
+    def macro_change_tab_groups_indentation(self, style: str):
+        original_window = self.driver.current_window_handle
+        self.driver.switch_to.new_window('tab')
+        self.driver.get(self.options_page_url())
+        
+        self.driver.find_element(By.CSS_SELECTOR, f"[name=indentation][value='{style}']").click()
+        self.driver.close()
+        self.driver.switch_to.window(original_window)
+
     def select_all(self):
         mod = Keys.COMMAND if sys.platform == 'darwin' else Keys.CONTROL
         self.driver.find_element(By.TAG_NAME, "body").send_keys(mod + "a")
