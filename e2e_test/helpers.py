@@ -102,6 +102,10 @@ class Window:
         """Convert coordinates relative to the window to screen coordinates."""
         return Coords(self._origin.x() + coords.x(), self._origin.y() + coords.y())
 
+    def click_center(self):
+        """Click on the center of the window."""
+        self.click(self.bbox().center())
+
     def find_phrase_with_ocr(self, target_phrase: str) -> Tuple[bool, Optional[BoundingBox]]:
         """Find a phrase in the window using OCR."""
 

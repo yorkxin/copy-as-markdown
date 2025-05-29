@@ -56,16 +56,6 @@ def setup_all_custom_formats(driver: WebDriver, extension_base_url: str):
         """).strip(), slot=2)
     driver.switch_to.window(original_window)
 
-def get_popup_url(driver: WebDriver, extension_base_url: str, window_id: str, tab_id: str) -> str:
-    """Get the popup URL for the given window and tab."""
-    return f"{extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open=1"
-
-def get_window_and_tab_ids(driver: WebDriver) -> Tuple[str, str]:
-    """Get the window ID and tab ID from the test helper window."""
-    window_id = driver.find_element(By.ID, "window-id").get_attribute("value")
-    tab_id = driver.find_element(By.ID, "tab-0-id").get_attribute("value")
-    return window_id, tab_id
-
 def run_test_popup_menu_action(browser_environment: BrowserEnvironment, button_id: str, expected_text: str) -> None:
     """Test a popup menu action and verify the clipboard content.
     
@@ -76,18 +66,12 @@ def run_test_popup_menu_action(browser_environment: BrowserEnvironment, button_i
         expected_text: The expected text in the clipboard after clicking
     """
     Clipboard.clear()
-    driver = browser_environment.driver
-    driver.switch_to.window(browser_environment._test_helper_window_handle)
-    window_id, tab_id = get_window_and_tab_ids(driver)
-    popup_url = get_popup_url(driver, browser_environment._extension_base_url, window_id, tab_id)
-    driver.switch_to.new_window('window')
+    browser_environment.open_popup()
     try:
-        driver.get(popup_url)
-        copy_button = driver.find_element(By.ID, button_id)
+        copy_button = browser_environment.driver.find_element(By.ID, button_id)
         copy_button.click()
         clipboard_text = browser_environment.window.poll_clipboard_content()
         assert clipboard_text == expected_text
     finally:
         # closes the popup window
-        driver.close()
-        driver.switch_to.window(browser_environment._test_helper_window_handle)
+        browser_environment.close_popup()

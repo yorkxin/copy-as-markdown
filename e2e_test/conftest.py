@@ -69,6 +69,30 @@ class BrowserEnvironment:
     def request_permission_page_url(self, permission: str):
         return f"{self._extension_base_url}/dist/ui/permissions.html?permissions={permission}"
 
+    def popup_url(self, window_id: str, tab_id: str, keep_open: bool = False):
+        return f"{self._extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open={keep_open and '1' or '0'}"
+
+    def get_window_and_tab_ids(self):
+        self.driver.switch_to.window(self._test_helper_window_handle)
+        window_id = self.driver.find_element(By.ID, "window-id").get_attribute("value")
+        tab_id = self.driver.find_element(By.ID, "tab-0-id").get_attribute("value")
+        return window_id, tab_id
+
+    def open_popup(self):
+        window_id, tab_id = self.get_window_and_tab_ids()
+        self.driver.switch_to.new_window('tab')
+        self.driver.get(self.popup_url(window_id, tab_id))
+        self._popup_window_handle = self.driver.current_window_handle
+        return self._popup_window_handle
+    
+    def switch_to_popup(self):
+        self.driver.switch_to.window(self._popup_window_handle)
+
+    def close_popup(self):
+        self.driver.switch_to.window(self._popup_window_handle)
+        self.driver.close()
+        self._popup_window_handle = None
+
     def macro_grant_permission(self, permission: str) -> bool:
         self.driver.switch_to.new_window('tab')
         handler = self.driver.current_window_handle
@@ -195,6 +219,9 @@ def browser_environment(request):
             # options.add_argument("--headless=new")  # use headless new mode
             options.add_argument("--disable-gpu")
             options.add_argument("--lang=en-US")
+            # enableExtensionTargets is required for Selenium to work with popups opened by a web extension.
+            # See https://github.com/SeleniumHQ/selenium/issues/15685
+            options.add_experimental_option('enableExtensionTargets', True)
             options.add_argument(f"--load-extension={EXTENSION_PATHS['chrome']},{E2E_HELPER_EXTENSION_PATH}")
             driver = webdriver.Chrome(options=options)
 
