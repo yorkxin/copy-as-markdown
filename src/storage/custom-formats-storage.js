@@ -1,5 +1,11 @@
 import CustomFormat from '../lib/custom-format.js';
 
+/**
+ * @param {import('../lib/custom-format.js').Context} context
+ * @param {string} slot
+ * @param {string} attribute
+ * @returns {string}
+ */
 function storageKeyOf(context, slot, attribute) {
   return `custom_formats.${context}.${slot}.${attribute}`;
 }
@@ -7,8 +13,8 @@ function storageKeyOf(context, slot, attribute) {
 export default {
   /**
    *
-   * @param context {string}
-   * @param slot {string}
+   * @param {import('../lib/custom-format.js').Context} context
+   * @param {string} slot
    * @returns {Promise<CustomFormat>}
    */
   async get(context, slot) {
@@ -28,7 +34,7 @@ export default {
   },
 
   /**
-   *
+   * @param {import('../lib/custom-format.js').Context} context
    * @returns {Promise<CustomFormat[]>}
    */
   async list(context) {
@@ -37,9 +43,9 @@ export default {
 
   /**
    *
-   * @param context {string}
-   * @param slot {string}
-   * @param customFormat {CustomFormat}
+   * @param {import('../lib/custom-format.js').Context} context
+   * @param {string} slot
+   * @param {CustomFormat} customFormat
    * @returns {Promise<void>}
    */
   async save(context, slot, customFormat) {

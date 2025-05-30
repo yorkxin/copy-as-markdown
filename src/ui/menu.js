@@ -36,8 +36,8 @@ const menuTemplate = `
 
 /**
  *
- * @param container {Node}
- * @param loc {Location}
+ * @param {Node} container
+ * @param {Location} loc
  */
 export default function renderMenu(container, loc) {
   const parser = new DOMParser();

@@ -6,7 +6,7 @@ Mustache.escape = function (text) { return text; };
 
 /** @typedef {import('./tabs.js').TabList} TabList */
 
-/** @typedef {'tabs'} Context */
+/** @typedef {'single-link'|'multiple-links'} Context */
 
 /**
  * @typedef {Object} RenderInputLink
@@ -33,7 +33,7 @@ Mustache.escape = function (text) { return text; };
 export default class CustomFormat {
   /**
    * @param {Object} params
-   * @param {Context} context
+   * @param {Context} params.context
    * @param {string} params.slot
    * @param {string} params.name
    * @param {string} params.template
@@ -55,17 +55,23 @@ export default class CustomFormat {
 
   /**
    *
-   * @param {RenderInput} input
+   * @param {RenderInput|{title: string, url: string}} input
    * @returns {string}
    */
   render(input) {
     return Mustache.render(this.template, input);
   }
 
+  /**
+   * @returns {string}
+   */
   get displayName() {
     return this.name.length !== 0 ? this.name : this.defaultName;
   }
 
+  /**
+   * @returns {string}
+   */
   get defaultName() {
     return `Custom Format ${this.slot}`;
   }

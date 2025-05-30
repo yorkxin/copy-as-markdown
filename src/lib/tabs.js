@@ -1,5 +1,10 @@
 // eslint-disable-next-line max-classes-per-file
 export class Tab {
+  /**
+   * @param {string} title
+   * @param {string} url
+   * @param {number} groupId
+   */
   constructor(title, url, groupId) {
     this.title = title;
     this.url = url;
@@ -8,12 +13,20 @@ export class Tab {
 }
 
 export class TabGroup {
+  /**
+   * @param {string} title
+   * @param {number} id
+   * @param {string} color
+   */
   constructor(title, id, color) {
     this.title = title;
     this.id = id;
     this.color = color;
   }
 
+  /**
+   * @returns {string}
+   */
   getTitle() {
     if (this.title === '') {
       return `Untitled ${this.color} group`;
@@ -26,9 +39,9 @@ TabGroup.NonGroupId = -1;
 
 export class TabList {
   /**
-   * @param name {string}
-   * @param groupId {number}
-   * @param tabs {Tab[]}
+   * @param {string} name
+   * @param {number} groupId
+   * @param {Tab[]} tabs
    */
   constructor(name, groupId, tabs) {
     this.name = name;
@@ -38,14 +51,15 @@ export class TabList {
 
   /**
    * Represents a list of tabs that are not grouped.
-   * @param tabs {Tab[]}
+   * @param {Tab[]} tabs
+   * @returns {TabList}
    */
   static nonGroup(tabs) {
     return new TabList('', TabGroup.NonGroupId, tabs);
   }
 
   /**
-   * @return {boolean}
+   * @returns {boolean}
    */
   isNonGroup() {
     return this.groupId === TabGroup.NonGroupId;
@@ -55,7 +69,7 @@ export class TabList {
 export class TabListGrouper {
   /**
    *
-   * @param groups {TabGroup[]}
+   * @param {TabGroup[]} groups
    */
   constructor(groups) {
     /** @type {Map<number,TabGroup>} */
@@ -67,8 +81,8 @@ export class TabListGrouper {
 
   /**
    *
-   * @param tabs {Tab[]}
-   * @return {TabList[]}
+   * @param {Tab[]} tabs
+   * @returns {TabList[]}
    */
   collectTabsByGroup(tabs) {
     if (tabs.length === 0) {
@@ -98,8 +112,8 @@ export class TabListGrouper {
 
   /**
    *
-   * @param tab {Tab}
-   * @return {TabList}
+   * @param {Tab} tab
+   * @returns {TabList}
    */
   makeTabListGroup(tab) {
     if (tab.groupId === TabGroup.NonGroupId) {

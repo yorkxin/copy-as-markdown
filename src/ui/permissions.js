@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('permissions-placeholder').textContent = permissions.join(', ');
 
-  const grantButton = document.getElementById('request-permission');
+  const grantButton = /** @type {HTMLButtonElement} */ (document.getElementById('request-permission'));
   if (await browser.permissions.contains({ permissions })) {
     grantButton.disabled = true;
     grantButton.innerText = 'Granted!';

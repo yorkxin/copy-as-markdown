@@ -1,4 +1,4 @@
-/** @typedef PermissionStatus {Map<String,"yes"|"no"|"unavailable">} */
+/** @typedef {Map<string,"yes"|"no"|"unavailable">} PermissionStatus */
 
 /**
  * Loads the permissions statuses for the given permissions.
@@ -8,7 +8,7 @@ export async function loadPermissions() {
   /** @type {PermissionStatus} */
   const permissionStatuses = new Map();
 
-  /** @type {Map<String,"yes"|"no"|"unavailable">} */
+  /** @type {Map<string,"yes"|"no"|"unavailable">} */
   await Promise.all(['bookmarks', 'tabs', 'tabGroups'].map(async (perm) => {
     try {
       const status = await browser.permissions.contains({ permissions: [perm] });
@@ -26,7 +26,7 @@ export async function loadPermissions() {
  * @param {PermissionStatus} permissionStatuses
  */
 export function hideUiIfPermissionsNotGranted(permissionStatuses) {
-  document.querySelectorAll('[data-hide-if-permission-contains]').forEach((el) => {
+  document.querySelectorAll('[data-hide-if-permission-contains]').forEach((/** @type {HTMLElement} */ el) => {
     const status = permissionStatuses.get(el.dataset.hideIfPermissionContains);
     if (status === 'unavailable') {
       // eslint-disable-next-line no-param-reassign
@@ -45,8 +45,8 @@ export function hideUiIfPermissionsNotGranted(permissionStatuses) {
  * @param {PermissionStatus} permissionStatuses
  */
 export function disableUiIfPermissionsNotGranted(permissionStatuses) {
-  document.querySelectorAll('[data-dependson-permissions]').forEach((el) => {
-    const dependsOn = el.dataset.dependsonPermissions.split(',');
+  document.querySelectorAll('[data-dependson-permissions]').forEach((/** @type {HTMLButtonElement|HTMLInputElement} */ el) => {
+    const dependsOn = /** @type {string} */ (el.dataset.dependsonPermissions).split(',');
     const statuses = dependsOn.map((perm) => permissionStatuses.get(perm));
     // eslint-disable-next-line no-param-reassign
     el.disabled = !statuses.every((dep) => dep === 'yes');

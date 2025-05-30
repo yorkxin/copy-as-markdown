@@ -17,7 +17,7 @@
  * i.e. please do not extract any code to separate functions.
  * @param text {string}
  * @param iframeSrc {string} URL to iframe-copy.html
- * @returns {Promise<{ok: boolean, errorMessage?: string, method: 'navigator_api'|'textarea'}>}
+ * @returns {Promise<{ok: boolean, errorMessage?: string, method: 'navigator_api'|'textarea'|'iframe'}>}
  */
 export default async function copy(text, iframeSrc) {
   class KnownFailureError extends Error {}
@@ -40,6 +40,7 @@ export default async function copy(text, iframeSrc) {
       // See https://web.dev/async-clipboard/#security-and-permissions
       // See https://bugs.chromium.org/p/chromium/issues/detail?id=1382608#c4
       ret = await navigator.permissions.query({
+        // @ts-ignore
         name: 'clipboard-write', allowWithoutGesture: true,
       });
     } catch (e) {

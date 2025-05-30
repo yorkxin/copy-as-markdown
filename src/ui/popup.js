@@ -7,11 +7,11 @@ let keepOpen = false;
 /**
  * @typedef {Object} MessageParam
  * @property {string} format
- * @property {string|undefined} tabId
+ * @property {number|undefined} tabId
  * @property {string|undefined} scope
  * @property {string|undefined} listType
+ * @property {number|undefined} windowId
  * @property {string|undefined} customFormatSlot
- * @property {string|undefined} windowId
  */
 
 /**
@@ -22,7 +22,7 @@ let keepOpen = false;
 
 /**
  *
- * @param message {Message}
+ * @param {Message} message
  * @returns {Promise<{ok: true, text: string|undefined}>}
  */
 async function sendMessage(message) {
@@ -70,6 +70,7 @@ document.forms['form-popup-actions'].addEventListener('submit', async (e) => {
       params: { type: 'success' },
     });
   } catch (error) {
+    // @ts-ignore
     browser.runtime.lastError = error;
     await browser.runtime.sendMessage({
       topic: 'badge',
@@ -121,9 +122,9 @@ async function getActiveTabId(crWindow) {
 
 async function showCustomFormatsForExportTabs() {
   /** @type {HTMLTemplateElement} */
-  const template = document.getElementById('template-export-tabs-button');
-  const divExportAll = document.getElementById('actions-export-all');
-  const divExportHighlighted = document.getElementById('actions-export-highlighted');
+  const template = /** @type {HTMLTemplateElement} */ (document.getElementById('template-export-tabs-button'));
+  const divExportAll = /** @type {HTMLDivElement} */ (document.getElementById('actions-export-all'));
+  const divExportHighlighted = /** @type {HTMLDivElement} */ (document.getElementById('actions-export-highlighted'));
 
   const customFormats = await CustomFormatsStorage.list('multiple-links');
   customFormats.forEach((customFormat) => {
@@ -131,7 +132,7 @@ async function showCustomFormatsForExportTabs() {
       return;
     }
 
-    const clone = template.content.cloneNode(true);
+    const clone = /** @type {DocumentFragment} */ (template.content.cloneNode(true));
 
     /** @type {HTMLButtonElement} */
     const btnAll = clone.querySelector('button[data-scope="all"]');
@@ -151,8 +152,8 @@ async function showCustomFormatsForExportTabs() {
 
 async function showCustomFormatsForCurrentTab() {
   /** @type {HTMLTemplateElement} */
-  const template = document.getElementById('template-current-tab-button');
-  const divExportCurrent = document.getElementById('actions-export-current-tab');
+  const template = /** @type {HTMLTemplateElement} */ (document.getElementById('template-current-tab-button'));
+  const divExportCurrent = /** @type {HTMLDivElement} */ (document.getElementById('actions-export-current-tab'));
 
   const customFormats = await CustomFormatsStorage.list('single-link');
   customFormats.forEach((customFormat) => {
@@ -160,7 +161,7 @@ async function showCustomFormatsForCurrentTab() {
       return;
     }
 
-    const clone = template.content.cloneNode(true);
+    const clone = /** @type {DocumentFragment} */ (template.content.cloneNode(true));
 
     /** @type {HTMLButtonElement} */
     const btn = clone.querySelector('button[value="export-current-tab"]');

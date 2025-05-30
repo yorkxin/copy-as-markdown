@@ -1,6 +1,10 @@
 const INDENT_STYLE_SPACES = 'spaces';
 const INDENT_STYLE_TAB = 'tab';
 
+/**
+ * @typedef {[string] | [string, NestedArray]} NestedArray
+ */
+
 /* eslint-disable no-underscore-dangle */
 export default class Markdown {
   static DefaultTitle() {
@@ -8,9 +12,10 @@ export default class Markdown {
   }
 
   /**
-   * @param alwaysEscapeLinkBracket {Boolean}
-   * @param unorderedListChar {'-'|'*'|'+'}
-   * @param indentation {'spaces'|'tab'}
+   * @param {Object} params
+   * @param {boolean} [params.alwaysEscapeLinkBracket]
+   * @param {'-'|'*'|'+'} [params.unorderedListChar]
+   * @param {'spaces'|'tab'} [params.indentation]
    */
   constructor({
     alwaysEscapeLinkBracket = false,
@@ -73,7 +78,7 @@ export default class Markdown {
 
     const shouldEscapeBrackets = (
       this.alwaysEscapeLinkBracket // user wants \[\]
-      || !this.constructor.bracketsAreBalanced(text) // unbalanced brackets, must be escaped
+      || !Markdown.bracketsAreBalanced(text) // unbalanced brackets, must be escaped
     );
 
     const newString = [];
@@ -124,7 +129,7 @@ export default class Markdown {
   linkTo(title, url) {
     let titleToUse;
     if (title === '') {
-      titleToUse = this.constructor.DefaultTitle();
+      titleToUse = Markdown.DefaultTitle();
     } else {
       titleToUse = this.escapeLinkText(title);
     }
@@ -146,19 +151,27 @@ export default class Markdown {
     return `[![${description}](${url})](${linkURL})`;
   }
 
+  /**
+   * @param {NestedArray} items
+   * @returns {string}
+   */
   list(items) {
     return this.nestedList(items, this._unorderedListChar);
   }
 
+  /**
+   * @param {NestedArray} items
+   * @returns {string}
+   */
   taskList(items) {
     return this.nestedList(items, '- [ ]');
   }
 
   /**
    *
-   * @param items {string[]|string[][]}
-   * @param prefix {string}
-   * @param level {number}
+   * @param {NestedArray} items
+   * @param {string} prefix
+   * @param {number} level
    * @return {string}
    */
   nestedList(items, prefix, level = 0) {

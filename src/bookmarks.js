@@ -6,7 +6,8 @@
 export class Bookmarks {
   /**
    *
-   * @param markdown {import("lib/markdown.js").default}
+   * @param {Object} params - The parameters
+   * @param {import("./lib/markdown.js").default} params.markdown - The markdown instance
    */
   constructor({ markdown }) {
     this._markdown = markdown;
@@ -14,8 +15,8 @@ export class Bookmarks {
 
   /**
    *
-   * @param bookmark {browser.bookmarks.BookmarkTreeNode}
-   * @returns {Array<String|String[]>}
+   * @param {browser.bookmarks.BookmarkTreeNode} bookmark
+   * @returns {import("./lib/markdown.js").NestedArray}
    */
   aggregate(bookmark) {
     if (bookmark.url) {
@@ -40,8 +41,8 @@ export class Bookmarks {
 
   /**
    *
-   * @param bookmark {browser.bookmarks.BookmarkTreeNode}
-   * @returns {String|String[]|string}
+   * @param {browser.bookmarks.BookmarkTreeNode} bookmark
+   * @returns {string}
    */
   toMarkdown(bookmark) {
     const tree = this.aggregate(bookmark);

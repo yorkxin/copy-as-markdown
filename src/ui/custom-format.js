@@ -5,12 +5,15 @@ import CustomFormat from '../lib/custom-format.js';
 class UI {
   /**
    *
-   * @param doc {Document}
+   * @param {Document} doc
    */
   constructor(doc) {
     const params = new URLSearchParams(document.location.search);
+    /** @property {string} */
     this.slot = params.get('slot');
+    /** @property {import('../lib/custom-format.js').Context} */
     this.context = params.get('context');
+    /** @property {Object} */
     this.sampleInput = {};
     const placeholder = doc.querySelector("[data-placeholder='context-in-header']");
     switch (this.context) {
@@ -26,13 +29,18 @@ class UI {
         throw new TypeError(`invalid context '${this.context}'`);
     }
 
-    this.elInputName = doc.getElementById('input-name');
-    this.elInputTemplate = doc.getElementById('input-template');
-    /** @type {HTMLInputElement} */
-    this.elShowInMenus = doc.getElementById('input-show-in-menus');
-    this.elPreview = doc.getElementById('preview');
-    this.elErrorTemplate = doc.getElementById('error-template');
-    this.elSave = doc.getElementById('save');
+    /** @property {HTMLInputElement} */
+    this.elInputName = /** @type {HTMLInputElement} */ (doc.getElementById('input-name'));
+    /** @property {HTMLInputElement} */
+    this.elInputTemplate = /** @type {HTMLInputElement} */ (doc.getElementById('input-template'));
+    /** @property {HTMLInputElement} */
+    this.elShowInMenus = /** @type {HTMLInputElement} */ (doc.getElementById('input-show-in-menus'));
+    /** @property {HTMLTextAreaElement} */
+    this.elPreview = /** @type {HTMLTextAreaElement} */ (doc.getElementById('preview'));
+    /** @property {HTMLDivElement} */
+    this.elErrorTemplate = /** @type {HTMLDivElement} */ (doc.getElementById('error-template'));
+    /** @property {HTMLButtonElement} */
+    this.elSave = /** @type {HTMLButtonElement} */ (doc.getElementById('save'));
     // eslint-disable-next-line no-param-reassign
     doc.getElementById('sample-input').textContent = JSON.stringify(this.sampleInput, null, 2);
 
@@ -55,7 +63,7 @@ class UI {
 
   /**
    *
-   * @param customFormat {CustomFormat}
+   * @param {CustomFormat} customFormat
    */
   load(customFormat) {
     this.elInputName.value = customFormat.name === '' ? this.defaultName() : customFormat.name;
@@ -65,7 +73,7 @@ class UI {
   }
 
   /**
-   * @return {CustomFormat}
+   * @returns {CustomFormat}
    */
   current() {
     return new CustomFormat({
@@ -77,6 +85,9 @@ class UI {
     });
   }
 
+  /**
+   * @returns {void}
+   */
   renderPreview() {
     this.elInputTemplate.classList.remove('is-danger');
     this.elErrorTemplate.classList.add('is-hidden');
@@ -96,14 +107,23 @@ class UI {
     }
   }
 
+  /**
+   * @returns {string}
+   */
   defaultName() {
     return `Custom Format ${this.slot}`;
   }
 
+  /**
+   * @returns {Object}
+   */
   static get sampleInputForOneLink() {
     return { title: 'Example 1', url: 'https://example.com/1' };
   }
 
+  /**
+   * @returns {Object}
+   */
   static get sampleInputForTabs() {
     return {
       links: [

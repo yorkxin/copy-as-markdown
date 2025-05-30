@@ -6,7 +6,7 @@ window.addEventListener('message', (event) => {
         event.source.postMessage({ topic: 'iframe-copy-response', ok: false, reason: 'no text' }, event.origin);
       }
 
-      const textBox = document.getElementById('copy');
+      const textBox = /** @type {HTMLTextAreaElement} */ (document.getElementById('copy'));
       textBox.innerHTML = text;
       textBox.select();
       const result = document.execCommand('Copy');

@@ -1,7 +1,7 @@
 import Settings from '../lib/settings.js';
 import * as lib from './lib.js';
 
-/** @type {Map<String,"yes"|"no"|"unavailable">} */
+/** @type {Map<string,"yes"|"no"|"unavailable">} */
 let permissionStatuses = new Map();
 
 async function loadPermissions() {
@@ -10,7 +10,7 @@ async function loadPermissions() {
 
 function refreshUi() {
   lib.hideUiIfPermissionsNotGranted(permissionStatuses);
-  document.querySelectorAll('[data-request-permission]').forEach((el) => {
+  document.querySelectorAll('[data-request-permission]').forEach((/** @type {HTMLButtonElement} */ el) => {
     const status = permissionStatuses.get(el.dataset.requestPermission);
     if (status === 'unavailable') {
       // eslint-disable-next-line no-param-reassign
@@ -28,7 +28,7 @@ function refreshUi() {
     }
   });
 
-  document.querySelectorAll('[data-remove-permission]').forEach((el) => {
+  document.querySelectorAll('[data-remove-permission]').forEach((/** @type {HTMLButtonElement} */ el) => {
     const status = permissionStatuses.get(el.dataset.removePermission);
     if (status === 'unavailable') {
       // eslint-disable-next-line no-param-reassign

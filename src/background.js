@@ -6,8 +6,11 @@ import { Bookmarks } from './bookmarks.js';
 import CustomFormatsStorage from './storage/custom-formats-storage.js';
 import CustomFormat from './lib/custom-format.js';
 
+/** @typedef {'all-tabs'|'highlighted-tabs'|'current-tab'|'link'} CustomFormatSubject */
+
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
+/** @type {browser.action.ColorArray} */
 const COLOR_OPAQUE = [0, 0, 0, 255];
 
 const TEXT_OK = '✓';
@@ -41,7 +44,8 @@ async function refreshMarkdownInstance() {
     console.error('error getting settings', error);
   }
 
-  let unorderedListChar = '';
+  /** @type {'-'|'*'|'+'} */
+  let unorderedListChar;
   switch (settings.styleOfUnorderedList) {
     case 'dash':
       unorderedListChar = '-';
@@ -240,6 +244,11 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 // NOTE: this function should be executed in content script.
+/**
+ *
+ * @param {import('turndown').Options} turndownOptions
+ * @returns {string}
+ */
 function selectionToMarkdown(turndownOptions) {
   // eslint-disable-next-line no-undef
   const turndownService = new TurndownService(turndownOptions)
@@ -264,6 +273,10 @@ function selectionToMarkdown(turndownOptions) {
   return turndownService.turndown(html);
 }
 
+/**
+ *
+ * @returns {import('turndown').Options}
+ */
 function getTurndownOptions() {
   return {
     // For all options see https://github.com/mixmark-io/turndown?tab=readme-ov-file#options
@@ -274,12 +287,12 @@ function getTurndownOptions() {
 
 /**
  *
- * @param tabLists {TabList[]}
- * @param formatter {function(Tab) : string}
- * @returns {string[]|string[][]}
+ * @param {import('./lib/custom-format.js').TabList[]} tabLists
+ * @param {function(Tab) : string} formatter
+ * @returns {import('./lib/markdown.js').NestedArray}
  */
 function formatItems(tabLists, formatter) {
-  /** @type {string[]|string[][]} */
+  /** @type {import('./lib/markdown.js').NestedArray} */
   const items = [];
 
   tabLists.forEach((tabList) => {
@@ -299,8 +312,8 @@ function formatItems(tabLists, formatter) {
 
 /**
  *
- * @param windowId {Number}
- * @returns {Promise<browser.tabGroups.TabGroup[]>}
+ * @param {number} windowId
+ * @returns {Promise<chrome.tabGroups.TabGroup[]>}
  */
 async function getTabGroups(windowId) {
   let granted = false;
@@ -315,14 +328,23 @@ async function getTabGroups(windowId) {
     return [];
   }
 
-  return browser.tabGroups.query({ windowId });
+  // For Firefox mv2 compatibility
+  return new Promise((resolve, reject) => {
+    chrome.tabGroups.query({ windowId }, (groups) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(groups);
+      }
+    });
+  });
 }
 
 /**
  *
- * @param format {'link','title','url'}
- * @param tabLists
- * @param listType
+ * @param {'link'|'title'|'url'} format
+ * @param {import('./lib/custom-format.js').TabList[]} tabLists
+ * @param {'list'|'task-list'} listType
  * @returns {string}
  */
 function renderBuiltInFormat(format, tabLists, listType) {
@@ -341,10 +363,11 @@ function renderBuiltInFormat(format, tabLists, listType) {
 
 /**
  *
- * @param slot {string}
- * @param title {string}
- * @param url {string}
- * @returns {string}
+ * @param {Object} options
+ * @param {string} options.slot - Custom format slot identifier
+ * @param {string} options.title - The page title
+ * @param {string} options.url - The page URL
+ * @returns {Promise<string>}
  */
 async function renderCustomFormatForSingleTab({ slot, title, url }) {
   const customFormat = await CustomFormatsStorage.get('single-link', slot);
@@ -354,9 +377,10 @@ async function renderCustomFormatForSingleTab({ slot, title, url }) {
 
 /**
  *
- * @param slot {string}
- * @param lists {TabList[]}
- * @returns {string}
+ * @param {Object} options
+ * @param {string} options.slot - Custom format slot identifier
+ * @param {import('./lib/tabs.js').TabList[]} options.lists - Array of tab lists to format
+ * @returns {Promise<string>}
  */
 async function renderCustomFormatForMultipleTabs({ slot, lists }) {
   const customFormat = await CustomFormatsStorage.get('multiple-links', slot);
@@ -366,11 +390,12 @@ async function renderCustomFormatForMultipleTabs({ slot, lists }) {
 
 /**
  *
- * @param scope {'all'|'highlighted'}
- * @param format {'link','title','url','custom-format'}
- * @param customFormatSlot {string}
- * @param listType {'list','task-list'}
- * @param windowId {number}
+ * @param {Object} options
+ * @param {'all'|'highlighted'} options.scope
+ * @param {'link'|'title'|'url'|'custom-format'} options.format
+ * @param {string} [options.customFormatSlot] required if options.format is 'custom-format'
+ * @param {'list'|'task-list'} [options.listType] required if options.format is not 'custom-format'
+ * @param {number} options.windowId
  * @returns {Promise<string>}
  */
 async function handleExportTabs({
@@ -380,6 +405,15 @@ async function handleExportTabs({
   listType,
   windowId,
 }) {
+  if (format === 'custom-format') {
+    if (listType !== null && listType !== undefined) {
+      throw new TypeError('listType is not allowed if format is custom-format');
+    }
+    if (!customFormatSlot) {
+      throw new TypeError('customFormatSlot is required if format is custom-format');
+    }
+  }
+
   if (!await browser.permissions.contains({ permissions: ['tabs'] })) {
     await browser.windows.create({
       focused: true,
@@ -406,6 +440,11 @@ async function handleExportTabs({
   return renderBuiltInFormat(format, tabLists, listType);
 }
 
+/**
+ *
+ * @param {browser.tabs.Tab} tab
+ * @returns {Promise<string>}
+ */
 async function convertSelectionInTabToMarkdown(tab) {
   await browser.scripting.executeScript({
     target: { tabId: tab.id, allFrames: true },
@@ -422,12 +461,17 @@ async function convertSelectionInTabToMarkdown(tab) {
   return results.map((frame) => frame.result).join('\n\n');
 }
 
+/**
+ *
+ * @param {string} command
+ * @returns {{context: CustomFormatSubject, slot: string}}
+ */
 function parseCustomFormatCommand(command) {
   const match = /(all-tabs|highlighted-tabs|current-tab|link)-custom-format-(\d)/.exec(command);
   if (match === null) {
     throw new TypeError(`unknown command: ${command}`);
   }
-  const context = match[1];
+  const context = /** @type {CustomFormatSubject} */ (match[1]);
   const slot = match[2];
   return {
     context,
@@ -435,6 +479,12 @@ function parseCustomFormatCommand(command) {
   };
 }
 
+/**
+ *
+ * @param {string} slot
+ * @param {browser.tabs.Tab} tab
+ * @returns {Promise<string>}
+ */
 async function handleCustomFormatCurrentPage(slot, tab) {
   // eslint-disable-next-line no-use-before-define
   return handleExportLink({
@@ -445,6 +495,12 @@ async function handleCustomFormatCurrentPage(slot, tab) {
   });
 }
 
+/**
+ *
+ * @param {string} slot
+ * @param {browser.contextMenus.OnClickData} menuInfo
+ * @returns {Promise<string>}
+ */
 async function handleCustomFormatLink(slot, menuInfo) {
   // linkText for Firefox (as of 2018/03/07)
   // selectionText for Chrome on Mac only. On Windows it does not highlight text when
@@ -461,6 +517,13 @@ async function handleCustomFormatLink(slot, menuInfo) {
   });
 }
 
+/**
+ *
+ * @param {'all'|'highlighted'} scope
+ * @param {string} slot
+ * @param {number} windowId
+ * @returns {Promise<string>}
+ */
 async function handleCustomFormatTabs(scope, slot, windowId) {
   return handleExportTabs({
     scope,
@@ -470,6 +533,12 @@ async function handleCustomFormatTabs(scope, slot, windowId) {
   });
 }
 
+/**
+ *
+ * @param {browser.contextMenus.OnClickData} info
+ * @param {browser.tabs.Tab} tab
+ * @returns {Promise<string>}
+ */
 async function handleContentOfContextMenu(info, tab) {
   let text;
 
@@ -556,7 +625,7 @@ async function handleContentOfContextMenu(info, tab) {
       const {
         context,
         slot,
-      } = parseCustomFormatCommand(info.menuItemId);
+      } = parseCustomFormatCommand(info.menuItemId.toString());
 
       switch (context) {
         case 'current-tab': {
@@ -585,10 +654,11 @@ async function handleContentOfContextMenu(info, tab) {
 
 /**
  *
- * @param format {'link'|'custom-format'}
- * @param [customFormatSlot=null] {String?}
- * @param title {String}
- * @param url {String}
+ * @param {Object} options
+ * @param {'link'|'custom-format'} options.format
+ * @param {String|null} [options.customFormatSlot=null]
+ * @param {String} options.title
+ * @param {String} options.url
  * @returns {Promise<string>}
  */
 async function handleExportLink({
