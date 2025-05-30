@@ -1,5 +1,6 @@
 import ctypes
 import re
+import subprocess
 import sys
 from textwrap import dedent
 import time
@@ -215,6 +216,7 @@ class BrowserEnvironment:
         shadow = Shadow(self.driver)
 
         for shortcut in keyboard_shortcuts.items:
+            # XXX: this only works for Chrome running in English language.
             element = shadow.find_element(f"[aria-label=\"Edit shortcut {shortcut.label} for Copy as Markdown\"]")
             self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
             element.click()
@@ -375,6 +377,11 @@ def browser_environment(request):
         browser = request.param
 
         if browser == "chrome":
+            # on macOS, force the language to English
+            if sys.platform == 'darwin':
+                # run a command to set the language to English
+                subprocess.run(["defaults", "write", "com.google.chrome.for.testing", "AppleLanguages", "-array", "en"])
+
             options = webdriver.ChromeOptions()
             # options.add_argument("--headless=new")  # use headless new mode
             options.add_argument("--disable-gpu")
