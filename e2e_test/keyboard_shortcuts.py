@@ -30,10 +30,12 @@ class KeyboardShortcuts:
     def get_by_manifest_key(self, manifest_key):
         return self.by_manifest_key.get(manifest_key)
 
+# NOTE: known shortcut keys that conflict with global shortcuts:
+# Alt-Shift-1 on macOS: ChatGPT start pairing
 
 # Define all available shortcuts
 ALL_SHORTCUTS = {
-    "selection-as-markdown": Shortcut(label="Copy Selection as Markdown", manifest_key="selection-as-markdown", keystroke="1"),
+    "selection-as-markdown": Shortcut(label="Copy Selection as Markdown", manifest_key="selection-as-markdown", keystroke="0"),
     "current-tab-link": Shortcut(label="current tab: [title](url)", manifest_key="current-tab-link", keystroke="2"),
     "current-tab-custom-format-1": Shortcut(label="current tab: custom format 1", manifest_key="current-tab-custom-format-1", keystroke="3"),
     "current-tab-custom-format-2": Shortcut(label="current tab: custom format 2", manifest_key="current-tab-custom-format-2", keystroke="4"),
