@@ -35,6 +35,13 @@ E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file_
 if os.name == 'nt':  # Check if running on Windows
     pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
 
+# Force browser download and avoid using the browsers installed on the system. (See https://github.com/SeleniumHQ/selenium/issues/15627)
+# This is required to make sure we run the Chrome for Testing (CfT).
+# One reason is that the Google brand Chrome does not accept load-extension option, so we need to use Chromium.
+# See also https://issues.chromium.org/issues/401529219
+# NOTE: To delete the browsers, go to ~/.cache/selenium/
+os.environ['SE_FORCE_BROWSER_DOWNLOAD'] = 'true'
+
 @dataclass
 class CustomFormatConfig:
     context: str
