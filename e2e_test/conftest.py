@@ -430,9 +430,12 @@ def _find_extension_id_for_chrome(name: str, driver: webdriver.Chrome):
     driver.get("chrome://extensions/")
     shadow = Shadow(driver)
 
-    for element in shadow.find_elements("extensions-item"):
-        if shadow.find_element(element, "#name").text == name:
-            return element.get_attribute("id")
+    # try a few attempts to find the extension
+    for _ in range(3):
+        for element in shadow.find_elements("extensions-item"):
+            if shadow.find_element(element, "#name").text == name:
+                return element.get_attribute("id")
+        time.sleep(0.5)
     return None
 
 def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefox):
