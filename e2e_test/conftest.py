@@ -1,5 +1,6 @@
 import ctypes
 import re
+import subprocess
 import sys
 from textwrap import dedent
 import time
@@ -34,6 +35,13 @@ E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file_
 # Set the path to the Tesseract OCR executable
 if os.name == 'nt':  # Check if running on Windows
     pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
+
+# Force browser download and avoid using the browsers installed on the system. (See https://github.com/SeleniumHQ/selenium/issues/15627)
+# This is required to make sure we run the Chrome for Testing (CfT).
+# One reason is that the Google brand Chrome does not accept load-extension option, so we need to use Chromium.
+# See also https://issues.chromium.org/issues/401529219
+# NOTE: To delete the browsers, go to ~/.cache/selenium/
+os.environ['SE_FORCE_BROWSER_DOWNLOAD'] = 'true'
 
 @dataclass
 class CustomFormatConfig:
@@ -208,6 +216,7 @@ class BrowserEnvironment:
         shadow = Shadow(self.driver)
 
         for shortcut in keyboard_shortcuts.items:
+            # XXX: this only works for Chrome running in English language.
             element = shadow.find_element(f"[aria-label=\"Edit shortcut {shortcut.label} for Copy as Markdown\"]")
             self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
             element.click()
@@ -368,6 +377,11 @@ def browser_environment(request):
         browser = request.param
 
         if browser == "chrome":
+            # on macOS, force the language to English
+            if sys.platform == 'darwin':
+                # run a command to set the language to English
+                subprocess.run(["defaults", "write", "com.google.chrome.for.testing", "AppleLanguages", "-array", "en"])
+
             options = webdriver.ChromeOptions()
             # options.add_argument("--headless=new")  # use headless new mode
             options.add_argument("--disable-gpu")
