@@ -320,10 +320,6 @@ class TestTabsExporting:
         "all-tabs-custom-format-2",
     ])
     def test_all_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
-        if self.browser.brand == "firefox":
-            # The extension does not support grouped tabs in Firefox
-            pytest.skip("Firefox does not support grouped tabs")
-
         kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.ALL_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
@@ -346,10 +342,6 @@ class TestTabsExporting:
         "highlighted-tabs-custom-format-2",
     ])
     def test_highlighted_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
-        if self.browser.brand == "firefox":
-            # The extension does not support grouped tabs in Firefox
-            pytest.skip("Firefox does not support grouped tabs")
-
         kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
@@ -373,10 +365,6 @@ class TestTabsExporting:
         "all-tabs-custom-format-2",
     ])
     def test_all_tabs_grouped_popup_menu(self, manifest_key: str):
-        if self.browser.brand == "firefox":
-            # The extension does not support grouped tabs in Firefox
-            pytest.skip("Firefox does not support grouped tabs")
-
         expected_format = self.ALL_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
         for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
@@ -398,10 +386,6 @@ class TestTabsExporting:
         "highlighted-tabs-custom-format-2",
     ])
     def test_highlighted_tabs_grouped_popup_menu(self, manifest_key: str):
-        if self.browser.brand == "firefox":
-            # The extension does not support grouped tabs in Firefox
-            pytest.skip("Firefox does not support grouped tabs")
-
         expected_format = self.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
         self.browser.set_highlighted_tabs()
