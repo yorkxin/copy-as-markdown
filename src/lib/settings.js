@@ -76,7 +76,7 @@ export default {
 
   /**
    * @returns {Promise<Settings>}
-   */ 
+   */
   async getAll() {
     const all = await browser.storage.sync.get(this.defaultSettings);
 
