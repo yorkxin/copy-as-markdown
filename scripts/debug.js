@@ -47,6 +47,11 @@ switch (browser) {
     // eslint-disable-next-line camelcase
     spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'firefox')} --url about:debugging#/runtime/this-firefox https://example.com`);
     break;
+  case 'firefox-deved':
+    console.log('starting firefox developer edition');
+    // eslint-disable-next-line camelcase
+    spawnedBrowser = child_process.exec(`npx web-ext run -f deved -s ${path.join(root, 'firefox')} --url about:debugging#/runtime/this-firefox https://example.com`);
+    break;
   case 'firefox-mv3':
     console.log('starting firefox-mv3');
     // eslint-disable-next-line camelcase
