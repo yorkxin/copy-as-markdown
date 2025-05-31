@@ -187,7 +187,7 @@ class Window:
         while time.time() - started_at < timeout:
             clipboard_content = Clipboard.read()
             if clipboard_content != '':
-                return clipboard_content
+                return clipboard_content.replace('\r\n', '\n') # avoid Windows line endings
             time.sleep(0.1)
         raise Exception(f"Clipboard was empty after {timeout} seconds.")
 
