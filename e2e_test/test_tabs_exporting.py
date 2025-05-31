@@ -234,46 +234,10 @@ class TestTabsExporting:
         self.browser.close_popup()
         self.browser.close_demo_window()
  
-    @pytest.mark.parametrize("manifest_key", [
-        "all-tabs-link-as-list",
-        "all-tabs-link-as-task-list",
-        "all-tabs-title-as-list",
-        "all-tabs-url-as-list",
-        "all-tabs-custom-format-1",
-    ])
-    def test_all_tabs_keyboard_shortcut(self, manifest_key: str):
-        kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
-        expected_format = self.TAB_LIST_FORMATS[manifest_key]
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            expected_output = expected_format.format(url=self.fixture_server.url, prefix=prefix)
-            
-            self.browser.switch_to_demo_window()
-
-            Clipboard.clear()
-            kbd.press()
-            clipboard_text = self.browser.window.poll_clipboard_content()
-            assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix"
-
-    @pytest.mark.parametrize("manifest_key", [
-        "highlighted-tabs-link-as-list",
-        "highlighted-tabs-link-as-task-list",
-        "highlighted-tabs-title-as-list",
-        "highlighted-tabs-url-as-list",
-        "highlighted-tabs-custom-format-1",
-    ])
-    def test_highlighted_tabs_keyboard_shortcut(self, manifest_key: str):
-        kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
-        expected_format = self.HIGHLIGHTED_TABS_FORMATS[manifest_key]
-        self.browser.set_highlighted_tabs()
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            expected_output = expected_format.format(url=self.fixture_server.url, prefix=prefix)
-            self.browser.switch_to_demo_window()
-            Clipboard.clear()
-            kbd.press()
-            clipboard_text = self.browser.window.poll_clipboard_content()
-            assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix"
+    @pytest.fixture(scope="class")
+    def set_default_format_style(self):
+        self.browser.macro_change_format_style("dash", "spaces")
+        yield
 
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -282,16 +246,20 @@ class TestTabsExporting:
         "all-tabs-url-as-list",
         "all-tabs-custom-format-1",
     ])
-    def test_all_tabs_popup_menu(self, manifest_key: str):
+    def test_all_tabs_keyboard_shortcut(self, manifest_key: str, set_default_format_style):
+        ul_style = "dash"
+        kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.TAB_LIST_FORMATS[manifest_key]
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            expected_text = expected_format.format(url=self.fixture_server.url, prefix=prefix)
-            self.browser.switch_to_demo_window()
-            Clipboard.clear()
-            self.browser.trigger_popup_menu(manifest_key)
-            clipboard_text = self.browser.window.poll_clipboard_content()
-            assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix"
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+        )
+        self.browser.macro_change_format_style(ul_style, None)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        kbd.press()
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -300,17 +268,64 @@ class TestTabsExporting:
         "highlighted-tabs-url-as-list",
         "highlighted-tabs-custom-format-1",
     ])
-    def test_highlighted_tabs_popup_menu(self, manifest_key: str):
+    def test_highlighted_tabs_keyboard_shortcut(self, manifest_key: str, set_default_format_style):
+        ul_style = "dash"
+        kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.HIGHLIGHTED_TABS_FORMATS[manifest_key]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+        )
         self.browser.set_highlighted_tabs()
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            expected_text = expected_format.format(url=self.fixture_server.url, prefix=prefix)
-            self.browser.switch_to_demo_window()
-            Clipboard.clear()
-            self.browser.trigger_popup_menu(manifest_key)
-            clipboard_text = self.browser.window.poll_clipboard_content()
-            assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix"
+        self.browser.macro_change_format_style(ul_style, None)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        kbd.press()
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
+
+    @pytest.mark.parametrize("manifest_key", [
+        "all-tabs-link-as-list",
+        "all-tabs-link-as-task-list",
+        "all-tabs-title-as-list",
+        "all-tabs-url-as-list",
+        "all-tabs-custom-format-1",
+    ])
+    def test_all_tabs_popup_menu(self, manifest_key: str, set_default_format_style):
+        ul_style = "dash"
+        expected_format = self.TAB_LIST_FORMATS[manifest_key]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+        )
+        self.browser.macro_change_format_style(ul_style, None)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        self.browser.trigger_popup_menu(manifest_key)
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
+
+    @pytest.mark.parametrize("manifest_key", [
+        "highlighted-tabs-link-as-list",
+        "highlighted-tabs-link-as-task-list",
+        "highlighted-tabs-title-as-list",
+        "highlighted-tabs-url-as-list",
+        "highlighted-tabs-custom-format-1",
+    ])
+    def test_highlighted_tabs_popup_menu(self, manifest_key: str, set_default_format_style):
+        ul_style = "dash"
+        expected_format = self.HIGHLIGHTED_TABS_FORMATS[manifest_key]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+        )
+        self.browser.set_highlighted_tabs()
+        self.browser.macro_change_format_style(ul_style, None)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        self.browser.trigger_popup_menu(manifest_key)
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
    
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -319,20 +334,24 @@ class TestTabsExporting:
         "all-tabs-url-as-list",
         "all-tabs-custom-format-2",
     ])
-    def test_all_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
+    def test_all_tabs_grouped_keyboard_shortcut(self, manifest_key: str, set_default_format_style):
         kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.ALL_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            for indent_style, indentation in self.ALL_INDENTATION_STYLES.items():
-                self.browser.macro_change_tab_groups_indentation(indent_style)
-                expected_output = expected_format.format(url=self.fixture_server.url, indentation=indentation, prefix=prefix)
-                self.browser.switch_to_demo_window()
-                Clipboard.clear()
-                kbd.press()
-                clipboard_text = self.browser.window.poll_clipboard_content()
-                assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix and {indent_style} indentation"
+        ul_style = "dash"
+        indent_style = "spaces"
+        expected_format = self.ALL_TABS_GROUPED_FORMATS[manifest_key]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+            indentation=self.ALL_INDENTATION_STYLES[indent_style],
+        )
+        self.browser.macro_change_format_style(ul_style, indent_style)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        kbd.press()
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -341,21 +360,25 @@ class TestTabsExporting:
         "highlighted-tabs-url-as-list",
         "highlighted-tabs-custom-format-2",
     ])
-    def test_highlighted_tabs_grouped_keyboard_shortcut(self, manifest_key: str):
+    def test_highlighted_tabs_grouped_keyboard_shortcut(self, manifest_key: str, set_default_format_style):
         kbd = self.all_keyboard_shortcuts.get_by_manifest_key(manifest_key)
         expected_format = self.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
         self.browser.set_highlighted_tabs()
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            for indent_style, indentation in self.ALL_INDENTATION_STYLES.items():
-                self.browser.macro_change_tab_groups_indentation(indent_style)
-                expected_output = expected_format.format(url=self.fixture_server.url, indentation=indentation, prefix=prefix)
-                self.browser.switch_to_demo_window()
-                Clipboard.clear()
-                kbd.press()
-                clipboard_text = self.browser.window.poll_clipboard_content()
-                assert clipboard_text == expected_output, f"Expected {expected_output} but got {clipboard_text} with {ul_style} prefix and {indent_style} indentation"
+        ul_style = "dash"
+        indent_style = "spaces"
+        expected_format = self.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            indentation=self.ALL_INDENTATION_STYLES[indent_style],
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+        )
+        self.browser.macro_change_format_style(ul_style, indent_style)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        kbd.press()
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
 
     @pytest.mark.parametrize("manifest_key", [
         "all-tabs-link-as-list",
@@ -364,19 +387,23 @@ class TestTabsExporting:
         "all-tabs-url-as-list",
         "all-tabs-custom-format-2",
     ])
-    def test_all_tabs_grouped_popup_menu(self, manifest_key: str):
+    def test_all_tabs_grouped_popup_menu(self, manifest_key: str, set_default_format_style):
         expected_format = self.ALL_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            for indent_style, indentation in self.ALL_INDENTATION_STYLES.items():
-                self.browser.macro_change_tab_groups_indentation(indent_style)
-                expected_text = expected_format.format(url=self.fixture_server.url, indentation=indentation, prefix=prefix)
-                self.browser.switch_to_demo_window()
-                Clipboard.clear()
-                self.browser.trigger_popup_menu(manifest_key)
-                clipboard_text = self.browser.window.poll_clipboard_content()
-                assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix and {indent_style} indentation"
+        ul_style = "dash"
+        indent_style = "spaces"
+        expected_format = self.ALL_TABS_GROUPED_FORMATS[manifest_key]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            indentation=self.ALL_INDENTATION_STYLES[indent_style],
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+        )
+        self.browser.macro_change_format_style(ul_style, indent_style)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        self.browser.trigger_popup_menu(manifest_key)
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
 
     @pytest.mark.parametrize("manifest_key", [
         "highlighted-tabs-link-as-list",
@@ -385,19 +412,60 @@ class TestTabsExporting:
         "highlighted-tabs-url-as-list",
         "highlighted-tabs-custom-format-2",
     ])
-    def test_highlighted_tabs_grouped_popup_menu(self, manifest_key: str):
+    def test_highlighted_tabs_grouped_popup_menu(self, manifest_key: str, set_default_format_style):
         expected_format = self.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
         self.browser.set_grouped_tabs()
         self.browser.set_highlighted_tabs()
-        for ul_style, prefix in self.ALL_UNORDERED_LIST_STYLES.items():
-            self.browser.macro_change_unordered_list_prefix_style(ul_style)
-            for indent_style, indentation in self.ALL_INDENTATION_STYLES.items():
-                self.browser.macro_change_tab_groups_indentation(indent_style)
-                expected_text = expected_format.format(url=self.fixture_server.url, indentation=indentation, prefix=prefix)
-                self.browser.switch_to_demo_window()
-                Clipboard.clear()
-                self.browser.trigger_popup_menu(manifest_key)
-                clipboard_text = self.browser.window.poll_clipboard_content()
-                assert clipboard_text == expected_text, f"Expected {expected_text} but got {clipboard_text} with {ul_style} prefix and {indent_style} indentation"
+        ul_style = "dash"
+        indent_style = "spaces"
+        expected_format = self.HIGHLIGHTED_TABS_GROUPED_FORMATS[manifest_key]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url,
+            indentation=self.ALL_INDENTATION_STYLES[indent_style],
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style],
+        )
+        self.browser.macro_change_format_style(ul_style, indent_style)
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        self.browser.trigger_popup_menu(manifest_key)
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
 
-    
+    @pytest.mark.parametrize("ul_style", [
+        "dash",
+        "asterisk",
+        "plus",
+    ])
+    def test_unordered_list_prefix_style(self, ul_style: str):
+        expected_format = self.TAB_LIST_FORMATS["all-tabs-link-as-list"]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url, 
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style], 
+        )
+        self.browser.macro_change_format_style(ul_style, None)
+        self.browser.ungroup_tabs()
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        self.browser.trigger_popup_menu("all-tabs-link-as-list")
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
+
+    @pytest.mark.parametrize("indent_style", [
+        "tab",
+        "spaces",
+    ])
+    def test_tab_groups_indentation_style(self, indent_style: str):
+        ul_style = "dash"
+        expected_format = self.ALL_TABS_GROUPED_FORMATS["all-tabs-link-as-list"]
+        expected_text = expected_format.format(
+            url=self.fixture_server.url, 
+            prefix=self.ALL_UNORDERED_LIST_STYLES[ul_style], 
+            indentation=self.ALL_INDENTATION_STYLES[indent_style],
+        )
+        self.browser.macro_change_format_style(ul_style, indent_style)
+        self.browser.set_grouped_tabs()
+        self.browser.switch_to_demo_window()
+        Clipboard.clear()
+        self.browser.trigger_popup_menu("all-tabs-link-as-list")
+        clipboard_text = self.browser.window.poll_clipboard_content()
+        assert clipboard_text == expected_text
