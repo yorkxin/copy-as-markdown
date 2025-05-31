@@ -156,7 +156,9 @@ export default class Markdown {
    * @returns {string}
    */
   list(items) {
-    return this.nestedList(items, this._unorderedListChar);
+    const rendered = this.renderList(items, this._unorderedListChar);
+    const flattened = rendered.flat(100); // otherwise it only flatters 1 level deep
+    return flattened.map((item) => `${item}\n`).join('');
   }
 
   /**
@@ -164,7 +166,9 @@ export default class Markdown {
    * @returns {string}
    */
   taskList(items) {
-    return this.nestedList(items, '- [ ]');
+    const rendered = this.renderList(items, '- [ ]');
+    const flattened = rendered.flat(100); // otherwise it only flatters 1 level deep
+    return flattened.map((item) => `${item}\n`).join('');
   }
 
   /**
@@ -172,9 +176,9 @@ export default class Markdown {
    * @param {NestedArray} items
    * @param {string} prefix
    * @param {number} level
-   * @return {string}
+   * @return {NestedArray}
    */
-  nestedList(items, prefix, level = 0) {
+  renderList(items, prefix, level = 0) {
     let renderedIndents = '';
     let indent = '';
     if (this._indentation === INDENT_STYLE_SPACES) {
@@ -194,10 +198,10 @@ export default class Markdown {
 
     return items.map((item) => {
       if (item instanceof Array) {
-        return this.nestedList(item, prefix, level + 1);
+        return this.renderList(item, prefix, level + 1);
       }
       return `${renderedIndents}${prefix} ${item}`;
-    }).join('\n');
+    });
   }
 
   get alwaysEscapeLinkBracket() {

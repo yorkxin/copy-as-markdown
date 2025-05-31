@@ -33,7 +33,7 @@ class TestTabsExporting:
             {prefix} [Page 5 - Copy as Markdown]({url}/5.html)
             {prefix} [Page 6 - Copy as Markdown]({url}/6.html)
             {prefix} [Page 7 - Copy as Markdown]({url}/7.html)
-            """).strip(),
+            """).lstrip(),
         "all-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
             - [ ] [Page 1 - Copy as Markdown]({url}/1.html)
@@ -43,7 +43,7 @@ class TestTabsExporting:
             - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
             - [ ] [Page 6 - Copy as Markdown]({url}/6.html)
             - [ ] [Page 7 - Copy as Markdown]({url}/7.html)
-            """).strip(), # Task List must have - [ ] prefix
+            """).lstrip(), # Task List must have - [ ] prefix
         "all-tabs-title-as-list": dedent("""
             {prefix} Page 0 - Copy as Markdown
             {prefix} Page 1 - Copy as Markdown
@@ -53,7 +53,7 @@ class TestTabsExporting:
             {prefix} Page 5 - Copy as Markdown
             {prefix} Page 6 - Copy as Markdown
             {prefix} Page 7 - Copy as Markdown
-            """).strip(),
+            """).lstrip(),
         "all-tabs-url-as-list": dedent("""
             {prefix} {url}/0.html
             {prefix} {url}/1.html
@@ -63,7 +63,7 @@ class TestTabsExporting:
             {prefix} {url}/5.html
             {prefix} {url}/6.html
             {prefix} {url}/7.html
-            """).strip(),
+            """).lstrip(),
         "all-tabs-custom-format-1": dedent("""
             1,'Page 0 - Copy as Markdown','{url}/0.html'
             2,'Page 1 - Copy as Markdown','{url}/1.html'
@@ -81,22 +81,22 @@ class TestTabsExporting:
             {prefix} [Page 0 - Copy as Markdown]({url}/0.html)
             {prefix} [Page 2 - Copy as Markdown]({url}/2.html)
             {prefix} [Page 5 - Copy as Markdown]({url}/5.html)
-            """).strip(),
+            """).lstrip(),
         "highlighted-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
             - [ ] [Page 2 - Copy as Markdown]({url}/2.html)
             - [ ] [Page 5 - Copy as Markdown]({url}/5.html)
-            """).strip(), # Task List must have - [ ] prefix
+            """).lstrip(), # Task List must have - [ ] prefix
         "highlighted-tabs-title-as-list": dedent("""
             {prefix} Page 0 - Copy as Markdown
             {prefix} Page 2 - Copy as Markdown
             {prefix} Page 5 - Copy as Markdown
-            """).strip(),
+            """).lstrip(),
         "highlighted-tabs-url-as-list": dedent("""
             {prefix} {url}/0.html
             {prefix} {url}/2.html
             {prefix} {url}/5.html
-            """).strip(),
+            """).lstrip(),
         "highlighted-tabs-custom-format-1": dedent("""
             1,'Page 0 - Copy as Markdown','{url}/0.html'
             2,'Page 2 - Copy as Markdown','{url}/2.html'
@@ -115,7 +115,8 @@ class TestTabsExporting:
             {prefix} Untitled green group
             {indentation}{prefix} [Page 5 - Copy as Markdown]({url}/5.html)
             {indentation}{prefix} [Page 6 - Copy as Markdown]({url}/6.html)
-            {prefix} [Page 7 - Copy as Markdown]({url}/7.html)""").strip(),
+            {prefix} [Page 7 - Copy as Markdown]({url}/7.html)
+            """).lstrip(),
         "all-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
             - [ ] Group 1
@@ -126,7 +127,8 @@ class TestTabsExporting:
             - [ ] Untitled green group
             {indentation}- [ ] [Page 5 - Copy as Markdown]({url}/5.html)
             {indentation}- [ ] [Page 6 - Copy as Markdown]({url}/6.html)
-            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)""").strip(), # Task List must have - [ ] prefix
+            - [ ] [Page 7 - Copy as Markdown]({url}/7.html)
+            """).lstrip(), # Task List must have - [ ] prefix
         "all-tabs-title-as-list": dedent("""
             {prefix} Page 0 - Copy as Markdown
             {prefix} Group 1
@@ -138,7 +140,7 @@ class TestTabsExporting:
             {indentation}{prefix} Page 5 - Copy as Markdown
             {indentation}{prefix} Page 6 - Copy as Markdown
             {prefix} Page 7 - Copy as Markdown
-            """).strip(),
+            """).lstrip(),
         "all-tabs-url-as-list": dedent("""
             {prefix} {url}/0.html
             {prefix} Group 1
@@ -150,7 +152,7 @@ class TestTabsExporting:
             {indentation}{prefix} {url}/5.html
             {indentation}{prefix} {url}/6.html
             {prefix} {url}/7.html
-            """).strip(),
+            """).lstrip(),
         "all-tabs-custom-format-2": dedent("""
             1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
             2,title='Group 1',url='',isGroup=true
@@ -172,28 +174,28 @@ class TestTabsExporting:
             {indentation}{prefix} [Page 2 - Copy as Markdown]({url}/2.html)
             {prefix} Untitled green group
             {indentation}{prefix} [Page 5 - Copy as Markdown]({url}/5.html)
-            """).strip(),
+            """).lstrip(),
         "highlighted-tabs-link-as-task-list": dedent("""
             - [ ] [Page 0 - Copy as Markdown]({url}/0.html)
             - [ ] Group 1
             {indentation}- [ ] [Page 2 - Copy as Markdown]({url}/2.html)
             - [ ] Untitled green group
             {indentation}- [ ] [Page 5 - Copy as Markdown]({url}/5.html)
-            """).strip(), # Task List must have - [ ] prefix
+            """).lstrip(), # Task List must have - [ ] prefix
         "highlighted-tabs-title-as-list": dedent("""
             {prefix} Page 0 - Copy as Markdown
             {prefix} Group 1
             {indentation}{prefix} Page 2 - Copy as Markdown
             {prefix} Untitled green group
             {indentation}{prefix} Page 5 - Copy as Markdown
-            """).strip(),
+            """).lstrip(),
         "highlighted-tabs-url-as-list": dedent("""
             {prefix} {url}/0.html
             {prefix} Group 1
             {indentation}{prefix} {url}/2.html
             {prefix} Untitled green group
             {indentation}{prefix} {url}/5.html
-            """).strip(),
+            """).lstrip(),
         "highlighted-tabs-custom-format-2": dedent("""
             1,title='Page 0 - Copy as Markdown',url='{url}/0.html',isGroup=false
             2,title='Group 1',url='',isGroup=true
