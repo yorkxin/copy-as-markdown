@@ -182,21 +182,19 @@ class BrowserEnvironment:
         for permission in ["tabs", "tabGroups"]:
             self.macro_revoke_permission(permission)
 
-    def macro_change_unordered_list_prefix_style(self, style: str):
-        original_window = self.driver.current_window_handle
-        self.driver.switch_to.new_window('tab')
-        self.driver.get(self.options_page_url())
-
-        self.driver.find_element(By.CSS_SELECTOR, f"[name=character][value='{style}']").click()
-        self.driver.close()
-        self.driver.switch_to.window(original_window)
-
-    def macro_change_tab_groups_indentation(self, style: str):
+    def macro_change_format_style(self, ul_style: str, indent_style: str|None = None):
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
         self.driver.get(self.options_page_url())
         
-        self.driver.find_element(By.CSS_SELECTOR, f"[name=indentation][value='{style}']").click()
+        self.driver.find_element(By.CSS_SELECTOR, f"[name=character][value='{ul_style}']").click()
+        
+        if indent_style is not None:
+            indent_option = self.driver.find_element(By.CSS_SELECTOR, f"[name=indentation][value='{indent_style}']")
+            if indent_option.is_enabled() == False:
+                raise ValueError(f"Indentation style {indent_style} cannot be changed")
+            indent_option.click()
+
         self.driver.close()
         self.driver.switch_to.window(original_window)
 
