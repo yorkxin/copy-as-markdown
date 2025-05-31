@@ -1,5 +1,7 @@
 import pyautogui
 from dataclasses import dataclass
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.action_chains import ActionChains
 
 @dataclass
 class Shortcut:
@@ -12,6 +14,8 @@ class Shortcut:
             with pyautogui.hold('alt'):
                 pyautogui.press(self.keystroke)
 
+    def run_action_chain(self, actions: ActionChains):
+        return actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(self.keystroke).key_up(Keys.SHIFT).key_up(Keys.ALT)
 
 class KeyboardShortcuts:
     def __init__(self):

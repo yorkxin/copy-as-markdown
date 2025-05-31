@@ -220,9 +220,7 @@ class BrowserEnvironment:
             element = shadow.find_element(f"[aria-label=\"Edit shortcut {shortcut.label} for Copy as Markdown\"]")
             self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
             element.click()
-            key = shortcut.keystroke
-            actions = ActionChains(self.driver)
-            actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(key).key_up(Keys.SHIFT).key_up(Keys.ALT).perform()
+            shortcut.run_action_chain(ActionChains(self.driver)).perform()
         
         self.driver.close()
         self.driver.switch_to.window(original_window)
@@ -260,8 +258,7 @@ class BrowserEnvironment:
             ActionChains(self.driver).click(cmd_entry).perform()
 
             # Execute key combination
-            actions = ActionChains(self.driver)
-            actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(shortcut.keystroke).key_up(Keys.SHIFT).key_up(Keys.ALT).perform()
+            shortcut.run_action_chain(ActionChains(self.driver)).perform()
 
         self.driver.close()
         self.driver.switch_to.window(original_window)
