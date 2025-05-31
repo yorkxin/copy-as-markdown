@@ -7,7 +7,7 @@
     "node": ">= 20.0"
   },
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/",
     "compile": "npm run compile-chrome && npm run compile-firefox && npm run compile-firefox-mv3",
     "compile-chrome": "node scripts/compile.js chrome",
     "compile-firefox": "node scripts/compile.js firefox",
