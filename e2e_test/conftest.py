@@ -1,4 +1,5 @@
 import ctypes
+import json
 import re
 import subprocess
 import sys
@@ -226,39 +227,32 @@ class BrowserEnvironment:
         self.driver.switch_to.window(original_window)
 
     def setup_keyboard_shortcuts_firefox(self, keyboard_shortcuts: KeyboardShortcuts):
+        # use the commands.update() method to set the keyboard shortcuts
+        # see https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/update
+
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
+        self.driver.get(self.options_page_url())
 
-        self.driver.get("about:addons")
-        # Click the page options button
-        self.driver.find_element(By.CSS_SELECTOR, "button[action='page-options']").click()
-
-        # Send multiple DOWN keys and ENTER in one chain
-        ActionChains(self.driver).send_keys(
-            Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.DOWN + 
-            Keys.DOWN + Keys.DOWN + Keys.DOWN + Keys.ENTER
-        ).perform()
-
-        # Click all expand buttons for keyboard shortcuts
-        for button in self.driver.find_elements(By.CSS_SELECTOR, "button[data-l10n-id='shortcuts-card-expand-button']"):
-            button.click()
-        
-        # Expand all shortcuts
-        expand_buttons = self.driver.find_elements(By.CSS_SELECTOR, "button[data-l10n-id='shortcuts-card-expand-button']")
-        for button in expand_buttons:
-            self.driver.execute_script("arguments[0].scrollIntoView(false);", button)
-            button.click()
-
+        # Construct the JSON
+        commands = []
         for shortcut in keyboard_shortcuts.items:
-            cmd_entry = self.driver.find_element(By.XPATH, f"//input[@name='{shortcut.manifest_key}']")
+            commands.append({
+                "name": shortcut.manifest_key,
+                "shortcut": shortcut.toFirefoxShortcut()
+            })
 
-            # Scroll and click.
-            # NOTE: must use ActionChains.click() instead of cmd_entry.click()
-            self.driver.execute_script("arguments[0].scrollIntoView(false);", cmd_entry)
-            ActionChains(self.driver).click(cmd_entry).perform()
+        script = """
+        var callback = arguments[arguments.length - 1];
+        var commands = arguments[0];
+        Promise.all(commands.map(function(cmd) {
+            return browser.commands.update(cmd);
+        })).then(function(results) {
+            callback(results);
+        });
+        """
 
-            # Execute key combination
-            shortcut.run_action_chain(ActionChains(self.driver)).perform()
+        self.driver.execute_async_script(script, commands)
 
         self.driver.close()
         self.driver.switch_to.window(original_window)
