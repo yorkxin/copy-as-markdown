@@ -123,15 +123,56 @@ export default class Markdown {
   }
 
   /**
+   * Removes URL if present within the title string. If there is a separator
+   * before or after the URL (like "title - URL" or "URL - title"), it is also
+   * removed.
+   *
+   * @param {string} title - The title string.
+   * @param {string} url - The URL to remove.
+   * @returns {string}
+   */
+  static removeUrlFromTitle(title, url) {
+    const urlIndex = title.indexOf(url);
+    if (urlIndex === -1) {
+      return title;
+    }
+
+    // matches whitespace starting at the beginning of the string, followed by
+    // 1-2 symbols, followed by whitespace
+    const separatorRegex = /^\s+[^\w\s]{1,2}\s+/;
+
+    const beforeUrl = title.substring(0, urlIndex);
+    if (beforeUrl.length > 0) {
+      const reversed = beforeUrl.split('').reverse().join('');
+      const match = reversed.match(separatorRegex);
+      if (match) {
+        return beforeUrl.substring(0, beforeUrl.length - match[0].length);
+      }
+      return beforeUrl;
+    }
+
+    const afterUrl = title.substring(urlIndex + url.length);
+    if (afterUrl.length > 0) {
+      const match = afterUrl.match(separatorRegex);
+      if (match) {
+        return afterUrl.substring(match[0].length);
+      }
+      return afterUrl;
+    }
+
+    return '';
+  }
+
+  /**
  * @param {string} title
  * @param {string} url
  */
   linkTo(title, url) {
-    let titleToUse;
-    if (title === '') {
+    let titleToUse = Markdown.removeUrlFromTitle(title, url);
+    if (titleToUse === '') {
       titleToUse = Markdown.DefaultTitle();
     } else {
-      titleToUse = this.escapeLinkText(title);
+      titleToUse = this.escapeLinkText(titleToUse);
     }
     return `[${titleToUse}](${url})`;
   }
