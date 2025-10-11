@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import * as assert from 'assert';
-import Markdown from '../src/lib/markdown.js';
-import { Bookmarks } from '../src/bookmarks.js';
+import Markdown from '../src/lib/markdown';
+import { Bookmarks } from '../src/bookmarks';
 
 describe('bookmarks.js', () => {
   describe('toMarkdown', () => {

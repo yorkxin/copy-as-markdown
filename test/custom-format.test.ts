@@ -1,13 +1,12 @@
 import { describe, test } from 'node:test';
 import * as assert from 'node:assert';
-import { Tab, TabList } from '../src/lib/tabs.js';
-import CustomFormat from '../src/lib/custom-format.js';
+import { Tab, TabList } from '../src/lib/tabs';
+import CustomFormat from '../src/lib/custom-format';
 
 describe('custom-format.js', () => {
   describe('makeRenderInput', () => {
     test('ungrouped', () => {
-      /** @type TabList[] */
-      const lists = [
+      const lists: TabList[] = [
         new TabList('', -1, [
           new Tab('Example 1', 'https://example.com/1', -1),
           new Tab('Example 2', 'https://example.com/2', -1),
@@ -37,8 +36,7 @@ describe('custom-format.js', () => {
     });
 
     test('a group in the middle', () => {
-      /** @type TabList[] */
-      const lists = [
+      const lists: TabList[] = [
         new TabList('', -1, [
           new Tab('Example 1', 'https://example.com/1', -1),
           new Tab('Example 2', 'https://example.com/2', -1),
@@ -95,8 +93,7 @@ describe('custom-format.js', () => {
     });
 
     test('a group at the end', () => {
-      /** @type TabList[] */
-      const lists = [
+      const lists: TabList[] = [
         new TabList('', -1, [
           new Tab('Example 1', 'https://example.com/1', -1),
           new Tab('Example 2', 'https://example.com/2', -1),
