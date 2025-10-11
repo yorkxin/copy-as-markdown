@@ -1,4 +1,4 @@
-import Mustache from 'mustache';
+import Mustache from '../shims/mustache.js';
 import type { TabList } from './tabs.js';
 
 // disable HTML escape
