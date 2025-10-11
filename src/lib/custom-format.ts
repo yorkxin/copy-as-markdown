@@ -38,7 +38,7 @@ export default class CustomFormat {
     name,
     template,
     showInMenus,
-  }: { context: Context; slot: string; name: string; template: string; showInMenus: boolean; }) {
+  }: { context: Context; slot: string; name: string; template: string; showInMenus: boolean }) {
     this.context = context;
     this.slot = slot;
     this.name = name;
@@ -60,7 +60,7 @@ export default class CustomFormat {
 
   static makeRenderInputForTabLists(lists: TabList[]): RenderInput {
     const links: RenderInputLink[] = lists
-      .flatMap((list) => list.tabs)
+      .flatMap(list => list.tabs)
       .map((tab, idx) => ({
         title: tab.title,
         url: tab.url,

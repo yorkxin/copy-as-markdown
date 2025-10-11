@@ -1,6 +1,6 @@
-// eslint-disable-next-line max-classes-per-file
 import CustomFormatsStorage from '../storage/custom-formats-storage';
-import CustomFormat, { type Context, type RenderInput, type RenderInputLink } from '../lib/custom-format';
+import CustomFormat from '../lib/custom-format';
+import type { Context, RenderInput, RenderInputLink } from '../lib/custom-format';
 
 class UI {
   slot: string;
@@ -26,7 +26,7 @@ class UI {
     this.context = context;
     this.sampleInput = {} as RenderInput | RenderInputLink;
 
-    const placeholder = doc.querySelector<HTMLElement>("[data-placeholder='context-in-header']");
+    const placeholder = doc.querySelector<HTMLElement>('[data-placeholder=\'context-in-header\']');
     if (!placeholder) {
       throw new Error('Missing placeholder element');
     }
@@ -138,10 +138,18 @@ class UI {
       ],
       grouped: [
         {
-          title: 'Example 1', url: 'https://example.com/1', isGroup: false, number: 1, links: [],
+          title: 'Example 1',
+          url: 'https://example.com/1',
+          isGroup: false,
+          number: 1,
+          links: [],
         },
         {
-          title: 'Example 2', url: 'https://example.com/2', isGroup: false, number: 2, links: [],
+          title: 'Example 2',
+          url: 'https://example.com/2',
+          isGroup: false,
+          number: 2,
+          links: [],
         },
         {
           title: 'Group 1',
@@ -150,21 +158,41 @@ class UI {
           number: 3,
           links: [
             {
-              title: 'Example 3', url: 'https://example.com/3', isGroup: false, number: 1, links: [],
+              title: 'Example 3',
+              url: 'https://example.com/3',
+              isGroup: false,
+              number: 1,
+              links: [],
             },
             {
-              title: 'Example 4', url: 'https://example.com/4', isGroup: false, number: 2, links: [],
+              title: 'Example 4',
+              url: 'https://example.com/4',
+              isGroup: false,
+              number: 2,
+              links: [],
             },
             {
-              title: 'Example 5', url: 'https://example.com/5', isGroup: false, number: 3, links: [],
+              title: 'Example 5',
+              url: 'https://example.com/5',
+              isGroup: false,
+              number: 3,
+              links: [],
             },
           ],
         },
         {
-          title: 'Example 6', url: 'https://example.com/6', isGroup: false, number: 4, links: [],
+          title: 'Example 6',
+          url: 'https://example.com/6',
+          isGroup: false,
+          number: 4,
+          links: [],
         },
         {
-          title: 'Example 7', url: 'https://example.com/7', isGroup: false, number: 5, links: [],
+          title: 'Example 7',
+          url: 'https://example.com/7',
+          isGroup: false,
+          number: 5,
+          links: [],
         },
       ],
     };

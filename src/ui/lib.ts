@@ -10,7 +10,7 @@ export async function loadPermissions(): Promise<PermissionStatus> {
     try {
       const status = await browser.permissions.contains({ permissions: [perm] });
       permissionStatuses.set(perm, status ? 'yes' : 'no');
-    } catch (e) {
+    } catch {
       permissionStatuses.set(perm, 'unavailable');
     }
   }));
@@ -25,7 +25,7 @@ export function hideUiIfPermissionsNotGranted(permissionStatuses: PermissionStat
 
     const status = permissionStatuses.get(permName);
     if (status === 'unavailable') {
-      el.innerText = 'Unsupported';
+      el.textContent = 'Unsupported';
     } else if (status === 'yes') {
       el.classList.add('is-hidden');
     } else if (status === 'no') {
@@ -40,7 +40,7 @@ export function disableUiIfPermissionsNotGranted(permissionStatuses: PermissionS
     if (!dependsOnStr) return;
 
     const dependsOn = dependsOnStr.split(',');
-    const statuses = dependsOn.map((perm) => permissionStatuses.get(perm));
-    el.disabled = !statuses.every((dep) => dep === 'yes');
+    const statuses = dependsOn.map(perm => permissionStatuses.get(perm));
+    el.disabled = !statuses.every(dep => dep === 'yes');
   });
 }

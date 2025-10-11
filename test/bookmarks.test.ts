@@ -1,5 +1,5 @@
 import { describe, it } from 'node:test';
-import * as assert from 'assert';
+import * as assert from 'node:assert';
 import Markdown from '../src/lib/markdown';
 import { Bookmarks } from '../src/bookmarks';
 
@@ -69,8 +69,7 @@ describe('bookmarks.js', () => {
         + '    - bar 3\n'
         + '        - [baz 1](http://baz.com/1)\n'
         + '    - bar 4\n'
-        + '    - bar 5'
-        ,
+        + '    - bar 5',
       );
     });
   });

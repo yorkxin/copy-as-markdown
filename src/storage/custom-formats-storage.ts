@@ -1,4 +1,5 @@
-import CustomFormat, { Context } from '../lib/custom-format';
+import type { Context } from '../lib/custom-format';
+import CustomFormat from '../lib/custom-format';
 
 function storageKeyOf(context: Context, slot: string, attribute: string): string {
   return `custom_formats.${context}.${slot}.${attribute}`;
@@ -22,7 +23,7 @@ export default {
   },
 
   async list(context: Context): Promise<CustomFormat[]> {
-    return Promise.all(['1', '2', '3', '4', '5'].map((slot) => this.get(context, slot)));
+    return Promise.all(['1', '2', '3', '4', '5'].map(slot => this.get(context, slot)));
   },
 
   async save(context: Context, slot: string, customFormat: CustomFormat): Promise<void> {

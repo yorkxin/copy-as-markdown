@@ -1,7 +1,8 @@
 import Settings from './lib/settings';
 import copy from './content-script';
 import Markdown from './lib/markdown';
-import { Tab, TabGroup, TabListGrouper, TabList } from './lib/tabs';
+import type { TabList } from './lib/tabs';
+import { Tab, TabGroup, TabListGrouper } from './lib/tabs';
 import { Bookmarks } from './bookmarks';
 import CustomFormatsStorage from './storage/custom-formats-storage';
 import CustomFormat from './lib/custom-format';
@@ -28,9 +29,9 @@ const bookmarks = new Bookmarks({
 });
 
 const FORMAT_TO_FUNCTION: Record<string, (tab: Tab) => string> = {
-  link: (tab) => `[${tab.title}](${tab.url})`,
-  title: (tab) => tab.title,
-  url: (tab) => tab.url,
+  link: tab => `[${tab.title}](${tab.url})`,
+  title: tab => tab.title,
+  url: tab => tab.url,
 };
 
 async function refreshMarkdownInstance(): Promise<void> {
@@ -98,7 +99,7 @@ async function createMenus(): Promise<void> {
   });
 
   const singleLinkFormats = (await CustomFormatsStorage.list('single-link'))
-    .filter((format) => format.showInMenus);
+    .filter(format => format.showInMenus);
   singleLinkFormats.forEach((format) => {
     browser.contextMenus.create({
       id: `current-tab-custom-format-${format.slot}`,
@@ -130,7 +131,7 @@ async function createMenus(): Promise<void> {
 
   try {
     const multipleLinksFormats = (await CustomFormatsStorage.list('multiple-links'))
-      .filter((format) => format.showInMenus);
+      .filter(format => format.showInMenus);
 
     await browser.contextMenus.update('current-tab', {
       contexts: [
@@ -139,7 +140,6 @@ async function createMenus(): Promise<void> {
       ],
     });
 
-    // eslint-disable-next-line no-restricted-syntax
     for await (const format of singleLinkFormats) {
       await browser.contextMenus.update(`current-tab-custom-format-${format.slot}`, {
         contexts: [
@@ -169,7 +169,6 @@ async function createMenus(): Promise<void> {
       contexts: ['tab'],
     });
 
-    // eslint-disable-next-line no-restricted-syntax
     for await (const format of multipleLinksFormats) {
       browser.contextMenus.create({
         id: `all-tabs-custom-format-${format.slot}`,
@@ -199,7 +198,6 @@ async function createMenus(): Promise<void> {
       contexts: ['tab'],
     });
 
-    // eslint-disable-next-line no-restricted-syntax
     for await (const format of multipleLinksFormats) {
       browser.contextMenus.create({
         id: `highlighted-tabs-custom-format-${format.slot}`,
@@ -209,7 +207,7 @@ async function createMenus(): Promise<void> {
         contexts: ['tab'],
       });
     }
-  } catch (error) {
+  } catch {
     console.info('this browser does not support context contextMenus on tab bar');
   }
 
@@ -220,7 +218,7 @@ async function createMenus(): Promise<void> {
       type: 'normal',
       contexts: ['bookmark'],
     });
-  } catch (error) {
+  } catch {
     console.info('this browser does not support context contextMenus on bookmarks');
   }
 }
@@ -298,7 +296,7 @@ async function getTabGroups(windowId: number): Promise<chrome.tabGroups.TabGroup
   let granted = false;
   try {
     granted = await browser.permissions.contains({ permissions: ['tabGroups'] });
-  } catch (e) {
+  } catch {
     // tabGroups is only supported in Chrome/Chromium
     return [];
   }
@@ -322,7 +320,7 @@ async function getTabGroups(windowId: number): Promise<chrome.tabGroups.TabGroup
 function renderBuiltInFormat(
   format: 'link' | 'title' | 'url',
   tabLists: TabList[],
-  listType: 'list' | 'task-list'
+  listType: 'list' | 'task-list',
 ): string {
   const formatter = FORMAT_TO_FUNCTION[format];
   if (!formatter) {
@@ -404,11 +402,11 @@ async function handleExportTabs({
     windowId,
   });
   const crGroups = await getTabGroups(windowId);
-  const groups = crGroups.map((group) => new TabGroup(group.title || '', group.id, group.color || ''));
-  const tabs = crTabs.map((tab) => new Tab(
+  const groups = crGroups.map(group => new TabGroup(group.title || '', group.id, group.color || ''));
+  const tabs = crTabs.map(tab => new Tab(
     markdownInstance.escapeLinkText(tab.title || ''),
     tab.url || '',
-    (tab as any).groupId || TabGroup.NonGroupId
+    (tab as any).groupId || TabGroup.NonGroupId,
   ));
   const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
   if (format === 'custom-format') {
@@ -436,7 +434,7 @@ async function convertSelectionInTabToMarkdown(tab: browser.tabs.Tab): Promise<s
     ],
   });
 
-  return results.map((frame) => frame.result as string).join('\n\n');
+  return results.map(frame => frame.result as string).join('\n\n');
 }
 
 function parseCustomFormatCommand(command: string): { context: CustomFormatSubject; slot: string } {
@@ -479,7 +477,7 @@ async function handleCustomFormatLink(slot: string, menuInfo: browser.contextMen
 async function handleCustomFormatTabs(
   scope: 'all' | 'highlighted',
   slot: string,
-  windowId: number
+  windowId: number,
 ): Promise<string> {
   return handleExportTabs({
     scope,
@@ -491,7 +489,7 @@ async function handleCustomFormatTabs(
 
 async function handleContentOfContextMenu(
   info: browser.contextMenus.OnClickData,
-  tab: browser.tabs.Tab
+  tab: browser.tabs.Tab,
 ): Promise<string> {
   let text: string;
 
@@ -538,7 +536,10 @@ async function handleContentOfContextMenu(
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
-        scope: 'all', format: 'link', listType: 'list', windowId: tab.windowId,
+        scope: 'all',
+        format: 'link',
+        listType: 'list',
+        windowId: tab.windowId,
       });
       break;
     }
@@ -549,7 +550,10 @@ async function handleContentOfContextMenu(
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
-        scope: 'all', format: 'link', listType: 'task-list', windowId: tab.windowId,
+        scope: 'all',
+        format: 'link',
+        listType: 'task-list',
+        windowId: tab.windowId,
       });
       break;
     }
@@ -560,7 +564,10 @@ async function handleContentOfContextMenu(
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
-        scope: 'highlighted', format: 'link', listType: 'list', windowId: tab.windowId,
+        scope: 'highlighted',
+        format: 'link',
+        listType: 'list',
+        windowId: tab.windowId,
       });
       break;
     }
@@ -571,7 +578,10 @@ async function handleContentOfContextMenu(
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
-        scope: 'highlighted', format: 'link', listType: 'task-list', windowId: tab.windowId,
+        scope: 'highlighted',
+        format: 'link',
+        listType: 'task-list',
+        windowId: tab.windowId,
       });
       break;
     }
@@ -678,12 +688,11 @@ async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Prom
 
 createMenus().then(() => null /* NOP */);
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  if (Object.keys(changes).indexOf(CustomFormatsStorage.KeyOfLastUpdate()) !== -1) {
+  if (Object.keys(changes).includes(CustomFormatsStorage.KeyOfLastUpdate())) {
     await createMenus();
   }
 });
 
-// eslint-disable-next-line no-undef
 if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
   // Hack for Firefox, in which Context Menu disappears after some time.
   // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
@@ -701,7 +710,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
   }
   try {
     const text = await handleContentOfContextMenu(info, tab);
-    // eslint-disable-next-line no-undef
+
     if ((globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true) {
       await navigator.clipboard.writeText(text);
     } else {
@@ -754,42 +763,66 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         break;
       case 'all-tabs-link-as-list':
         text = await handleExportTabs({
-          scope: 'all', format: 'link', listType: 'list', windowId,
+          scope: 'all',
+          format: 'link',
+          listType: 'list',
+          windowId,
         });
         break;
       case 'all-tabs-link-as-task-list':
         text = await handleExportTabs({
-          scope: 'all', format: 'link', listType: 'task-list', windowId,
+          scope: 'all',
+          format: 'link',
+          listType: 'task-list',
+          windowId,
         });
         break;
       case 'all-tabs-title-as-list':
         text = await handleExportTabs({
-          scope: 'all', format: 'title', listType: 'list', windowId,
+          scope: 'all',
+          format: 'title',
+          listType: 'list',
+          windowId,
         });
         break;
       case 'all-tabs-url-as-list':
         text = await handleExportTabs({
-          scope: 'all', format: 'url', listType: 'list', windowId,
+          scope: 'all',
+          format: 'url',
+          listType: 'list',
+          windowId,
         });
         break;
       case 'highlighted-tabs-link-as-list':
         text = await handleExportTabs({
-          scope: 'highlighted', format: 'link', listType: 'list', windowId,
+          scope: 'highlighted',
+          format: 'link',
+          listType: 'list',
+          windowId,
         });
         break;
       case 'highlighted-tabs-link-as-task-list':
         text = await handleExportTabs({
-          scope: 'highlighted', format: 'link', listType: 'task-list', windowId,
+          scope: 'highlighted',
+          format: 'link',
+          listType: 'task-list',
+          windowId,
         });
         break;
       case 'highlighted-tabs-title-as-list':
         text = await handleExportTabs({
-          scope: 'highlighted', format: 'title', listType: 'list', windowId,
+          scope: 'highlighted',
+          format: 'title',
+          listType: 'list',
+          windowId,
         });
         break;
       case 'highlighted-tabs-url-as-list':
         text = await handleExportTabs({
-          scope: 'highlighted', format: 'url', listType: 'list', windowId,
+          scope: 'highlighted',
+          format: 'url',
+          listType: 'list',
+          windowId,
         });
         break;
       default: {
@@ -815,13 +848,12 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
             default:
               throw new TypeError(`unknown keyboard custom format: ${command}`);
           }
-        } catch (e) {
+        } catch {
           throw new TypeError(`unknown keyboard command: ${command}`);
         }
       }
     }
 
-    // eslint-disable-next-line no-undef
     if ((globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API) {
       await navigator.clipboard.writeText(text);
     } else {
@@ -838,7 +870,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
 
 async function handleRuntimeMessage(
   topic: 'badge' | 'export-current-tab' | 'export-tabs',
-  params: any
+  params: any,
 ): Promise<string | null> {
   switch (topic) {
     case 'badge': {
@@ -849,7 +881,7 @@ async function handleRuntimeMessage(
     case 'export-current-tab': {
       const tab = await browser.tabs.get(params.tabId);
       if (typeof tab === 'undefined') {
-        throw new Error('got undefined tab');
+        throw new TypeError('got undefined tab');
       }
       return handleExportLink({
         format: params.format,
@@ -864,7 +896,7 @@ async function handleRuntimeMessage(
     }
 
     default: {
-      throw TypeError(`Unknown message topic '${topic}'`);
+      throw new TypeError(`Unknown message topic '${topic}'`);
     }
   }
 }
@@ -873,8 +905,8 @@ async function handleRuntimeMessage(
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   handleRuntimeMessage(message.topic, message.params)
-    .then((text) => sendResponse({ ok: true, text }))
-    .catch((error) => sendResponse({ ok: false, error: error.message }));
+    .then(text => sendResponse({ ok: true, text }))
+    .catch(error => sendResponse({ ok: false, error: error.message }));
 
   // Must return true to indicate async. See https://developer.chrome.com/docs/extensions/mv3/messaging/#simple
   return true;

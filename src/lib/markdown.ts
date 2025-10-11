@@ -150,7 +150,7 @@ export default class Markdown {
     }
 
     return items.map((item: string | NestedArray) => {
-      if (item instanceof Array) {
+      if (Array.isArray(item)) {
         return this.nestedList(item, prefix, level + 1);
       }
       return `${renderedIndents}${prefix} ${item}`;

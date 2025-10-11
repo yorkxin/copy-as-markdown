@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (grantButton) {
     if (await browser.permissions.contains({ permissions })) {
       grantButton.disabled = true;
-      grantButton.innerText = 'Granted!';
+      grantButton.textContent = 'Granted!';
     } else {
       grantButton.addEventListener('click', async () => {
         await browser.permissions.request({ permissions });

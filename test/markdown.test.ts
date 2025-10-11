@@ -1,5 +1,5 @@
 import { describe, it } from 'node:test';
-import * as assert from 'assert';
+import * as assert from 'node:assert';
 import Markdown from '../src/lib/markdown';
 
 describe('Markdown', () => {

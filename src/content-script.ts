@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-
 /**
  * Before modifying anything here, read the following articles first:
  * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard
@@ -30,8 +28,9 @@ export default async function copy(text: string, iframeSrc: string): Promise<Cop
     let ret: PermissionStatus | undefined;
     try {
       ret = await navigator.permissions.query({
-        // @ts-ignore - clipboard-write is not in standard PermissionName
-        name: 'clipboard-write', allowWithoutGesture: true,
+        // @ts-expect-error - clipboard-write is not in standard PermissionName
+        name: 'clipboard-write',
+        allowWithoutGesture: true,
       });
     } catch (e) {
       if (e instanceof TypeError) {

@@ -74,7 +74,7 @@ if (formPopupActions) {
         params: { type: 'success' },
       });
     } catch (error) {
-      // @ts-ignore - browser.runtime.lastError is not in types
+      // @ts-expect-error - browser.runtime.lastError is not in types
       browser.runtime.lastError = error;
       await browser.runtime.sendMessage({
         topic: 'badge',
@@ -106,7 +106,7 @@ async function getCurrentWindow(): Promise<browser.windows.Window> {
   if (URL_PARAMS.has('window')) {
     const windowIdParam = URL_PARAMS.get('window');
     if (windowIdParam) {
-      return browser.windows.get(parseInt(windowIdParam, 10), { populate: true });
+      return browser.windows.get(Number.parseInt(windowIdParam, 10), { populate: true });
     }
   }
   return browser.windows.getCurrent({ populate: true });
@@ -116,7 +116,7 @@ async function getActiveTabId(crWindow: browser.windows.Window): Promise<number>
   if (URL_PARAMS.has('tab')) {
     const tabIdParam = URL_PARAMS.get('tab');
     if (tabIdParam) {
-      return parseInt(tabIdParam, 10);
+      return Number.parseInt(tabIdParam, 10);
     }
   }
 

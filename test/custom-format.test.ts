@@ -23,13 +23,25 @@ describe('custom-format.js', () => {
         ],
         grouped: [
           {
-            title: 'Example 1', url: 'https://example.com/1', number: 1, isGroup: false, links: [],
+            title: 'Example 1',
+            url: 'https://example.com/1',
+            number: 1,
+            isGroup: false,
+            links: [],
           },
           {
-            title: 'Example 2', url: 'https://example.com/2', number: 2, isGroup: false, links: [],
+            title: 'Example 2',
+            url: 'https://example.com/2',
+            number: 2,
+            isGroup: false,
+            links: [],
           },
           {
-            title: 'Example 3', url: 'https://example.com/3', number: 3, isGroup: false, links: [],
+            title: 'Example 3',
+            url: 'https://example.com/3',
+            number: 3,
+            isGroup: false,
+            links: [],
           },
         ],
       });
@@ -63,10 +75,18 @@ describe('custom-format.js', () => {
         ],
         grouped: [
           {
-            title: 'Example 1', url: 'https://example.com/1', number: 1, isGroup: false, links: [],
+            title: 'Example 1',
+            url: 'https://example.com/1',
+            number: 1,
+            isGroup: false,
+            links: [],
           },
           {
-            title: 'Example 2', url: 'https://example.com/2', number: 2, isGroup: false, links: [],
+            title: 'Example 2',
+            url: 'https://example.com/2',
+            number: 2,
+            isGroup: false,
+            links: [],
           },
           {
             isGroup: true,
@@ -75,18 +95,34 @@ describe('custom-format.js', () => {
             number: 3,
             links: [
               {
-                title: 'Example 3', url: 'https://example.com/3', number: 1, isGroup: false, links: [],
+                title: 'Example 3',
+                url: 'https://example.com/3',
+                number: 1,
+                isGroup: false,
+                links: [],
               },
               {
-                title: 'Example 4', url: 'https://example.com/4', number: 2, isGroup: false, links: [],
+                title: 'Example 4',
+                url: 'https://example.com/4',
+                number: 2,
+                isGroup: false,
+                links: [],
               },
             ],
           },
           {
-            title: 'Example 5', url: 'https://example.com/5', number: 4, isGroup: false, links: [],
+            title: 'Example 5',
+            url: 'https://example.com/5',
+            number: 4,
+            isGroup: false,
+            links: [],
           },
           {
-            title: 'Example 6', url: 'https://example.com/6', number: 5, isGroup: false, links: [],
+            title: 'Example 6',
+            url: 'https://example.com/6',
+            number: 5,
+            isGroup: false,
+            links: [],
           },
         ],
       });
@@ -114,10 +150,18 @@ describe('custom-format.js', () => {
         ],
         grouped: [
           {
-            title: 'Example 1', url: 'https://example.com/1', number: 1, isGroup: false, links: [],
+            title: 'Example 1',
+            url: 'https://example.com/1',
+            number: 1,
+            isGroup: false,
+            links: [],
           },
           {
-            title: 'Example 2', url: 'https://example.com/2', number: 2, isGroup: false, links: [],
+            title: 'Example 2',
+            url: 'https://example.com/2',
+            number: 2,
+            isGroup: false,
+            links: [],
           },
           {
             isGroup: true,
@@ -126,10 +170,18 @@ describe('custom-format.js', () => {
             number: 3,
             links: [
               {
-                title: 'Example 3', url: 'https://example.com/3', number: 1, isGroup: false, links: [],
+                title: 'Example 3',
+                url: 'https://example.com/3',
+                number: 1,
+                isGroup: false,
+                links: [],
               },
               {
-                title: 'Example 4', url: 'https://example.com/4', number: 2, isGroup: false, links: [],
+                title: 'Example 4',
+                url: 'https://example.com/4',
+                number: 2,
+                isGroup: false,
+                links: [],
               },
             ],
           },

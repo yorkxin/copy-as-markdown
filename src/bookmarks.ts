@@ -25,7 +25,7 @@ export class Bookmarks {
     }
 
     // folder, traverse
-    const children = bookmark.children.map((bm) => this.aggregate(bm));
+    const children = bookmark.children.map(bm => this.aggregate(bm));
     if (children.length === 0) {
       return [bookmark.title];
     }
