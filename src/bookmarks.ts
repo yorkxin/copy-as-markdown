@@ -1,24 +1,17 @@
-/* eslint-disable no-underscore-dangle , import/prefer-default-export  */
+import type Markdown from './lib/markdown';
+import type { NestedArray } from './lib/markdown';
 
 /**
  * Bookmarks handles bookmarks formatting
  */
 export class Bookmarks {
-  /**
-   *
-   * @param {Object} params - The parameters
-   * @param {import("./lib/markdown.js").default} params.markdown - The markdown instance
-   */
-  constructor({ markdown }) {
+  private _markdown: Markdown;
+
+  constructor({ markdown }: { markdown: Markdown }) {
     this._markdown = markdown;
   }
 
-  /**
-   *
-   * @param {browser.bookmarks.BookmarkTreeNode} bookmark
-   * @returns {import("./lib/markdown.js").NestedArray}
-   */
-  aggregate(bookmark) {
+  aggregate(bookmark: browser.bookmarks.BookmarkTreeNode): NestedArray {
     if (bookmark.url) {
       // an actual bookmark, not a folder, return
       return [this._markdown.linkTo(bookmark.title, bookmark.url)];
@@ -39,16 +32,11 @@ export class Bookmarks {
     return [bookmark.title, children];
   }
 
-  /**
-   *
-   * @param {browser.bookmarks.BookmarkTreeNode} bookmark
-   * @returns {string}
-   */
-  toMarkdown(bookmark) {
+  toMarkdown(bookmark: browser.bookmarks.BookmarkTreeNode): string {
     const tree = this.aggregate(bookmark);
 
     if (tree.length === 1) {
-      return tree[0];
+      return tree[0] as string;
     }
 
     return this._markdown.list(tree);

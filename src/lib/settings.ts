@@ -4,12 +4,11 @@ const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
 const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
 const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
 
-/**
- * @typedef {Object} Settings
- * @property {boolean} alwaysEscapeLinkBrackets
- * @property {'dash'|'asterisk'|'plus'} styleOfUnorderedList
- * @property {'spaces'|'tab'} styleOfTabGroupIndentation
- */
+interface Settings {
+  alwaysEscapeLinkBrackets: boolean;
+  styleOfUnorderedList: 'dash' | 'asterisk' | 'plus';
+  styleOfTabGroupIndentation: 'spaces' | 'tab';
+}
 
 /**
  * Singleton Settings object in the sync storage
@@ -19,10 +18,7 @@ export default {
   SKStyleOfUnorderedList,
   SKStyleTabGroupIndentation,
 
-  /**
-   * @returns {Settings}
-   */
-  get defaultSettings() {
+  get defaultSettings(): Record<string, unknown> {
     return {
       [SKLinkTextAlwaysEscapeBrackets]: false,
       [SKStyleOfUnorderedList]: 'dash',
@@ -30,60 +26,39 @@ export default {
     };
   },
 
-  /**
-   * @returns {string[]}
-   */
-  get keys() {
+  get keys(): string[] {
     return Object.keys(this.defaultSettings);
   },
 
-  /**
-   * @param {boolean} value
-   * @return {Promise<void>}
-   */
-  async setLinkTextAlwaysEscapeBrackets(value) {
+  async setLinkTextAlwaysEscapeBrackets(value: boolean): Promise<void> {
     await browser.storage.sync.set({
       [SKLinkTextAlwaysEscapeBrackets]: value,
     });
   },
 
-  /**
-   * @param {'spaces'|'tab'} value
-   * @return {Promise<void>}
-   */
-  async setStyleTabGroupIndentation(value) {
+  async setStyleTabGroupIndentation(value: 'spaces' | 'tab'): Promise<void> {
     await browser.storage.sync.set({
       [SKStyleTabGroupIndentation]: value,
     });
   },
 
-  /**
-   * @param {'dash'|'asterisk'|'plus'} value
-   * @return {Promise<void>}
-   */
-  async setStyleOfUnrderedList(value) {
+  async setStyleOfUnrderedList(value: 'dash' | 'asterisk' | 'plus'): Promise<void> {
     await browser.storage.sync.set({
       [SKStyleOfUnorderedList]: value,
     });
   },
 
-  /**
-   * @return {Promise<void>}
-   */
-  async reset() {
+  async reset(): Promise<void> {
     await browser.storage.sync.remove(this.keys);
   },
 
-  /**
-   * @returns {Promise<Settings>}
-   */
-  async getAll() {
+  async getAll(): Promise<Settings> {
     const all = await browser.storage.sync.get(this.defaultSettings);
 
     return {
-      alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets],
-      styleOfUnorderedList: all[SKStyleOfUnorderedList],
-      styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation],
+      alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets] as boolean,
+      styleOfUnorderedList: all[SKStyleOfUnorderedList] as 'dash' | 'asterisk' | 'plus',
+      styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation] as 'spaces' | 'tab',
     };
   },
 };

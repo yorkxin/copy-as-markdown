@@ -1,11 +1,18 @@
 /* eslint-disable max-len */
-/* eslint-disable max-classes-per-file */
 
 /**
  * Before modifying anything here, read the following articles first:
  * https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard
  * https://web.dev/async-clipboard/
  */
+
+type CopyMethod = 'navigator_api' | 'textarea' | 'iframe';
+
+interface CopyResult {
+  ok: boolean;
+  error?: string;
+  method: CopyMethod;
+}
 
 /**
  * copy writes text to system clipboard in content script.
@@ -15,39 +22,21 @@
  *
  * NOTE: the whole function must be passed to content script as a function literal.
  * i.e. please do not extract any code to separate functions.
- * @param text {string}
- * @param iframeSrc {string} URL to iframe-copy.html
- * @returns {Promise<{ok: boolean, errorMessage?: string, method: 'navigator_api'|'textarea'|'iframe'}>}
  */
-export default async function copy(text, iframeSrc) {
+export default async function copy(text: string, iframeSrc: string): Promise<CopyResult> {
   class KnownFailureError extends Error {}
 
-  const useClipboardAPI = async (t) => {
-    /** @type {PermissionStatus} */
-    let ret;
+  const useClipboardAPI = async (t: string): Promise<boolean> => {
+    let ret: PermissionStatus | undefined;
     try {
-      // XXX: In Chrome, clipboard-write permission is required in order to use
-      // navigator.clipboard.writeText() in Content Script.
-      //
-      // There are some inconsistent behaviors when navigator.clipboard is called
-      // via onCommand (Keyboard Shortcut) vs via onMenu (Context Menu).
-      // The keyboard shortcut _may_ trigger permission prompt while the context menu one almost
-      // don't.
-      //
-      // Here we behave conservatively -- if permission query don't return 'granted' then
-      // don't even bother to try calling navigator.clipboard.writeText().
-      //
-      // See https://web.dev/async-clipboard/#security-and-permissions
-      // See https://bugs.chromium.org/p/chromium/issues/detail?id=1382608#c4
       ret = await navigator.permissions.query({
-        // @ts-ignore
+        // @ts-ignore - clipboard-write is not in standard PermissionName
         name: 'clipboard-write', allowWithoutGesture: true,
       });
     } catch (e) {
       if (e instanceof TypeError) {
-        // ... And also `clipboard-write` is not a permission that can be queried in Firefox,
-        // but since navigator.clipboard.writeText() always work on Firefox as long as it is declared
-        // in manifest.json, we don't even bother handling it.
+        // Firefox: `clipboard-write` is not a queryable permission,
+        // but navigator.clipboard.writeText() works if declared in manifest.json
         await navigator.clipboard.writeText(t);
         return true;
       }
@@ -60,12 +49,11 @@ export default async function copy(text, iframeSrc) {
       await navigator.clipboard.writeText(t);
       return true;
     }
-    console.debug(`clipboard-write permission state: ${ret.state}`);
+    console.debug(`clipboard-write permission state: ${ret?.state}`);
     throw new KnownFailureError('no permission to call navigator.clipboard API');
   };
 
-  const useOnPageTextarea = async (t) => {
-    /** @type {HTMLTextAreaElement} */
+  const useOnPageTextarea = async (t: string): Promise<boolean> => {
     const textBox = document.createElement('textarea');
     document.body.appendChild(textBox);
     try {
@@ -85,7 +73,7 @@ export default async function copy(text, iframeSrc) {
     }
   };
 
-  const useIframeTextarea = async (t) => new Promise((resolve, reject) => {
+  const useIframeTextarea = async (t: string): Promise<boolean> => new Promise((resolve, reject) => {
     const iframe = document.createElement('iframe');
     iframe.src = iframeSrc;
     iframe.width = '10';
@@ -113,7 +101,7 @@ export default async function copy(text, iframeSrc) {
     });
 
     setTimeout(() => {
-      iframe.contentWindow.postMessage({ cmd: 'copy', text: t }, '*');
+      iframe.contentWindow?.postMessage({ cmd: 'copy', text: t }, '*');
     }, 100);
   });
 
@@ -125,7 +113,8 @@ export default async function copy(text, iframeSrc) {
       console.debug(error);
       // try next method
     } else {
-      return Promise.resolve({ ok: false, error: `${error.name} ${error.message}`, method: 'navigator_api' });
+      const err = error as Error;
+      return Promise.resolve({ ok: false, error: `${err.name} ${err.message}`, method: 'navigator_api' });
     }
   }
 
@@ -137,7 +126,8 @@ export default async function copy(text, iframeSrc) {
       console.debug(error);
       // try next method
     } else {
-      return Promise.resolve({ ok: false, error: `${error.name} ${error.message}`, method: 'textarea' });
+      const err = error as Error;
+      return Promise.resolve({ ok: false, error: `${err.name} ${err.message}`, method: 'textarea' });
     }
   }
 
@@ -145,7 +135,7 @@ export default async function copy(text, iframeSrc) {
     await useIframeTextarea(text);
     return Promise.resolve({ ok: true, method: 'iframe' });
   } catch (error) {
-    console.debug(error);
-    return Promise.resolve({ ok: false, error: `${error.name} ${error.message}`, method: 'iframe' });
+    const err = error as Error;
+    return Promise.resolve({ ok: false, error: `${err.name} ${err.message}`, method: 'iframe' });
   }
 }

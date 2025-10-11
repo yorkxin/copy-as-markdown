@@ -1,4 +1,4 @@
-const menuTemplate = `      
+const menuTemplate = `
 <aside class="menu">
   <p class="menu-label">General</p>
   <ul class="menu-list">
@@ -34,28 +34,25 @@ const menuTemplate = `
 </aside>
 `;
 
-/**
- *
- * @param {Node} container
- * @param {Location} loc
- */
-export default function renderMenu(container, loc) {
+export default function renderMenu(container: Node, loc: Location): void {
   const parser = new DOMParser();
   const menu = parser.parseFromString(menuTemplate, 'text/html');
   const segs = loc.pathname.split('/');
   const path = segs[segs.length - 1];
   const query = new URLSearchParams(loc.search);
-  /** @type {HTMLElement} */
-  let active = null;
+  let active: HTMLElement | null = null;
   if (path === 'custom-format.html') {
     const context = query.get('context');
     const slot = query.get('slot');
-    active = menu.querySelector(`[data-menu-custom-format-context='${context}'] a[data-menu-custom-format-slot="${slot}"]`);
+    active = menu.querySelector<HTMLElement>(`[data-menu-custom-format-context='${context}'] a[data-menu-custom-format-slot="${slot}"]`);
   } else {
-    active = menu.querySelector(`a[href='${path}']`);
+    active = menu.querySelector<HTMLElement>(`a[href='${path}']`);
   }
   if (active) {
     active.classList.add('is-active');
   }
-  container.appendChild(menu.body.firstChild);
+  const firstChild = menu.body.firstChild;
+  if (firstChild) {
+    container.appendChild(firstChild);
+  }
 }

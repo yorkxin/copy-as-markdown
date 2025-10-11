@@ -1,26 +1,24 @@
 const INDENT_STYLE_SPACES = 'spaces';
 const INDENT_STYLE_TAB = 'tab';
 
-/**
- * @typedef {[string] | [string, NestedArray]} NestedArray
- */
+export type NestedArray = (string | NestedArray)[];
 
-/* eslint-disable no-underscore-dangle */
 export default class Markdown {
-  static DefaultTitle() {
+  private _alwaysEscapeLinkBracket: boolean;
+  private _unorderedListChar: '-' | '*' | '+';
+  private _indentation: 'spaces' | 'tab';
+
+  static INDENT_STYLE_SPACES = INDENT_STYLE_SPACES;
+  static INDENT_STYLE_TABS = INDENT_STYLE_TAB;
+
+  static DefaultTitle(): string {
     return '(No Title)';
   }
 
-  /**
-   * @param {Object} params
-   * @param {boolean} [params.alwaysEscapeLinkBracket]
-   * @param {'-'|'*'|'+'} [params.unorderedListChar]
-   * @param {'spaces'|'tab'} [params.indentation]
-   */
   constructor({
     alwaysEscapeLinkBracket = false,
-    unorderedListChar = '-',
-    indentation = INDENT_STYLE_SPACES,
+    unorderedListChar = '-' as '-' | '*' | '+',
+    indentation = INDENT_STYLE_SPACES as 'spaces' | 'tab',
   } = {}) {
     this._alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
     this._unorderedListChar = unorderedListChar;
@@ -29,11 +27,9 @@ export default class Markdown {
 
   /**
    * check if [] are balanced
-   * @param text {string}
-   * @returns {boolean}
    */
-  static bracketsAreBalanced(text) {
-    const stack = [];
+  static bracketsAreBalanced(text: string): boolean {
+    const stack: string[] = [];
 
     // using an iterator to ensure Unicode code point is considered.
     const it = text[Symbol.iterator]();
@@ -55,23 +51,10 @@ export default class Markdown {
   }
 
   /**
- * Escapes link text to sanitize inline formats or unbalanced brackets.
- *
- * @param text {string}
- * @return {string}
- * @see https://spec.commonmark.org/0.30/#link-text
- * @example unbalanced brackets are escaped
- *   escapeLinkText('[[[Staple') // \[\[\[Staple
- *   escapeLinkText('Apple ][') // Apple \]\[
- * @example balanced brackets are intact
- *   escapeLinkText('[JIRA-123] Launch Rocket') // [JIRA-123] Launch Rocket
- * @example inline formats are escaped
- *   escapeLinkText('Click *Start* button to run `launch()`')
- *   //=> Click \*Start\* button to run \`launch()\`
- *
- */
-  escapeLinkText(text) {
-  // runtime type checking :shrug:
+   * Escapes link text to sanitize inline formats or unbalanced brackets.
+   */
+  escapeLinkText(text: string): string {
+    // runtime type checking
     if (typeof text !== 'string') {
       return '';
     }
@@ -81,17 +64,17 @@ export default class Markdown {
       || !Markdown.bracketsAreBalanced(text) // unbalanced brackets, must be escaped
     );
 
-    const newString = [];
+    const newString: string[] = [];
 
     // using an iterator to ensure Unicode code point is considered.
     const it = text[Symbol.iterator]();
     let ch = it.next();
 
     while (!ch.done) {
-      let chToUse = null;
+      let chToUse: string | null = null;
 
       switch (ch.value) {
-      // Potential unbalanced brackets
+        // Potential unbalanced brackets
         case '[':
         case ']':
           if (shouldEscapeBrackets) {
@@ -99,7 +82,7 @@ export default class Markdown {
           }
           break;
 
-          // chars that may be interpreted as inline formats
+        // chars that may be interpreted as inline formats
         case '*':
         case '_':
         case '`':
@@ -122,12 +105,8 @@ export default class Markdown {
     return newString.join('');
   }
 
-  /**
- * @param {string} title
- * @param {string} url
- */
-  linkTo(title, url) {
-    let titleToUse;
+  linkTo(title: string, url: string): string {
+    let titleToUse: string;
     if (title === '') {
       titleToUse = Markdown.DefaultTitle();
     } else {
@@ -136,45 +115,23 @@ export default class Markdown {
     return `[${titleToUse}](${url})`;
   }
 
-  static imageFor(title, url) {
+  static imageFor(title: string, url: string): string {
     return `![${title}](${url})`;
   }
 
-  /**
- *
- * @param description {string}
- * @param url {string}
- * @param linkURL {string}
- * @returns {string}
- */
-  static linkedImage(description, url, linkURL) {
+  static linkedImage(description: string, url: string, linkURL: string): string {
     return `[![${description}](${url})](${linkURL})`;
   }
 
-  /**
-   * @param {NestedArray} items
-   * @returns {string}
-   */
-  list(items) {
+  list(items: NestedArray): string {
     return this.nestedList(items, this._unorderedListChar);
   }
 
-  /**
-   * @param {NestedArray} items
-   * @returns {string}
-   */
-  taskList(items) {
+  taskList(items: NestedArray): string {
     return this.nestedList(items, '- [ ]');
   }
 
-  /**
-   *
-   * @param {NestedArray} items
-   * @param {string} prefix
-   * @param {number} level
-   * @return {string}
-   */
-  nestedList(items, prefix, level = 0) {
+  nestedList(items: NestedArray, prefix: string, level: number = 0): string {
     let renderedIndents = '';
     let indent = '';
     if (this._indentation === INDENT_STYLE_SPACES) {
@@ -192,7 +149,7 @@ export default class Markdown {
       renderedIndents += indent;
     }
 
-    return items.map((item) => {
+    return items.map((item: string | NestedArray) => {
       if (item instanceof Array) {
         return this.nestedList(item, prefix, level + 1);
       }
@@ -200,30 +157,27 @@ export default class Markdown {
     }).join('\n');
   }
 
-  get alwaysEscapeLinkBracket() {
+  get alwaysEscapeLinkBracket(): boolean {
     return this._alwaysEscapeLinkBracket;
   }
 
-  set alwaysEscapeLinkBracket(value) {
+  set alwaysEscapeLinkBracket(value: boolean) {
     this._alwaysEscapeLinkBracket = value;
   }
 
-  get unorderedListChar() {
+  get unorderedListChar(): '-' | '*' | '+' {
     return this._unorderedListChar;
   }
 
-  set unorderedListChar(value) {
+  set unorderedListChar(value: '-' | '*' | '+') {
     this._unorderedListChar = value;
   }
 
-  get nestedListIndentation() {
+  get nestedListIndentation(): 'spaces' | 'tab' {
     return this._indentation;
   }
 
-  set nestedListIndentation(value) {
+  set nestedListIndentation(value: 'spaces' | 'tab') {
     this._indentation = value;
   }
 }
-
-Markdown.INDENT_STYLE_SPACES = INDENT_STYLE_SPACES;
-Markdown.INDENT_STYLE_TABS = INDENT_STYLE_TAB;

@@ -1,21 +1,36 @@
 // eslint-disable-next-line max-classes-per-file
-import CustomFormatsStorage from '../storage/custom-formats-storage.js';
-import CustomFormat from '../lib/custom-format.js';
+import CustomFormatsStorage from '../storage/custom-formats-storage';
+import CustomFormat, { type Context, type RenderInput, type RenderInputLink } from '../lib/custom-format';
 
 class UI {
-  /**
-   *
-   * @param {Document} doc
-   */
-  constructor(doc) {
+  slot: string;
+  context: Context;
+  sampleInput: RenderInput | RenderInputLink;
+  elInputName: HTMLInputElement;
+  elInputTemplate: HTMLInputElement;
+  elShowInMenus: HTMLInputElement;
+  elPreview: HTMLTextAreaElement;
+  elErrorTemplate: HTMLDivElement;
+  elSave: HTMLButtonElement;
+
+  constructor(doc: Document) {
     const params = new URLSearchParams(document.location.search);
-    /** @property {string} */
-    this.slot = params.get('slot');
-    /** @property {import('../lib/custom-format.js').Context} */
-    this.context = params.get('context');
-    /** @property {Object} */
-    this.sampleInput = {};
-    const placeholder = doc.querySelector("[data-placeholder='context-in-header']");
+    const slot = params.get('slot');
+    const context = params.get('context') as Context | null;
+
+    if (!slot || !context) {
+      throw new TypeError('Missing required URL parameters: slot and context');
+    }
+
+    this.slot = slot;
+    this.context = context;
+    this.sampleInput = {} as RenderInput | RenderInputLink;
+
+    const placeholder = doc.querySelector<HTMLElement>("[data-placeholder='context-in-header']");
+    if (!placeholder) {
+      throw new Error('Missing placeholder element');
+    }
+
     switch (this.context) {
       case 'multiple-links':
         this.sampleInput = UI.sampleInputForTabs;
@@ -29,20 +44,26 @@ class UI {
         throw new TypeError(`invalid context '${this.context}'`);
     }
 
-    /** @property {HTMLInputElement} */
-    this.elInputName = /** @type {HTMLInputElement} */ (doc.getElementById('input-name'));
-    /** @property {HTMLInputElement} */
-    this.elInputTemplate = /** @type {HTMLInputElement} */ (doc.getElementById('input-template'));
-    /** @property {HTMLInputElement} */
-    this.elShowInMenus = /** @type {HTMLInputElement} */ (doc.getElementById('input-show-in-menus'));
-    /** @property {HTMLTextAreaElement} */
-    this.elPreview = /** @type {HTMLTextAreaElement} */ (doc.getElementById('preview'));
-    /** @property {HTMLDivElement} */
-    this.elErrorTemplate = /** @type {HTMLDivElement} */ (doc.getElementById('error-template'));
-    /** @property {HTMLButtonElement} */
-    this.elSave = /** @type {HTMLButtonElement} */ (doc.getElementById('save'));
-    // eslint-disable-next-line no-param-reassign
-    doc.getElementById('sample-input').textContent = JSON.stringify(this.sampleInput, null, 2);
+    const elInputName = doc.getElementById('input-name') as HTMLInputElement | null;
+    const elInputTemplate = doc.getElementById('input-template') as HTMLInputElement | null;
+    const elShowInMenus = doc.getElementById('input-show-in-menus') as HTMLInputElement | null;
+    const elPreview = doc.getElementById('preview') as HTMLTextAreaElement | null;
+    const elErrorTemplate = doc.getElementById('error-template') as HTMLDivElement | null;
+    const elSave = doc.getElementById('save') as HTMLButtonElement | null;
+    const elSampleInput = doc.getElementById('sample-input');
+
+    if (!elInputName || !elInputTemplate || !elShowInMenus || !elPreview || !elErrorTemplate || !elSave || !elSampleInput) {
+      throw new Error('Missing required DOM elements');
+    }
+
+    this.elInputName = elInputName;
+    this.elInputTemplate = elInputTemplate;
+    this.elShowInMenus = elShowInMenus;
+    this.elPreview = elPreview;
+    this.elErrorTemplate = elErrorTemplate;
+    this.elSave = elSave;
+
+    elSampleInput.textContent = JSON.stringify(this.sampleInput, null, 2);
 
     this.elInputTemplate.addEventListener('input', () => {
       this.renderPreview();
@@ -52,30 +73,22 @@ class UI {
       this.renderPreview();
     });
 
-    doc.querySelectorAll('[data-placeholder="default-name"]')
+    doc.querySelectorAll<HTMLElement>('[data-placeholder="default-name"]')
       .forEach((el) => {
-        // eslint-disable-next-line no-param-reassign
         el.textContent = this.defaultName();
       });
 
     this.elInputName.placeholder = this.defaultName();
   }
 
-  /**
-   *
-   * @param {CustomFormat} customFormat
-   */
-  load(customFormat) {
+  load(customFormat: CustomFormat): void {
     this.elInputName.value = customFormat.name === '' ? this.defaultName() : customFormat.name;
     this.elInputTemplate.value = customFormat.template;
     this.elShowInMenus.checked = customFormat.showInMenus;
     this.renderPreview();
   }
 
-  /**
-   * @returns {CustomFormat}
-   */
-  current() {
+  current(): CustomFormat {
     return new CustomFormat({
       slot: this.slot,
       context: this.context,
@@ -85,10 +98,7 @@ class UI {
     });
   }
 
-  /**
-   * @returns {void}
-   */
-  renderPreview() {
+  renderPreview(): void {
     this.elInputTemplate.classList.remove('is-danger');
     this.elErrorTemplate.classList.add('is-hidden');
     this.elSave.disabled = true;
@@ -107,24 +117,15 @@ class UI {
     }
   }
 
-  /**
-   * @returns {string}
-   */
-  defaultName() {
+  defaultName(): string {
     return `Custom Format ${this.slot}`;
   }
 
-  /**
-   * @returns {Object}
-   */
-  static get sampleInputForOneLink() {
-    return { title: 'Example 1', url: 'https://example.com/1' };
+  static get sampleInputForOneLink(): RenderInputLink {
+    return { title: 'Example 1', url: 'https://example.com/1', number: 1 };
   }
 
-  /**
-   * @returns {Object}
-   */
-  static get sampleInputForTabs() {
+  static get sampleInputForTabs(): RenderInput {
     return {
       links: [
         { title: 'Example 1', url: 'https://example.com/1', number: 1 },
@@ -144,7 +145,7 @@ class UI {
         },
         {
           title: 'Group 1',
-          url: null,
+          url: '',
           isGroup: true,
           number: 3,
           links: [

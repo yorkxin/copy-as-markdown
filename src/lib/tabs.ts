@@ -1,11 +1,9 @@
-// eslint-disable-next-line max-classes-per-file
 export class Tab {
-  /**
-   * @param {string} title
-   * @param {string} url
-   * @param {number} groupId
-   */
-  constructor(title, url, groupId) {
+  title: string;
+  url: string;
+  groupId: number;
+
+  constructor(title: string, url: string, groupId: number) {
     this.title = title;
     this.url = url;
     this.groupId = groupId;
@@ -13,21 +11,19 @@ export class Tab {
 }
 
 export class TabGroup {
-  /**
-   * @param {string} title
-   * @param {number} id
-   * @param {string} color
-   */
-  constructor(title, id, color) {
+  title: string;
+  id: number;
+  color: string;
+
+  static NonGroupId = -1;
+
+  constructor(title: string, id: number, color: string) {
     this.title = title;
     this.id = id;
     this.color = color;
   }
 
-  /**
-   * @returns {string}
-   */
-  getTitle() {
+  getTitle(): string {
     if (this.title === '') {
       return `Untitled ${this.color} group`;
     }
@@ -35,15 +31,12 @@ export class TabGroup {
   }
 }
 
-TabGroup.NonGroupId = -1;
-
 export class TabList {
-  /**
-   * @param {string} name
-   * @param {number} groupId
-   * @param {Tab[]} tabs
-   */
-  constructor(name, groupId, tabs) {
+  name: string;
+  groupId: number;
+  tabs: Tab[];
+
+  constructor(name: string, groupId: number, tabs: Tab[]) {
     this.name = name;
     this.groupId = groupId;
     this.tabs = tabs;
@@ -51,56 +44,43 @@ export class TabList {
 
   /**
    * Represents a list of tabs that are not grouped.
-   * @param {Tab[]} tabs
-   * @returns {TabList}
    */
-  static nonGroup(tabs) {
+  static nonGroup(tabs: Tab[]): TabList {
     return new TabList('', TabGroup.NonGroupId, tabs);
   }
 
-  /**
-   * @returns {boolean}
-   */
-  isNonGroup() {
+  isNonGroup(): boolean {
     return this.groupId === TabGroup.NonGroupId;
   }
 }
 
 export class TabListGrouper {
-  /**
-   *
-   * @param {TabGroup[]} groups
-   */
-  constructor(groups) {
-    /** @type {Map<number,TabGroup>} */
+  groupIndex: Map<number, TabGroup>;
+
+  constructor(groups: TabGroup[]) {
     this.groupIndex = new Map();
     groups.forEach((group) => {
       this.groupIndex.set(group.id, group);
     });
   }
 
-  /**
-   *
-   * @param {Tab[]} tabs
-   * @returns {TabList[]}
-   */
-  collectTabsByGroup(tabs) {
+  collectTabsByGroup(tabs: Tab[]): TabList[] {
     if (tabs.length === 0) {
       return [];
     }
 
-    /** @type {TabList[]} */
-    const collection = [];
+    const collection: TabList[] = [];
+    const firstTab = tabs[0];
+    if (!firstTab) return [];
 
-    /** @type {TabList|null} */
-    let currentGroup = this.makeTabListGroup(tabs[0]);
+    let currentGroup: TabList = this.makeTabListGroup(firstTab);
 
     for (let i = 1; i < tabs.length; i += 1) {
       const tab = tabs[i];
-      if (tab.groupId !== currentGroup.groupId) {
+      if (tab && tab.groupId !== currentGroup.groupId) {
         collection.push(currentGroup);
         currentGroup = this.makeTabListGroup(tab);
-      } else {
+      } else if (tab) {
         currentGroup.tabs.push(tab);
       }
     }
@@ -110,12 +90,7 @@ export class TabListGrouper {
     return collection;
   }
 
-  /**
-   *
-   * @param {Tab} tab
-   * @returns {TabList}
-   */
-  makeTabListGroup(tab) {
+  makeTabListGroup(tab: Tab): TabList {
     if (tab.groupId === TabGroup.NonGroupId) {
       // no group
       return TabList.nonGroup([tab]);
