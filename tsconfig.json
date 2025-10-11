@@ -3,8 +3,8 @@
     /* Language and Environment */
     "target": "ES2020",
     "lib": ["ES2020", "DOM"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
 
     /* Type Checking */
     "strict": true,
@@ -20,8 +20,7 @@
     "esModuleInterop": true,
 
     /* Emit */
-    "declaration": true,
-    "declarationMap": true,
+    "declaration": false,
     "sourceMap": true,
     "removeComments": false,
     "noEmit": false,
@@ -40,9 +39,7 @@
     "types": ["chrome", "firefox-webext-browser"]
   },
   "include": [
-    "src/**/*",
-    "scripts/**/*",
-    "test/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -51,7 +48,9 @@
     "chrome/dist",
     "firefox/dist",
     "firefox-mv3/dist",
-    "src/vendor/**/*",
+    "vendor/**/*",
+    "scripts/**/*",
+    "test/**/*",
     "e2e_test"
   ]
 }

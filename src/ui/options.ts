@@ -1,5 +1,5 @@
-import Settings from '../lib/settings';
-import * as lib from './lib';
+import Settings from '../lib/settings.js';
+import * as lib from './lib.js';
 
 interface FormElements extends HTMLFormControlsCollection {
   enabled: HTMLInputElement;

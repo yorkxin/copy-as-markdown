@@ -1,4 +1,4 @@
-import renderMenu from './menu';
+import renderMenu from './menu.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const menuElement = document.getElementById('menu');

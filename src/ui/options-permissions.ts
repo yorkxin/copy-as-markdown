@@ -1,6 +1,6 @@
-import Settings from '../lib/settings';
-import * as lib from './lib';
-import type { PermissionStatus } from './lib';
+import Settings from '../lib/settings.js';
+import * as lib from './lib.js';
+import type { PermissionStatus } from './lib.js';
 
 let permissionStatuses: PermissionStatus = new Map();
 

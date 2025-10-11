@@ -1,5 +1,5 @@
 import Mustache from 'mustache';
-import type { TabList } from './tabs';
+import type { TabList } from './tabs.js';
 
 // disable HTML escape
 Mustache.escape = (text: string) => text;

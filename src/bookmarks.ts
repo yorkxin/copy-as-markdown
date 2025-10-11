@@ -1,5 +1,5 @@
-import type Markdown from './lib/markdown';
-import type { NestedArray } from './lib/markdown';
+import type Markdown from './lib/markdown.js';
+import type { NestedArray } from './lib/markdown.js';
 
 /**
  * Bookmarks handles bookmarks formatting

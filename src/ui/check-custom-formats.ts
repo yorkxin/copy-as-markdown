@@ -1,5 +1,5 @@
-import CustomFormatsStorage from '../storage/custom-formats-storage';
-import type { Context } from '../lib/custom-format';
+import CustomFormatsStorage from '../storage/custom-formats-storage.js';
+import type { Context } from '../lib/custom-format.js';
 
 async function setVisibility(slot: string, context: Context, visible: boolean): Promise<void> {
   const format = await CustomFormatsStorage.get(context, slot);

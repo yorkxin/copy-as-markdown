@@ -1,6 +1,6 @@
-import CustomFormatsStorage from '../storage/custom-formats-storage';
-import CustomFormat from '../lib/custom-format';
-import type { Context, RenderInput, RenderInputLink } from '../lib/custom-format';
+import CustomFormatsStorage from '../storage/custom-formats-storage.js';
+import CustomFormat from '../lib/custom-format.js';
+import type { Context, RenderInput, RenderInputLink } from '../lib/custom-format.js';
 
 class UI {
   slot: string;

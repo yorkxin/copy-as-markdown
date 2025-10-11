@@ -24,7 +24,7 @@
     "debug-firefox-deved": "node scripts/debug.js firefox-deved",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "clean": "rm -rf ./build/* firefox/dist/* firefox-mv3/dist/* chrome/dist/* ./dist/*",
+    "clean": "rm -rf ./build/* ./dist/* ./{firefox,firefox-mv3,chrome}/dist/*",
     "convert-images": "./scripts/convert-images.sh",
     "postinstall": "node scripts/postinstall.js"
   },

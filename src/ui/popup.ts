@@ -1,4 +1,4 @@
-import CustomFormatsStorage from '../storage/custom-formats-storage';
+import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 
 let windowId = -1;
 let tabId = -1;

@@ -1,12 +1,12 @@
-import Settings from './lib/settings';
-import copy from './content-script';
-import Markdown from './lib/markdown';
-import type { TabList } from './lib/tabs';
-import { Tab, TabGroup, TabListGrouper } from './lib/tabs';
-import { Bookmarks } from './bookmarks';
-import CustomFormatsStorage from './storage/custom-formats-storage';
-import CustomFormat from './lib/custom-format';
-import type { NestedArray } from './lib/markdown';
+import Settings from './lib/settings.js';
+import copy from './content-script.js';
+import Markdown from './lib/markdown.js';
+import type { TabList } from './lib/tabs.js';
+import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
+import { Bookmarks } from './bookmarks.js';
+import CustomFormatsStorage from './storage/custom-formats-storage.js';
+import CustomFormat from './lib/custom-format.js';
+import type { NestedArray } from './lib/markdown.js';
 import type { Options as TurndownOptions } from 'turndown';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';

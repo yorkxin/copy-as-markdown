@@ -1,5 +1,5 @@
-import type { Context } from '../lib/custom-format';
-import CustomFormat from '../lib/custom-format';
+import type { Context } from '../lib/custom-format.js';
+import CustomFormat from '../lib/custom-format.js';
 
 function storageKeyOf(context: Context, slot: string, attribute: string): string {
   return `custom_formats.${context}.${slot}.${attribute}`;
