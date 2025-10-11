@@ -26,7 +26,7 @@ describe('Markdown', () => {
       });
 
       it('can set indentation style', () => {
-        const markdown = new Markdown({ indentation: Markdown.INDENT_STYLE_TABS });
+        const markdown = new Markdown({ indentation: 'tab' });
         assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n\t- c\n\t- d\n- e\n\t- f');
       });
     });
