@@ -67,8 +67,7 @@ describe('bookmarks.js', () => {
         + '    - bar 3\n'
         + '        - [baz 1](http://baz.com/1)\n'
         + '    - bar 4\n'
-        + '    - bar 5\n'
-        ,
+        + '    - bar 5\n',
       );
     });
   });
