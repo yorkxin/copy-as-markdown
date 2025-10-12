@@ -15,7 +15,7 @@ describe('custom-format.js', () => {
       ];
 
       const actual = CustomFormat.makeRenderInputForTabLists(lists);
-      assert.deepEqual(actual, {
+      assert.deepStrictEqual(actual, {
         links: [
           { title: 'Example 1', url: 'https://example.com/1', number: 1 },
           { title: 'Example 2', url: 'https://example.com/2', number: 2 },
@@ -141,7 +141,7 @@ describe('custom-format.js', () => {
       ];
 
       const actual = CustomFormat.makeRenderInputForTabLists(lists);
-      assert.deepEqual(actual, {
+      assert.deepStrictEqual(actual, {
         links: [
           { title: 'Example 1', url: 'https://example.com/1', number: 1 },
           { title: 'Example 2', url: 'https://example.com/2', number: 2 },

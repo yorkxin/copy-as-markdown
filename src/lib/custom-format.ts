@@ -14,7 +14,7 @@ export interface RenderInputLink {
 
 export interface RenderInputEntry {
   title: string;
-  url: string;
+  url: string | null;
   isGroup: boolean;
   number: number;
   links: RenderInputEntry[];
@@ -86,7 +86,7 @@ export default class CustomFormat {
         grouped.push({
           isGroup: true,
           title: group.name,
-          url: '',
+          url: null,
           number,
           links: group.tabs.map((tab, jdx) => ({
             title: tab.title,
