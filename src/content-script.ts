@@ -22,11 +22,24 @@ interface CopyResult {
  * i.e. please do not extract any code to separate functions.
  */
 export default async function copy(text: string, iframeSrc: string): Promise<CopyResult> {
-  class KnownFailureError extends Error {}
+  class KnownFailureError extends Error { }
 
   const useClipboardAPI = async (t: string): Promise<boolean> => {
     let ret: PermissionStatus | undefined;
     try {
+      // XXX: In Chrome, clipboard-write permission is required in order to use
+      // navigator.clipboard.writeText() in Content Script.
+      //
+      // There are some inconsistent behaviors when navigator.clipboard is called
+      // via onCommand (Keyboard Shortcut) vs via onMenu (Context Menu).
+      // The keyboard shortcut _may_ trigger permission prompt while the context menu one almost
+      // don't.
+      //
+      // Here we behave conservatively -- if permission query don't return 'granted' then
+      // don't even bother to try calling navigator.clipboard.writeText().
+      //
+      // See https://web.dev/async-clipboard/#security-and-permissions
+      // See https://bugs.chromium.org/p/chromium/issues/detail?id=1382608#c4
       ret = await navigator.permissions.query({
         // @ts-expect-error - clipboard-write is not in standard PermissionName
         name: 'clipboard-write',

@@ -52,6 +52,15 @@ export default class Markdown {
 
   /**
    * Escapes link text to sanitize inline formats or unbalanced brackets.
+   * @see https://spec.commonmark.org/0.30/#link-text
+   * @example unbalanced brackets are escaped
+   *   escapeLinkText('[[[Staple') // \[\[\[Staple
+   *   escapeLinkText('Apple ][') // Apple \]\[
+   * @example balanced brackets are intact
+   *   escapeLinkText('[JIRA-123] Launch Rocket') // [JIRA-123] Launch Rocket
+   * @example inline formats are escaped
+   *   escapeLinkText('Click *Start* button to run `launch()`')
+   *   //=> Click \*Start\* button to run \`launch()\`
    */
   escapeLinkText(text: string): string {
     // runtime type checking
