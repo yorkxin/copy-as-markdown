@@ -36,6 +36,8 @@ export class Bookmarks {
     const tree = this.aggregate(bookmark);
 
     if (tree.length === 1) {
+      // The first item is always a string so it's safe to cast to string.
+      // FIXME: this fact is not checked by type system
       return tree[0] as string;
     }
 
