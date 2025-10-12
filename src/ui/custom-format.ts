@@ -153,7 +153,7 @@ class UI {
         },
         {
           title: 'Group 1',
-          url: '',
+          url: null,
           isGroup: true,
           number: 3,
           links: [
