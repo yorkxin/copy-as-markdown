@@ -21,7 +21,7 @@
 
     /* Emit */
     "declaration": false,
-    "sourceMap": true,
+    "sourceMap": false,
     "removeComments": false,
     "noEmit": false,
     "outDir": "./dist",
