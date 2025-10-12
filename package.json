@@ -7,8 +7,10 @@
     "node": ">= 20.0"
   },
   "scripts": {
-    "test": "node --test",
-    "compile": "npm run compile-chrome && npm run compile-firefox && npm run compile-firefox-mv3",
+    "test": "tsx --test test/**/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "build:ts": "tsc",
+    "compile": "npm run build:ts && npm run compile-chrome && npm run compile-firefox && npm run compile-firefox-mv3",
     "compile-chrome": "node scripts/compile.js chrome",
     "compile-firefox": "node scripts/compile.js firefox",
     "compile-firefox-mv3": "node scripts/compile.js firefox-mv3",
@@ -20,22 +22,27 @@
     "debug-firefox-mv3": "node scripts/debug.js firefox-mv3",
     "debug-firefox": "node scripts/debug.js firefox",
     "debug-firefox-deved": "node scripts/debug.js firefox-deved",
-    "eslint": "eslint .",
-    "clean": "rm -rf ./build/* firefox/dist/* firefox-mv3/dist/* chrome/dist/*",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "clean": "rm -rf ./build/* ./dist/* ./{firefox,firefox-mv3,chrome}/dist/*",
     "convert-images": "./scripts/convert-images.sh",
     "postinstall": "node scripts/postinstall.js"
   },
   "license": "MIT",
+  "dependencies": {
+    "mustache": "^4.2.0"
+  },
   "devDependencies": {
+    "@antfu/eslint-config": "^5.4.1",
     "@types/chrome": "^0.0.266",
     "@types/firefox-webext-browser": "^120.0.1",
+    "@types/mustache": "^4.2.6",
     "@types/nodemon": "^1.19.6",
+    "@types/turndown": "^5.0.5",
     "bulma": "^1.0.0",
-    "eslint": "^8.9.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.18.2",
-    "mustache": "^4.2.0",
+    "eslint": "^9.37.0",
     "nodemon": "^3.1.0",
+    "tsx": "^4.20.6",
     "turndown": "^7.1.3",
     "typescript": "^5.4.0",
     "webextension-polyfill": "^0.12.0"

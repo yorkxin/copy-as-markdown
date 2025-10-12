@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-// eslint-disable-next-line import/no-extraneous-dependencies
 import nodemon from 'nodemon';
-// eslint-disable-next-line camelcase
+
+import * as process from 'node:process';
 import child_process from 'node:child_process';
 import * as path from 'node:path';
 
@@ -29,32 +29,32 @@ const edgeBinary = {
 switch (browser) {
   case 'chrome':
     console.log('starting chrome');
-    // eslint-disable-next-line camelcase
+
     spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'chrome')} -t chromium --args chrome://extensions https://example.com`);
     break;
   case 'edge': {
     console.log('starting edge');
     const binary = edgeBinary[process.platform];
     if (typeof binary === 'undefined') {
-      throw new Error(`unsupported Edge platform: ${process.platform}`);
+      throw new TypeError(`unsupported Edge platform: ${process.platform}`);
     }
-    // eslint-disable-next-line camelcase
+
     spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'chrome')} -t chromium --chromium-binary "${binary}" --args chrome://extensions https://example.com`);
     break;
   }
   case 'firefox':
     console.log('starting firefox');
-    // eslint-disable-next-line camelcase
+
     spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'firefox')} --url about:debugging#/runtime/this-firefox https://example.com`);
     break;
   case 'firefox-deved':
     console.log('starting firefox developer edition');
-    // eslint-disable-next-line camelcase
+
     spawnedBrowser = child_process.exec(`npx web-ext run -f deved -s ${path.join(root, 'firefox')} --url about:debugging#/runtime/this-firefox https://example.com`);
     break;
   case 'firefox-mv3':
     console.log('starting firefox-mv3');
-    // eslint-disable-next-line camelcase
+
     spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'firefox-mv3')} --url about:debugging#/runtime/this-firefox https://example.com`);
     break;
   default:

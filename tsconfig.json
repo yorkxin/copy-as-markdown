@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    /* Type Checking */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+
+    /* Modules */
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    /* Emit */
+    "declaration": false,
+    "sourceMap": false,
+    "removeComments": false,
+    "noEmit": false,
+    "outDir": "./dist",
+
+    /* Interop Constraints */
+    "isolatedModules": true,
+    "allowJs": true,
+    "checkJs": false,
+    "forceConsistentCasingInFileNames": true,
+
+    /* Skip Lib Check */
+    "skipLibCheck": true,
+
+    /* WebExtension Types */
+    "types": ["chrome", "firefox-webext-browser"]
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "chrome/dist",
+    "firefox/dist",
+    "firefox-mv3/dist",
+    "vendor/**/*",
+    "scripts/**/*",
+    "test/**/*",
+    "e2e_test"
+  ]
+}

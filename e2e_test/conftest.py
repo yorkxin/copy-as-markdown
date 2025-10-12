@@ -92,19 +92,19 @@ class BrowserEnvironment:
         self.window = Window(win_pos['y'], win_pos['x'], actual_width, actual_height)
 
     def options_page_url(self):
-        return f"{self._extension_base_url}/dist/ui/options.html"
+        return f"{self._extension_base_url}/dist/static/options.html"
 
     def options_permissions_page_url(self):
-        return f"{self._extension_base_url}/dist/ui/options-permissions.html"
+        return f"{self._extension_base_url}/dist/static/options-permissions.html"
 
     def request_permission_page_url(self, permission: str):
-        return f"{self._extension_base_url}/dist/ui/permissions.html?permissions={permission}"
+        return f"{self._extension_base_url}/dist/static/permissions.html?permissions={permission}"
 
     def custom_format_page_url(self, context: str, slot: int):
-        return f"{self._extension_base_url}/dist/ui/custom-format.html?context={context}&slot={slot}"
+        return f"{self._extension_base_url}/dist/static/custom-format.html?context={context}&slot={slot}"
 
     def popup_url(self, window_id: str, tab_id: str, keep_open: bool = False):
-        return f"{self._extension_base_url}/dist/ui/popup.html?window={window_id}&tab={tab_id}&keep_open={keep_open and '1' or '0'}"
+        return f"{self._extension_base_url}/dist/static/popup.html?window={window_id}&tab={tab_id}&keep_open={keep_open and '1' or '0'}"
 
     def get_window_and_tab_ids(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
