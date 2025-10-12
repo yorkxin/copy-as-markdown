@@ -382,16 +382,18 @@ async function handleExportTabs({
     throw new Error('permission required');
   }
 
+  // call browser.tabs.query() for Firefox MV2 polyfilling, but cast to chrome.tabs.Tab[] for groupId property.
   const crTabs = await browser.tabs.query({
     highlighted: (scope === 'highlighted' ? true : undefined),
     windowId,
-  });
+  }) as chrome.tabs.Tab[];
+
   const crGroups = await getTabGroups(windowId);
   const groups = crGroups.map(group => new TabGroup(group.title || '', group.id, group.color || ''));
   const tabs = crTabs.map(tab => new Tab(
     markdownInstance.escapeLinkText(tab.title || ''),
     tab.url || '',
-    (tab as any).groupId || TabGroup.NonGroupId,
+    tab.groupId || TabGroup.NonGroupId,
   ));
   const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
   if (format === 'custom-format') {
