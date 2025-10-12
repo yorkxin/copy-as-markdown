@@ -68,11 +68,6 @@ export default class Markdown {
    *   //=> Click \*Start\* button to run \`launch()\`
    */
   escapeLinkText(text: string): string {
-    // runtime type checking
-    if (typeof text !== 'string') {
-      return '';
-    }
-
     const shouldEscapeBrackets = (
       this.alwaysEscapeLinkBracket // user wants \[\]
       || !Markdown.bracketsAreBalanced(text) // unbalanced brackets, must be escaped
