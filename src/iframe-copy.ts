@@ -10,13 +10,19 @@ interface CopyResponse {
 }
 
 window.addEventListener('message', (event: MessageEvent<CopyMessage>) => {
+  if (!event.source) {
+    throw new Error('No event source');
+  }
+  const options: WindowPostMessageOptions = {
+    targetOrigin: event.origin,
+  };
   switch (event.data.cmd) {
     case 'copy': {
       const { text } = event.data;
       if (text === '' || !text) {
-        (event.source as Window).postMessage(
+        event.source.postMessage(
           { topic: 'iframe-copy-response', ok: false, reason: 'no text' } as CopyResponse,
-          event.origin,
+          options,
         );
         return;
       }
@@ -26,14 +32,14 @@ window.addEventListener('message', (event: MessageEvent<CopyMessage>) => {
       textBox.select();
       const result = document.execCommand('Copy');
       if (result) {
-        (event.source as Window).postMessage(
+        event.source.postMessage(
           { topic: 'iframe-copy-response', ok: true } as CopyResponse,
-          event.origin,
+          options,
         );
       } else {
-        (event.source as Window).postMessage(
+        event.source.postMessage(
           { topic: 'iframe-copy-response', ok: false, reason: 'execCommand returned false' } as CopyResponse,
-          event.origin,
+          options,
         );
       }
       textBox.innerHTML = '';
@@ -41,9 +47,9 @@ window.addEventListener('message', (event: MessageEvent<CopyMessage>) => {
     }
 
     default: {
-      (event.source as Window).postMessage(
+      event.source.postMessage(
         { topic: 'iframe-copy-response', ok: false, reason: `unknown command ${event.data.cmd}` } as CopyResponse,
-        event.origin,
+        options,
       );
     }
   }
