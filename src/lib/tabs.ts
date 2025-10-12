@@ -77,10 +77,15 @@ export class TabListGrouper {
 
     for (let i = 1; i < tabs.length; i += 1) {
       const tab = tabs[i];
-      if (tab && tab.groupId !== currentGroup.groupId) {
+
+      if (!tab) {
+        continue;
+      }
+
+      if (tab.groupId !== currentGroup.groupId) {
         collection.push(currentGroup);
         currentGroup = this.makeTabListGroup(tab);
-      } else if (tab) {
+      } else {
         currentGroup.tabs.push(tab);
       }
     }
