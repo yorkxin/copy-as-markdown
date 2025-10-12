@@ -472,15 +472,16 @@ async function handleCustomFormatTabs(
   });
 }
 
+// context menu handler. In case of bookmark, tab can be undeefined.
 async function handleContentOfContextMenu(
   info: browser.contextMenus.OnClickData,
-  tab: browser.tabs.Tab,
+  tab: browser.tabs.Tab | undefined,
 ): Promise<string> {
   let text: string;
 
   switch (info.menuItemId) {
     case 'current-tab': {
-      text = markdownInstance.linkTo(tab.title || '', tab.url || '');
+      text = markdownInstance.linkTo(tab!.title || '', tab!.url || '');
       break;
     }
 
@@ -511,62 +512,62 @@ async function handleContentOfContextMenu(
     }
 
     case 'selection-as-markdown': {
-      text = await convertSelectionInTabToMarkdown(tab);
+      text = await convertSelectionInTabToMarkdown(tab!);
       break;
     }
 
     // Only available on Firefox
     case 'all-tabs-list': {
-      if (tab.windowId === undefined) {
+      if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
         scope: 'all',
         format: 'link',
         listType: 'list',
-        windowId: tab.windowId,
+        windowId: tab!.windowId,
       });
       break;
     }
 
     // Only available on Firefox
     case 'all-tabs-task-list': {
-      if (tab.windowId === undefined) {
+      if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
         scope: 'all',
         format: 'link',
         listType: 'task-list',
-        windowId: tab.windowId,
+        windowId: tab!.windowId,
       });
       break;
     }
 
     // Only available on Firefox
     case 'highlighted-tabs-list': {
-      if (tab.windowId === undefined) {
+      if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
         scope: 'highlighted',
         format: 'link',
         listType: 'list',
-        windowId: tab.windowId,
+        windowId: tab!.windowId,
       });
       break;
     }
 
     // Only available on Firefox
     case 'highlighted-tabs-task-list': {
-      if (tab.windowId === undefined) {
+      if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
       text = await handleExportTabs({
         scope: 'highlighted',
         format: 'link',
         listType: 'task-list',
-        windowId: tab.windowId,
+        windowId: tab!.windowId,
       });
       break;
     }
@@ -589,7 +590,7 @@ async function handleContentOfContextMenu(
 
       switch (context) {
         case 'current-tab': {
-          text = await handleCustomFormatCurrentPage(slot, tab);
+          text = await handleCustomFormatCurrentPage(slot, tab!);
           break;
         }
         case 'link': {
@@ -597,17 +598,17 @@ async function handleContentOfContextMenu(
           break;
         }
         case 'all-tabs': {
-          if (tab.windowId === undefined) {
+          if (tab!.windowId === undefined) {
             throw new Error('tab has no windowId');
           }
-          text = await handleCustomFormatTabs('all', slot, tab.windowId);
+          text = await handleCustomFormatTabs('all', slot, tab!.windowId);
           break;
         }
         case 'highlighted-tabs': {
-          if (tab.windowId === undefined) {
+          if (tab!.windowId === undefined) {
             throw new Error('tab has no windowId');
           }
-          text = await handleCustomFormatTabs('highlighted', slot, tab.windowId);
+          text = await handleCustomFormatTabs('highlighted', slot, tab!.windowId);
           break;
         }
         default:
@@ -688,17 +689,16 @@ if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
 // NOTE: All listeners must be registered at top level scope.
 
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (!tab) {
-    console.error('tab is undefined');
-    await flashBadge('fail');
-    return false;
-  }
   try {
     const text = await handleContentOfContextMenu(info, tab);
 
     if ((globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true) {
       await navigator.clipboard.writeText(text);
     } else {
+      if (!tab) {
+        // in case of bookmark click, tab won't exist
+        tab = await mustGetCurrentTab();
+      }
       await copyUsingContentScript(tab, text);
     }
     await flashBadge('success');
