@@ -1,6 +1,7 @@
 import Settings from '../lib/settings.js';
 import * as lib from './lib.js';
 import type { PermissionStatus } from './lib.js';
+import { PermissionStatusValue } from './lib.js';
 
 let permissionStatuses: PermissionStatus = new Map();
 
@@ -15,13 +16,13 @@ function refreshUi(): void {
     if (!permName) return;
 
     const status = permissionStatuses.get(permName);
-    if (status === 'unavailable') {
+    if (status === PermissionStatusValue.Unavailable) {
       el.disabled = true;
       el.classList.remove('is-hidden', 'is-primary', 'is-outlined');
-    } else if (status === 'yes') {
+    } else if (status === PermissionStatusValue.Yes) {
       el.disabled = true;
       el.classList.add('is-hidden');
-    } else if (status === 'no') {
+    } else if (status === PermissionStatusValue.No) {
       el.disabled = false;
       el.classList.remove('is-hidden');
       el.classList.add('is-primary');
@@ -33,15 +34,15 @@ function refreshUi(): void {
     if (!permName) return;
 
     const status = permissionStatuses.get(permName);
-    if (status === 'unavailable') {
+    if (status === PermissionStatusValue.Unavailable) {
       el.disabled = true;
       el.classList.add('is-hidden');
       el.classList.remove('is-outlined');
-    } else if (status === 'yes') {
+    } else if (status === PermissionStatusValue.Yes) {
       // permissions granted: show remove button
       el.disabled = false;
       el.classList.remove('is-hidden');
-    } else if (status === 'no') {
+    } else if (status === PermissionStatusValue.No) {
       // permissions not all granted: hide remove button
       el.disabled = true;
       el.classList.add('is-hidden');
@@ -91,7 +92,7 @@ if (revokeAllButton) {
   revokeAllButton.addEventListener('click', async () => {
     await Settings.reset();
     const toBeRemoved = Array.from(permissionStatuses.entries())
-      .filter(([, stat]) => stat !== 'unavailable')
+      .filter(([, stat]) => stat !== PermissionStatusValue.Unavailable)
       .map(([perm]) => perm) as browser._manifest.OptionalPermission[];
     await browser.permissions.remove({ permissions: toBeRemoved });
   });
