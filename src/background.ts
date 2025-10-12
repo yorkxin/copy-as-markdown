@@ -392,7 +392,7 @@ async function handleExportTabs({
       type: 'popup',
       width: 640,
       height: 480,
-      url: '/dist/ui/permissions.html?permissions=tabs',
+      url: '/dist/static/permissions.html?permissions=tabs',
     });
     throw new Error('permission required');
   }
@@ -672,7 +672,7 @@ async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Prom
       tabId: tab.id,
     },
     func: copy as any,
-    args: [text, browser.runtime.getURL('dist/iframe-copy.html')],
+    args: [text, browser.runtime.getURL('dist/static/iframe-copy.html')],
   });
 
   const firstResult = results[0];
