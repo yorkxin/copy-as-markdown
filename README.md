@@ -12,7 +12,7 @@ Do you often type Markdown code manually for a link or image, or even all tabs i
 
 **Copy as Markdown** is a browser extension that helps you copy the following things as Markdown to your system clipboard:
 
-On the web page: 
+On the web page:
 
 :ballot_box_with_check: Selection Text as Markdown<br>
 :ballot_box_with_check: A Link on the Page<br>
@@ -22,7 +22,7 @@ Exporting tabs in the current window, either all or highlighted tabs:
 
 :ballot_box_with_check: Current Tab as Link<br>
 :ballot_box_with_check: List of Links<br>
-:ballot_box_with_check: Task List (for GitHub-Flavored Markdown)<be>
+:ballot_box_with_check: Task List (for GitHub-Flavored Markdown)<br>
 :ballot_box_with_check: With Tab Grouping (in Chrome, Edge etc.)
 
 ## Keyboard Shortcuts
@@ -31,7 +31,7 @@ You can add keyboard shortcuts for copying tab(s) as Markdown. By default, Copy 
 
 ### Firefox
 
-Please refer to this Firefox Help: https://support.mozilla.org/en-US/kb/manage-extension-shortcuts-firefox
+Please refer to this Firefox Help: <https://support.mozilla.org/en-US/kb/manage-extension-shortcuts-firefox>
 
 ### Chrome
 
@@ -47,7 +47,7 @@ Here is the folder structure. The platform-specific folders are used to resolve 
 
 ```
 src/               # Shared Source Code
-  background.js
+  lackground.ts
   ...
 chrome/            # Chrome / Chromium files
   dist/            # ../src will be copied here
@@ -93,11 +93,12 @@ To debug some behaviors such as Firefox restarts (for example, are context menus
 it is necessary to build an XPI package and install it on Firefox. Temporary Add-Ons won't be enough
 because they get uninstalled after Firefox quits.
 
-Firefox checks the signature when installing XPI. To do so, 
+Firefox checks the signature when installing XPI. To do so,
 
 1. Grab [API keys](https://addons.mozilla.org/en-US/developers/addon/api/key/) from Firefox Add-On
 2. Bump version in `manifest.json`. Note that AMO only accepts version numbers in `X.Y.Z` format where all 3 segments are numbers without zero prefixes.
 3. Run:
+
     ```shell
     web-ext sign --channel=unlisted --api-key=... --api-secret=...
     ```
@@ -106,13 +107,13 @@ It'll create an XPI that is signed with your Firefox Add-Ons account. The file w
 uploaded to Add-On Developer Hub as unlisted.
 
 Note that Firefox Add-On keeps track of all the versions that have ever been uploaded, including
-'self-distributed' (`channel=unlisted`). 
+'self-distributed' (`channel=unlisted`).
 
-See https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/
+See <https://extensionworkshop.com/documentation/develop/getting-started-with-web-ext/>
 
 ### Unit Tests
 
-Unit tests are written in mocha, `./test/**/*.test.js`.
+Unit tests are under `./test/**/*.test.ts`.
 
 To run, use `npm test`.
 
