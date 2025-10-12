@@ -32,7 +32,7 @@ async function checkCustomFormats(context: Context): Promise<void> {
   const checkboxes = document.querySelectorAll<HTMLInputElement>(`input[type='checkbox'][data-custom-format-context='${context}']`);
   const promises: Promise<void>[] = [];
   for (let i = 0; i < checkboxes.length; i += 1) {
-    promises.push(initCheckbox(checkboxes[i] as HTMLInputElement));
+    promises.push(initCheckbox(checkboxes[i]!));
   }
 
   await Promise.all(promises);
