@@ -4,31 +4,30 @@ This directory contains third-party library files that are copied to the extensi
 
 ## Files
 
-- **mustache.mjs** - ⚠️ This file is now **automatically copied** from `node_modules/mustache/` during the build process via `scripts/copy-deps.js`. You can delete this file from version control if desired.
+All files in this directory are automatically copied from `node_modules/` during `npm install` via `scripts/postinstall.js`:
 
-- **browser-polyfill.js** - WebExtension polyfill for cross-browser compatibility (manually vendored)
+- **mustache.mjs** - Mustache templating library
+- **browser-polyfill.js** - WebExtension polyfill for cross-browser compatibility
+- **bulma.css** - CSS framework for UI styling
+- **turndown.js** - HTML to Markdown converter
 
-- **bulma.css** - CSS framework for UI styling (manually vendored)
-
-- **turndown.js** - HTML to Markdown converter (manually vendored)
+These files are then copied to `dist/vendor/` in the final extension packages during the build process.
 
 ## Managing Dependencies
 
-### Automatic (Recommended)
+### Adding New Dependencies
 
-For dependencies that are available in npm, add them to `scripts/copy-deps.js`:
+To add a new vendored dependency, add it to the `files` array in `scripts/postinstall.js`:
 
 ```javascript
-{
-  name: 'package-name',
-  files: [
-    { from: 'path/in/package.js', to: 'output-name.js' },
-  ],
-}
+const files = [
+  'node_modules/package-name/dist/file.js',
+  // ... other files
+];
 ```
 
-The files will be automatically copied from `node_modules/` to `dist/vendor/` during `npm run build:ts`.
+The file will be automatically copied to this directory during `npm install` and will be available for:
 
-### Manual Vendoring
-
-For files not available in npm or requiring customization, manually place them in this directory. They will be copied to the extension during the build process.
+- IDE type checking and autocomplete
+- TypeScript compilation
+- Runtime usage in the extension

@@ -9,7 +9,7 @@
   "scripts": {
     "test": "tsx --test test/**/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "build:ts": "tsc && node scripts/copy-deps.js",
+    "build:ts": "tsc",
     "compile": "npm run build:ts && npm run compile-chrome && npm run compile-firefox && npm run compile-firefox-mv3",
     "compile-chrome": "node scripts/compile.js chrome",
     "compile-firefox": "node scripts/compile.js firefox",
