@@ -1,4 +1,5 @@
 import '../vendor/browser-polyfill.js';
+import { TabGroupIndentationStyle, UnorderedListStyle } from './markdown.js';
 
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
 const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
@@ -6,8 +7,8 @@ const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
 
 interface Settings {
   alwaysEscapeLinkBrackets: boolean;
-  styleOfUnorderedList: 'dash' | 'asterisk' | 'plus';
-  styleOfTabGroupIndentation: 'spaces' | 'tab';
+  styleOfUnorderedList: UnorderedListStyle;
+  styleOfTabGroupIndentation: TabGroupIndentationStyle;
 }
 
 /**
@@ -21,8 +22,8 @@ export default {
   get defaultSettings(): Record<string, unknown> {
     return {
       [SKLinkTextAlwaysEscapeBrackets]: false,
-      [SKStyleOfUnorderedList]: 'dash',
-      [SKStyleTabGroupIndentation]: 'spaces',
+      [SKStyleOfUnorderedList]: UnorderedListStyle.Dash,
+      [SKStyleTabGroupIndentation]: TabGroupIndentationStyle.Spaces,
     };
   },
 
@@ -36,13 +37,13 @@ export default {
     });
   },
 
-  async setStyleTabGroupIndentation(value: 'spaces' | 'tab'): Promise<void> {
+  async setStyleTabGroupIndentation(value: TabGroupIndentationStyle): Promise<void> {
     await browser.storage.sync.set({
       [SKStyleTabGroupIndentation]: value,
     });
   },
 
-  async setStyleOfUnrderedList(value: 'dash' | 'asterisk' | 'plus'): Promise<void> {
+  async setStyleOfUnrderedList(value: UnorderedListStyle): Promise<void> {
     await browser.storage.sync.set({
       [SKStyleOfUnorderedList]: value,
     });
@@ -57,8 +58,8 @@ export default {
 
     return {
       alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets] as boolean,
-      styleOfUnorderedList: all[SKStyleOfUnorderedList] as 'dash' | 'asterisk' | 'plus',
-      styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation] as 'spaces' | 'tab',
+      styleOfUnorderedList: all[SKStyleOfUnorderedList] as UnorderedListStyle,
+      styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation] as TabGroupIndentationStyle,
     };
   },
 };

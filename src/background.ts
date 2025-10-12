@@ -43,24 +43,9 @@ async function refreshMarkdownInstance(): Promise<void> {
     return;
   }
 
-  let unorderedListChar: '-' | '*' | '+';
-  switch (settings.styleOfUnorderedList) {
-    case 'dash':
-      unorderedListChar = '-';
-      break;
-    case 'asterisk':
-      unorderedListChar = '*';
-      break;
-    case 'plus':
-      unorderedListChar = '+';
-      break;
-    default:
-      console.error('unrecognized style of unordered list:', settings.styleOfUnorderedList);
-      unorderedListChar = '-';
-  }
   markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
-  markdownInstance.unorderedListChar = unorderedListChar;
-  markdownInstance.nestedListIndentation = settings.styleOfTabGroupIndentation;
+  markdownInstance.unorderedListStyle = settings.styleOfUnorderedList;
+  markdownInstance.indentationStyle = settings.styleOfTabGroupIndentation;
 }
 
 async function flashBadge(type: 'success' | 'fail'): Promise<void> {

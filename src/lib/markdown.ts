@@ -1,15 +1,20 @@
-const INDENT_STYLE_SPACES = 'spaces';
-const INDENT_STYLE_TAB = 'tab';
-
 export type NestedArray = (string | NestedArray)[];
 
-export default class Markdown {
-  private _alwaysEscapeLinkBracket: boolean;
-  private _unorderedListChar: '-' | '*' | '+';
-  private _indentation: 'spaces' | 'tab';
+export enum UnorderedListStyle {
+  Dash = 'dash',
+  Asterisk = 'asterisk',
+  Plus = 'plus',
+}
 
-  static INDENT_STYLE_SPACES = INDENT_STYLE_SPACES;
-  static INDENT_STYLE_TABS = INDENT_STYLE_TAB;
+export enum TabGroupIndentationStyle {
+  Spaces = 'spaces',
+  Tab = 'tab',
+}
+
+export default class Markdown {
+  alwaysEscapeLinkBracket: boolean;
+  unorderedListStyle: UnorderedListStyle;
+  indentationStyle: TabGroupIndentationStyle;
 
   static DefaultTitle(): string {
     return '(No Title)';
@@ -17,12 +22,12 @@ export default class Markdown {
 
   constructor({
     alwaysEscapeLinkBracket = false,
-    unorderedListChar = '-' as '-' | '*' | '+',
-    indentation = INDENT_STYLE_SPACES as 'spaces' | 'tab',
+    unorderedListStyle = UnorderedListStyle.Dash,
+    indentationStyle = TabGroupIndentationStyle.Spaces,
   } = {}) {
-    this._alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
-    this._unorderedListChar = unorderedListChar;
-    this._indentation = indentation;
+    this.alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
+    this.unorderedListStyle = unorderedListStyle;
+    this.indentationStyle = indentationStyle;
   }
 
   /**
@@ -133,7 +138,7 @@ export default class Markdown {
   }
 
   list(items: NestedArray): string {
-    return this.nestedList(items, this._unorderedListChar);
+    return this.nestedList(items, this.unorderedListChar);
   }
 
   taskList(items: NestedArray): string {
@@ -143,15 +148,15 @@ export default class Markdown {
   nestedList(items: NestedArray, prefix: string, level: number = 0): string {
     let renderedIndents = '';
     let indent = '';
-    if (this._indentation === INDENT_STYLE_SPACES) {
+    if (this.indentationStyle === TabGroupIndentationStyle.Spaces) {
       // Two spaces, happens to work because we only support unordered list.
       // It will break if we are going to support ordered list, in which the spaces to use
       // depend on the length of prefix characters in the parent level.
       indent = '  ';
-    } else if (this._indentation === INDENT_STYLE_TAB) {
+    } else if (this.indentationStyle === TabGroupIndentationStyle.Tab) {
       indent = '\t';
     } else {
-      throw new TypeError(`Invalid indent style ${this._indentation}`);
+      throw new TypeError(`Invalid indent style ${this.indentationStyle}`);
     }
 
     for (let i = 0; i < level; i += 1) {
@@ -166,27 +171,16 @@ export default class Markdown {
     }).join('\n');
   }
 
-  get alwaysEscapeLinkBracket(): boolean {
-    return this._alwaysEscapeLinkBracket;
-  }
-
-  set alwaysEscapeLinkBracket(value: boolean) {
-    this._alwaysEscapeLinkBracket = value;
-  }
-
   get unorderedListChar(): '-' | '*' | '+' {
-    return this._unorderedListChar;
-  }
-
-  set unorderedListChar(value: '-' | '*' | '+') {
-    this._unorderedListChar = value;
-  }
-
-  get nestedListIndentation(): 'spaces' | 'tab' {
-    return this._indentation;
-  }
-
-  set nestedListIndentation(value: 'spaces' | 'tab') {
-    this._indentation = value;
+    switch (this.unorderedListStyle) {
+      case UnorderedListStyle.Asterisk:
+        return '*';
+      case UnorderedListStyle.Dash:
+        return '-';
+      case UnorderedListStyle.Plus:
+        return '+';
+      default:
+        throw new TypeError(`invalid unorderedListStyle: ${this.unorderedListStyle}`);
+    }
   }
 }

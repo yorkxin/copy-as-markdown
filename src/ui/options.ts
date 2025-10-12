@@ -1,3 +1,4 @@
+import type { TabGroupIndentationStyle, UnorderedListStyle } from '../lib/markdown.js';
 import Settings from '../lib/settings.js';
 import * as lib from './lib.js';
 
@@ -56,7 +57,7 @@ if (formTabGroupIndentation) {
   formTabGroupIndentation.addEventListener('change', async (event) => {
     try {
       const target = event.target as HTMLInputElement;
-      await Settings.setStyleTabGroupIndentation(target.value as 'spaces' | 'tab');
+      await Settings.setStyleTabGroupIndentation(target.value as TabGroupIndentationStyle);
       console.info('settings saved');
     } catch (error) {
       console.error('failed to save settings:', error);
@@ -69,7 +70,7 @@ if (formUnorderedList) {
   formUnorderedList.addEventListener('change', async (event) => {
     try {
       const target = event.target as HTMLInputElement;
-      await Settings.setStyleOfUnrderedList(target.value as 'dash' | 'asterisk' | 'plus');
+      await Settings.setStyleOfUnrderedList(target.value as UnorderedListStyle);
       console.info('settings saved');
     } catch (error) {
       console.error('failed to save settings:', error);

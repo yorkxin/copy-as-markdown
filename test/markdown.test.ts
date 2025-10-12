@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
-import Markdown from '../src/lib/markdown';
+import Markdown, { TabGroupIndentationStyle, UnorderedListStyle } from '../src/lib/markdown';
 
 describe('Markdown', () => {
   it('default properties', () => {
@@ -15,7 +15,7 @@ describe('Markdown', () => {
     });
 
     it('can set a character', () => {
-      const markdown = new Markdown({ unorderedListChar: '*' });
+      const markdown = new Markdown({ unorderedListStyle: UnorderedListStyle.Asterisk });
       assert.equal(markdown.list(['a', 'b', 'c']), '* a\n* b\n* c');
     });
 
@@ -26,7 +26,7 @@ describe('Markdown', () => {
       });
 
       it('can set indentation style', () => {
-        const markdown = new Markdown({ indentation: 'tab' });
+        const markdown = new Markdown({ indentationStyle: TabGroupIndentationStyle.Tab });
         assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n\t- c\n\t- d\n- e\n\t- f');
       });
     });
