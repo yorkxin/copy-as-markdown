@@ -8,20 +8,14 @@ import CustomFormatsStorage from './storage/custom-formats-storage.js';
 import CustomFormat from './lib/custom-format.js';
 import type { NestedArray } from './lib/markdown.js';
 import type { Options as TurndownOptions } from 'turndown';
+import { createBrowserBadgeService } from './services/badge-service.js';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
 
-const COLOR_GREEN = '#738a05';
-const COLOR_RED = '#d11b24';
-const COLOR_OPAQUE: browser.action.ColorArray = [0, 0, 0, 255];
-
-const TEXT_OK = '✓';
-const TEXT_ERROR = '×';
-const TEXT_EMPTY = '';
-
-const FLASH_BADGE_TIMEOUT = 3000; // ms
-
 const ALARM_REFRESH_MENU = 'refreshMenu';
+
+// Initialize badge service
+const badgeService = createBrowserBadgeService();
 
 const markdownInstance = new Markdown();
 const bookmarks = new Bookmarks({
@@ -46,24 +40,6 @@ async function refreshMarkdownInstance(): Promise<void> {
   markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
   markdownInstance.unorderedListStyle = settings.styleOfUnorderedList;
   markdownInstance.indentationStyle = settings.styleOfTabGroupIndentation;
-}
-
-async function flashBadge(type: 'success' | 'fail'): Promise<void> {
-  const entrypoint = (typeof browser.browserAction !== 'undefined') ? browser.browserAction : chrome.action;
-  switch (type) {
-    case 'success':
-      await entrypoint.setBadgeText({ text: TEXT_OK });
-      await entrypoint.setBadgeBackgroundColor({ color: COLOR_GREEN });
-      break;
-    case 'fail':
-      await entrypoint.setBadgeText({ text: TEXT_ERROR });
-      await entrypoint.setBadgeBackgroundColor({ color: COLOR_RED });
-      break;
-    default:
-      return; // don't know what it is. quit.
-  }
-
-  browser.alarms.create('clear', { when: Date.now() + FLASH_BADGE_TIMEOUT });
 }
 
 async function createMenus(): Promise<void> {
@@ -209,12 +185,8 @@ async function createMenus(): Promise<void> {
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
-  const entrypoint = (typeof browser.browserAction !== 'undefined') ? browser.browserAction : chrome.action;
-  if (alarm.name === 'clear') {
-    await Promise.all([
-      entrypoint.setBadgeText({ text: TEXT_EMPTY }),
-      entrypoint.setBadgeBackgroundColor({ color: COLOR_OPAQUE }),
-    ]);
+  if (alarm.name === badgeService.getClearAlarmName()) {
+    await badgeService.clear();
   }
 
   if (alarm.name === ALARM_REFRESH_MENU) {
@@ -703,11 +675,11 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
       }
       await copyUsingContentScript(tab, text);
     }
-    await flashBadge('success');
+    await badgeService.showSuccess();
     return true;
   } catch (error) {
     console.error(error);
-    await flashBadge('fail');
+    await badgeService.showError();
     throw error;
   }
 });
@@ -846,11 +818,11 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
     } else {
       await copyUsingContentScript(tab, text);
     }
-    await flashBadge('success');
+    await badgeService.showSuccess();
     return true;
   } catch (e) {
     console.error(e);
-    await flashBadge('fail');
+    await badgeService.showError();
     throw e;
   }
 });
@@ -861,7 +833,11 @@ async function handleRuntimeMessage(
 ): Promise<string | null> {
   switch (topic) {
     case 'badge': {
-      await flashBadge(params.type);
+      if (params.type === 'success') {
+        await badgeService.showSuccess();
+      } else {
+        await badgeService.showError();
+      }
       return null;
     }
 
