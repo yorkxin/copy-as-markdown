@@ -9,13 +9,15 @@ import CustomFormat from './lib/custom-format.js';
 import type { NestedArray } from './lib/markdown.js';
 import type { Options as TurndownOptions } from 'turndown';
 import { createBrowserBadgeService } from './services/badge-service.js';
+import { createBrowserContextMenuService } from './services/context-menu-service.js';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
-// Initialize badge service
+// Initialize services
 const badgeService = createBrowserBadgeService();
+const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage);
 
 const markdownInstance = new Markdown();
 const bookmarks = new Bookmarks({
@@ -42,146 +44,11 @@ async function refreshMarkdownInstance(): Promise<void> {
   markdownInstance.indentationStyle = settings.styleOfTabGroupIndentation;
 }
 
+/**
+ * @deprecated Use contextMenuService.createAll() instead
+ */
 async function createMenus(): Promise<void> {
-  await browser.contextMenus.removeAll();
-
-  browser.contextMenus.create({
-    id: 'current-tab',
-    title: 'Copy Page Link as Markdown',
-    type: 'normal',
-    contexts: ['page'],
-  });
-
-  browser.contextMenus.create({
-    id: 'link',
-    title: 'Copy Link as Markdown',
-    type: 'normal',
-    contexts: ['link'],
-  });
-
-  const singleLinkFormats = (await CustomFormatsStorage.list('single-link'))
-    .filter(format => format.showInMenus);
-  singleLinkFormats.forEach((format) => {
-    browser.contextMenus.create({
-      id: `current-tab-custom-format-${format.slot}`,
-      title: `Copy Page Link (${format.displayName})`,
-      contexts: ['page'],
-    });
-    browser.contextMenus.create({
-      id: `link-custom-format-${format.slot}`,
-      title: `Copy Link (${format.displayName})`,
-      contexts: ['link'],
-    });
-  });
-
-  browser.contextMenus.create({
-    id: 'image',
-    title: 'Copy Image as Markdown', // TODO: how to fetch alt text?
-    type: 'normal',
-    contexts: ['image'],
-  });
-
-  browser.contextMenus.create({
-    id: 'selection-as-markdown',
-    title: 'Copy Selection as Markdown',
-    type: 'normal',
-    contexts: ['selection'],
-  });
-
-  /* The following menu items are Firefox-only */
-
-  try {
-    const multipleLinksFormats = (await CustomFormatsStorage.list('multiple-links'))
-      .filter(format => format.showInMenus);
-
-    await browser.contextMenus.update('current-tab', {
-      contexts: [
-        'page',
-        'tab', // only available on Firefox
-      ],
-    });
-
-    for await (const format of singleLinkFormats) {
-      await browser.contextMenus.update(`current-tab-custom-format-${format.slot}`, {
-        contexts: [
-          'page',
-          'tab', // only available on Firefox
-        ],
-      });
-    }
-
-    browser.contextMenus.create({
-      id: 'separator-1',
-      type: 'separator',
-      contexts: ['tab'],
-    });
-
-    browser.contextMenus.create({
-      id: 'all-tabs-list',
-      title: 'Copy All Tabs',
-      type: 'normal',
-      contexts: ['tab'],
-    });
-
-    browser.contextMenus.create({
-      id: 'all-tabs-task-list',
-      title: 'Copy All Tabs (Task List)',
-      type: 'normal',
-      contexts: ['tab'],
-    });
-
-    for await (const format of multipleLinksFormats) {
-      browser.contextMenus.create({
-        id: `all-tabs-custom-format-${format.slot}`,
-        title: `Copy All Tabs (${format.displayName})`,
-        type: 'normal',
-        contexts: ['tab'],
-      });
-    }
-
-    browser.contextMenus.create({
-      id: 'separator-2',
-      type: 'separator',
-      contexts: ['tab'],
-    });
-
-    browser.contextMenus.create({
-      id: 'highlighted-tabs-list',
-      title: 'Copy Selected Tabs',
-      type: 'normal',
-      contexts: ['tab'],
-    });
-
-    browser.contextMenus.create({
-      id: 'highlighted-tabs-task-list',
-      title: 'Copy Selected Tabs (Task List)',
-      type: 'normal',
-      contexts: ['tab'],
-    });
-
-    for await (const format of multipleLinksFormats) {
-      browser.contextMenus.create({
-        id: `highlighted-tabs-custom-format-${format.slot}`,
-        title: `Copy Selected Tabs (${format.displayName})`,
-        type: 'normal',
-        visible: format.showInMenus,
-        contexts: ['tab'],
-      });
-    }
-  } catch {
-    console.info('this browser does not support context contextMenus on tab bar');
-  }
-
-  try {
-    browser.contextMenus.create({
-      id: 'bookmark-link',
-      title: 'Copy Bookmark or Folder as Markdown',
-      type: 'normal',
-      contexts: ['bookmark'],
-    });
-  } catch {
-    console.info('this browser does not support context contextMenus on bookmarks');
-  }
+  await contextMenuService.createAll();
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
