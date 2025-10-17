@@ -1,34 +1,27 @@
 import Settings from './lib/settings.js';
 import copy from './content-script.js';
 import Markdown from './lib/markdown.js';
-import type { TabList } from './lib/tabs.js';
-import { Tab, TabGroup, TabListGrouper } from './lib/tabs.js';
 import { Bookmarks } from './bookmarks.js';
 import CustomFormatsStorage from './storage/custom-formats-storage.js';
-import CustomFormat from './lib/custom-format.js';
-import type { NestedArray } from './lib/markdown.js';
 import type { Options as TurndownOptions } from 'turndown';
 import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
+import { createBrowserTabExportService } from './services/tab-export-service.js';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
-// Initialize services
-const badgeService = createBrowserBadgeService();
-const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage);
-
+// Initialize markdown and bookmarks
 const markdownInstance = new Markdown();
 const bookmarks = new Bookmarks({
   markdown: markdownInstance,
 });
 
-const FORMAT_TO_FUNCTION: Record<string, (tab: Tab) => string> = {
-  link: tab => `[${tab.title}](${tab.url})`,
-  title: tab => tab.title,
-  url: tab => tab.url,
-};
+// Initialize services
+const badgeService = createBrowserBadgeService();
+const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage);
+const tabExportService = createBrowserTabExportService(markdownInstance, CustomFormatsStorage);
 
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
@@ -98,70 +91,7 @@ function getTurndownOptions(): TurndownOptions {
   };
 }
 
-function formatItems(tabLists: TabList[], formatter: (tab: Tab) => string): NestedArray {
-  const items: NestedArray = [];
-
-  tabLists.forEach((tabList) => {
-    if (tabList.groupId === TabGroup.NonGroupId) {
-      tabList.tabs.forEach((tab) => {
-        items.push(formatter(tab));
-      });
-    } else {
-      items.push(tabList.name);
-      const sublist = tabList.tabs.map(formatter);
-      items.push(sublist);
-    }
-  });
-
-  return items;
-}
-
-async function getTabGroups(windowId: number): Promise<chrome.tabGroups.TabGroup[]> {
-  let granted = false;
-  try {
-    granted = await browser.permissions.contains({ permissions: ['tabGroups'] });
-  } catch {
-    // tabGroups is only supported in Chrome/Chromium
-    return [];
-  }
-
-  if (!granted) {
-    return [];
-  }
-
-  // For Firefox mv2 compatibility
-  return new Promise((resolve, reject) => {
-    chrome.tabGroups.query({ windowId }, (groups) => {
-      if (chrome.runtime.lastError) {
-        reject(chrome.runtime.lastError);
-      } else {
-        resolve(groups);
-      }
-    });
-  });
-}
-
-function renderBuiltInFormat(
-  format: 'link' | 'title' | 'url',
-  tabLists: TabList[],
-  listType: 'list' | 'task-list',
-): string {
-  const formatter = FORMAT_TO_FUNCTION[format];
-  if (!formatter) {
-    throw new TypeError(`unknown format: ${format}`);
-  }
-  const items = formatItems(tabLists, formatter);
-
-  switch (listType) {
-    case 'list':
-      return markdownInstance.list(items);
-    case 'task-list':
-      return markdownInstance.taskList(items);
-    default:
-      throw new TypeError(`unknown listType: ${listType}`);
-  }
-}
-
+// renderCustomFormatForSingleTab is still used for single links
 async function renderCustomFormatForSingleTab({
   slot,
   title,
@@ -174,74 +104,6 @@ async function renderCustomFormatForSingleTab({
   const customFormat = await CustomFormatsStorage.get('single-link', slot);
   const input = { title, url, number: 1 };
   return customFormat.render(input);
-}
-
-async function renderCustomFormatForMultipleTabs({
-  slot,
-  lists,
-}: {
-  slot: string;
-  lists: TabList[];
-}): Promise<string> {
-  const customFormat = await CustomFormatsStorage.get('multiple-links', slot);
-  const input = CustomFormat.makeRenderInputForTabLists(lists);
-  return customFormat.render(input);
-}
-
-async function handleExportTabs({
-  scope,
-  format,
-  customFormatSlot,
-  listType,
-  windowId,
-}: {
-  scope: 'all' | 'highlighted';
-  format: 'link' | 'title' | 'url' | 'custom-format';
-  customFormatSlot?: string;
-  listType?: 'list' | 'task-list';
-  windowId: number;
-}): Promise<string> {
-  if (format === 'custom-format') {
-    if (listType !== null && listType !== undefined) {
-      throw new TypeError('listType is not allowed if format is custom-format');
-    }
-    if (!customFormatSlot) {
-      throw new TypeError('customFormatSlot is required if format is custom-format');
-    }
-  }
-
-  if (!await browser.permissions.contains({ permissions: ['tabs'] })) {
-    await browser.windows.create({
-      focused: true,
-      type: 'popup',
-      width: 640,
-      height: 480,
-      url: '/dist/static/permissions.html?permissions=tabs',
-    });
-    throw new Error('permission required');
-  }
-
-  // call browser.tabs.query() for Firefox MV2 polyfilling, but cast to chrome.tabs.Tab[] for groupId property.
-  const crTabs = await browser.tabs.query({
-    highlighted: (scope === 'highlighted' ? true : undefined),
-    windowId,
-  }) as chrome.tabs.Tab[];
-
-  const crGroups = await getTabGroups(windowId);
-  const groups = crGroups.map(group => new TabGroup(group.title || '', group.id, group.color || ''));
-  const tabs = crTabs.map(tab => new Tab(
-    markdownInstance.escapeLinkText(tab.title || ''),
-    tab.url || '',
-    tab.groupId || TabGroup.NonGroupId,
-  ));
-  const tabLists = new TabListGrouper(groups).collectTabsByGroup(tabs);
-  if (format === 'custom-format') {
-    if (!customFormatSlot) {
-      throw new TypeError('customFormatSlot is required');
-    }
-    return renderCustomFormatForMultipleTabs({ slot: customFormatSlot, lists: tabLists });
-  }
-  return renderBuiltInFormat(format, tabLists, listType!);
 }
 
 async function convertSelectionInTabToMarkdown(tab: browser.tabs.Tab): Promise<string> {
@@ -305,7 +167,7 @@ async function handleCustomFormatTabs(
   slot: string,
   windowId: number,
 ): Promise<string> {
-  return handleExportTabs({
+  return tabExportService.exportTabs({
     scope,
     format: 'custom-format',
     customFormatSlot: slot,
@@ -362,7 +224,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'all',
         format: 'link',
         listType: 'list',
@@ -376,7 +238,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'all',
         format: 'link',
         listType: 'task-list',
@@ -390,7 +252,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'highlighted',
         format: 'link',
         listType: 'list',
@@ -404,7 +266,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'highlighted',
         format: 'link',
         listType: 'task-list',
@@ -588,7 +450,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         text = await handleExportLink({ format: 'link', title: tab.title || '', url: tab.url || '' });
         break;
       case 'all-tabs-link-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'link',
           listType: 'list',
@@ -596,7 +458,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'all-tabs-link-as-task-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'link',
           listType: 'task-list',
@@ -604,7 +466,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'all-tabs-title-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'title',
           listType: 'list',
@@ -612,7 +474,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'all-tabs-url-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'url',
           listType: 'list',
@@ -620,7 +482,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-link-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'link',
           listType: 'list',
@@ -628,7 +490,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-link-as-task-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'link',
           listType: 'task-list',
@@ -636,7 +498,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-title-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'title',
           listType: 'list',
@@ -644,7 +506,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-url-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'url',
           listType: 'list',
@@ -722,7 +584,7 @@ async function handleRuntimeMessage(
     }
 
     case 'export-tabs': {
-      return handleExportTabs(params);
+      return tabExportService.exportTabs(params);
     }
 
     default: {
