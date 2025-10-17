@@ -9,7 +9,6 @@ import type {
   CustomFormatsProvider,
   PermissionsAPI,
   TabGroupsAPI,
-  TabGroupsAPIResolver,
   TabsAPI,
   WindowsAPI,
 } from '../../src/services/tab-export-service.js';
