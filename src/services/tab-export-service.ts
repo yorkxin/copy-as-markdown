@@ -18,6 +18,16 @@ export type ExportFormat = 'link' | 'title' | 'url' | 'custom-format';
 export type ListType = 'list' | 'task-list';
 export type ExportScope = 'all' | 'highlighted';
 
+/**
+ * Interface for markdown formatting operations required by the tab export service.
+ */
+export interface MarkdownFormatter {
+  escapeLinkText: (text: string) => string;
+  linkTo: (title: string, url: string) => string;
+  list: (items: NestedArray) => string;
+  taskList: (items: NestedArray) => string;
+}
+
 export interface ExportTabsOptions {
   scope: ExportScope;
   format: ExportFormat;
@@ -55,7 +65,7 @@ export interface CustomFormatsProvider {
  * @param permissionsAPI - Browser permissions API
  * @param windowsAPI - Browser windows API
  * @param tabGroupsAPIResolver - Function that returns the tab groups API (resolved at runtime)
- * @param markdown - Markdown formatter instance
+ * @param markdown - Markdown formatter (implements MarkdownFormatter interface)
  * @param customFormatsProvider - Provider for custom format templates
  * @returns Tab export service with methods to export tabs as Markdown
  *
@@ -83,7 +93,7 @@ export function createTabExportService(
   permissionsAPI: PermissionsAPI,
   windowsAPI: WindowsAPI,
   tabGroupsAPIResolver: TabGroupsAPIResolver,
-  markdown: Markdown,
+  markdown: MarkdownFormatter,
   customFormatsProvider: CustomFormatsProvider,
 ) {
   /**

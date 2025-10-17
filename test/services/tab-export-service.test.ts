@@ -7,14 +7,15 @@ import assert from 'node:assert';
 import { createTabExportService } from '../../src/services/tab-export-service.js';
 import type {
   CustomFormatsProvider,
+  MarkdownFormatter,
   PermissionsAPI,
   TabGroupsAPI,
   TabsAPI,
   WindowsAPI,
 } from '../../src/services/tab-export-service.js';
 
-// Mock Markdown class
-class MockMarkdown {
+// Mock Markdown class implementing MarkdownFormatter interface
+class MockMarkdown implements MarkdownFormatter {
   escapeLinkText(text: string): string {
     return text;
   }
@@ -58,7 +59,7 @@ describe('TabExportService', () => {
         create: mock.fn(async () => ({} as any)),
       };
 
-      const mockMarkdown = new MockMarkdown() as any;
+      const mockMarkdown = new MockMarkdown();
 
       const mockCustomFormatsProvider: CustomFormatsProvider = {
         get: mock.fn(async () => createMockCustomFormat() as any),
@@ -105,7 +106,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -143,7 +144,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -178,7 +179,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -212,7 +213,7 @@ describe('TabExportService', () => {
       const taskListMock = mock.fn((items: any[]) => items.map(i => `- [ ] ${i}\n`).join(''));
       const listMock = mock.fn((items: any[]) => items.map(i => `- ${i}\n`).join(''));
 
-      const mockMarkdown = {
+      const mockMarkdown: MarkdownFormatter = {
         escapeLinkText: (text: string) => text,
         linkTo: (title: string, url: string) => `[${title}](${url})`,
         taskList: taskListMock,
@@ -224,7 +225,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => null,
-        mockMarkdown as any,
+        mockMarkdown,
         {} as any,
       );
 
@@ -264,7 +265,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         mockWindowsAPI,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -300,7 +301,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -349,7 +350,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         mockCustomFormatsProvider,
       );
 
@@ -377,7 +378,7 @@ describe('TabExportService', () => {
         {} as any,
         {} as any,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -399,7 +400,7 @@ describe('TabExportService', () => {
         {} as any,
         {} as any,
         () => null,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -449,7 +450,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => mockTabGroupsAPI,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
@@ -494,7 +495,7 @@ describe('TabExportService', () => {
         mockPermissionsAPI,
         {} as any,
         () => mockTabGroupsAPI,
-        new MockMarkdown() as any,
+        new MockMarkdown(),
         {} as any,
       );
 
