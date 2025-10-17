@@ -106,31 +106,6 @@ async function renderCustomFormatForSingleTab({
   return customFormat.render(input);
 }
 
-/**
- * @deprecated Use tabExportService.exportTabs() instead
- */
-async function handleExportTabs({
-  scope,
-  format,
-  customFormatSlot,
-  listType,
-  windowId,
-}: {
-  scope: 'all' | 'highlighted';
-  format: 'link' | 'title' | 'url' | 'custom-format';
-  customFormatSlot?: string;
-  listType?: 'list' | 'task-list';
-  windowId: number;
-}): Promise<string> {
-  return tabExportService.exportTabs({
-    scope,
-    format,
-    customFormatSlot,
-    listType,
-    windowId,
-  });
-}
-
 async function convertSelectionInTabToMarkdown(tab: browser.tabs.Tab): Promise<string> {
   if (!tab.id) {
     throw new Error('tab has no id');
@@ -192,7 +167,7 @@ async function handleCustomFormatTabs(
   slot: string,
   windowId: number,
 ): Promise<string> {
-  return handleExportTabs({
+  return tabExportService.exportTabs({
     scope,
     format: 'custom-format',
     customFormatSlot: slot,
@@ -249,7 +224,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'all',
         format: 'link',
         listType: 'list',
@@ -263,7 +238,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'all',
         format: 'link',
         listType: 'task-list',
@@ -277,7 +252,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'highlighted',
         format: 'link',
         listType: 'list',
@@ -291,7 +266,7 @@ async function handleContentOfContextMenu(
       if (tab!.windowId === undefined) {
         throw new Error('tab has no windowId');
       }
-      text = await handleExportTabs({
+      text = await tabExportService.exportTabs({
         scope: 'highlighted',
         format: 'link',
         listType: 'task-list',
@@ -475,7 +450,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         text = await handleExportLink({ format: 'link', title: tab.title || '', url: tab.url || '' });
         break;
       case 'all-tabs-link-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'link',
           listType: 'list',
@@ -483,7 +458,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'all-tabs-link-as-task-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'link',
           listType: 'task-list',
@@ -491,7 +466,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'all-tabs-title-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'title',
           listType: 'list',
@@ -499,7 +474,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'all-tabs-url-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'all',
           format: 'url',
           listType: 'list',
@@ -507,7 +482,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-link-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'link',
           listType: 'list',
@@ -515,7 +490,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-link-as-task-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'link',
           listType: 'task-list',
@@ -523,7 +498,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-title-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'title',
           listType: 'list',
@@ -531,7 +506,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
         });
         break;
       case 'highlighted-tabs-url-as-list':
-        text = await handleExportTabs({
+        text = await tabExportService.exportTabs({
           scope: 'highlighted',
           format: 'url',
           listType: 'list',
@@ -609,7 +584,7 @@ async function handleRuntimeMessage(
     }
 
     case 'export-tabs': {
-      return handleExportTabs(params);
+      return tabExportService.exportTabs(params);
     }
 
     default: {
