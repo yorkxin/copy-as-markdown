@@ -40,6 +40,40 @@ function createMockCustomFormat(renderOutput: string = 'mocked output') {
   };
 }
 
+// Helpers to create unused mock stubs (for dependencies not used in specific tests)
+// These throw errors if accidentally called, making test failures clear
+function createUnusedTabsAPI(): TabsAPI {
+  return {
+    query: mock.fn(async () => {
+      throw new Error('TabsAPI.query should not be called in this test');
+    }),
+  };
+}
+
+function createUnusedPermissionsAPI(): PermissionsAPI {
+  return {
+    contains: mock.fn(async () => {
+      throw new Error('PermissionsAPI.contains should not be called in this test');
+    }),
+  };
+}
+
+function createUnusedWindowsAPI(): WindowsAPI {
+  return {
+    create: mock.fn(async () => {
+      throw new Error('WindowsAPI.create should not be called in this test');
+    }),
+  };
+}
+
+function createUnusedCustomFormatsProvider(): CustomFormatsProvider {
+  return {
+    get: mock.fn(async () => {
+      throw new Error('CustomFormatsProvider.get should not be called in this test');
+    }),
+  };
+}
+
 describe('TabExportService', () => {
   describe('exportTabs - basic functionality', () => {
     it('should export all tabs as markdown link list', async () => {
@@ -104,10 +138,10 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => null,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act
@@ -142,10 +176,10 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => null,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act
@@ -177,10 +211,10 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => null,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act
@@ -223,10 +257,10 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => null,
         mockMarkdown,
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act
@@ -266,7 +300,7 @@ describe('TabExportService', () => {
         mockWindowsAPI,
         () => null,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act & Assert
@@ -299,10 +333,10 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => null,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act
@@ -348,7 +382,7 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => null,
         new MockMarkdown(),
         mockCustomFormatsProvider,
@@ -373,13 +407,14 @@ describe('TabExportService', () => {
 
     it('should throw error if custom format is used without customFormatSlot', async () => {
       // Arrange
+      // These tests only validate options, so no APIs are actually called
       const service = createTabExportService(
-        {} as any,
-        {} as any,
-        {} as any,
+        createUnusedTabsAPI(),
+        createUnusedPermissionsAPI(),
+        createUnusedWindowsAPI(),
         () => null,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act & Assert
@@ -395,13 +430,14 @@ describe('TabExportService', () => {
 
     it('should throw error if custom format is used with listType', async () => {
       // Arrange
+      // These tests only validate options, so no APIs are actually called
       const service = createTabExportService(
-        {} as any,
-        {} as any,
-        {} as any,
+        createUnusedTabsAPI(),
+        createUnusedPermissionsAPI(),
+        createUnusedWindowsAPI(),
         () => null,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act & Assert
@@ -448,10 +484,10 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => mockTabGroupsAPI,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act
@@ -493,10 +529,10 @@ describe('TabExportService', () => {
       const service = createTabExportService(
         mockTabsAPI,
         mockPermissionsAPI,
-        {} as any,
+        createUnusedWindowsAPI(),
         () => mockTabGroupsAPI,
         new MockMarkdown(),
-        {} as any,
+        createUnusedCustomFormatsProvider(),
       );
 
       // Act
