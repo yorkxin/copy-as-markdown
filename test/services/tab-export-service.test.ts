@@ -32,22 +32,11 @@ class MockMarkdown {
   }
 }
 
-// Mock CustomFormat
-class MockCustomFormat {
-  render(input: any): string {
-    return `Custom: ${input.links.length} links`;
-  }
-
-  static makeRenderInputForTabLists(lists: any): any {
-    const allTabs = lists.flatMap((list: any) => list.tabs);
-    return {
-      links: allTabs.map((tab: any, idx: number) => ({
-        title: tab.title,
-        url: tab.url,
-        number: idx + 1,
-      })),
-    };
-  }
+// Helper to create a mock custom format object
+function createMockCustomFormat(renderOutput: string = 'mocked output') {
+  return {
+    render: mock.fn((input: any) => renderOutput),
+  };
 }
 
 describe('TabExportService', () => {
@@ -72,7 +61,7 @@ describe('TabExportService', () => {
       const mockMarkdown = new MockMarkdown() as any;
 
       const mockCustomFormatsProvider: CustomFormatsProvider = {
-        get: mock.fn(async () => new MockCustomFormat() as any),
+        get: mock.fn(async () => createMockCustomFormat() as any),
       };
 
       const service = createTabExportService(
@@ -337,21 +326,12 @@ describe('TabExportService', () => {
         contains: mock.fn(async () => true),
       };
 
-      const mockCustomFormat = new MockCustomFormat();
+      // Mock custom format that will be returned by the provider
+      const mockCustomFormat = createMockCustomFormat('Custom: 2 links');
+
       const mockCustomFormatsProvider: CustomFormatsProvider = {
         get: mock.fn(async () => mockCustomFormat as any),
       };
-
-      (MockCustomFormat as any).makeRenderInputForTabLists = mock.fn((lists: any) => {
-        const allTabs = lists.flatMap((list: any) => list.tabs);
-        return {
-          links: allTabs.map((tab: any, idx: number) => ({
-            title: tab.title,
-            url: tab.url,
-            number: idx + 1,
-          })),
-        };
-      });
 
       const service = createTabExportService(
         mockTabsAPI,
