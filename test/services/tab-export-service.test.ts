@@ -35,7 +35,7 @@ class MockMarkdown {
 // Helper to create a mock custom format object
 function createMockCustomFormat(renderOutput: string = 'mocked output') {
   return {
-    render: mock.fn((input: any) => renderOutput),
+    render: mock.fn(() => renderOutput),
   };
 }
 
@@ -88,10 +88,12 @@ describe('TabExportService', () => {
 
     it('should query only highlighted tabs when scope is highlighted', async () => {
       // Arrange
+      const queryMock = mock.fn(async () => [
+        { title: 'GitHub', url: 'https://github.com', groupId: -1 },
+      ] as any);
+
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-        ] as any),
+        query: queryMock,
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
@@ -116,7 +118,7 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      const queryCall = (mockTabsAPI.query as any).mock.calls[0];
+      const queryCall = queryMock.mock.calls[0]!;
       assert.strictEqual(queryCall.arguments[0].highlighted, true);
       assert.strictEqual(queryCall.arguments[0].windowId, 1);
     });
@@ -207,11 +209,14 @@ describe('TabExportService', () => {
         contains: mock.fn(async () => true),
       };
 
+      const taskListMock = mock.fn((items: any[]) => items.map(i => `- [ ] ${i}\n`).join(''));
+      const listMock = mock.fn((items: any[]) => items.map(i => `- ${i}\n`).join(''));
+
       const mockMarkdown = {
         escapeLinkText: (text: string) => text,
         linkTo: (title: string, url: string) => `[${title}](${url})`,
-        taskList: mock.fn((items: any[]) => items.map(i => `- [ ] ${i}\n`).join('')),
-        list: mock.fn((items: any[]) => items.map(i => `- ${i}\n`).join('')),
+        taskList: taskListMock,
+        list: listMock,
       };
 
       const service = createTabExportService(
@@ -232,8 +237,8 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      assert.strictEqual((mockMarkdown.taskList as any).mock.calls.length, 1);
-      assert.strictEqual((mockMarkdown.list as any).mock.calls.length, 0);
+      assert.strictEqual(taskListMock.mock.calls.length, 1);
+      assert.strictEqual(listMock.mock.calls.length, 0);
     });
   });
 
@@ -248,8 +253,10 @@ describe('TabExportService', () => {
         contains: mock.fn(async () => false),
       };
 
+      const createMock = mock.fn(async () => ({} as any));
+
       const mockWindowsAPI: WindowsAPI = {
-        create: mock.fn(async () => ({} as any)),
+        create: createMock,
       };
 
       const service = createTabExportService(
@@ -273,7 +280,7 @@ describe('TabExportService', () => {
       );
 
       // Should open permission dialog
-      assert.strictEqual((mockWindowsAPI.create as any).mock.calls.length, 1);
+      assert.strictEqual(createMock.mock.calls.length, 1);
     });
 
     it('should check for tabs permission', async () => {
@@ -282,8 +289,10 @@ describe('TabExportService', () => {
         query: mock.fn(async () => []),
       };
 
+      const containsMock = mock.fn(async () => true);
+
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => true),
+        contains: containsMock,
       };
 
       const service = createTabExportService(
@@ -304,7 +313,7 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      const permissionCall = (mockPermissionsAPI.contains as any).mock.calls[0];
+      const permissionCall = containsMock.mock.calls[0]!;
       assert.deepStrictEqual(
         permissionCall.arguments[0],
         { permissions: ['tabs'] },
@@ -329,8 +338,10 @@ describe('TabExportService', () => {
       // Mock custom format that will be returned by the provider
       const mockCustomFormat = createMockCustomFormat('Custom: 2 links');
 
+      const getMock = mock.fn(async () => mockCustomFormat as any);
+
       const mockCustomFormatsProvider: CustomFormatsProvider = {
-        get: mock.fn(async () => mockCustomFormat as any),
+        get: getMock,
       };
 
       const service = createTabExportService(
@@ -352,9 +363,9 @@ describe('TabExportService', () => {
 
       // Assert
       assert.strictEqual(result, 'Custom: 2 links');
-      assert.strictEqual((mockCustomFormatsProvider.get as any).mock.calls.length, 1);
+      assert.strictEqual(getMock.mock.calls.length, 1);
       assert.deepStrictEqual(
-        (mockCustomFormatsProvider.get as any).mock.calls[0].arguments,
+        getMock.mock.calls[0]!.arguments,
         ['multiple-links', '1'],
       );
     });
