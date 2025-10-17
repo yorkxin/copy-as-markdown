@@ -11,13 +11,17 @@ describe('BadgeService', () => {
   describe('showSuccess', () => {
     it('should set success badge with green color and checkmark', async () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -27,23 +31,23 @@ describe('BadgeService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls.length,
+        setBadgeTextMock.mock.calls.length,
         1,
         'setBadgeText should be called once',
       );
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls[0]?.arguments[0],
+        setBadgeTextMock.mock.calls[0]!.arguments[0],
         { text: '✓' },
         'Badge text should be checkmark',
       );
 
       assert.strictEqual(
-        (mockBadgeAPI.setBadgeBackgroundColor as any).mock.calls.length,
+        setBadgeBackgroundColorMock.mock.calls.length,
         1,
         'setBadgeBackgroundColor should be called once',
       );
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeBackgroundColor as any).mock.calls[0]?.arguments[0],
+        setBadgeBackgroundColorMock.mock.calls[0]!.arguments[0],
         { color: '#738a05' },
         'Badge color should be green',
       );
@@ -51,13 +55,17 @@ describe('BadgeService', () => {
 
     it('should schedule badge clear alarm', async () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -68,12 +76,12 @@ describe('BadgeService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockAlarmsAPI.create as any).mock.calls.length,
+        createAlarmMock.mock.calls.length,
         1,
         'Alarm should be created',
       );
 
-      const [alarmName, alarmInfo] = (mockAlarmsAPI.create as any).mock.calls[0]?.arguments;
+      const [alarmName, alarmInfo] = createAlarmMock.mock.calls[0]!.arguments;
       assert.strictEqual(alarmName, 'clearBadge', 'Alarm name should be clearBadge');
       assert.ok(
         alarmInfo.when >= beforeTime + 3000,
@@ -89,13 +97,17 @@ describe('BadgeService', () => {
   describe('showError', () => {
     it('should set error badge with red color and X mark', async () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -105,23 +117,23 @@ describe('BadgeService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls.length,
+        setBadgeTextMock.mock.calls.length,
         1,
         'setBadgeText should be called once',
       );
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls[0]?.arguments[0],
+        setBadgeTextMock.mock.calls[0]!.arguments[0],
         { text: '×' },
         'Badge text should be X mark',
       );
 
       assert.strictEqual(
-        (mockBadgeAPI.setBadgeBackgroundColor as any).mock.calls.length,
+        setBadgeBackgroundColorMock.mock.calls.length,
         1,
         'setBadgeBackgroundColor should be called once',
       );
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeBackgroundColor as any).mock.calls[0]?.arguments[0],
+        setBadgeBackgroundColorMock.mock.calls[0]!.arguments[0],
         { color: '#d11b24' },
         'Badge color should be red',
       );
@@ -129,13 +141,17 @@ describe('BadgeService', () => {
 
     it('should schedule badge clear alarm', async () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -145,12 +161,12 @@ describe('BadgeService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockAlarmsAPI.create as any).mock.calls.length,
+        createAlarmMock.mock.calls.length,
         1,
         'Alarm should be created',
       );
 
-      const [alarmName] = (mockAlarmsAPI.create as any).mock.calls[0]?.arguments;
+      const [alarmName] = createAlarmMock.mock.calls[0]!.arguments;
       assert.strictEqual(alarmName, 'clearBadge', 'Alarm name should be clearBadge');
     });
   });
@@ -158,13 +174,17 @@ describe('BadgeService', () => {
   describe('clear', () => {
     it('should clear badge text and set transparent background', async () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -174,23 +194,23 @@ describe('BadgeService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls.length,
+        setBadgeTextMock.mock.calls.length,
         1,
         'setBadgeText should be called once',
       );
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls[0]?.arguments[0],
+        setBadgeTextMock.mock.calls[0]!.arguments[0],
         { text: '' },
         'Badge text should be empty',
       );
 
       assert.strictEqual(
-        (mockBadgeAPI.setBadgeBackgroundColor as any).mock.calls.length,
+        setBadgeBackgroundColorMock.mock.calls.length,
         1,
         'setBadgeBackgroundColor should be called once',
       );
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeBackgroundColor as any).mock.calls[0]?.arguments[0],
+        setBadgeBackgroundColorMock.mock.calls[0]!.arguments[0],
         { color: [0, 0, 0, 0] },
         'Badge color should be transparent',
       );
@@ -198,13 +218,17 @@ describe('BadgeService', () => {
 
     it('should not create any alarm', async () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -214,7 +238,7 @@ describe('BadgeService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockAlarmsAPI.create as any).mock.calls.length,
+        createAlarmMock.mock.calls.length,
         0,
         'No alarm should be created',
       );
@@ -224,13 +248,17 @@ describe('BadgeService', () => {
   describe('getClearAlarmName', () => {
     it('should return the correct alarm name', () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -246,13 +274,17 @@ describe('BadgeService', () => {
   describe('Integration: success then clear', () => {
     it('should show success badge and then clear it', async () => {
       // Arrange
+      const setBadgeTextMock = mock.fn(async () => { });
+      const setBadgeBackgroundColorMock = mock.fn(async () => { });
+      const createAlarmMock = mock.fn(() => { });
+
       const mockBadgeAPI: BadgeAPI = {
-        setBadgeText: mock.fn(async () => { }),
-        setBadgeBackgroundColor: mock.fn(async () => { }),
+        setBadgeText: setBadgeTextMock,
+        setBadgeBackgroundColor: setBadgeBackgroundColorMock,
       };
 
       const mockAlarmsAPI: AlarmsAPI = {
-        create: mock.fn(() => { }),
+        create: createAlarmMock,
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
@@ -263,13 +295,13 @@ describe('BadgeService', () => {
 
       // Assert - success was shown
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls[0]?.arguments[0],
+        setBadgeTextMock.mock.calls[0]!.arguments[0],
         { text: '✓' },
       );
 
       // Assert - then cleared
       assert.deepStrictEqual(
-        (mockBadgeAPI.setBadgeText as any).mock.calls[1]?.arguments[0],
+        setBadgeTextMock.mock.calls[1]!.arguments[0],
         { text: '' },
       );
     });

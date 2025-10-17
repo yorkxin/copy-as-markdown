@@ -10,31 +10,38 @@ import type {
   CustomFormatsProvider,
 } from '../../src/services/context-menu-service.js';
 
-// Mock CustomFormat class
-class MockCustomFormat {
+// Mock CustomFormat interface (matches what the service expects)
+interface MockCustomFormat {
   slot: string;
-  name: string;
+  displayName: string;
   showInMenus: boolean;
+}
 
-  constructor(slot: string, name: string, showInMenus: boolean = true) {
-    this.slot = slot;
-    this.name = name;
-    this.showInMenus = showInMenus;
-  }
-
-  get displayName(): string {
-    return this.name || `Custom Format ${this.slot}`;
-  }
+// Helper to create mock custom formats
+function createMockCustomFormat(
+  slot: string,
+  name: string,
+  showInMenus: boolean = true,
+): MockCustomFormat {
+  return {
+    slot,
+    displayName: name || `Custom Format ${slot}`,
+    showInMenus,
+  };
 }
 
 describe('ContextMenuService', () => {
   describe('createAll', () => {
     it('should remove all existing menus first', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
@@ -48,7 +55,7 @@ describe('ContextMenuService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockMenusAPI.removeAll as any).mock.calls.length,
+        removeAllMock.mock.calls.length,
         1,
         'removeAll should be called once',
       );
@@ -56,10 +63,14 @@ describe('ContextMenuService', () => {
 
     it('should create basic menus (current-tab and link)', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
@@ -72,7 +83,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert
-      const createCalls = (mockMenusAPI.create as any).mock.calls;
+      const createCalls = createMock.mock.calls;
 
       // Find current-tab menu
       const currentTabCall = createCalls.find(
@@ -96,10 +107,14 @@ describe('ContextMenuService', () => {
 
     it('should create image and selection menus', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
@@ -112,7 +127,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert
-      const createCalls = (mockMenusAPI.create as any).mock.calls;
+      const createCalls = createMock.mock.calls;
 
       // Find image menu
       const imageCall = createCalls.find(
@@ -134,18 +149,22 @@ describe('ContextMenuService', () => {
 
     it('should create custom format menus for single links', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
-      const customFormat = new MockCustomFormat('1', 'My Custom Format');
+      const customFormat = createMockCustomFormat('1', 'My Custom Format');
 
       const mockFormatsProvider: CustomFormatsProvider = {
         list: mock.fn(async (context) => {
           if (context === 'single-link') {
-            return [customFormat as any];
+            return [customFormat];
           }
           return [];
         }),
@@ -157,7 +176,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert
-      const createCalls = (mockMenusAPI.create as any).mock.calls;
+      const createCalls = createMock.mock.calls;
 
       // Find custom format menu for current-tab
       const customTabCall = createCalls.find(
@@ -182,18 +201,22 @@ describe('ContextMenuService', () => {
 
     it('should not create menus for custom formats with showInMenus=false', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
-      const hiddenFormat = new MockCustomFormat('1', 'Hidden Format', false);
+      const hiddenFormat = createMockCustomFormat('1', 'Hidden Format', false);
 
       const mockFormatsProvider: CustomFormatsProvider = {
         list: mock.fn(async (context) => {
           if (context === 'single-link') {
-            return [hiddenFormat as any];
+            return [hiddenFormat];
           }
           return [];
         }),
@@ -205,7 +228,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert
-      const createCalls = (mockMenusAPI.create as any).mock.calls;
+      const createCalls = createMock.mock.calls;
 
       // Should not find custom format menu
       const customTabCall = createCalls.find(
@@ -220,10 +243,14 @@ describe('ContextMenuService', () => {
 
     it('should attempt to create Firefox-specific menus', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
@@ -236,7 +263,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert - should attempt to update current-tab menu for 'tab' context
-      const updateCalls = (mockMenusAPI.update as any).mock.calls;
+      const updateCalls = updateMock.mock.calls;
       const updateCurrentTabCall = updateCalls.find(
         (call: any) => call.arguments[0] === 'current-tab',
       );
@@ -253,10 +280,14 @@ describe('ContextMenuService', () => {
 
     it('should create all tabs menus when Firefox features are supported', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
@@ -269,7 +300,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert
-      const createCalls = (mockMenusAPI.create as any).mock.calls;
+      const createCalls = createMock.mock.calls;
 
       // Should create all-tabs menus
       const allTabsCall = createCalls.find(
@@ -293,10 +324,14 @@ describe('ContextMenuService', () => {
   describe('refresh', () => {
     it('should be an alias for createAll', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
@@ -310,12 +345,12 @@ describe('ContextMenuService', () => {
 
       // Assert
       assert.strictEqual(
-        (mockMenusAPI.removeAll as any).mock.calls.length,
+        removeAllMock.mock.calls.length,
         1,
         'removeAll should be called',
       );
       assert.ok(
-        (mockMenusAPI.create as any).mock.calls.length > 0,
+        createMock.mock.calls.length > 0,
         'create should be called',
       );
     });
@@ -324,22 +359,26 @@ describe('ContextMenuService', () => {
   describe('Integration: with custom formats', () => {
     it('should create menus for both single and multiple link formats', async () => {
       // Arrange
+      const createMock = mock.fn(() => {});
+      const updateMock = mock.fn(async () => {});
+      const removeAllMock = mock.fn(async () => {});
+
       const mockMenusAPI: ContextMenusAPI = {
-        create: mock.fn(() => {}),
-        update: mock.fn(async () => {}),
-        removeAll: mock.fn(async () => {}),
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
       };
 
-      const singleFormat = new MockCustomFormat('1', 'Single Format');
-      const multipleFormat = new MockCustomFormat('2', 'Multiple Format');
+      const singleFormat = createMockCustomFormat('1', 'Single Format');
+      const multipleFormat = createMockCustomFormat('2', 'Multiple Format');
 
       const mockFormatsProvider: CustomFormatsProvider = {
         list: mock.fn(async (context) => {
           if (context === 'single-link') {
-            return [singleFormat as any];
+            return [singleFormat];
           }
           if (context === 'multiple-links') {
-            return [multipleFormat as any];
+            return [multipleFormat];
           }
           return [];
         }),
@@ -351,7 +390,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert
-      const createCalls = (mockMenusAPI.create as any).mock.calls;
+      const createCalls = createMock.mock.calls;
 
       // Should have single link custom format menus
       const singleLinkMenu = createCalls.find(
