@@ -37,13 +37,6 @@ async function refreshMarkdownInstance(): Promise<void> {
   markdownInstance.indentationStyle = settings.styleOfTabGroupIndentation;
 }
 
-/**
- * @deprecated Use contextMenuService.createAll() instead
- */
-async function createMenus(): Promise<void> {
-  await contextMenuService.createAll();
-}
-
 browser.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === badgeService.getClearAlarmName()) {
     await badgeService.clear();
@@ -51,7 +44,7 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
 
   if (alarm.name === ALARM_REFRESH_MENU) {
     await browser.contextMenus.removeAll();
-    createMenus();
+    await contextMenuService.createAll();
   }
 });
 
@@ -375,10 +368,10 @@ async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Prom
   throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
 }
 
-createMenus().then(() => null /* NOP */);
+contextMenuService.createAll().then(() => null /* NOP */);
 browser.storage.sync.onChanged.addListener(async (changes) => {
   if (Object.keys(changes).includes(CustomFormatsStorage.KeyOfLastUpdate())) {
-    await createMenus();
+    await contextMenuService.createAll();
   }
 });
 
