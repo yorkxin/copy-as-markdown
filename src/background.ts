@@ -1,5 +1,4 @@
 import Settings from './lib/settings.js';
-import copy from './content-script.js';
 import Markdown from './lib/markdown.js';
 import { Bookmarks } from './bookmarks.js';
 import CustomFormatsStorage from './storage/custom-formats-storage.js';
@@ -7,6 +6,7 @@ import type { Options as TurndownOptions } from 'turndown';
 import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
 import { createBrowserTabExportService } from './services/tab-export-service.js';
+import { createBrowserClipboardService } from './services/clipboard-service.js';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
 
@@ -22,6 +22,14 @@ const bookmarks = new Bookmarks({
 const badgeService = createBrowserBadgeService();
 const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage);
 const tabExportService = createBrowserTabExportService(markdownInstance, CustomFormatsStorage);
+
+// Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
+const useNavigatorClipboard = (globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true;
+const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
+const clipboardService = createBrowserClipboardService(
+  useNavigatorClipboard ? navigator.clipboard : null,
+  iframeCopyUrl,
+);
 
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
@@ -345,29 +353,6 @@ async function handleExportLink({
   }
 }
 
-async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Promise<boolean> {
-  if (!tab.id) {
-    throw new Error('tab has no id');
-  }
-  const results = await browser.scripting.executeScript({
-    target: {
-      tabId: tab.id,
-    },
-    func: copy as any,
-    args: [text, browser.runtime.getURL('dist/static/iframe-copy.html')],
-  });
-
-  const firstResult = results[0];
-  if (!firstResult) {
-    throw new Error('no result from content script');
-  }
-  const { result } = firstResult;
-  if (result.ok) {
-    return true;
-  }
-  throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
-}
-
 contextMenuService.createAll().then(() => null /* NOP */);
 browser.storage.sync.onChanged.addListener(async (changes) => {
   if (Object.keys(changes).includes(CustomFormatsStorage.KeyOfLastUpdate())) {
@@ -387,16 +372,7 @@ if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await handleContentOfContextMenu(info, tab);
-
-    if ((globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      if (!tab) {
-        // in case of bookmark click, tab won't exist
-        tab = await mustGetCurrentTab();
-      }
-      await copyUsingContentScript(tab, text);
-    }
+    await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
   } catch (error) {
@@ -406,29 +382,23 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
-// mustGetCurrentTab() is made for Firefox in which in some
-// contexts tabs.getCurrent() returns undefined.
-async function mustGetCurrentTab(): Promise<browser.tabs.Tab> {
-  const tabs = await browser.tabs.query({
-    currentWindow: true,
-    active: true,
-  });
-  if (tabs.length !== 1) {
-    throw new Error('failed to get current tab');
-  }
-  return tabs[0]!;
-}
-
 // listen to keyboard shortcuts
 browser.commands.onCommand.addListener(async (command: string, argTab?: browser.tabs.Tab) => {
-  let tab = argTab;
-  if (typeof tab === 'undefined') {
-    // tab argument is not available on Firefox.
-    // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/onCommand
-
-    tab = await mustGetCurrentTab();
-  }
   try {
+    // Note: tab argument may be undefined on Firefox.
+    // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/onCommand
+    let tab = argTab;
+    if (!tab) {
+      const tabs = await browser.tabs.query({
+        currentWindow: true,
+        active: true,
+      });
+      if (tabs.length !== 1) {
+        throw new Error('failed to get current tab');
+      }
+      tab = tabs[0]!;
+    }
+
     let text = '';
     const windowId = tab.windowId;
     if (windowId === undefined) {
@@ -535,11 +505,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
       }
     }
 
-    if ((globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API) {
-      await navigator.clipboard.writeText(text);
-    } else {
-      await copyUsingContentScript(tab, text);
-    }
+    await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
   } catch (e) {
