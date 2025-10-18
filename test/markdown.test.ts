@@ -11,23 +11,23 @@ describe('Markdown', () => {
   describe('list()', () => {
     it('defaults to dash', () => {
       const markdown = new Markdown();
-      assert.equal(markdown.list(['a', 'b', 'c']), '- a\n- b\n- c');
+      assert.equal(markdown.list(['a', 'b', 'c']), '- a\n- b\n- c\n');
     });
 
     it('can set a character', () => {
       const markdown = new Markdown({ unorderedListStyle: UnorderedListStyle.Asterisk });
-      assert.equal(markdown.list(['a', 'b', 'c']), '* a\n* b\n* c');
+      assert.equal(markdown.list(['a', 'b', 'c']), '* a\n* b\n* c\n');
     });
 
     describe('nested list', () => {
       it('works', () => {
         const markdown = new Markdown();
-        assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n  - c\n  - d\n- e\n  - f');
+        assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n  - c\n  - d\n- e\n  - f\n');
       });
 
       it('can set indentation style', () => {
         const markdown = new Markdown({ indentationStyle: TabGroupIndentationStyle.Tab });
-        assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n\t- c\n\t- d\n- e\n\t- f');
+        assert.equal(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']]), '- a\n- b\n\t- c\n\t- d\n- e\n\t- f\n');
       });
     });
   });
@@ -35,7 +35,7 @@ describe('Markdown', () => {
   describe('taskList()', () => {
     it('works', () => {
       const markdown = new Markdown();
-      assert.equal(markdown.taskList(['a', 'b', 'c']), '- [ ] a\n- [ ] b\n- [ ] c');
+      assert.equal(markdown.taskList(['a', 'b', 'c']), '- [ ] a\n- [ ] b\n- [ ] c\n');
     });
   });
 

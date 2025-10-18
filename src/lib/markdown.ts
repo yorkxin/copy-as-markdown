@@ -133,14 +133,18 @@ export default class Markdown {
   }
 
   list(items: NestedArray): string {
-    return this.nestedList(items, this.unorderedListChar);
+    const rendered = this.renderList(items, this.unorderedListChar);
+    const flattened = rendered.flat(10); // otherwise it only flatters 1 level deep
+    return flattened.map(item => `${item}\n`).join('');
   }
 
   taskList(items: NestedArray): string {
-    return this.nestedList(items, '- [ ]');
+    const rendered = this.renderList(items, '- [ ]');
+    const flattened = rendered.flat(10); // otherwise it only flatters 1 level deep
+    return flattened.map(item => `${item}\n`).join('');
   }
 
-  nestedList(items: NestedArray, prefix: string, level: number = 0): string {
+  renderList(items: NestedArray, prefix: string, level: number = 0): NestedArray {
     let renderedIndents = '';
     let indent = '';
     if (this.indentationStyle === TabGroupIndentationStyle.Spaces) {
@@ -160,10 +164,10 @@ export default class Markdown {
 
     return items.map((item: string | NestedArray) => {
       if (Array.isArray(item)) {
-        return this.nestedList(item, prefix, level + 1);
+        return this.renderList(item, prefix, level + 1);
       }
       return `${renderedIndents}${prefix} ${item}`;
-    }).join('\n');
+    });
   }
 
   get unorderedListChar(): '-' | '*' | '+' {
