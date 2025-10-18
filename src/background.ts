@@ -7,6 +7,7 @@ import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
 import { createBrowserTabExportService } from './services/tab-export-service.js';
 import { createBrowserClipboardService } from './services/clipboard-service.js';
+import { createBrowserLinkExportService } from './services/link-export-service.js';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
 
@@ -22,6 +23,7 @@ const bookmarks = new Bookmarks({
 const badgeService = createBrowserBadgeService();
 const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage);
 const tabExportService = createBrowserTabExportService(markdownInstance, CustomFormatsStorage);
+const linkExportService = createBrowserLinkExportService(markdownInstance, CustomFormatsStorage);
 
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
 const useNavigatorClipboard = (globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true;
@@ -90,21 +92,6 @@ function getTurndownOptions(): TurndownOptions {
     headingStyle: 'atx',
     bulletListMarker: markdownInstance.unorderedListChar,
   };
-}
-
-// renderCustomFormatForSingleTab is still used for single links
-async function renderCustomFormatForSingleTab({
-  slot,
-  title,
-  url,
-}: {
-  slot: string;
-  title: string;
-  url: string;
-}): Promise<string> {
-  const customFormat = await CustomFormatsStorage.get('single-link', slot);
-  const input = { title, url, number: 1 };
-  return customFormat.render(input);
 }
 
 async function convertSelectionInTabToMarkdown(tab: browser.tabs.Tab): Promise<string> {
@@ -334,23 +321,12 @@ async function handleExportLink({
   title: string;
   url: string;
 }): Promise<string> {
-  switch (format) {
-    case 'link':
-      return markdownInstance.linkTo(title, url);
-
-    case 'custom-format':
-      if (!customFormatSlot) {
-        throw new TypeError('customFormatSlot is required for custom-format');
-      }
-      return renderCustomFormatForSingleTab({
-        slot: customFormatSlot,
-        title: markdownInstance.escapeLinkText(title),
-        url,
-      });
-
-    default:
-      throw new TypeError(`invalid format: ${format}`);
-  }
+  return linkExportService.exportLink({
+    format,
+    title,
+    url,
+    customFormatSlot,
+  });
 }
 
 contextMenuService.createAll().then(() => null /* NOP */);
