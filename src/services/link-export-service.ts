@@ -1,15 +1,4 @@
-export interface MarkdownFormatter {
-  escapeLinkText: (text: string) => string;
-  linkTo: (title: string, url: string) => string;
-}
-
-export interface CustomFormatsProvider {
-  get: (usage: 'single-link', slot: string) => Promise<CustomFormat>;
-}
-
-export interface CustomFormat {
-  render: (input: { title: string; url: string; number: number }) => string;
-}
+import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
 
 export interface LinkExportService {
   /**

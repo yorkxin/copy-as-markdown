@@ -10,23 +10,13 @@ import type Markdown from '../lib/markdown.js';
 import type { NestedArray } from '../lib/markdown.js';
 import type { TabList } from '../lib/tabs.js';
 import { Tab, TabGroup, TabListGrouper } from '../lib/tabs.js';
-import type CustomFormat from '../lib/custom-format.js';
 import CustomFormatClass from '../lib/custom-format.js';
+import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
 
 // Type Definitions
 export type ExportFormat = 'link' | 'title' | 'url' | 'custom-format';
 export type ListType = 'list' | 'task-list';
 export type ExportScope = 'all' | 'highlighted';
-
-/**
- * Interface for markdown formatting operations required by the tab export service.
- */
-export interface MarkdownFormatter {
-  escapeLinkText: (text: string) => string;
-  linkTo: (title: string, url: string) => string;
-  list: (items: NestedArray) => string;
-  taskList: (items: NestedArray) => string;
-}
 
 export interface ExportTabsOptions {
   scope: ExportScope;
@@ -53,10 +43,6 @@ export interface TabGroupsAPI {
 }
 
 export type TabGroupsAPIResolver = () => TabGroupsAPI | null;
-
-export interface CustomFormatsProvider {
-  get: (context: 'multiple-links', slot: string) => Promise<CustomFormat>;
-}
 
 /**
  * Creates a tab export service instance.
