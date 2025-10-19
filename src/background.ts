@@ -10,6 +10,7 @@ import { createBrowserLinkExportService } from './services/link-export-service.j
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
 import { createBrowserCommandHandlerService } from './services/command-handler-service.js';
 import { createBrowserContextMenuHandlerService } from './services/context-menu-handler-service.js';
+import { createBrowserRuntimeMessageHandlerService } from './services/runtime-message-handler-service.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
@@ -61,6 +62,13 @@ const contextMenuHandlerService = createBrowserContextMenuHandlerService(
   bookmarks,
 );
 
+// Runtime message handler service
+const runtimeMessageHandlerService = createBrowserRuntimeMessageHandlerService(
+  badgeService,
+  linkExportService,
+  tabExportService,
+);
+
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
   try {
@@ -85,25 +93,6 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     await contextMenuService.createAll();
   }
 });
-
-async function handleExportLink({
-  format,
-  customFormatSlot,
-  title,
-  url,
-}: {
-  format: 'link' | 'custom-format';
-  customFormatSlot?: string | null;
-  title: string;
-  url: string;
-}): Promise<string> {
-  return linkExportService.exportLink({
-    format,
-    title,
-    url,
-    customFormatSlot,
-  });
-}
 
 contextMenuService.createAll().then(() => null /* NOP */);
 browser.storage.sync.onChanged.addListener(async (changes) => {
@@ -148,47 +137,11 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
   }
 });
 
-async function handleRuntimeMessage(
-  topic: 'badge' | 'export-current-tab' | 'export-tabs',
-  params: any,
-): Promise<string | null> {
-  switch (topic) {
-    case 'badge': {
-      if (params.type === 'success') {
-        await badgeService.showSuccess();
-      } else {
-        await badgeService.showError();
-      }
-      return null;
-    }
-
-    case 'export-current-tab': {
-      const tab = await browser.tabs.get(params.tabId);
-      if (typeof tab === 'undefined') {
-        throw new TypeError('got undefined tab');
-      }
-      return handleExportLink({
-        format: params.format,
-        customFormatSlot: params.customFormatSlot,
-        title: tab.title || '',
-        url: tab.url || '',
-      });
-    }
-
-    case 'export-tabs': {
-      return tabExportService.exportTabs(params);
-    }
-
-    default: {
-      throw new TypeError(`Unknown message topic '${topic}'`);
-    }
-  }
-}
-
 // listen to messages from popup
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  handleRuntimeMessage(message.topic, message.params)
+  runtimeMessageHandlerService
+    .handleMessage(message.topic, message.params)
     .then(text => sendResponse({ ok: true, text }))
     .catch(error => sendResponse({ ok: false, error: error.message }));
 
