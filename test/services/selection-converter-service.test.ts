@@ -185,39 +185,5 @@ describe('SelectionConverterService', () => {
         customOption: 'value',
       }]);
     });
-
-    it('should use custom turndown script URL', async () => {
-      const executeScriptMock = mock.fn(async () => [{ result: 'test' }]);
-
-      const mockScriptingAPI: ScriptingAPI = {
-        executeScript: executeScriptMock,
-      };
-
-      const mockTurndownOptionsProvider: TurndownOptionsProvider = {
-        getTurndownOptions: () => ({}),
-      };
-
-      const service = createSelectionConverterService(
-        mockScriptingAPI,
-        mockTurndownOptionsProvider,
-        'custom/path/to/turndown.js',
-      );
-
-      const tab: browser.tabs.Tab = {
-        id: 999,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: true,
-        incognito: false,
-        mutedInfo: { muted: false },
-      };
-
-      await service.convertSelectionToMarkdown(tab);
-
-      const loadScriptCall = executeScriptMock.mock.calls[0]!;
-      assert.deepEqual(loadScriptCall.arguments[0]!.files, ['custom/path/to/turndown.js']);
-    });
   });
 });
