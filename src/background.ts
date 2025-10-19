@@ -9,8 +9,7 @@ import { createBrowserClipboardService } from './services/clipboard-service.js';
 import { createBrowserLinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
 import { createBrowserCommandHandlerService } from './services/command-handler-service.js';
-
-type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
+import { createBrowserContextMenuHandlerService } from './services/context-menu-handler-service.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
@@ -53,6 +52,15 @@ const commandHandlerService = createBrowserCommandHandlerService(
   tabExportService,
 );
 
+// Context menu handler service
+const contextMenuHandlerService = createBrowserContextMenuHandlerService(
+  markdownInstance,
+  selectionConverterService,
+  linkExportService,
+  tabExportService,
+  bookmarks,
+);
+
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
   try {
@@ -77,196 +85,6 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     await contextMenuService.createAll();
   }
 });
-
-function parseCustomFormatCommand(command: string): { context: CustomFormatSubject; slot: string } {
-  const match = /(all-tabs|highlighted-tabs|current-tab|link)-custom-format-(\d)/.exec(command);
-  if (match === null) {
-    throw new TypeError(`unknown command: ${command}`);
-  }
-  const context = match[1] as CustomFormatSubject;
-  const slot = match[2]!;
-  return {
-    context,
-    slot,
-  };
-}
-
-async function handleCustomFormatLink(slot: string, menuInfo: browser.contextMenus.OnClickData): Promise<string> {
-  // linkText for Firefox (as of 2018/03/07)
-  // selectionText for Chrome on Mac only. On Windows it does not highlight text when
-  // right-click.
-  // TODO: use linkText when Chrome supports it on stable.
-  const linkText = menuInfo.selectionText || menuInfo.linkText || '';
-
-  return handleExportLink({
-    format: 'custom-format',
-    customFormatSlot: slot,
-    title: linkText,
-    url: menuInfo.linkUrl || '',
-  });
-}
-
-// context menu handler. In case of bookmark, tab can be undeefined.
-async function handleContentOfContextMenu(
-  info: browser.contextMenus.OnClickData,
-  tab: browser.tabs.Tab | undefined,
-): Promise<string> {
-  let text: string;
-
-  switch (info.menuItemId) {
-    case 'current-tab': {
-      text = markdownInstance.linkTo(tab!.title || '', tab!.url || '');
-      break;
-    }
-
-    case 'link': {
-      /* <a href="linkURL"><img src="srcURL" /></a> */
-      if (info.mediaType === 'image') {
-        // TODO: extract image alt text
-        text = Markdown.linkedImage('', info.srcUrl || '', info.linkUrl || '');
-        break;
-      }
-
-      /* <a href="linkURL">Text</a> */
-
-      // linkText for Firefox (as of 2018/03/07)
-      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
-      // right-click.
-      // TODO: use linkText when Chrome supports it on stable.
-      const linkText = info.selectionText || info.linkText || '';
-
-      text = markdownInstance.linkTo(linkText, info.linkUrl || '');
-      break;
-    }
-
-    case 'image': {
-      // TODO: extract image alt text
-      text = Markdown.imageFor('', info.srcUrl || '');
-      break;
-    }
-
-    case 'selection-as-markdown': {
-      text = await selectionConverterService.convertSelectionToMarkdown(tab!);
-      break;
-    }
-
-    // Only available on Firefox
-    case 'all-tabs-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'all',
-        format: 'link',
-        listType: 'list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'all-tabs-task-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'all',
-        format: 'link',
-        listType: 'task-list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'highlighted-tabs-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'highlighted',
-        format: 'link',
-        listType: 'list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'highlighted-tabs-task-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'highlighted',
-        format: 'link',
-        listType: 'task-list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'bookmark-link': {
-      const bm = await browser.bookmarks.getSubTree(info.bookmarkId!);
-      if (bm.length === 0) {
-        throw new Error('bookmark not found');
-      }
-      text = bookmarks.toMarkdown(bm[0]!);
-      break;
-    }
-
-    default: {
-      const {
-        context,
-        slot,
-      } = parseCustomFormatCommand(info.menuItemId.toString());
-
-      switch (context) {
-        case 'current-tab': {
-          text = await handleExportLink({
-            format: 'custom-format',
-            customFormatSlot: slot,
-            title: tab!.title || '',
-            url: tab!.url || '',
-          });
-          break;
-        }
-        case 'link': {
-          text = await handleCustomFormatLink(slot, info);
-          break;
-        }
-        case 'all-tabs': {
-          if (tab!.windowId === undefined) {
-            throw new Error('tab has no windowId');
-          }
-          text = await tabExportService.exportTabs({
-            scope: 'all',
-            format: 'custom-format',
-            customFormatSlot: slot,
-            windowId: tab!.windowId,
-          });
-          break;
-        }
-        case 'highlighted-tabs': {
-          if (tab!.windowId === undefined) {
-            throw new Error('tab has no windowId');
-          }
-          text = await tabExportService.exportTabs({
-            scope: 'highlighted',
-            format: 'custom-format',
-            customFormatSlot: slot,
-            windowId: tab!.windowId,
-          });
-          break;
-        }
-        default:
-          throw new TypeError(`unknown context menu custom format: ${info.menuItemId}`);
-      }
-    }
-  }
-  return text;
-}
 
 async function handleExportLink({
   format,
@@ -305,7 +123,7 @@ if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
 
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
-    const text = await handleContentOfContextMenu(info, tab);
+    const text = await contextMenuHandlerService.handleMenuClick(info, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
