@@ -2,12 +2,12 @@ import Settings from './lib/settings.js';
 import Markdown from './lib/markdown.js';
 import { Bookmarks } from './bookmarks.js';
 import CustomFormatsStorage from './storage/custom-formats-storage.js';
-import type { Options as TurndownOptions } from 'turndown';
 import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
 import { createBrowserTabExportService } from './services/tab-export-service.js';
 import { createBrowserClipboardService } from './services/clipboard-service.js';
 import { createBrowserLinkExportService } from './services/link-export-service.js';
+import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
 
@@ -31,6 +31,18 @@ const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
 const clipboardService = createBrowserClipboardService(
   useNavigatorClipboard ? navigator.clipboard : null,
   iframeCopyUrl,
+);
+
+// Selection converter service with turndown options provider
+const turndownJsUrl = 'dist/vendor/turndown.js';
+const selectionConverterService = createBrowserSelectionConverterService(
+  {
+    getTurndownOptions: () => ({
+      headingStyle: 'atx',
+      bulletListMarker: markdownInstance.unorderedListChar,
+    }),
+  },
+  turndownJsUrl,
 );
 
 async function refreshMarkdownInstance(): Promise<void> {
@@ -57,61 +69,6 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
     await contextMenuService.createAll();
   }
 });
-
-// NOTE: this function should be executed in content script.
-function selectionToMarkdown(turndownOptions: TurndownOptions): string {
-  const TurndownService = (globalThis as any).TurndownService;
-  const turndownService = new TurndownService(turndownOptions)
-    .remove('script')
-    .remove('style');
-  const sel = getSelection();
-  const container = document.createElement('div');
-  if (!sel) {
-    return '';
-  }
-  for (let i = 0, len = sel.rangeCount; i < len; i += 1) {
-    container.appendChild(sel.getRangeAt(i).cloneContents());
-  }
-
-  // Fix <a href> so that they are absolute URLs
-  container.querySelectorAll('a').forEach((value) => {
-    value.setAttribute('href', value.href);
-  });
-
-  // Fix <img src> so that they are absolute URLs
-  container.querySelectorAll('img').forEach((value) => {
-    value.setAttribute('src', value.src);
-  });
-  const html = container.innerHTML;
-  return turndownService.turndown(html);
-}
-
-function getTurndownOptions(): TurndownOptions {
-  return {
-    // For all options see https://github.com/mixmark-io/turndown?tab=readme-ov-file#options
-    headingStyle: 'atx',
-    bulletListMarker: markdownInstance.unorderedListChar,
-  };
-}
-
-async function convertSelectionInTabToMarkdown(tab: browser.tabs.Tab): Promise<string> {
-  if (!tab.id) {
-    throw new Error('tab has no id');
-  }
-  await browser.scripting.executeScript({
-    target: { tabId: tab.id, allFrames: true },
-    files: ['dist/vendor/turndown.js'],
-  });
-  const results = await browser.scripting.executeScript({
-    target: { tabId: tab.id, allFrames: true },
-    func: selectionToMarkdown as any,
-    args: [
-      getTurndownOptions(),
-    ],
-  });
-
-  return results.map(frame => frame.result as string).join('\n\n');
-}
 
 function parseCustomFormatCommand(command: string): { context: CustomFormatSubject; slot: string } {
   const match = /(all-tabs|highlighted-tabs|current-tab|link)-custom-format-(\d)/.exec(command);
@@ -203,7 +160,7 @@ async function handleContentOfContextMenu(
     }
 
     case 'selection-as-markdown': {
-      text = await convertSelectionInTabToMarkdown(tab!);
+      text = await selectionConverterService.convertSelectionToMarkdown(tab!);
       break;
     }
 
@@ -383,7 +340,7 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
 
     switch (command) {
       case 'selection-as-markdown':
-        text = await convertSelectionInTabToMarkdown(tab);
+        text = await selectionConverterService.convertSelectionToMarkdown(tab);
         break;
       case 'current-tab-link':
         text = await handleExportLink({ format: 'link', title: tab.title || '', url: tab.url || '' });

@@ -48,3 +48,23 @@ export interface CustomFormatsProvider {
    */
   get: (context: 'single-link' | 'multiple-links', slot: string) => Promise<CustomFormat>;
 }
+
+/**
+ * Browser scripting API for executing scripts in tabs
+ */
+export interface ScriptingAPI {
+  /**
+   * Execute a script in a tab
+   * @param options - Script execution options
+   * @param options.target - Target tab and frame configuration
+   * @param options.func - Function to execute (optional, use with args)
+   * @param options.files - Script files to load (optional, alternative to func)
+   * @param options.args - Arguments to pass to the function
+   */
+  executeScript: <T extends any[]>(options: {
+    target: { tabId: number; allFrames?: boolean };
+    func?: (...args: T) => any;
+    files?: string[];
+    args?: T;
+  }) => Promise<Array<{ result?: any }>>;
+}

@@ -1,12 +1,5 @@
 import copy from '../content-script.js';
-
-export interface ScriptingAPI {
-  executeScript: <T extends any[]>(options: {
-    target: { tabId: number };
-    func: (...args: T) => any;
-    args: T;
-  }) => Promise<Array<{ result?: any }>>;
-}
+import type { ScriptingAPI } from './shared-types.js';
 
 export interface TabsAPI {
   query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
