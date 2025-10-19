@@ -2,9 +2,8 @@
  * Service for handling context menu click events
  */
 
-import type { TabExportService } from './tab-export-service.js';
-import type { LinkExportService } from './link-export-service.js';
-import type { SelectionConverterService } from './selection-converter-service.js';
+import type { HandlerCoreService } from './handler-core-service.js';
+import { parseCustomFormatCommand } from './handler-core-service.js';
 import type { MarkdownFormatter } from './shared-types.js';
 
 export interface BookmarksAPI {
@@ -28,8 +27,6 @@ export interface ContextMenuHandlerService {
   ) => Promise<string>;
 }
 
-type CustomFormatContext = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
-
 // Lookup table for Firefox tab list menu items
 const TAB_LIST_MENU_ITEMS: Record<string, { scope: 'all' | 'highlighted'; listType: 'list' | 'task-list' }> = {
   'all-tabs-list': { scope: 'all', listType: 'list' },
@@ -40,22 +37,10 @@ const TAB_LIST_MENU_ITEMS: Record<string, { scope: 'all' | 'highlighted'; listTy
 
 export function createContextMenuHandlerService(
   markdown: MarkdownFormatter,
-  selectionConverterService: SelectionConverterService,
-  linkExportService: LinkExportService,
-  tabExportService: TabExportService,
+  handlerCore: HandlerCoreService,
   bookmarksAPI: BookmarksAPI,
   bookmarksFormatter: BookmarksFormatter,
 ): ContextMenuHandlerService {
-  function parseCustomFormatCommand(command: string): { context: CustomFormatContext; slot: string } {
-    const match = /(all-tabs|highlighted-tabs|current-tab|link)-custom-format-(\d)/.exec(command);
-    if (match === null) {
-      throw new TypeError(`unknown command: ${command}`);
-    }
-    const context = match[1] as CustomFormatContext;
-    const slot = match[2]!;
-    return { context, slot };
-  }
-
   async function handleMenuClick_(
     info: browser.contextMenus.OnClickData,
     tab?: browser.tabs.Tab,
@@ -94,7 +79,7 @@ export function createContextMenuHandlerService(
       if (!tab) {
         throw new Error('tab is required for selection-as-markdown menu item');
       }
-      return selectionConverterService.convertSelectionToMarkdown(tab);
+      return handlerCore.convertSelection(tab);
     }
 
     // Check if menu item is in the tab list lookup table (Firefox only)
@@ -106,7 +91,7 @@ export function createContextMenuHandlerService(
         throw new Error('tab has no windowId');
       }
       const params = TAB_LIST_MENU_ITEMS[menuItemId]!;
-      return tabExportService.exportTabs({
+      return handlerCore.exportMultipleTabs({
         scope: params.scope,
         format: 'link',
         listType: params.listType,
@@ -128,14 +113,14 @@ export function createContextMenuHandlerService(
 
     // Try to parse as custom format command
     try {
-      const { context, slot } = parseCustomFormatCommand(menuItemId);
+      const { context, slot } = parseCustomFormatCommand(menuItemId, ['all-tabs', 'highlighted-tabs', 'current-tab', 'link'] as const);
 
       switch (context) {
         case 'current-tab': {
           if (!tab) {
             throw new Error('tab is required for current-tab custom format');
           }
-          return linkExportService.exportLink({
+          return handlerCore.exportSingleLink({
             format: 'custom-format',
             customFormatSlot: slot,
             title: tab.title || '',
@@ -148,7 +133,7 @@ export function createContextMenuHandlerService(
           // selectionText for Chrome on Mac only. On Windows it does not highlight text when right-click.
           // TODO: use linkText when Chrome supports it on stable.
           const linkText = info.selectionText || info.linkText || '';
-          return linkExportService.exportLink({
+          return handlerCore.exportSingleLink({
             format: 'custom-format',
             customFormatSlot: slot,
             title: linkText,
@@ -163,7 +148,7 @@ export function createContextMenuHandlerService(
           if (tab.windowId === undefined) {
             throw new Error('tab has no windowId');
           }
-          return tabExportService.exportTabs({
+          return handlerCore.exportMultipleTabs({
             scope: 'all',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -178,7 +163,7 @@ export function createContextMenuHandlerService(
           if (tab.windowId === undefined) {
             throw new Error('tab has no windowId');
           }
-          return tabExportService.exportTabs({
+          return handlerCore.exportMultipleTabs({
             scope: 'highlighted',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -191,7 +176,7 @@ export function createContextMenuHandlerService(
       }
     } catch (error) {
       // If it's not a custom format command, throw unknown menu item error
-      if (error instanceof TypeError && error.message.includes('unknown command')) {
+      if (error instanceof TypeError && error.message.includes('unknown custom format command')) {
         throw new TypeError(`unknown context menu item: ${menuItemId}`);
       }
       throw error;
@@ -216,16 +201,12 @@ export function createContextMenuHandlerService(
 
 export function createBrowserContextMenuHandlerService(
   markdown: MarkdownFormatter,
-  selectionConverterService: SelectionConverterService,
-  linkExportService: LinkExportService,
-  tabExportService: TabExportService,
+  handlerCore: HandlerCoreService,
   bookmarksFormatter: BookmarksFormatter,
 ): ContextMenuHandlerService {
   return createContextMenuHandlerService(
     markdown,
-    selectionConverterService,
-    linkExportService,
-    tabExportService,
+    handlerCore,
     browser.bookmarks,
     bookmarksFormatter,
   );

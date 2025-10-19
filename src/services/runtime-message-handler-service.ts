@@ -2,9 +2,7 @@
  * Service for handling runtime messages from popup and other extension pages
  */
 
-import type { BadgeService } from './badge-service.js';
-import type { LinkExportService } from './link-export-service.js';
-import type { TabExportService } from './tab-export-service.js';
+import type { HandlerCoreService } from './handler-core-service.js';
 
 export interface TabsAPI {
   get: (tabId: number) => Promise<browser.tabs.Tab>;
@@ -21,18 +19,16 @@ export interface RuntimeMessageHandlerService {
 }
 
 export function createRuntimeMessageHandlerService(
-  badgeService: BadgeService,
-  linkExportService: LinkExportService,
-  tabExportService: TabExportService,
+  handlerCore: HandlerCoreService,
   tabsAPI: TabsAPI,
 ): RuntimeMessageHandlerService {
   async function handleMessage_(topic: string, params: any): Promise<string | null> {
     switch (topic) {
       case 'badge': {
         if (params.type === 'success') {
-          await badgeService.showSuccess();
+          await handlerCore.showSuccessBadge();
         } else {
-          await badgeService.showError();
+          await handlerCore.showErrorBadge();
         }
         return null;
       }
@@ -42,7 +38,7 @@ export function createRuntimeMessageHandlerService(
         if (typeof tab === 'undefined') {
           throw new TypeError('got undefined tab');
         }
-        return linkExportService.exportLink({
+        return handlerCore.exportSingleLink({
           format: params.format,
           customFormatSlot: params.customFormatSlot,
           title: tab.title || '',
@@ -51,7 +47,7 @@ export function createRuntimeMessageHandlerService(
       }
 
       case 'export-tabs': {
-        return tabExportService.exportTabs(params);
+        return handlerCore.exportMultipleTabs(params);
       }
 
       default: {
@@ -66,14 +62,10 @@ export function createRuntimeMessageHandlerService(
 }
 
 export function createBrowserRuntimeMessageHandlerService(
-  badgeService: BadgeService,
-  linkExportService: LinkExportService,
-  tabExportService: TabExportService,
+  handlerCore: HandlerCoreService,
 ): RuntimeMessageHandlerService {
   return createRuntimeMessageHandlerService(
-    badgeService,
-    linkExportService,
-    tabExportService,
+    handlerCore,
     browser.tabs,
   );
 }

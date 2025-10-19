@@ -6,9 +6,7 @@ import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { createRuntimeMessageHandlerService } from '../../src/services/runtime-message-handler-service.js';
 import type { TabsAPI } from '../../src/services/runtime-message-handler-service.js';
-import type { BadgeService } from '../../src/services/badge-service.js';
-import type { LinkExportService } from '../../src/services/link-export-service.js';
-import type { TabExportService } from '../../src/services/tab-export-service.js';
+import type { HandlerCoreService } from '../../src/services/handler-core-service.js';
 
 // Helper to create mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -22,35 +20,22 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 }
 
 // Helper to create unused mock stubs
-function createUnusedBadgeService(): BadgeService {
+function createUnusedHandlerCore(): HandlerCoreService {
   return {
-    showSuccess: mock.fn(async () => {
-      throw new Error('BadgeService.showSuccess should not be called in this test');
+    exportSingleLink: mock.fn(async () => {
+      throw new Error('HandlerCore.exportSingleLink should not be called in this test');
     }),
-    showError: mock.fn(async () => {
-      throw new Error('BadgeService.showError should not be called in this test');
+    exportMultipleTabs: mock.fn(async () => {
+      throw new Error('HandlerCore.exportMultipleTabs should not be called in this test');
     }),
-    clear: mock.fn(async () => {
-      throw new Error('BadgeService.clear should not be called in this test');
+    convertSelection: mock.fn(async () => {
+      throw new Error('HandlerCore.convertSelection should not be called in this test');
     }),
-    getClearAlarmName: mock.fn(() => {
-      throw new Error('BadgeService.getClearAlarmName should not be called in this test');
+    showSuccessBadge: mock.fn(async () => {
+      throw new Error('HandlerCore.showSuccessBadge should not be called in this test');
     }),
-  };
-}
-
-function createUnusedLinkExportService(): LinkExportService {
-  return {
-    exportLink: mock.fn(async () => {
-      throw new Error('LinkExportService should not be called in this test');
-    }),
-  };
-}
-
-function createUnusedTabExportService(): TabExportService {
-  return {
-    exportTabs: mock.fn(async () => {
-      throw new Error('TabExportService should not be called in this test');
+    showErrorBadge: mock.fn(async () => {
+      throw new Error('HandlerCore.showErrorBadge should not be called in this test');
     }),
   };
 }
@@ -68,15 +53,13 @@ describe('RuntimeMessageHandlerService', () => {
     it('should show success badge when type is success', async () => {
       // Arrange
       const showSuccessMock = mock.fn(async () => {});
-      const mockBadgeService: BadgeService = {
-        ...createUnusedBadgeService(),
-        showSuccess: showSuccessMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        showSuccessBadge: showSuccessMock,
       };
 
       const service = createRuntimeMessageHandlerService(
-        mockBadgeService,
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        mockHandlerCore,
         createUnusedTabsAPI(),
       );
 
@@ -91,15 +74,13 @@ describe('RuntimeMessageHandlerService', () => {
     it('should show error badge when type is not success', async () => {
       // Arrange
       const showErrorMock = mock.fn(async () => {});
-      const mockBadgeService: BadgeService = {
-        ...createUnusedBadgeService(),
-        showError: showErrorMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        showErrorBadge: showErrorMock,
       };
 
       const service = createRuntimeMessageHandlerService(
-        mockBadgeService,
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        mockHandlerCore,
         createUnusedTabsAPI(),
       );
 
@@ -133,14 +114,13 @@ describe('RuntimeMessageHandlerService', () => {
         get: getMock,
       };
 
-      const mockLinkExportService: LinkExportService = {
-        exportLink: exportLinkMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportLinkMock,
       };
 
       const service = createRuntimeMessageHandlerService(
-        createUnusedBadgeService(),
-        mockLinkExportService,
-        createUnusedTabExportService(),
+        mockHandlerCore,
         mockTabsAPI,
       );
 
@@ -173,14 +153,13 @@ describe('RuntimeMessageHandlerService', () => {
         get: getMock,
       };
 
-      const mockLinkExportService: LinkExportService = {
-        exportLink: exportLinkMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportLinkMock,
       };
 
       const service = createRuntimeMessageHandlerService(
-        createUnusedBadgeService(),
-        mockLinkExportService,
-        createUnusedTabExportService(),
+        mockHandlerCore,
         mockTabsAPI,
       );
 
@@ -202,9 +181,7 @@ describe('RuntimeMessageHandlerService', () => {
       };
 
       const service = createRuntimeMessageHandlerService(
-        createUnusedBadgeService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         mockTabsAPI,
       );
 
@@ -227,14 +204,13 @@ describe('RuntimeMessageHandlerService', () => {
         return 'exported tabs';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createRuntimeMessageHandlerService(
-        createUnusedBadgeService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedTabsAPI(),
       );
 
@@ -263,14 +239,13 @@ describe('RuntimeMessageHandlerService', () => {
         return 'custom tabs';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createRuntimeMessageHandlerService(
-        createUnusedBadgeService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedTabsAPI(),
       );
 
@@ -291,9 +266,7 @@ describe('RuntimeMessageHandlerService', () => {
     it('should throw error for unknown topic', async () => {
       // Arrange
       const service = createRuntimeMessageHandlerService(
-        createUnusedBadgeService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedTabsAPI(),
       );
 

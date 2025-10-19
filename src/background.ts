@@ -8,6 +8,7 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardService } from './services/clipboard-service.js';
 import { createBrowserLinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
+import { createBrowserHandlerCoreService } from './services/handler-core-service.js';
 import { createBrowserCommandHandlerService } from './services/command-handler-service.js';
 import { createBrowserContextMenuHandlerService } from './services/context-menu-handler-service.js';
 import { createBrowserRuntimeMessageHandlerService } from './services/runtime-message-handler-service.js';
@@ -46,28 +47,26 @@ const selectionConverterService = createBrowserSelectionConverterService(
   turndownJsUrl,
 );
 
-// Command handler service
-const commandHandlerService = createBrowserCommandHandlerService(
-  selectionConverterService,
+// Handler core service (shared by all handler services)
+const handlerCore = createBrowserHandlerCoreService(
   linkExportService,
   tabExportService,
+  selectionConverterService,
+  badgeService,
 );
+
+// Command handler service
+const commandHandlerService = createBrowserCommandHandlerService(handlerCore);
 
 // Context menu handler service
 const contextMenuHandlerService = createBrowserContextMenuHandlerService(
   markdownInstance,
-  selectionConverterService,
-  linkExportService,
-  tabExportService,
+  handlerCore,
   bookmarks,
 );
 
 // Runtime message handler service
-const runtimeMessageHandlerService = createBrowserRuntimeMessageHandlerService(
-  badgeService,
-  linkExportService,
-  tabExportService,
-);
+const runtimeMessageHandlerService = createBrowserRuntimeMessageHandlerService(handlerCore);
 
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;

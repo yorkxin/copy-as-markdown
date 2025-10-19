@@ -5,14 +5,12 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
 import { createContextMenuHandlerService } from '../../src/services/context-menu-handler-service.js';
+import type { HandlerCoreService } from '../../src/services/handler-core-service.js';
 import type {
   BookmarksAPI,
   BookmarksFormatter,
 } from '../../src/services/context-menu-handler-service.js';
 import type { MarkdownFormatter } from '../../src/services/shared-types.js';
-import type { SelectionConverterService } from '../../src/services/selection-converter-service.js';
-import type { LinkExportService } from '../../src/services/link-export-service.js';
-import type { TabExportService } from '../../src/services/tab-export-service.js';
 
 // Helper to create mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -53,26 +51,22 @@ function createUnusedMarkdown(): MarkdownFormatter {
   };
 }
 
-function createUnusedSelectionConverterService(): SelectionConverterService {
+function createUnusedHandlerCore(): HandlerCoreService {
   return {
-    convertSelectionToMarkdown: mock.fn(async () => {
-      throw new Error('SelectionConverterService should not be called in this test');
+    exportSingleLink: mock.fn(async () => {
+      throw new Error('HandlerCoreService.exportSingleLink should not be called in this test');
     }),
-  };
-}
-
-function createUnusedLinkExportService(): LinkExportService {
-  return {
-    exportLink: mock.fn(async () => {
-      throw new Error('LinkExportService should not be called in this test');
+    exportMultipleTabs: mock.fn(async () => {
+      throw new Error('HandlerCoreService.exportMultipleTabs should not be called in this test');
     }),
-  };
-}
-
-function createUnusedTabExportService(): TabExportService {
-  return {
-    exportTabs: mock.fn(async () => {
-      throw new Error('TabExportService should not be called in this test');
+    convertSelection: mock.fn(async () => {
+      throw new Error('HandlerCoreService.convertSelection should not be called in this test');
+    }),
+    showSuccessBadge: mock.fn(async () => {
+      throw new Error('HandlerCoreService.showSuccessBadge should not be called in this test');
+    }),
+    showErrorBadge: mock.fn(async () => {
+      throw new Error('HandlerCoreService.showErrorBadge should not be called in this test');
     }),
   };
 }
@@ -111,9 +105,7 @@ describe('ContextMenuHandlerService', () => {
 
       const service = createContextMenuHandlerService(
         mockMarkdown,
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -132,9 +124,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -165,9 +155,7 @@ describe('ContextMenuHandlerService', () => {
 
       const service = createContextMenuHandlerService(
         mockMarkdown,
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -190,9 +178,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -225,9 +211,7 @@ describe('ContextMenuHandlerService', () => {
 
       const service = createContextMenuHandlerService(
         mockMarkdown,
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -251,9 +235,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -280,15 +262,14 @@ describe('ContextMenuHandlerService', () => {
         return 'converted markdown';
       });
 
-      const mockSelectionConverterService: SelectionConverterService = {
-        convertSelectionToMarkdown: convertMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        convertSelection: convertMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        mockSelectionConverterService,
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -307,9 +288,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -336,15 +315,14 @@ describe('ContextMenuHandlerService', () => {
         return 'all tabs list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -367,15 +345,14 @@ describe('ContextMenuHandlerService', () => {
         return 'task list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -397,15 +374,14 @@ describe('ContextMenuHandlerService', () => {
         return 'highlighted list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -428,15 +404,14 @@ describe('ContextMenuHandlerService', () => {
         return 'highlighted task list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -454,9 +429,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -476,9 +449,7 @@ describe('ContextMenuHandlerService', () => {
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -522,9 +493,7 @@ describe('ContextMenuHandlerService', () => {
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         mockBookmarksAPI,
         mockBookmarksFormatter,
       );
@@ -551,9 +520,7 @@ describe('ContextMenuHandlerService', () => {
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         mockBookmarksAPI,
         createUnusedBookmarksFormatter(),
       );
@@ -574,9 +541,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -603,15 +568,14 @@ describe('ContextMenuHandlerService', () => {
         return 'custom formatted';
       });
 
-      const mockLinkExportService: LinkExportService = {
-        exportLink: exportLinkMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportLinkMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        mockLinkExportService,
-        createUnusedTabExportService(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -636,15 +600,14 @@ describe('ContextMenuHandlerService', () => {
         return 'custom link';
       });
 
-      const mockLinkExportService: LinkExportService = {
-        exportLink: exportLinkMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportLinkMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        mockLinkExportService,
-        createUnusedTabExportService(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -672,15 +635,14 @@ describe('ContextMenuHandlerService', () => {
         return 'custom tabs';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -704,15 +666,14 @@ describe('ContextMenuHandlerService', () => {
         return 'custom highlighted';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -732,9 +693,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const service = createContextMenuHandlerService(
         createUnusedMarkdown(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );

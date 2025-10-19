@@ -8,9 +8,7 @@ import { createCommandHandlerService } from '../../src/services/command-handler-
 import type {
   TabsAPI,
 } from '../../src/services/command-handler-service.js';
-import type { SelectionConverterService } from '../../src/services/selection-converter-service.js';
-import type { LinkExportService } from '../../src/services/link-export-service.js';
-import type { TabExportService } from '../../src/services/tab-export-service.js';
+import type { HandlerCoreService } from '../../src/services/handler-core-service.js';
 
 // Helper to create a mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -23,7 +21,7 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
   } as browser.tabs.Tab;
 }
 
-// Helper to create unused mock stubs (for dependencies not used in specific tests)
+// Helper to create unused mock stubs
 function createUnusedTabsAPI(): TabsAPI {
   return {
     query: mock.fn(async () => {
@@ -32,26 +30,22 @@ function createUnusedTabsAPI(): TabsAPI {
   };
 }
 
-function createUnusedSelectionConverterService(): SelectionConverterService {
+function createUnusedHandlerCore(): HandlerCoreService {
   return {
-    convertSelectionToMarkdown: mock.fn(async () => {
-      throw new Error('SelectionConverterService should not be called in this test');
+    exportSingleLink: mock.fn(async () => {
+      throw new Error('HandlerCore.exportSingleLink should not be called in this test');
     }),
-  };
-}
-
-function createUnusedLinkExportService(): LinkExportService {
-  return {
-    exportLink: mock.fn(async () => {
-      throw new Error('LinkExportService should not be called in this test');
+    exportMultipleTabs: mock.fn(async () => {
+      throw new Error('HandlerCore.exportMultipleTabs should not be called in this test');
     }),
-  };
-}
-
-function createUnusedTabExportService(): TabExportService {
-  return {
-    exportTabs: mock.fn(async () => {
-      throw new Error('TabExportService should not be called in this test');
+    convertSelection: mock.fn(async () => {
+      throw new Error('HandlerCore.convertSelection should not be called in this test');
+    }),
+    showSuccessBadge: mock.fn(async () => {
+      throw new Error('HandlerCore.showSuccessBadge should not be called in this test');
+    }),
+    showErrorBadge: mock.fn(async () => {
+      throw new Error('HandlerCore.showErrorBadge should not be called in this test');
     }),
   };
 }
@@ -69,15 +63,14 @@ describe('CommandHandlerService', () => {
       };
 
       const convertMock = mock.fn(async () => 'markdown content');
-      const mockSelectionConverterService: SelectionConverterService = {
-        convertSelectionToMarkdown: convertMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        convertSelection: convertMock,
       };
 
       const service = createCommandHandlerService(
         mockTabsAPI,
-        mockSelectionConverterService,
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        mockHandlerCore,
       );
 
       const mockTab = createMockTab();
@@ -101,15 +94,14 @@ describe('CommandHandlerService', () => {
       };
 
       const convertMock = mock.fn(async () => 'markdown content');
-      const mockSelectionConverterService: SelectionConverterService = {
-        convertSelectionToMarkdown: convertMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        convertSelection: convertMock,
       };
 
       const service = createCommandHandlerService(
         mockTabsAPI,
-        mockSelectionConverterService,
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        mockHandlerCore,
       );
 
       // Act
@@ -133,9 +125,7 @@ describe('CommandHandlerService', () => {
 
       const service = createCommandHandlerService(
         mockTabsAPI,
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
       );
 
       // Act & Assert
@@ -151,9 +141,7 @@ describe('CommandHandlerService', () => {
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
       );
 
       // Act & Assert
@@ -173,15 +161,14 @@ describe('CommandHandlerService', () => {
         return 'converted markdown';
       });
 
-      const mockSelectionConverterService: SelectionConverterService = {
-        convertSelectionToMarkdown: convertMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        convertSelection: convertMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        mockSelectionConverterService,
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        mockHandlerCore,
       );
 
       // Act
@@ -208,15 +195,14 @@ describe('CommandHandlerService', () => {
         return '[Example Site](https://example.com)';
       });
 
-      const mockLinkExportService: LinkExportService = {
-        exportLink: exportLinkMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportLinkMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        mockLinkExportService,
-        createUnusedTabExportService(),
+        mockHandlerCore,
       );
 
       // Act
@@ -240,15 +226,14 @@ describe('CommandHandlerService', () => {
         return 'tabs as list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -269,15 +254,14 @@ describe('CommandHandlerService', () => {
         return 'tabs as task list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -296,15 +280,14 @@ describe('CommandHandlerService', () => {
         return 'titles list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -322,15 +305,14 @@ describe('CommandHandlerService', () => {
         return 'urls list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -352,15 +334,14 @@ describe('CommandHandlerService', () => {
         return 'highlighted tabs list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -379,15 +360,14 @@ describe('CommandHandlerService', () => {
         return 'highlighted task list';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -406,15 +386,14 @@ describe('CommandHandlerService', () => {
         return 'highlighted titles';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -433,15 +412,14 @@ describe('CommandHandlerService', () => {
         return 'highlighted urls';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -468,15 +446,14 @@ describe('CommandHandlerService', () => {
         return 'custom formatted link';
       });
 
-      const mockLinkExportService: LinkExportService = {
-        exportLink: exportLinkMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportLinkMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        mockLinkExportService,
-        createUnusedTabExportService(),
+        mockHandlerCore,
       );
 
       // Act
@@ -498,15 +475,14 @@ describe('CommandHandlerService', () => {
         return 'custom tabs format';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -526,15 +502,14 @@ describe('CommandHandlerService', () => {
         return 'custom highlighted format';
       });
 
-      const mockTabExportService: TabExportService = {
-        exportTabs: exportTabsMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportMultipleTabs: exportTabsMock,
       };
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        mockTabExportService,
+        mockHandlerCore,
       );
 
       // Act
@@ -552,9 +527,7 @@ describe('CommandHandlerService', () => {
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
       );
 
       // Act & Assert
@@ -570,9 +543,7 @@ describe('CommandHandlerService', () => {
 
       const service = createCommandHandlerService(
         createUnusedTabsAPI(),
-        createUnusedSelectionConverterService(),
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
+        createUnusedHandlerCore(),
       );
 
       // Act & Assert

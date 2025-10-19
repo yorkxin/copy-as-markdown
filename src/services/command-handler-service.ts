@@ -2,9 +2,8 @@
  * Service for handling keyboard command shortcuts
  */
 
-import type { TabExportService } from './tab-export-service.js';
-import type { LinkExportService } from './link-export-service.js';
-import type { SelectionConverterService } from './selection-converter-service.js';
+import type { HandlerCoreService } from './handler-core-service.js';
+import { parseCustomFormatCommand } from './handler-core-service.js';
 
 export interface TabsAPI {
   query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
@@ -34,9 +33,7 @@ const TAB_EXPORT_COMMANDS: Record<string, { scope: 'all' | 'highlighted'; format
 
 export function createCommandHandlerService(
   tabsAPI: TabsAPI,
-  selectionConverterService: SelectionConverterService,
-  linkExportService: LinkExportService,
-  tabExportService: TabExportService,
+  handlerCore: HandlerCoreService,
 ): CommandHandlerService {
   async function mustGetCurrentTab(providedTab?: browser.tabs.Tab): Promise<browser.tabs.Tab> {
     if (providedTab) {
@@ -55,16 +52,6 @@ export function createCommandHandlerService(
     return tabs[0]!;
   }
 
-  function parseCustomFormatCommand(command: string): { context: 'current-tab' | 'all-tabs' | 'highlighted-tabs'; slot: string } {
-    const match = /(current-tab|all-tabs|highlighted-tabs)-custom-format-(\d)/.exec(command);
-    if (match === null) {
-      throw new TypeError(`unknown custom format command: ${command}`);
-    }
-    const context = match[1] as 'current-tab' | 'all-tabs' | 'highlighted-tabs';
-    const slot = match[2]!;
-    return { context, slot };
-  }
-
   async function handleCommand_(command: string, tab?: browser.tabs.Tab): Promise<string> {
     const currentTab = await mustGetCurrentTab(tab);
     const windowId = currentTab.windowId;
@@ -74,11 +61,11 @@ export function createCommandHandlerService(
 
     // Handle special commands
     if (command === 'selection-as-markdown') {
-      return selectionConverterService.convertSelectionToMarkdown(currentTab);
+      return handlerCore.convertSelection(currentTab);
     }
 
     if (command === 'current-tab-link') {
-      return linkExportService.exportLink({
+      return handlerCore.exportSingleLink({
         format: 'link',
         title: currentTab.title || '',
         url: currentTab.url || '',
@@ -88,7 +75,7 @@ export function createCommandHandlerService(
     // Check if command is in the tab export lookup table
     if (command in TAB_EXPORT_COMMANDS) {
       const params = TAB_EXPORT_COMMANDS[command]!;
-      return tabExportService.exportTabs({
+      return handlerCore.exportMultipleTabs({
         ...params,
         windowId,
       });
@@ -96,11 +83,11 @@ export function createCommandHandlerService(
 
     // Try to parse as custom format command
     try {
-      const { context, slot } = parseCustomFormatCommand(command);
+      const { context, slot } = parseCustomFormatCommand(command, ['current-tab', 'all-tabs', 'highlighted-tabs'] as const);
 
       switch (context) {
         case 'current-tab':
-          return linkExportService.exportLink({
+          return handlerCore.exportSingleLink({
             format: 'custom-format',
             customFormatSlot: slot,
             title: currentTab.title || '',
@@ -108,7 +95,7 @@ export function createCommandHandlerService(
           });
 
         case 'all-tabs':
-          return tabExportService.exportTabs({
+          return handlerCore.exportMultipleTabs({
             scope: 'all',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -116,7 +103,7 @@ export function createCommandHandlerService(
           });
 
         case 'highlighted-tabs':
-          return tabExportService.exportTabs({
+          return handlerCore.exportMultipleTabs({
             scope: 'highlighted',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -141,14 +128,10 @@ export function createCommandHandlerService(
 }
 
 export function createBrowserCommandHandlerService(
-  selectionConverterService: SelectionConverterService,
-  linkExportService: LinkExportService,
-  tabExportService: TabExportService,
+  handlerCore: HandlerCoreService,
 ): CommandHandlerService {
   return createCommandHandlerService(
     browser.tabs,
-    selectionConverterService,
-    linkExportService,
-    tabExportService,
+    handlerCore,
   );
 }
