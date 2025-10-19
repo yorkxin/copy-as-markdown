@@ -1,9 +1,9 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { createClipboardService } from '../../src/services/clipboard-service.js';
+import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type {
   ClipboardAPI,
-  ScriptingAPI,
   TabsAPI,
 } from '../../src/services/clipboard-service.js';
 

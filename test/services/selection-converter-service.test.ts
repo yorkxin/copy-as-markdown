@@ -1,10 +1,8 @@
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { createSelectionConverterService } from '../../src/services/selection-converter-service.js';
-import type {
-  ScriptingAPI,
-  TurndownOptionsProvider,
-} from '../../src/services/selection-converter-service.js';
+import type { ScriptingAPI } from '../../src/services/shared-types.js';
+import type { TurndownOptionsProvider } from '../../src/services/selection-converter-service.js';
 import type { Options as TurndownOptions } from 'turndown';
 
 describe('SelectionConverterService', () => {

@@ -6,15 +6,7 @@
  */
 
 import type { Options as TurndownOptions } from 'turndown';
-
-export interface ScriptingAPI {
-  executeScript: <T extends any[]>(options: {
-    target: { tabId: number; allFrames?: boolean };
-    func?: (...args: T) => any;
-    files?: string[];
-    args?: T;
-  }) => Promise<Array<{ result?: any }>>;
-}
+import type { ScriptingAPI } from './shared-types.js';
 
 export interface TurndownOptionsProvider {
   getTurndownOptions: () => TurndownOptions;
