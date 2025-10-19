@@ -8,6 +8,7 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardService } from './services/clipboard-service.js';
 import { createBrowserLinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
+import { createBrowserCommandHandlerService } from './services/command-handler-service.js';
 
 type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
 
@@ -43,6 +44,13 @@ const selectionConverterService = createBrowserSelectionConverterService(
     }),
   },
   turndownJsUrl,
+);
+
+// Command handler service
+const commandHandlerService = createBrowserCommandHandlerService(
+  selectionConverterService,
+  linkExportService,
+  tabExportService,
 );
 
 async function refreshMarkdownInstance(): Promise<void> {
@@ -83,15 +91,6 @@ function parseCustomFormatCommand(command: string): { context: CustomFormatSubje
   };
 }
 
-async function handleCustomFormatCurrentPage(slot: string, tab: browser.tabs.Tab): Promise<string> {
-  return handleExportLink({
-    format: 'custom-format',
-    customFormatSlot: slot,
-    title: tab.title || '',
-    url: tab.url || '',
-  });
-}
-
 async function handleCustomFormatLink(slot: string, menuInfo: browser.contextMenus.OnClickData): Promise<string> {
   // linkText for Firefox (as of 2018/03/07)
   // selectionText for Chrome on Mac only. On Windows it does not highlight text when
@@ -104,19 +103,6 @@ async function handleCustomFormatLink(slot: string, menuInfo: browser.contextMen
     customFormatSlot: slot,
     title: linkText,
     url: menuInfo.linkUrl || '',
-  });
-}
-
-async function handleCustomFormatTabs(
-  scope: 'all' | 'highlighted',
-  slot: string,
-  windowId: number,
-): Promise<string> {
-  return tabExportService.exportTabs({
-    scope,
-    format: 'custom-format',
-    customFormatSlot: slot,
-    windowId,
   });
 }
 
@@ -238,7 +224,12 @@ async function handleContentOfContextMenu(
 
       switch (context) {
         case 'current-tab': {
-          text = await handleCustomFormatCurrentPage(slot, tab!);
+          text = await handleExportLink({
+            format: 'custom-format',
+            customFormatSlot: slot,
+            title: tab!.title || '',
+            url: tab!.url || '',
+          });
           break;
         }
         case 'link': {
@@ -249,14 +240,24 @@ async function handleContentOfContextMenu(
           if (tab!.windowId === undefined) {
             throw new Error('tab has no windowId');
           }
-          text = await handleCustomFormatTabs('all', slot, tab!.windowId);
+          text = await tabExportService.exportTabs({
+            scope: 'all',
+            format: 'custom-format',
+            customFormatSlot: slot,
+            windowId: tab!.windowId,
+          });
           break;
         }
         case 'highlighted-tabs': {
           if (tab!.windowId === undefined) {
             throw new Error('tab has no windowId');
           }
-          text = await handleCustomFormatTabs('highlighted', slot, tab!.windowId);
+          text = await tabExportService.exportTabs({
+            scope: 'highlighted',
+            format: 'custom-format',
+            customFormatSlot: slot,
+            windowId: tab!.windowId,
+          });
           break;
         }
         default:
@@ -316,128 +317,9 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 // listen to keyboard shortcuts
-browser.commands.onCommand.addListener(async (command: string, argTab?: browser.tabs.Tab) => {
+browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
-    // Note: tab argument may be undefined on Firefox.
-    // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/onCommand
-    let tab = argTab;
-    if (!tab) {
-      const tabs = await browser.tabs.query({
-        currentWindow: true,
-        active: true,
-      });
-      if (tabs.length !== 1) {
-        throw new Error('failed to get current tab');
-      }
-      tab = tabs[0]!;
-    }
-
-    let text = '';
-    const windowId = tab.windowId;
-    if (windowId === undefined) {
-      throw new Error('tab has no windowId');
-    }
-
-    switch (command) {
-      case 'selection-as-markdown':
-        text = await selectionConverterService.convertSelectionToMarkdown(tab);
-        break;
-      case 'current-tab-link':
-        text = await handleExportLink({ format: 'link', title: tab.title || '', url: tab.url || '' });
-        break;
-      case 'all-tabs-link-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'link',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'all-tabs-link-as-task-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'link',
-          listType: 'task-list',
-          windowId,
-        });
-        break;
-      case 'all-tabs-title-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'title',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'all-tabs-url-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'url',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-link-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'link',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-link-as-task-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'link',
-          listType: 'task-list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-title-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'title',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-url-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'url',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      default: {
-        try {
-          const {
-            context,
-            slot,
-          } = parseCustomFormatCommand(command);
-
-          switch (context) {
-            case 'current-tab': {
-              text = await handleCustomFormatCurrentPage(slot, tab);
-              break;
-            }
-            case 'all-tabs': {
-              text = await handleCustomFormatTabs('all', slot, windowId);
-              break;
-            }
-            case 'highlighted-tabs': {
-              text = await handleCustomFormatTabs('highlighted', slot, windowId);
-              break;
-            }
-            default:
-              throw new TypeError(`unknown keyboard custom format: ${command}`);
-          }
-        } catch {
-          throw new TypeError(`unknown keyboard command: ${command}`);
-        }
-      }
-    }
-
+    const text = await commandHandlerService.handleCommand(command, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
