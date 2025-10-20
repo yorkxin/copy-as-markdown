@@ -2,13 +2,13 @@
  * Service for handling runtime messages from popup and other extension pages
  */
 
-import type { HandlerCoreService } from './handler-core-service.js';
+import type { HandlerCore } from './handler-core.js';
 
 export interface TabsAPI {
   get: (tabId: number) => Promise<browser.tabs.Tab>;
 }
 
-export interface RuntimeMessageHandlerService {
+export interface RuntimeMessageHandler {
   /**
    * Handle a runtime message
    * @param topic - The message topic
@@ -18,10 +18,10 @@ export interface RuntimeMessageHandlerService {
   handleMessage: (topic: string, params: any) => Promise<string | null>;
 }
 
-export function createRuntimeMessageHandlerService(
-  handlerCore: HandlerCoreService,
+export function createRuntimeMessageHandler(
+  handlerCore: HandlerCore,
   tabsAPI: TabsAPI,
-): RuntimeMessageHandlerService {
+): RuntimeMessageHandler {
   async function handleMessage_(topic: string, params: any): Promise<string | null> {
     switch (topic) {
       case 'export-current-tab': {
@@ -52,10 +52,10 @@ export function createRuntimeMessageHandlerService(
   };
 }
 
-export function createBrowserRuntimeMessageHandlerService(
-  handlerCore: HandlerCoreService,
-): RuntimeMessageHandlerService {
-  return createRuntimeMessageHandlerService(
+export function createBrowserRuntimeMessageHandler(
+  handlerCore: HandlerCore,
+): RuntimeMessageHandler {
+  return createRuntimeMessageHandler(
     handlerCore,
     browser.tabs,
   );

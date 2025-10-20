@@ -4,11 +4,12 @@
 
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { createCommandHandlerService } from '../../src/services/command-handler-service.js';
+import { createKeyboardCommandHandler } from '../../src/handlers/keyboard-command-handler.js';
+
 import type {
   TabsAPI,
-} from '../../src/services/command-handler-service.js';
-import type { HandlerCoreService } from '../../src/services/handler-core-service.js';
+} from '../../src/handlers/keyboard-command-handler.js';
+import type { HandlerCore } from '../../src/handlers/handler-core.js';
 
 // Helper to create a mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -30,7 +31,7 @@ function createUnusedTabsAPI(): TabsAPI {
   };
 }
 
-function createUnusedHandlerCore(): HandlerCoreService {
+function createUnusedHandlerCore(): HandlerCore {
   return {
     exportSingleLink: mock.fn(async () => {
       throw new Error('HandlerCore.exportSingleLink should not be called in this test');
@@ -63,12 +64,12 @@ describe('CommandHandlerService', () => {
       };
 
       const convertMock = mock.fn(async () => 'markdown content');
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         convertSelection: convertMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         mockTabsAPI,
         mockHandlerCore,
       );
@@ -94,12 +95,12 @@ describe('CommandHandlerService', () => {
       };
 
       const convertMock = mock.fn(async () => 'markdown content');
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         convertSelection: convertMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         mockTabsAPI,
         mockHandlerCore,
       );
@@ -123,7 +124,7 @@ describe('CommandHandlerService', () => {
         query: mock.fn(async () => []),
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         mockTabsAPI,
         createUnusedHandlerCore(),
       );
@@ -139,7 +140,7 @@ describe('CommandHandlerService', () => {
       // Arrange
       const mockTab = createMockTab({ windowId: undefined });
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         createUnusedHandlerCore(),
       );
@@ -161,12 +162,12 @@ describe('CommandHandlerService', () => {
         return 'converted markdown';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         convertSelection: convertMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -195,12 +196,12 @@ describe('CommandHandlerService', () => {
         return '[Example Site](https://example.com)';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportLinkMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -226,12 +227,12 @@ describe('CommandHandlerService', () => {
         return 'tabs as list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -254,12 +255,12 @@ describe('CommandHandlerService', () => {
         return 'tabs as task list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -280,12 +281,12 @@ describe('CommandHandlerService', () => {
         return 'titles list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -305,12 +306,12 @@ describe('CommandHandlerService', () => {
         return 'urls list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -334,12 +335,12 @@ describe('CommandHandlerService', () => {
         return 'highlighted tabs list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -360,12 +361,12 @@ describe('CommandHandlerService', () => {
         return 'highlighted task list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -386,12 +387,12 @@ describe('CommandHandlerService', () => {
         return 'highlighted titles';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -412,12 +413,12 @@ describe('CommandHandlerService', () => {
         return 'highlighted urls';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -446,12 +447,12 @@ describe('CommandHandlerService', () => {
         return 'custom formatted link';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportLinkMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -475,12 +476,12 @@ describe('CommandHandlerService', () => {
         return 'custom tabs format';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -502,12 +503,12 @@ describe('CommandHandlerService', () => {
         return 'custom highlighted format';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         mockHandlerCore,
       );
@@ -525,7 +526,7 @@ describe('CommandHandlerService', () => {
       // Arrange
       const mockTab = createMockTab();
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         createUnusedHandlerCore(),
       );
@@ -541,7 +542,7 @@ describe('CommandHandlerService', () => {
       // Arrange
       const mockTab = createMockTab();
 
-      const service = createCommandHandlerService(
+      const service = createKeyboardCommandHandler(
         createUnusedTabsAPI(),
         createUnusedHandlerCore(),
       );

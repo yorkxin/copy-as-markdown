@@ -4,9 +4,9 @@
 
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { createRuntimeMessageHandlerService } from '../../src/services/runtime-message-handler-service.js';
-import type { TabsAPI } from '../../src/services/runtime-message-handler-service.js';
-import type { HandlerCoreService } from '../../src/services/handler-core-service.js';
+import { createRuntimeMessageHandler } from '../../src/handlers/runtime-message-handler.js';
+import type { TabsAPI } from '../../src/handlers/runtime-message-handler.js';
+import type { HandlerCore } from '../../src/handlers/handler-core.js';
 
 // Helper to create mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -20,7 +20,7 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 }
 
 // Helper to create unused mock stubs
-function createUnusedHandlerCore(): HandlerCoreService {
+function createUnusedHandlerCore(): HandlerCore {
   return {
     exportSingleLink: mock.fn(async () => {
       throw new Error('HandlerCore.exportSingleLink should not be called in this test');
@@ -40,7 +40,6 @@ function createUnusedHandlerCore(): HandlerCoreService {
   };
 }
 
-
 function createUnusedTabsAPI(): TabsAPI {
   return {
     get: mock.fn(async () => {
@@ -50,7 +49,6 @@ function createUnusedTabsAPI(): TabsAPI {
 }
 
 describe('RuntimeMessageHandlerService', () => {
-
   describe('handleMessage - export-current-tab topic', () => {
     it('should export current tab with link format', async () => {
       // Arrange
@@ -72,14 +70,14 @@ describe('RuntimeMessageHandlerService', () => {
         get: getMock,
       };
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportLinkMock,
       };
 
-      const service = createRuntimeMessageHandlerService(
+      const service = createRuntimeMessageHandler(
         mockHandlerCore,
-        
+
         mockTabsAPI,
       );
 
@@ -112,14 +110,14 @@ describe('RuntimeMessageHandlerService', () => {
         get: getMock,
       };
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportLinkMock,
       };
 
-      const service = createRuntimeMessageHandlerService(
+      const service = createRuntimeMessageHandler(
         mockHandlerCore,
-        
+
         mockTabsAPI,
       );
 
@@ -140,9 +138,9 @@ describe('RuntimeMessageHandlerService', () => {
         get: mock.fn(async () => undefined as any),
       };
 
-      const service = createRuntimeMessageHandlerService(
+      const service = createRuntimeMessageHandler(
         createUnusedHandlerCore(),
-        
+
         mockTabsAPI,
       );
 
@@ -165,12 +163,12 @@ describe('RuntimeMessageHandlerService', () => {
         return 'exported tabs';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createRuntimeMessageHandlerService(
+      const service = createRuntimeMessageHandler(
         mockHandlerCore,
         createUnusedTabsAPI(),
       );
@@ -200,12 +198,12 @@ describe('RuntimeMessageHandlerService', () => {
         return 'custom tabs';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createRuntimeMessageHandlerService(
+      const service = createRuntimeMessageHandler(
         mockHandlerCore,
         createUnusedTabsAPI(),
       );
@@ -226,7 +224,7 @@ describe('RuntimeMessageHandlerService', () => {
   describe('handleMessage - error handling', () => {
     it('should throw error for unknown topic', async () => {
       // Arrange
-      const service = createRuntimeMessageHandlerService(
+      const service = createRuntimeMessageHandler(
         createUnusedHandlerCore(),
         createUnusedTabsAPI(),
       );

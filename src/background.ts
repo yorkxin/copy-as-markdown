@@ -8,10 +8,10 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardService } from './services/clipboard-service.js';
 import { createBrowserLinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
-import { createBrowserHandlerCoreService } from './services/handler-core-service.js';
-import { createBrowserCommandHandlerService } from './services/command-handler-service.js';
-import { createBrowserContextMenuHandlerService } from './services/context-menu-handler-service.js';
-import { createBrowserRuntimeMessageHandlerService } from './services/runtime-message-handler-service.js';
+import { createBrowserHandlerCore } from './handlers/handler-core.js';
+import { createKeyboardBrowserCommandHandler } from './handlers/keyboard-command-handler.js';
+import { createBrowserContextMenuHandler } from './handlers/context-menu-handler.js';
+import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
@@ -47,24 +47,24 @@ const selectionConverterService = createBrowserSelectionConverterService(
   turndownJsUrl,
 );
 
-// Handler core service (shared by all handler services)
-const handlerCore = createBrowserHandlerCoreService(
+// Handler core (shared by all handlers)
+const handlerCore = createBrowserHandlerCore(
   linkExportService,
   tabExportService,
   selectionConverterService,
 );
 
-// Command handler service
-const commandHandlerService = createBrowserCommandHandlerService(handlerCore);
+// Keyboard command handler
+const keyboardCommandHandler = createKeyboardBrowserCommandHandler(handlerCore);
 
-// Context menu handler service
-const contextMenuHandlerService = createBrowserContextMenuHandlerService(
+// Context menu handler
+const contextMenuHandler = createBrowserContextMenuHandler(
   handlerCore,
   bookmarks,
 );
 
-// Runtime message handler service
-const runtimeMessageHandlerService = createBrowserRuntimeMessageHandlerService(handlerCore);
+// Runtime message handler
+const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerCore);
 
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
@@ -109,7 +109,7 @@ if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
 
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
-    const text = await contextMenuHandlerService.handleMenuClick(info, tab);
+    const text = await contextMenuHandler.handleMenuClick(info, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
@@ -123,7 +123,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 // listen to keyboard shortcuts
 browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
-    const text = await commandHandlerService.handleCommand(command, tab);
+    const text = await keyboardCommandHandler.handleCommand(command, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
@@ -152,7 +152,7 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   // Handle export messages via service
-  runtimeMessageHandlerService
+  runtimeMessageHandler
     .handleMessage(message.topic, message.params)
     .then(text => sendResponse({ ok: true, text }))
     .catch(error => sendResponse({ ok: false, error: error.message }));

@@ -4,7 +4,7 @@
 
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { createHandlerCoreService } from '../../src/services/handler-core-service.js';
+import { createHandlerCore } from '../../src/handlers/handler-core.js';
 import type { LinkExportService } from '../../src/services/link-export-service.js';
 import type { TabExportService } from '../../src/services/tab-export-service.js';
 import type { SelectionConverterService } from '../../src/services/selection-converter-service.js';
@@ -61,7 +61,7 @@ describe('HandlerCoreService', () => {
         exportLink: exportLinkMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         mockLinkExportService,
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
@@ -93,7 +93,7 @@ describe('HandlerCoreService', () => {
         exportLink: exportLinkMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         mockLinkExportService,
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
@@ -128,7 +128,7 @@ describe('HandlerCoreService', () => {
         exportTabs: exportTabsMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
@@ -160,7 +160,7 @@ describe('HandlerCoreService', () => {
         exportTabs: exportTabsMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
@@ -189,7 +189,7 @@ describe('HandlerCoreService', () => {
         exportTabs: exportTabsMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
@@ -218,7 +218,7 @@ describe('HandlerCoreService', () => {
         exportTabs: exportTabsMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
@@ -249,7 +249,7 @@ describe('HandlerCoreService', () => {
         exportTabs: exportTabsMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
@@ -281,7 +281,7 @@ describe('HandlerCoreService', () => {
         convertSelectionToMarkdown: convertMock,
       };
 
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         mockSelectionConverterService,
@@ -299,7 +299,7 @@ describe('HandlerCoreService', () => {
   describe('formatImage', () => {
     it('should format image as markdown', () => {
       // Arrange
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
@@ -314,7 +314,7 @@ describe('HandlerCoreService', () => {
 
     it('should handle empty alt text', () => {
       // Arrange
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
@@ -331,7 +331,7 @@ describe('HandlerCoreService', () => {
   describe('formatLinkedImage', () => {
     it('should format linked image as markdown', () => {
       // Arrange
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
@@ -346,7 +346,7 @@ describe('HandlerCoreService', () => {
 
     it('should handle empty alt text', () => {
       // Arrange
-      const service = createHandlerCoreService(
+      const service = createHandlerCore(
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),

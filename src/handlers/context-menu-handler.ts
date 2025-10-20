@@ -2,8 +2,8 @@
  * Service for handling context menu click events
  */
 
-import type { HandlerCoreService } from './handler-core-service.js';
-import { parseCustomFormatCommand } from './handler-core-service.js';
+import type { HandlerCore } from './handler-core.js';
+import { parseCustomFormatCommand } from './handler-core.js';
 
 export interface BookmarksAPI {
   getSubTree: (id: string) => Promise<browser.bookmarks.BookmarkTreeNode[]>;
@@ -13,7 +13,7 @@ export interface BookmarksFormatter {
   toMarkdown: (bookmark: browser.bookmarks.BookmarkTreeNode) => string;
 }
 
-export interface ContextMenuHandlerService {
+export interface ContextMenuHandler {
   /**
    * Handle a context menu click event
    * @param info - The context menu click data
@@ -34,11 +34,11 @@ const TAB_LIST_MENU_ITEMS: Record<string, { scope: 'all' | 'highlighted'; listTy
   'highlighted-tabs-task-list': { scope: 'highlighted', listType: 'task-list' },
 };
 
-export function createContextMenuHandlerService(
-  handlerCore: HandlerCoreService,
+export function createContextMenuHandler(
+  handlerCore: HandlerCore,
   bookmarksAPI: BookmarksAPI,
   bookmarksFormatter: BookmarksFormatter,
-): ContextMenuHandlerService {
+): ContextMenuHandler {
   async function handleMenuClick_(
     info: browser.contextMenus.OnClickData,
     tab?: browser.tabs.Tab,
@@ -194,11 +194,11 @@ export function createContextMenuHandlerService(
   };
 }
 
-export function createBrowserContextMenuHandlerService(
-  handlerCore: HandlerCoreService,
+export function createBrowserContextMenuHandler(
+  handlerCore: HandlerCore,
   bookmarksFormatter: BookmarksFormatter,
-): ContextMenuHandlerService {
-  return createContextMenuHandlerService(
+): ContextMenuHandler {
+  return createContextMenuHandler(
     handlerCore,
     browser.bookmarks,
     bookmarksFormatter,

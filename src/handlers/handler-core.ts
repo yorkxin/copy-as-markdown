@@ -3,9 +3,9 @@
  * (command, context menu, runtime message handlers)
  */
 
-import type { LinkExportService } from './link-export-service.js';
-import type { TabExportService } from './tab-export-service.js';
-import type { SelectionConverterService } from './selection-converter-service.js';
+import type { LinkExportService } from '../services/link-export-service.js';
+import type { TabExportService } from '../services/tab-export-service.js';
+import type { SelectionConverterService } from '../services/selection-converter-service.js';
 import Markdown from '../lib/markdown.js';
 
 /**
@@ -47,7 +47,7 @@ export interface ExportMultipleTabsOptions {
   windowId: number;
 }
 
-export interface HandlerCoreService {
+export interface HandlerCore {
   /**
    * Export a single link (current tab or link from context menu)
    */
@@ -74,11 +74,11 @@ export interface HandlerCoreService {
   formatLinkedImage: (alt: string, imageUrl: string, linkUrl: string) => string;
 }
 
-export function createHandlerCoreService(
+export function createHandlerCore(
   linkExportService: LinkExportService,
   tabExportService: TabExportService,
   selectionConverterService: SelectionConverterService,
-): HandlerCoreService {
+): HandlerCore {
   async function exportSingleLink_(options: ExportSingleLinkOptions): Promise<string> {
     return linkExportService.exportLink({
       format: options.format,
@@ -113,12 +113,12 @@ export function createHandlerCoreService(
   };
 }
 
-export function createBrowserHandlerCoreService(
+export function createBrowserHandlerCore(
   linkExportService: LinkExportService,
   tabExportService: TabExportService,
   selectionConverterService: SelectionConverterService,
-): HandlerCoreService {
-  return createHandlerCoreService(
+): HandlerCore {
+  return createHandlerCore(
     linkExportService,
     tabExportService,
     selectionConverterService,

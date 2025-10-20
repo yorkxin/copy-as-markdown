@@ -2,14 +2,14 @@
  * Service for handling keyboard command shortcuts
  */
 
-import type { HandlerCoreService } from './handler-core-service.js';
-import { parseCustomFormatCommand } from './handler-core-service.js';
+import type { HandlerCore } from './handler-core.js';
+import { parseCustomFormatCommand } from './handler-core.js';
 
 export interface TabsAPI {
   query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
 }
 
-export interface CommandHandlerService {
+export interface KeyboardCommandHandler {
   /**
    * Handle a keyboard command
    * @param command - The command string from browser.commands.onCommand
@@ -31,10 +31,10 @@ const TAB_EXPORT_COMMANDS: Record<string, { scope: 'all' | 'highlighted'; format
   'highlighted-tabs-url-as-list': { scope: 'highlighted', format: 'url', listType: 'list' },
 };
 
-export function createCommandHandlerService(
+export function createKeyboardCommandHandler(
   tabsAPI: TabsAPI,
-  handlerCore: HandlerCoreService,
-): CommandHandlerService {
+  handlerCore: HandlerCore,
+): KeyboardCommandHandler {
   async function mustGetCurrentTab(providedTab?: browser.tabs.Tab): Promise<browser.tabs.Tab> {
     if (providedTab) {
       return providedTab;
@@ -127,10 +127,10 @@ export function createCommandHandlerService(
   };
 }
 
-export function createBrowserCommandHandlerService(
-  handlerCore: HandlerCoreService,
-): CommandHandlerService {
-  return createCommandHandlerService(
+export function createKeyboardBrowserCommandHandler(
+  handlerCore: HandlerCore,
+): KeyboardCommandHandler {
+  return createKeyboardCommandHandler(
     browser.tabs,
     handlerCore,
   );

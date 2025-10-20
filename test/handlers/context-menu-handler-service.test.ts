@@ -4,12 +4,12 @@
 
 import { describe, it, mock } from 'node:test';
 import assert from 'node:assert';
-import { createContextMenuHandlerService } from '../../src/services/context-menu-handler-service.js';
-import type { HandlerCoreService } from '../../src/services/handler-core-service.js';
+import { createContextMenuHandler } from '../../src/handlers/context-menu-handler.js';
+import type { HandlerCore } from '../../src/handlers/handler-core.js';
 import type {
   BookmarksAPI,
   BookmarksFormatter,
-} from '../../src/services/context-menu-handler-service.js';
+} from '../../src/handlers/context-menu-handler.js';
 
 // Helper to create mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -33,7 +33,7 @@ function createMockMenuInfo(overrides?: Partial<browser.contextMenus.OnClickData
 }
 
 // Helper to create unused mock stubs
-function createUnusedHandlerCore(): HandlerCoreService {
+function createUnusedHandlerCore(): HandlerCore {
   return {
     exportSingleLink: mock.fn(async () => {
       throw new Error('HandlerCoreService.exportSingleLink should not be called in this test');
@@ -81,12 +81,12 @@ describe('ContextMenuHandlerService', () => {
         return '[Example](https://example.com)';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportSingleLinkMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -104,7 +104,7 @@ describe('ContextMenuHandlerService', () => {
 
     it('should throw error when tab is not provided', async () => {
       // Arrange
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -130,12 +130,12 @@ describe('ContextMenuHandlerService', () => {
         return '[Click here](https://example.com)';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportSingleLinkMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -164,12 +164,12 @@ describe('ContextMenuHandlerService', () => {
         return '[![](https://example.com/image.png)](https://example.com)';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         formatLinkedImage: formatLinkedImageMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -199,12 +199,12 @@ describe('ContextMenuHandlerService', () => {
         return `[Link Text](https://example.com)`;
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportSingleLinkMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -233,12 +233,12 @@ describe('ContextMenuHandlerService', () => {
         return '![](https://example.com/image.png)';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         formatImage: formatImageMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -267,12 +267,12 @@ describe('ContextMenuHandlerService', () => {
         return 'converted markdown';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         convertSelection: convertMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -290,7 +290,7 @@ describe('ContextMenuHandlerService', () => {
 
     it('should throw error when tab is not provided', async () => {
       // Arrange
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -318,12 +318,12 @@ describe('ContextMenuHandlerService', () => {
         return 'all tabs list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -347,12 +347,12 @@ describe('ContextMenuHandlerService', () => {
         return 'task list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -375,12 +375,12 @@ describe('ContextMenuHandlerService', () => {
         return 'highlighted list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -404,12 +404,12 @@ describe('ContextMenuHandlerService', () => {
         return 'highlighted task list';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -426,7 +426,7 @@ describe('ContextMenuHandlerService', () => {
 
     it('should throw error when tab is not provided for tab list items', async () => {
       // Arrange
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -445,7 +445,7 @@ describe('ContextMenuHandlerService', () => {
       // Arrange
       const mockTab = createMockTab({ windowId: undefined });
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -488,7 +488,7 @@ describe('ContextMenuHandlerService', () => {
         toMarkdown: toMarkdownMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         mockBookmarksAPI,
         mockBookmarksFormatter,
@@ -514,7 +514,7 @@ describe('ContextMenuHandlerService', () => {
         getSubTree: mock.fn(async () => []),
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         mockBookmarksAPI,
         createUnusedBookmarksFormatter(),
@@ -534,7 +534,7 @@ describe('ContextMenuHandlerService', () => {
 
     it('should throw error when bookmarkId is not provided', async () => {
       // Arrange
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -562,12 +562,12 @@ describe('ContextMenuHandlerService', () => {
         return 'custom formatted';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportLinkMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -593,12 +593,12 @@ describe('ContextMenuHandlerService', () => {
         return 'custom link';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportSingleLink: exportLinkMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -627,12 +627,12 @@ describe('ContextMenuHandlerService', () => {
         return 'custom tabs';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -657,12 +657,12 @@ describe('ContextMenuHandlerService', () => {
         return 'custom highlighted';
       });
 
-      const mockHandlerCore: HandlerCoreService = {
+      const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         exportMultipleTabs: exportTabsMock,
       };
 
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -681,7 +681,7 @@ describe('ContextMenuHandlerService', () => {
   describe('handleMenuClick - error handling', () => {
     it('should throw error for unknown menu item', async () => {
       // Arrange
-      const service = createContextMenuHandlerService(
+      const service = createContextMenuHandler(
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
