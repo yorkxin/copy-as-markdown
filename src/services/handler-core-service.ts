@@ -32,27 +32,31 @@ export function parseCustomFormatCommand<T extends string>(
   return { context, slot };
 }
 
+export interface ExportSingleLinkOptions {
+  format: 'link' | 'custom-format';
+  customFormatSlot?: string;
+  title: string;
+  url: string;
+}
+
+export interface ExportMultipleTabsOptions {
+  scope: 'all' | 'highlighted';
+  format: 'link' | 'title' | 'url' | 'custom-format';
+  customFormatSlot?: string;
+  listType?: 'list' | 'task-list';
+  windowId: number;
+}
+
 export interface HandlerCoreService {
   /**
    * Export a single link (current tab or link from context menu)
    */
-  exportSingleLink: (options: {
-    format: 'link' | 'custom-format';
-    customFormatSlot?: string;
-    title: string;
-    url: string;
-  }) => Promise<string>;
+  exportSingleLink: (options: ExportSingleLinkOptions) => Promise<string>;
 
   /**
    * Export multiple tabs
    */
-  exportMultipleTabs: (options: {
-    scope: 'all' | 'highlighted';
-    format: 'link' | 'title' | 'url' | 'custom-format';
-    customFormatSlot?: string;
-    listType?: 'list' | 'task-list';
-    windowId: number;
-  }) => Promise<string>;
+  exportMultipleTabs: (options: ExportMultipleTabsOptions) => Promise<string>;
 
   /**
    * Convert selection to markdown
@@ -75,12 +79,7 @@ export function createHandlerCoreService(
   tabExportService: TabExportService,
   selectionConverterService: SelectionConverterService,
 ): HandlerCoreService {
-  async function exportSingleLink_(options: {
-    format: 'link' | 'custom-format';
-    customFormatSlot?: string;
-    title: string;
-    url: string;
-  }): Promise<string> {
+  async function exportSingleLink_(options: ExportSingleLinkOptions): Promise<string> {
     return linkExportService.exportLink({
       format: options.format,
       customFormatSlot: options.customFormatSlot,
@@ -89,13 +88,7 @@ export function createHandlerCoreService(
     });
   }
 
-  async function exportMultipleTabs_(options: {
-    scope: 'all' | 'highlighted';
-    format: 'link' | 'title' | 'url' | 'custom-format';
-    customFormatSlot?: string;
-    listType?: 'list' | 'task-list';
-    windowId: number;
-  }): Promise<string> {
+  async function exportMultipleTabs_(options: ExportMultipleTabsOptions): Promise<string> {
     return tabExportService.exportTabs(options);
   }
 
