@@ -8,7 +8,6 @@ import { createHandlerCoreService } from '../../src/services/handler-core-servic
 import type { LinkExportService } from '../../src/services/link-export-service.js';
 import type { TabExportService } from '../../src/services/tab-export-service.js';
 import type { SelectionConverterService } from '../../src/services/selection-converter-service.js';
-import type { BadgeService } from '../../src/services/badge-service.js';
 
 // Helper to create mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -46,23 +45,6 @@ function createUnusedSelectionConverterService(): SelectionConverterService {
   };
 }
 
-function createUnusedBadgeService(): BadgeService {
-  return {
-    showSuccess: mock.fn(async () => {
-      throw new Error('BadgeService.showSuccess should not be called in this test');
-    }),
-    showError: mock.fn(async () => {
-      throw new Error('BadgeService.showError should not be called in this test');
-    }),
-    clear: mock.fn(async () => {
-      throw new Error('BadgeService.clear should not be called in this test');
-    }),
-    getClearAlarmName: mock.fn(() => {
-      throw new Error('BadgeService.getClearAlarmName should not be called in this test');
-    }),
-  };
-}
-
 describe('HandlerCoreService', () => {
   describe('exportSingleLink', () => {
     it('should export link in standard format', async () => {
@@ -83,7 +65,6 @@ describe('HandlerCoreService', () => {
         mockLinkExportService,
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -116,7 +97,6 @@ describe('HandlerCoreService', () => {
         mockLinkExportService,
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -152,7 +132,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -185,7 +164,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -215,7 +193,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -245,7 +222,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -277,7 +253,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         mockTabExportService,
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -310,7 +285,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         mockSelectionConverterService,
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -322,56 +296,6 @@ describe('HandlerCoreService', () => {
     });
   });
 
-  describe('showSuccessBadge', () => {
-    it('should call badgeService.showSuccess', async () => {
-      // Arrange
-      const showSuccessMock = mock.fn(async () => {});
-
-      const mockBadgeService: BadgeService = {
-        ...createUnusedBadgeService(),
-        showSuccess: showSuccessMock,
-      };
-
-      const service = createHandlerCoreService(
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
-        createUnusedSelectionConverterService(),
-        mockBadgeService,
-      );
-
-      // Act
-      await service.showSuccessBadge();
-
-      // Assert
-      assert.strictEqual(showSuccessMock.mock.calls.length, 1);
-    });
-  });
-
-  describe('showErrorBadge', () => {
-    it('should call badgeService.showError', async () => {
-      // Arrange
-      const showErrorMock = mock.fn(async () => {});
-
-      const mockBadgeService: BadgeService = {
-        ...createUnusedBadgeService(),
-        showError: showErrorMock,
-      };
-
-      const service = createHandlerCoreService(
-        createUnusedLinkExportService(),
-        createUnusedTabExportService(),
-        createUnusedSelectionConverterService(),
-        mockBadgeService,
-      );
-
-      // Act
-      await service.showErrorBadge();
-
-      // Assert
-      assert.strictEqual(showErrorMock.mock.calls.length, 1);
-    });
-  });
-
   describe('formatImage', () => {
     it('should format image as markdown', () => {
       // Arrange
@@ -379,7 +303,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -395,7 +318,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -413,7 +335,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act
@@ -429,7 +350,6 @@ describe('HandlerCoreService', () => {
         createUnusedLinkExportService(),
         createUnusedTabExportService(),
         createUnusedSelectionConverterService(),
-        createUnusedBadgeService(),
       );
 
       // Act

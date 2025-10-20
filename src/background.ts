@@ -52,7 +52,6 @@ const handlerCore = createBrowserHandlerCoreService(
   linkExportService,
   tabExportService,
   selectionConverterService,
-  badgeService,
 );
 
 // Command handler service
@@ -138,6 +137,21 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
 // listen to messages from popup
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  // Handle badge messages directly in background.ts
+  if (message.topic === 'badge') {
+    if (message.params.type === 'success') {
+      badgeService.showSuccess()
+        .then(() => sendResponse({ ok: true, text: null }))
+        .catch(error => sendResponse({ ok: false, error: error.message }));
+    } else {
+      badgeService.showError()
+        .then(() => sendResponse({ ok: true, text: null }))
+        .catch(error => sendResponse({ ok: false, error: error.message }));
+    }
+    return true;
+  }
+
+  // Handle export messages via service
   runtimeMessageHandlerService
     .handleMessage(message.topic, message.params)
     .then(text => sendResponse({ ok: true, text }))

@@ -31,14 +31,15 @@ function createUnusedHandlerCore(): HandlerCoreService {
     convertSelection: mock.fn(async () => {
       throw new Error('HandlerCore.convertSelection should not be called in this test');
     }),
-    showSuccessBadge: mock.fn(async () => {
-      throw new Error('HandlerCore.showSuccessBadge should not be called in this test');
+    formatImage: mock.fn(() => {
+      throw new Error('HandlerCore.formatImage should not be called in this test');
     }),
-    showErrorBadge: mock.fn(async () => {
-      throw new Error('HandlerCore.showErrorBadge should not be called in this test');
+    formatLinkedImage: mock.fn(() => {
+      throw new Error('HandlerCore.formatLinkedImage should not be called in this test');
     }),
   };
 }
+
 
 function createUnusedTabsAPI(): TabsAPI {
   return {
@@ -49,49 +50,6 @@ function createUnusedTabsAPI(): TabsAPI {
 }
 
 describe('RuntimeMessageHandlerService', () => {
-  describe('handleMessage - badge topic', () => {
-    it('should show success badge when type is success', async () => {
-      // Arrange
-      const showSuccessMock = mock.fn(async () => {});
-      const mockHandlerCore: HandlerCoreService = {
-        ...createUnusedHandlerCore(),
-        showSuccessBadge: showSuccessMock,
-      };
-
-      const service = createRuntimeMessageHandlerService(
-        mockHandlerCore,
-        createUnusedTabsAPI(),
-      );
-
-      // Act
-      const result = await service.handleMessage('badge', { type: 'success' });
-
-      // Assert
-      assert.strictEqual(result, null);
-      assert.strictEqual(showSuccessMock.mock.calls.length, 1);
-    });
-
-    it('should show error badge when type is not success', async () => {
-      // Arrange
-      const showErrorMock = mock.fn(async () => {});
-      const mockHandlerCore: HandlerCoreService = {
-        ...createUnusedHandlerCore(),
-        showErrorBadge: showErrorMock,
-      };
-
-      const service = createRuntimeMessageHandlerService(
-        mockHandlerCore,
-        createUnusedTabsAPI(),
-      );
-
-      // Act
-      const result = await service.handleMessage('badge', { type: 'error' });
-
-      // Assert
-      assert.strictEqual(result, null);
-      assert.strictEqual(showErrorMock.mock.calls.length, 1);
-    });
-  });
 
   describe('handleMessage - export-current-tab topic', () => {
     it('should export current tab with link format', async () => {
@@ -121,6 +79,7 @@ describe('RuntimeMessageHandlerService', () => {
 
       const service = createRuntimeMessageHandlerService(
         mockHandlerCore,
+        
         mockTabsAPI,
       );
 
@@ -160,6 +119,7 @@ describe('RuntimeMessageHandlerService', () => {
 
       const service = createRuntimeMessageHandlerService(
         mockHandlerCore,
+        
         mockTabsAPI,
       );
 
@@ -182,6 +142,7 @@ describe('RuntimeMessageHandlerService', () => {
 
       const service = createRuntimeMessageHandlerService(
         createUnusedHandlerCore(),
+        
         mockTabsAPI,
       );
 

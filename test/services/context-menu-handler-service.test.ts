@@ -44,12 +44,6 @@ function createUnusedHandlerCore(): HandlerCoreService {
     convertSelection: mock.fn(async () => {
       throw new Error('HandlerCoreService.convertSelection should not be called in this test');
     }),
-    showSuccessBadge: mock.fn(async () => {
-      throw new Error('HandlerCoreService.showSuccessBadge should not be called in this test');
-    }),
-    showErrorBadge: mock.fn(async () => {
-      throw new Error('HandlerCoreService.showErrorBadge should not be called in this test');
-    }),
     formatImage: mock.fn(() => {
       throw new Error('HandlerCoreService.formatImage should not be called in this test');
     }),

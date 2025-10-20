@@ -24,15 +24,6 @@ export function createRuntimeMessageHandlerService(
 ): RuntimeMessageHandlerService {
   async function handleMessage_(topic: string, params: any): Promise<string | null> {
     switch (topic) {
-      case 'badge': {
-        if (params.type === 'success') {
-          await handlerCore.showSuccessBadge();
-        } else {
-          await handlerCore.showErrorBadge();
-        }
-        return null;
-      }
-
       case 'export-current-tab': {
         const tab = await tabsAPI.get(params.tabId);
         if (typeof tab === 'undefined') {

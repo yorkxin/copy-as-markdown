@@ -6,7 +6,6 @@
 import type { LinkExportService } from './link-export-service.js';
 import type { TabExportService } from './tab-export-service.js';
 import type { SelectionConverterService } from './selection-converter-service.js';
-import type { BadgeService } from './badge-service.js';
 import Markdown from '../lib/markdown.js';
 
 /**
@@ -61,16 +60,6 @@ export interface HandlerCoreService {
   convertSelection: (tab: browser.tabs.Tab) => Promise<string>;
 
   /**
-   * Show success badge
-   */
-  showSuccessBadge: () => Promise<void>;
-
-  /**
-   * Show error badge
-   */
-  showErrorBadge: () => Promise<void>;
-
-  /**
    * Format an image in markdown syntax
    */
   formatImage: (alt: string, url: string) => string;
@@ -85,7 +74,6 @@ export function createHandlerCoreService(
   linkExportService: LinkExportService,
   tabExportService: TabExportService,
   selectionConverterService: SelectionConverterService,
-  badgeService: BadgeService,
 ): HandlerCoreService {
   async function exportSingleLink_(options: {
     format: 'link' | 'custom-format';
@@ -115,14 +103,6 @@ export function createHandlerCoreService(
     return selectionConverterService.convertSelectionToMarkdown(tab);
   }
 
-  async function showSuccessBadge_(): Promise<void> {
-    return badgeService.showSuccess();
-  }
-
-  async function showErrorBadge_(): Promise<void> {
-    return badgeService.showError();
-  }
-
   function formatImage_(alt: string, url: string): string {
     return Markdown.imageFor(alt, url);
   }
@@ -135,8 +115,6 @@ export function createHandlerCoreService(
     exportSingleLink: exportSingleLink_,
     exportMultipleTabs: exportMultipleTabs_,
     convertSelection: convertSelection_,
-    showSuccessBadge: showSuccessBadge_,
-    showErrorBadge: showErrorBadge_,
     formatImage: formatImage_,
     formatLinkedImage: formatLinkedImage_,
   };
@@ -146,12 +124,10 @@ export function createBrowserHandlerCoreService(
   linkExportService: LinkExportService,
   tabExportService: TabExportService,
   selectionConverterService: SelectionConverterService,
-  badgeService: BadgeService,
 ): HandlerCoreService {
   return createHandlerCoreService(
     linkExportService,
     tabExportService,
     selectionConverterService,
-    badgeService,
   );
 }
