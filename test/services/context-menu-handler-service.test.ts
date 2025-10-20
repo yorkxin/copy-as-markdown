@@ -10,7 +10,6 @@ import type {
   BookmarksAPI,
   BookmarksFormatter,
 } from '../../src/services/context-menu-handler-service.js';
-import type { MarkdownFormatter } from '../../src/services/shared-types.js';
 
 // Helper to create mock tab
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
@@ -34,23 +33,6 @@ function createMockMenuInfo(overrides?: Partial<browser.contextMenus.OnClickData
 }
 
 // Helper to create unused mock stubs
-function createUnusedMarkdown(): MarkdownFormatter {
-  return {
-    escapeLinkText: mock.fn(() => {
-      throw new Error('MarkdownFormatter.escapeLinkText should not be called in this test');
-    }),
-    linkTo: mock.fn(() => {
-      throw new Error('MarkdownFormatter.linkTo should not be called in this test');
-    }),
-    list: mock.fn(() => {
-      throw new Error('MarkdownFormatter.list should not be called in this test');
-    }),
-    taskList: mock.fn(() => {
-      throw new Error('MarkdownFormatter.taskList should not be called in this test');
-    }),
-  };
-}
-
 function createUnusedHandlerCore(): HandlerCoreService {
   return {
     exportSingleLink: mock.fn(async () => {
@@ -67,6 +49,12 @@ function createUnusedHandlerCore(): HandlerCoreService {
     }),
     showErrorBadge: mock.fn(async () => {
       throw new Error('HandlerCoreService.showErrorBadge should not be called in this test');
+    }),
+    formatImage: mock.fn(() => {
+      throw new Error('HandlerCoreService.formatImage should not be called in this test');
+    }),
+    formatLinkedImage: mock.fn(() => {
+      throw new Error('HandlerCoreService.formatLinkedImage should not be called in this test');
     }),
   };
 }
@@ -92,20 +80,20 @@ describe('ContextMenuHandlerService', () => {
     it('should export current tab as markdown link', async () => {
       // Arrange
       const mockTab = createMockTab({ title: 'Example', url: 'https://example.com' });
-      const linkToMock = mock.fn((title: string, url: string) => {
-        assert.strictEqual(title, 'Example');
-        assert.strictEqual(url, 'https://example.com');
+      const exportSingleLinkMock = mock.fn(async (options: any) => {
+        assert.strictEqual(options.format, 'link');
+        assert.strictEqual(options.title, 'Example');
+        assert.strictEqual(options.url, 'https://example.com');
         return '[Example](https://example.com)';
       });
 
-      const mockMarkdown: MarkdownFormatter = {
-        ...createUnusedMarkdown(),
-        linkTo: linkToMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportSingleLinkMock,
       };
 
       const service = createContextMenuHandlerService(
-        mockMarkdown,
-        createUnusedHandlerCore(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -117,13 +105,12 @@ describe('ContextMenuHandlerService', () => {
 
       // Assert
       assert.strictEqual(result, '[Example](https://example.com)');
-      assert.strictEqual(linkToMock.mock.calls.length, 1);
+      assert.strictEqual(exportSingleLinkMock.mock.calls.length, 1);
     });
 
     it('should throw error when tab is not provided', async () => {
       // Arrange
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -142,20 +129,20 @@ describe('ContextMenuHandlerService', () => {
   describe('handleMenuClick - link', () => {
     it('should export regular link as markdown', async () => {
       // Arrange
-      const linkToMock = mock.fn((title: string, url: string) => {
-        assert.strictEqual(title, 'Click here');
-        assert.strictEqual(url, 'https://example.com');
+      const exportSingleLinkMock = mock.fn(async (options: any) => {
+        assert.strictEqual(options.format, 'link');
+        assert.strictEqual(options.title, 'Click here');
+        assert.strictEqual(options.url, 'https://example.com');
         return '[Click here](https://example.com)';
       });
 
-      const mockMarkdown: MarkdownFormatter = {
-        ...createUnusedMarkdown(),
-        linkTo: linkToMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportSingleLinkMock,
       };
 
       const service = createContextMenuHandlerService(
-        mockMarkdown,
-        createUnusedHandlerCore(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -171,14 +158,25 @@ describe('ContextMenuHandlerService', () => {
 
       // Assert
       assert.strictEqual(result, '[Click here](https://example.com)');
-      assert.strictEqual(linkToMock.mock.calls.length, 1);
+      assert.strictEqual(exportSingleLinkMock.mock.calls.length, 1);
     });
 
     it('should export linked image as markdown when mediaType is image', async () => {
       // Arrange
+      const formatLinkedImageMock = mock.fn((alt: string, imageUrl: string, linkUrl: string) => {
+        assert.strictEqual(alt, '');
+        assert.strictEqual(imageUrl, 'https://example.com/image.png');
+        assert.strictEqual(linkUrl, 'https://example.com');
+        return '[![](https://example.com/image.png)](https://example.com)';
+      });
+
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        formatLinkedImage: formatLinkedImageMock,
+      };
+
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
-        createUnusedHandlerCore(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -195,23 +193,25 @@ describe('ContextMenuHandlerService', () => {
 
       // Assert
       assert.strictEqual(result, '[![](https://example.com/image.png)](https://example.com)');
+      assert.strictEqual(formatLinkedImageMock.mock.calls.length, 1);
     });
 
     it('should use linkText when selectionText is not available', async () => {
       // Arrange
-      const linkToMock = mock.fn((title: string, url: string) => {
-        assert.strictEqual(title, 'Link Text');
-        return `[${title}](${url})`;
+      const exportSingleLinkMock = mock.fn(async (options: any) => {
+        assert.strictEqual(options.format, 'link');
+        assert.strictEqual(options.title, 'Link Text');
+        assert.strictEqual(options.url, 'https://example.com');
+        return `[Link Text](https://example.com)`;
       });
 
-      const mockMarkdown: MarkdownFormatter = {
-        ...createUnusedMarkdown(),
-        linkTo: linkToMock,
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        exportSingleLink: exportSingleLinkMock,
       };
 
       const service = createContextMenuHandlerService(
-        mockMarkdown,
-        createUnusedHandlerCore(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -226,16 +226,26 @@ describe('ContextMenuHandlerService', () => {
       await service.handleMenuClick(menuInfo);
 
       // Assert
-      assert.strictEqual(linkToMock.mock.calls.length, 1);
+      assert.strictEqual(exportSingleLinkMock.mock.calls.length, 1);
     });
   });
 
   describe('handleMenuClick - image', () => {
     it('should export image as markdown', async () => {
       // Arrange
+      const formatImageMock = mock.fn((alt: string, url: string) => {
+        assert.strictEqual(alt, '');
+        assert.strictEqual(url, 'https://example.com/image.png');
+        return '![](https://example.com/image.png)';
+      });
+
+      const mockHandlerCore: HandlerCoreService = {
+        ...createUnusedHandlerCore(),
+        formatImage: formatImageMock,
+      };
+
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
-        createUnusedHandlerCore(),
+        mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
       );
@@ -250,6 +260,7 @@ describe('ContextMenuHandlerService', () => {
 
       // Assert
       assert.strictEqual(result, '![](https://example.com/image.png)');
+      assert.strictEqual(formatImageMock.mock.calls.length, 1);
     });
   });
 
@@ -268,7 +279,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -287,7 +297,6 @@ describe('ContextMenuHandlerService', () => {
     it('should throw error when tab is not provided', async () => {
       // Arrange
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -321,7 +330,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -351,7 +359,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -380,7 +387,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -410,7 +416,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -428,7 +433,6 @@ describe('ContextMenuHandlerService', () => {
     it('should throw error when tab is not provided for tab list items', async () => {
       // Arrange
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -448,7 +452,6 @@ describe('ContextMenuHandlerService', () => {
       const mockTab = createMockTab({ windowId: undefined });
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -492,7 +495,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         mockBookmarksAPI,
         mockBookmarksFormatter,
@@ -519,7 +521,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         mockBookmarksAPI,
         createUnusedBookmarksFormatter(),
@@ -540,7 +541,6 @@ describe('ContextMenuHandlerService', () => {
     it('should throw error when bookmarkId is not provided', async () => {
       // Arrange
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -574,7 +574,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -606,7 +605,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -641,7 +639,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -672,7 +669,6 @@ describe('ContextMenuHandlerService', () => {
       };
 
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         mockHandlerCore,
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),
@@ -692,7 +688,6 @@ describe('ContextMenuHandlerService', () => {
     it('should throw error for unknown menu item', async () => {
       // Arrange
       const service = createContextMenuHandlerService(
-        createUnusedMarkdown(),
         createUnusedHandlerCore(),
         createUnusedBookmarksAPI(),
         createUnusedBookmarksFormatter(),

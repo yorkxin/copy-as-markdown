@@ -371,4 +371,72 @@ describe('HandlerCoreService', () => {
       assert.strictEqual(showErrorMock.mock.calls.length, 1);
     });
   });
+
+  describe('formatImage', () => {
+    it('should format image as markdown', () => {
+      // Arrange
+      const service = createHandlerCoreService(
+        createUnusedLinkExportService(),
+        createUnusedTabExportService(),
+        createUnusedSelectionConverterService(),
+        createUnusedBadgeService(),
+      );
+
+      // Act
+      const result = service.formatImage('Alt text', 'https://example.com/image.png');
+
+      // Assert
+      assert.strictEqual(result, '![Alt text](https://example.com/image.png)');
+    });
+
+    it('should handle empty alt text', () => {
+      // Arrange
+      const service = createHandlerCoreService(
+        createUnusedLinkExportService(),
+        createUnusedTabExportService(),
+        createUnusedSelectionConverterService(),
+        createUnusedBadgeService(),
+      );
+
+      // Act
+      const result = service.formatImage('', 'https://example.com/image.png');
+
+      // Assert
+      assert.strictEqual(result, '![](https://example.com/image.png)');
+    });
+  });
+
+  describe('formatLinkedImage', () => {
+    it('should format linked image as markdown', () => {
+      // Arrange
+      const service = createHandlerCoreService(
+        createUnusedLinkExportService(),
+        createUnusedTabExportService(),
+        createUnusedSelectionConverterService(),
+        createUnusedBadgeService(),
+      );
+
+      // Act
+      const result = service.formatLinkedImage('Alt text', 'https://example.com/image.png', 'https://example.com');
+
+      // Assert
+      assert.strictEqual(result, '[![Alt text](https://example.com/image.png)](https://example.com)');
+    });
+
+    it('should handle empty alt text', () => {
+      // Arrange
+      const service = createHandlerCoreService(
+        createUnusedLinkExportService(),
+        createUnusedTabExportService(),
+        createUnusedSelectionConverterService(),
+        createUnusedBadgeService(),
+      );
+
+      // Act
+      const result = service.formatLinkedImage('', 'https://example.com/image.png', 'https://example.com');
+
+      // Assert
+      assert.strictEqual(result, '[![](https://example.com/image.png)](https://example.com)');
+    });
+  });
 });

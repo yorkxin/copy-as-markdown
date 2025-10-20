@@ -60,7 +60,6 @@ const commandHandlerService = createBrowserCommandHandlerService(handlerCore);
 
 // Context menu handler service
 const contextMenuHandlerService = createBrowserContextMenuHandlerService(
-  markdownInstance,
   handlerCore,
   bookmarks,
 );

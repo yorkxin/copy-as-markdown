@@ -4,7 +4,6 @@
 
 import type { HandlerCoreService } from './handler-core-service.js';
 import { parseCustomFormatCommand } from './handler-core-service.js';
-import type { MarkdownFormatter } from './shared-types.js';
 
 export interface BookmarksAPI {
   getSubTree: (id: string) => Promise<browser.bookmarks.BookmarkTreeNode[]>;
@@ -36,7 +35,6 @@ const TAB_LIST_MENU_ITEMS: Record<string, { scope: 'all' | 'highlighted'; listTy
 };
 
 export function createContextMenuHandlerService(
-  markdown: MarkdownFormatter,
   handlerCore: HandlerCoreService,
   bookmarksAPI: BookmarksAPI,
   bookmarksFormatter: BookmarksFormatter,
@@ -52,14 +50,18 @@ export function createContextMenuHandlerService(
       if (!tab) {
         throw new Error('tab is required for current-tab menu item');
       }
-      return markdown.linkTo(tab.title || '', tab.url || '');
+      return handlerCore.exportSingleLink({
+        format: 'link',
+        title: tab.title || '',
+        url: tab.url || '',
+      });
     }
 
     if (menuItemId === 'link') {
       // <a href="linkURL"><img src="srcURL" /></a>
       if (info.mediaType === 'image') {
         // TODO: extract image alt text
-        return linkedImage('', info.srcUrl || '', info.linkUrl || '');
+        return handlerCore.formatLinkedImage('', info.srcUrl || '', info.linkUrl || '');
       }
 
       // <a href="linkURL">Text</a>
@@ -67,12 +69,16 @@ export function createContextMenuHandlerService(
       // selectionText for Chrome on Mac only. On Windows it does not highlight text when right-click.
       // TODO: use linkText when Chrome supports it on stable.
       const linkText = info.selectionText || info.linkText || '';
-      return markdown.linkTo(linkText, info.linkUrl || '');
+      return handlerCore.exportSingleLink({
+        format: 'link',
+        title: linkText,
+        url: info.linkUrl || '',
+      });
     }
 
     if (menuItemId === 'image') {
       // TODO: extract image alt text
-      return imageFor('', info.srcUrl || '');
+      return handlerCore.formatImage('', info.srcUrl || '');
     }
 
     if (menuItemId === 'selection-as-markdown') {
@@ -183,29 +189,16 @@ export function createContextMenuHandlerService(
     }
   }
 
-  // Helper function for linked images (static method from Markdown class)
-  function linkedImage(alt: string, imageUrl: string, linkUrl: string): string {
-    const image = imageFor(alt, imageUrl);
-    return `[${image}](${linkUrl})`;
-  }
-
-  // Helper function for images (static method from Markdown class)
-  function imageFor(alt: string, url: string): string {
-    return `![${alt}](${url})`;
-  }
-
   return {
     handleMenuClick: handleMenuClick_,
   };
 }
 
 export function createBrowserContextMenuHandlerService(
-  markdown: MarkdownFormatter,
   handlerCore: HandlerCoreService,
   bookmarksFormatter: BookmarksFormatter,
 ): ContextMenuHandlerService {
   return createContextMenuHandlerService(
-    markdown,
     handlerCore,
     browser.bookmarks,
     bookmarksFormatter,

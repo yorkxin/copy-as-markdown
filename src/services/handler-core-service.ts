@@ -7,6 +7,7 @@ import type { LinkExportService } from './link-export-service.js';
 import type { TabExportService } from './tab-export-service.js';
 import type { SelectionConverterService } from './selection-converter-service.js';
 import type { BadgeService } from './badge-service.js';
+import Markdown from '../lib/markdown.js';
 
 /**
  * Parse a custom format command to extract context and slot number
@@ -68,6 +69,16 @@ export interface HandlerCoreService {
    * Show error badge
    */
   showErrorBadge: () => Promise<void>;
+
+  /**
+   * Format an image in markdown syntax
+   */
+  formatImage: (alt: string, url: string) => string;
+
+  /**
+   * Format a linked image in markdown syntax
+   */
+  formatLinkedImage: (alt: string, imageUrl: string, linkUrl: string) => string;
 }
 
 export function createHandlerCoreService(
@@ -112,12 +123,22 @@ export function createHandlerCoreService(
     return badgeService.showError();
   }
 
+  function formatImage_(alt: string, url: string): string {
+    return Markdown.imageFor(alt, url);
+  }
+
+  function formatLinkedImage_(alt: string, imageUrl: string, linkUrl: string): string {
+    return Markdown.linkedImage(alt, imageUrl, linkUrl);
+  }
+
   return {
     exportSingleLink: exportSingleLink_,
     exportMultipleTabs: exportMultipleTabs_,
     convertSelection: convertSelection_,
     showSuccessBadge: showSuccessBadge_,
     showErrorBadge: showErrorBadge_,
+    formatImage: formatImage_,
+    formatLinkedImage: formatLinkedImage_,
   };
 }
 
