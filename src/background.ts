@@ -8,8 +8,10 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardService } from './services/clipboard-service.js';
 import { createBrowserLinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
-
-type CustomFormatSubject = 'all-tabs' | 'highlighted-tabs' | 'current-tab' | 'link';
+import { createBrowserHandlerCore } from './handlers/handler-core.js';
+import { createKeyboardBrowserCommandHandler } from './handlers/keyboard-command-handler.js';
+import { createBrowserContextMenuHandler } from './handlers/context-menu-handler.js';
+import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
@@ -45,6 +47,25 @@ const selectionConverterService = createBrowserSelectionConverterService(
   turndownJsUrl,
 );
 
+// Handler core (shared by all handlers)
+const handlerCore = createBrowserHandlerCore(
+  linkExportService,
+  tabExportService,
+  selectionConverterService,
+);
+
+// Keyboard command handler
+const keyboardCommandHandler = createKeyboardBrowserCommandHandler(handlerCore);
+
+// Context menu handler
+const contextMenuHandler = createBrowserContextMenuHandler(
+  handlerCore,
+  bookmarks,
+);
+
+// Runtime message handler
+const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerCore);
+
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
   try {
@@ -70,222 +91,6 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
-function parseCustomFormatCommand(command: string): { context: CustomFormatSubject; slot: string } {
-  const match = /(all-tabs|highlighted-tabs|current-tab|link)-custom-format-(\d)/.exec(command);
-  if (match === null) {
-    throw new TypeError(`unknown command: ${command}`);
-  }
-  const context = match[1] as CustomFormatSubject;
-  const slot = match[2]!;
-  return {
-    context,
-    slot,
-  };
-}
-
-async function handleCustomFormatCurrentPage(slot: string, tab: browser.tabs.Tab): Promise<string> {
-  return handleExportLink({
-    format: 'custom-format',
-    customFormatSlot: slot,
-    title: tab.title || '',
-    url: tab.url || '',
-  });
-}
-
-async function handleCustomFormatLink(slot: string, menuInfo: browser.contextMenus.OnClickData): Promise<string> {
-  // linkText for Firefox (as of 2018/03/07)
-  // selectionText for Chrome on Mac only. On Windows it does not highlight text when
-  // right-click.
-  // TODO: use linkText when Chrome supports it on stable.
-  const linkText = menuInfo.selectionText || menuInfo.linkText || '';
-
-  return handleExportLink({
-    format: 'custom-format',
-    customFormatSlot: slot,
-    title: linkText,
-    url: menuInfo.linkUrl || '',
-  });
-}
-
-async function handleCustomFormatTabs(
-  scope: 'all' | 'highlighted',
-  slot: string,
-  windowId: number,
-): Promise<string> {
-  return tabExportService.exportTabs({
-    scope,
-    format: 'custom-format',
-    customFormatSlot: slot,
-    windowId,
-  });
-}
-
-// context menu handler. In case of bookmark, tab can be undeefined.
-async function handleContentOfContextMenu(
-  info: browser.contextMenus.OnClickData,
-  tab: browser.tabs.Tab | undefined,
-): Promise<string> {
-  let text: string;
-
-  switch (info.menuItemId) {
-    case 'current-tab': {
-      text = markdownInstance.linkTo(tab!.title || '', tab!.url || '');
-      break;
-    }
-
-    case 'link': {
-      /* <a href="linkURL"><img src="srcURL" /></a> */
-      if (info.mediaType === 'image') {
-        // TODO: extract image alt text
-        text = Markdown.linkedImage('', info.srcUrl || '', info.linkUrl || '');
-        break;
-      }
-
-      /* <a href="linkURL">Text</a> */
-
-      // linkText for Firefox (as of 2018/03/07)
-      // selectionText for Chrome on Mac only. On Windows it does not highlight text when
-      // right-click.
-      // TODO: use linkText when Chrome supports it on stable.
-      const linkText = info.selectionText || info.linkText || '';
-
-      text = markdownInstance.linkTo(linkText, info.linkUrl || '');
-      break;
-    }
-
-    case 'image': {
-      // TODO: extract image alt text
-      text = Markdown.imageFor('', info.srcUrl || '');
-      break;
-    }
-
-    case 'selection-as-markdown': {
-      text = await selectionConverterService.convertSelectionToMarkdown(tab!);
-      break;
-    }
-
-    // Only available on Firefox
-    case 'all-tabs-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'all',
-        format: 'link',
-        listType: 'list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'all-tabs-task-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'all',
-        format: 'link',
-        listType: 'task-list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'highlighted-tabs-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'highlighted',
-        format: 'link',
-        listType: 'list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'highlighted-tabs-task-list': {
-      if (tab!.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
-      text = await tabExportService.exportTabs({
-        scope: 'highlighted',
-        format: 'link',
-        listType: 'task-list',
-        windowId: tab!.windowId,
-      });
-      break;
-    }
-
-    // Only available on Firefox
-    case 'bookmark-link': {
-      const bm = await browser.bookmarks.getSubTree(info.bookmarkId!);
-      if (bm.length === 0) {
-        throw new Error('bookmark not found');
-      }
-      text = bookmarks.toMarkdown(bm[0]!);
-      break;
-    }
-
-    default: {
-      const {
-        context,
-        slot,
-      } = parseCustomFormatCommand(info.menuItemId.toString());
-
-      switch (context) {
-        case 'current-tab': {
-          text = await handleCustomFormatCurrentPage(slot, tab!);
-          break;
-        }
-        case 'link': {
-          text = await handleCustomFormatLink(slot, info);
-          break;
-        }
-        case 'all-tabs': {
-          if (tab!.windowId === undefined) {
-            throw new Error('tab has no windowId');
-          }
-          text = await handleCustomFormatTabs('all', slot, tab!.windowId);
-          break;
-        }
-        case 'highlighted-tabs': {
-          if (tab!.windowId === undefined) {
-            throw new Error('tab has no windowId');
-          }
-          text = await handleCustomFormatTabs('highlighted', slot, tab!.windowId);
-          break;
-        }
-        default:
-          throw new TypeError(`unknown context menu custom format: ${info.menuItemId}`);
-      }
-    }
-  }
-  return text;
-}
-
-async function handleExportLink({
-  format,
-  customFormatSlot,
-  title,
-  url,
-}: {
-  format: 'link' | 'custom-format';
-  customFormatSlot?: string | null;
-  title: string;
-  url: string;
-}): Promise<string> {
-  return linkExportService.exportLink({
-    format,
-    title,
-    url,
-    customFormatSlot,
-  });
-}
-
 contextMenuService.createAll().then(() => null /* NOP */);
 browser.storage.sync.onChanged.addListener(async (changes) => {
   if (Object.keys(changes).includes(CustomFormatsStorage.KeyOfLastUpdate())) {
@@ -304,7 +109,7 @@ if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
 
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
-    const text = await handleContentOfContextMenu(info, tab);
+    const text = await contextMenuHandler.handleMenuClick(info, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
@@ -316,128 +121,9 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 });
 
 // listen to keyboard shortcuts
-browser.commands.onCommand.addListener(async (command: string, argTab?: browser.tabs.Tab) => {
+browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
-    // Note: tab argument may be undefined on Firefox.
-    // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/onCommand
-    let tab = argTab;
-    if (!tab) {
-      const tabs = await browser.tabs.query({
-        currentWindow: true,
-        active: true,
-      });
-      if (tabs.length !== 1) {
-        throw new Error('failed to get current tab');
-      }
-      tab = tabs[0]!;
-    }
-
-    let text = '';
-    const windowId = tab.windowId;
-    if (windowId === undefined) {
-      throw new Error('tab has no windowId');
-    }
-
-    switch (command) {
-      case 'selection-as-markdown':
-        text = await selectionConverterService.convertSelectionToMarkdown(tab);
-        break;
-      case 'current-tab-link':
-        text = await handleExportLink({ format: 'link', title: tab.title || '', url: tab.url || '' });
-        break;
-      case 'all-tabs-link-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'link',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'all-tabs-link-as-task-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'link',
-          listType: 'task-list',
-          windowId,
-        });
-        break;
-      case 'all-tabs-title-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'title',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'all-tabs-url-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'all',
-          format: 'url',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-link-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'link',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-link-as-task-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'link',
-          listType: 'task-list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-title-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'title',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      case 'highlighted-tabs-url-as-list':
-        text = await tabExportService.exportTabs({
-          scope: 'highlighted',
-          format: 'url',
-          listType: 'list',
-          windowId,
-        });
-        break;
-      default: {
-        try {
-          const {
-            context,
-            slot,
-          } = parseCustomFormatCommand(command);
-
-          switch (context) {
-            case 'current-tab': {
-              text = await handleCustomFormatCurrentPage(slot, tab);
-              break;
-            }
-            case 'all-tabs': {
-              text = await handleCustomFormatTabs('all', slot, windowId);
-              break;
-            }
-            case 'highlighted-tabs': {
-              text = await handleCustomFormatTabs('highlighted', slot, windowId);
-              break;
-            }
-            default:
-              throw new TypeError(`unknown keyboard custom format: ${command}`);
-          }
-        } catch {
-          throw new TypeError(`unknown keyboard command: ${command}`);
-        }
-      }
-    }
-
+    const text = await keyboardCommandHandler.handleCommand(command, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
@@ -448,47 +134,26 @@ browser.commands.onCommand.addListener(async (command: string, argTab?: browser.
   }
 });
 
-async function handleRuntimeMessage(
-  topic: 'badge' | 'export-current-tab' | 'export-tabs',
-  params: any,
-): Promise<string | null> {
-  switch (topic) {
-    case 'badge': {
-      if (params.type === 'success') {
-        await badgeService.showSuccess();
-      } else {
-        await badgeService.showError();
-      }
-      return null;
-    }
-
-    case 'export-current-tab': {
-      const tab = await browser.tabs.get(params.tabId);
-      if (typeof tab === 'undefined') {
-        throw new TypeError('got undefined tab');
-      }
-      return handleExportLink({
-        format: params.format,
-        customFormatSlot: params.customFormatSlot,
-        title: tab.title || '',
-        url: tab.url || '',
-      });
-    }
-
-    case 'export-tabs': {
-      return tabExportService.exportTabs(params);
-    }
-
-    default: {
-      throw new TypeError(`Unknown message topic '${topic}'`);
-    }
-  }
-}
-
 // listen to messages from popup
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  handleRuntimeMessage(message.topic, message.params)
+  // Handle badge messages directly in background.ts
+  if (message.topic === 'badge') {
+    if (message.params.type === 'success') {
+      badgeService.showSuccess()
+        .then(() => sendResponse({ ok: true, text: null }))
+        .catch(error => sendResponse({ ok: false, error: error.message }));
+    } else {
+      badgeService.showError()
+        .then(() => sendResponse({ ok: true, text: null }))
+        .catch(error => sendResponse({ ok: false, error: error.message }));
+    }
+    return true;
+  }
+
+  // Handle export messages via service
+  runtimeMessageHandler
+    .handleMessage(message.topic, message.params)
     .then(text => sendResponse({ ok: true, text }))
     .catch(error => sendResponse({ ok: false, error: error.message }));
 
