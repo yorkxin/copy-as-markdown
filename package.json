@@ -7,7 +7,9 @@
     "node": ">= 20.0"
   },
   "scripts": {
-    "test": "tsx --test test/**/*.test.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "typecheck": "tsc --noEmit",
     "build:ts": "tsc",
     "compile": "npm run build:ts && npm run compile-chrome && npm run compile-firefox && npm run compile-firefox-mv3",
@@ -39,12 +41,14 @@
     "@types/mustache": "^4.2.6",
     "@types/nodemon": "^1.19.6",
     "@types/turndown": "^5.0.5",
+    "@vitest/ui": "^3.2.4",
     "bulma": "^1.0.0",
     "eslint": "^9.37.0",
     "nodemon": "^3.1.0",
     "tsx": "^4.20.6",
     "turndown": "^7.1.3",
     "typescript": "^5.4.0",
+    "vitest": "^3.2.4",
     "webextension-polyfill": "^0.12.0"
   }
 }

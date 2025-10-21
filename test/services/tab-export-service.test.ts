@@ -2,12 +2,13 @@
  * Unit tests for tab export service
  */
 
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
+import { describe, expect, it, vi } from 'vitest';
 import { createTabExportService } from '../../src/services/tab-export-service.js';
 import type {
   CustomFormatsProvider,
   MarkdownFormatter,
+} from '../../src/services/shared-types.js';
+import type {
   PermissionsAPI,
   TabGroupsAPI,
   TabsAPI,
@@ -36,7 +37,7 @@ class MockMarkdown implements MarkdownFormatter {
 // Helper to create a mock custom format object
 function createMockCustomFormat(renderOutput: string = 'mocked output') {
   return {
-    render: mock.fn(() => renderOutput),
+    render: vi.fn(() => renderOutput),
   };
 }
 
@@ -44,7 +45,7 @@ function createMockCustomFormat(renderOutput: string = 'mocked output') {
 // These throw errors if accidentally called, making test failures clear
 function createUnusedTabsAPI(): TabsAPI {
   return {
-    query: mock.fn(async () => {
+    query: vi.fn(async () => {
       throw new Error('TabsAPI.query should not be called in this test');
     }),
   };
@@ -52,7 +53,7 @@ function createUnusedTabsAPI(): TabsAPI {
 
 function createUnusedPermissionsAPI(): PermissionsAPI {
   return {
-    contains: mock.fn(async () => {
+    contains: vi.fn(async () => {
       throw new Error('PermissionsAPI.contains should not be called in this test');
     }),
   };
@@ -60,7 +61,7 @@ function createUnusedPermissionsAPI(): PermissionsAPI {
 
 function createUnusedWindowsAPI(): WindowsAPI {
   return {
-    create: mock.fn(async () => {
+    create: vi.fn(async () => {
       throw new Error('WindowsAPI.create should not be called in this test');
     }),
   };
@@ -68,35 +69,35 @@ function createUnusedWindowsAPI(): WindowsAPI {
 
 function createUnusedCustomFormatsProvider(): CustomFormatsProvider {
   return {
-    get: mock.fn(async () => {
+    get: vi.fn(async () => {
       throw new Error('CustomFormatsProvider.get should not be called in this test');
     }),
   };
 }
 
-describe('TabExportService', () => {
+describe('tabExportService', () => {
   describe('exportTabs - basic functionality', () => {
     it('should export all tabs as markdown link list', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
+        query: vi.fn(async () => [
           { title: 'GitHub', url: 'https://github.com', groupId: -1 },
           { title: 'Twitter', url: 'https://twitter.com', groupId: -1 },
         ] as any),
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => true),
+        contains: vi.fn(async () => true),
       };
 
       const mockWindowsAPI: WindowsAPI = {
-        create: mock.fn(async () => ({} as any)),
+        create: vi.fn(async () => ({} as any)),
       };
 
       const mockMarkdown = new MockMarkdown();
 
       const mockCustomFormatsProvider: CustomFormatsProvider = {
-        get: mock.fn(async () => createMockCustomFormat() as any),
+        get: vi.fn(async () => createMockCustomFormat() as any),
       };
 
       const service = createTabExportService(
@@ -117,13 +118,13 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      assert.ok(result.includes('[GitHub](https://github.com)'));
-      assert.ok(result.includes('[Twitter](https://twitter.com)'));
+      expect(result.includes('[GitHub](https://github.com)')).toBeTruthy();
+      expect(result.includes('[Twitter](https://twitter.com)')).toBeTruthy();
     });
 
     it('should query only highlighted tabs when scope is highlighted', async () => {
       // Arrange
-      const queryMock = mock.fn(async () => [
+      const queryMock = vi.fn(async () => [
         { title: 'GitHub', url: 'https://github.com', groupId: -1 },
       ] as any);
 
@@ -132,7 +133,7 @@ describe('TabExportService', () => {
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => true),
+        contains: vi.fn(async () => true),
       };
 
       const service = createTabExportService(
@@ -154,8 +155,8 @@ describe('TabExportService', () => {
 
       // Assert
       const queryCall = queryMock.mock.calls[0]!;
-      assert.strictEqual(queryCall.arguments[0].highlighted, true);
-      assert.strictEqual(queryCall.arguments[0].windowId, 1);
+      expect(queryCall[0].highlighted).toBe(true);
+      expect(queryCall[0].windowId).toBe(1);
     });
   });
 
@@ -163,14 +164,14 @@ describe('TabExportService', () => {
     it('should export tabs as title-only list', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
+        query: vi.fn(async () => [
           { title: 'GitHub', url: 'https://github.com', groupId: -1 },
           { title: 'Twitter', url: 'https://twitter.com', groupId: -1 },
         ] as any),
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => true),
+        contains: vi.fn(async () => true),
       };
 
       const service = createTabExportService(
@@ -191,21 +192,21 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      assert.ok(result.includes('GitHub'));
-      assert.ok(result.includes('Twitter'));
-      assert.ok(!result.includes('https://'));
+      expect(result.includes('GitHub')).toBeTruthy();
+      expect(result.includes('Twitter')).toBeTruthy();
+      expect(!result.includes('https://')).toBeTruthy();
     });
 
     it('should export tabs as URL-only list', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
+        query: vi.fn(async () => [
           { title: 'GitHub', url: 'https://github.com', groupId: -1 },
         ] as any),
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => true),
+        contains: vi.fn(async () => true),
       };
 
       const service = createTabExportService(
@@ -226,8 +227,8 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      assert.ok(result.includes('https://github.com'));
-      assert.ok(!result.includes('['));
+      expect(result.includes('https://github.com')).toBeTruthy();
+      expect(!result.includes('[')).toBeTruthy();
     });
   });
 
@@ -235,17 +236,17 @@ describe('TabExportService', () => {
     it('should export as task list when listType is task-list', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
+        query: vi.fn(async () => [
           { title: 'GitHub', url: 'https://github.com', groupId: -1 },
         ] as any),
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => true),
+        contains: vi.fn(async () => true),
       };
 
-      const taskListMock = mock.fn((items: any[]) => items.map(i => `- [ ] ${i}\n`).join(''));
-      const listMock = mock.fn((items: any[]) => items.map(i => `- ${i}\n`).join(''));
+      const taskListMock = vi.fn((items: any[]) => items.map(i => `- [ ] ${i}\n`).join(''));
+      const listMock = vi.fn((items: any[]) => items.map(i => `- ${i}\n`).join(''));
 
       const mockMarkdown: MarkdownFormatter = {
         escapeLinkText: (text: string) => text,
@@ -272,8 +273,8 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      assert.strictEqual(taskListMock.mock.calls.length, 1);
-      assert.strictEqual(listMock.mock.calls.length, 0);
+      expect(taskListMock).toHaveBeenCalledTimes(1);
+      expect(listMock).toHaveBeenCalledTimes(0);
     });
   });
 
@@ -281,14 +282,14 @@ describe('TabExportService', () => {
     it('should throw error if tabs permission is not granted', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => []),
+        query: vi.fn(async () => []),
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => false),
+        contains: vi.fn(async () => false),
       };
 
-      const createMock = mock.fn(async () => ({} as any));
+      const createMock = vi.fn(async () => ({} as any));
 
       const mockWindowsAPI: WindowsAPI = {
         create: createMock,
@@ -304,27 +305,24 @@ describe('TabExportService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
-        () => service.exportTabs({
-          scope: 'all',
-          format: 'link',
-          listType: 'list',
-          windowId: 1,
-        }),
-        /Tabs permission required/,
-      );
+      await expect(async () => service.exportTabs({
+        scope: 'all',
+        format: 'link',
+        listType: 'list',
+        windowId: 1,
+      })).rejects.toThrow(/Tabs permission required/);
 
       // Should open permission dialog
-      assert.strictEqual(createMock.mock.calls.length, 1);
+      expect(createMock).toHaveBeenCalledTimes(1);
     });
 
     it('should check for tabs permission', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => []),
+        query: vi.fn(async () => []),
       };
 
-      const containsMock = mock.fn(async () => true);
+      const containsMock = vi.fn(async () => true);
 
       const mockPermissionsAPI: PermissionsAPI = {
         contains: containsMock,
@@ -349,8 +347,7 @@ describe('TabExportService', () => {
 
       // Assert
       const permissionCall = containsMock.mock.calls[0]!;
-      assert.deepStrictEqual(
-        permissionCall.arguments[0],
+      expect(permissionCall[0]).toEqual(
         { permissions: ['tabs'] },
       );
     });
@@ -360,20 +357,20 @@ describe('TabExportService', () => {
     it('should render custom format when format is custom-format', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
+        query: vi.fn(async () => [
           { title: 'GitHub', url: 'https://github.com', groupId: -1 },
           { title: 'Twitter', url: 'https://twitter.com', groupId: -1 },
         ] as any),
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async () => true),
+        contains: vi.fn(async () => true),
       };
 
       // Mock custom format that will be returned by the provider
       const mockCustomFormat = createMockCustomFormat('Custom: 2 links');
 
-      const getMock = mock.fn(async () => mockCustomFormat as any);
+      const getMock = vi.fn(async () => mockCustomFormat as any);
 
       const mockCustomFormatsProvider: CustomFormatsProvider = {
         get: getMock,
@@ -397,10 +394,9 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'Custom: 2 links');
-      assert.strictEqual(getMock.mock.calls.length, 1);
-      assert.deepStrictEqual(
-        getMock.mock.calls[0]!.arguments,
+      expect(result).toBe('Custom: 2 links');
+      expect(getMock).toHaveBeenCalledTimes(1);
+      expect(getMock.mock.calls[0]!).toEqual(
         ['multiple-links', '1'],
       );
     });
@@ -418,14 +414,11 @@ describe('TabExportService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
-        () => service.exportTabs({
-          scope: 'all',
-          format: 'custom-format',
-          windowId: 1,
-        }),
-        /customFormatSlot is required/,
-      );
+      await expect(async () => service.exportTabs({
+        scope: 'all',
+        format: 'custom-format',
+        windowId: 1,
+      })).rejects.toThrow(/customFormatSlot is required/);
     });
 
     it('should throw error if custom format is used with listType', async () => {
@@ -441,16 +434,13 @@ describe('TabExportService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
-        () => service.exportTabs({
-          scope: 'all',
-          format: 'custom-format',
-          customFormatSlot: '1',
-          listType: 'list',
-          windowId: 1,
-        }),
-        /listType is not allowed if format is custom-format/,
-      );
+      await expect(async () => service.exportTabs({
+        scope: 'all',
+        format: 'custom-format',
+        customFormatSlot: '1',
+        listType: 'list',
+        windowId: 1,
+      })).rejects.toThrow(/listType is not allowed if format is custom-format/);
     });
   });
 
@@ -458,7 +448,7 @@ describe('TabExportService', () => {
     it('should handle tab groups when available', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
+        query: vi.fn(async () => [
           { title: 'Gmail', url: 'https://mail.google.com', groupId: 1 },
           { title: 'Calendar', url: 'https://calendar.google.com', groupId: 1 },
           { title: 'GitHub', url: 'https://github.com', groupId: -1 },
@@ -466,7 +456,7 @@ describe('TabExportService', () => {
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async (perms) => {
+        contains: vi.fn(async (perms) => {
           if (perms.permissions?.includes('tabGroups')) return true;
           if (perms.permissions?.includes('tabs')) return true;
           return false;
@@ -499,21 +489,21 @@ describe('TabExportService', () => {
       });
 
       // Assert
-      assert.ok(result.includes('Work'));
-      assert.ok(result.includes('Gmail'));
-      assert.ok(result.includes('GitHub'));
+      expect(result.includes('Work')).toBeTruthy();
+      expect(result.includes('Gmail')).toBeTruthy();
+      expect(result.includes('GitHub')).toBeTruthy();
     });
 
     it('should handle missing tab groups permission gracefully', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => [
+        query: vi.fn(async () => [
           { title: 'GitHub', url: 'https://github.com', groupId: -1 },
         ] as any),
       };
 
       const mockPermissionsAPI: PermissionsAPI = {
-        contains: mock.fn(async (perms) => {
+        contains: vi.fn(async (perms) => {
           if (perms.permissions?.includes('tabGroups')) return false;
           if (perms.permissions?.includes('tabs')) return true;
           return false;
@@ -544,7 +534,7 @@ describe('TabExportService', () => {
       });
 
       // Assert - should still work without groups
-      assert.ok(result.includes('GitHub'));
+      expect(result.includes('GitHub')).toBeTruthy();
     });
   });
 });

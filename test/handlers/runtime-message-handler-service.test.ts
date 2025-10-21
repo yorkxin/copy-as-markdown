@@ -2,8 +2,7 @@
  * Unit tests for runtime message handler service
  */
 
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
+import { describe, expect, it, vi } from 'vitest';
 import { createRuntimeMessageHandler } from '../../src/handlers/runtime-message-handler.js';
 import type { TabsAPI } from '../../src/handlers/runtime-message-handler.js';
 import type { HandlerCore } from '../../src/handlers/handler-core.js';
@@ -22,19 +21,19 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 // Helper to create unused mock stubs
 function createUnusedHandlerCore(): HandlerCore {
   return {
-    exportSingleLink: mock.fn(async () => {
+    exportSingleLink: vi.fn(async () => {
       throw new Error('HandlerCore.exportSingleLink should not be called in this test');
     }),
-    exportMultipleTabs: mock.fn(async () => {
+    exportMultipleTabs: vi.fn(async () => {
       throw new Error('HandlerCore.exportMultipleTabs should not be called in this test');
     }),
-    convertSelection: mock.fn(async () => {
+    convertSelection: vi.fn(async () => {
       throw new Error('HandlerCore.convertSelection should not be called in this test');
     }),
-    formatImage: mock.fn(() => {
+    formatImage: vi.fn(() => {
       throw new Error('HandlerCore.formatImage should not be called in this test');
     }),
-    formatLinkedImage: mock.fn(() => {
+    formatLinkedImage: vi.fn(() => {
       throw new Error('HandlerCore.formatLinkedImage should not be called in this test');
     }),
   };
@@ -42,27 +41,27 @@ function createUnusedHandlerCore(): HandlerCore {
 
 function createUnusedTabsAPI(): TabsAPI {
   return {
-    get: mock.fn(async () => {
+    get: vi.fn(async () => {
       throw new Error('TabsAPI should not be called in this test');
     }),
   };
 }
 
-describe('RuntimeMessageHandlerService', () => {
+describe('runtimeMessageHandlerService', () => {
   describe('handleMessage - export-current-tab topic', () => {
     it('should export current tab with link format', async () => {
       // Arrange
       const mockTab = createMockTab({ id: 42, title: 'Example', url: 'https://example.com' });
-      const getMock = mock.fn(async (tabId: number) => {
-        assert.strictEqual(tabId, 42);
+      const getMock = vi.fn(async (tabId: number) => {
+        expect(tabId).toBe(42);
         return mockTab;
       });
 
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.title, 'Example');
-        assert.strictEqual(options.url, 'https://example.com');
-        assert.strictEqual(options.customFormatSlot, undefined);
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('link');
+        expect(options.title).toBe('Example');
+        expect(options.url).toBe('https://example.com');
+        expect(options.customFormatSlot).toBe(undefined);
         return '[Example](https://example.com)';
       });
 
@@ -88,21 +87,21 @@ describe('RuntimeMessageHandlerService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, '[Example](https://example.com)');
-      assert.strictEqual(getMock.mock.calls.length, 1);
-      assert.strictEqual(exportLinkMock.mock.calls.length, 1);
+      expect(result, '[Example](https://example.com)');
+      expect(getMock).toHaveBeenCalledTimes(1);
+      expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });
 
     it('should export current tab with custom format', async () => {
       // Arrange
       const mockTab = createMockTab({ id: 42, title: 'Example', url: 'https://example.com' });
-      const getMock = mock.fn(async () => mockTab);
+      const getMock = vi.fn(async () => mockTab);
 
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '2');
-        assert.strictEqual(options.title, 'Example');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('2');
+        expect(options.title).toBe('Example');
+        expect(options.url).toBe('https://example.com');
         return 'custom formatted';
       });
 
@@ -129,13 +128,13 @@ describe('RuntimeMessageHandlerService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'custom formatted');
+      expect(result).toBe('custom formatted');
     });
 
     it('should throw error when tab is undefined', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        get: mock.fn(async () => undefined as any),
+        get: vi.fn(async () => undefined as any),
       };
 
       const service = createRuntimeMessageHandler(
@@ -145,7 +144,7 @@ describe('RuntimeMessageHandlerService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
+      expect(
         () => service.handleMessage('export-current-tab', { tabId: 42, format: 'link' }),
         /got undefined tab/,
       );
@@ -155,11 +154,11 @@ describe('RuntimeMessageHandlerService', () => {
   describe('handleMessage - export-tabs topic', () => {
     it('should export tabs with provided params', async () => {
       // Arrange
-      const exportTabsMock = mock.fn(async (params: any) => {
-        assert.strictEqual(params.scope, 'all');
-        assert.strictEqual(params.format, 'link');
-        assert.strictEqual(params.listType, 'list');
-        assert.strictEqual(params.windowId, 100);
+      const exportTabsMock = vi.fn(async (params: any) => {
+        expect(params.scope).toBe('all');
+        expect(params.format).toBe('link');
+        expect(params.listType).toBe('list');
+        expect(params.windowId).toBe(100);
         return 'exported tabs';
       });
 
@@ -184,17 +183,17 @@ describe('RuntimeMessageHandlerService', () => {
       const result = await service.handleMessage('export-tabs', params);
 
       // Assert
-      assert.strictEqual(result, 'exported tabs');
-      assert.strictEqual(exportTabsMock.mock.calls.length, 1);
-      assert.strictEqual(exportTabsMock.mock.calls[0]!.arguments[0], params);
+      expect(result).toBe('exported tabs');
+      expect(exportTabsMock).toHaveBeenCalledTimes(1);
+      expect(exportTabsMock.mock.calls[0]![0]).toBe(params);
     });
 
     it('should export tabs with custom format', async () => {
       // Arrange
-      const exportTabsMock = mock.fn(async (params: any) => {
-        assert.strictEqual(params.scope, 'highlighted');
-        assert.strictEqual(params.format, 'custom-format');
-        assert.strictEqual(params.customFormatSlot, '1');
+      const exportTabsMock = vi.fn(async (params: any) => {
+        expect(params.scope).toBe('highlighted');
+        expect(params.format).toBe('custom-format');
+        expect(params.customFormatSlot).toBe('1');
         return 'custom tabs';
       });
 
@@ -217,7 +216,7 @@ describe('RuntimeMessageHandlerService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'custom tabs');
+      expect(result).toBe('custom tabs');
     });
   });
 
@@ -230,7 +229,7 @@ describe('RuntimeMessageHandlerService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
+      expect(
         () => service.handleMessage('unknown-topic', {}),
         /Unknown message topic 'unknown-topic'/,
       );

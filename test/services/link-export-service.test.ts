@@ -1,17 +1,16 @@
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, expect, it, vi } from 'vitest';
 import { createLinkExportService } from '../../src/services/link-export-service.js';
 import type {
   CustomFormat,
   CustomFormatsProvider,
   MarkdownFormatter,
-} from '../../src/services/link-export-service.js';
+} from '../../src/services/shared-types.js';
 
-describe('LinkExportService', () => {
+describe('linkExportService', () => {
   describe('exportLink', () => {
     describe('markdown link format', () => {
       it('should export link in markdown format', async () => {
-        const linkToMock = mock.fn((title: string, url: string) => `[${title}](${url})`);
+        const linkToMock = vi.fn((title: string, url: string) => `[${title}](${url})`);
 
         const mockMarkdown: MarkdownFormatter = {
           escapeLinkText: text => text,
@@ -19,7 +18,7 @@ describe('LinkExportService', () => {
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: mock.fn(async () => {
+          get: vi.fn(async () => {
             throw new Error('CustomFormatsProvider.get should not be called in this test');
           }),
         };
@@ -32,14 +31,14 @@ describe('LinkExportService', () => {
           url: 'https://example.com',
         });
 
-        assert.equal(result, '[Example](https://example.com)');
-        assert.equal(linkToMock.mock.calls.length, 1);
-        assert.equal(linkToMock.mock.calls[0]!.arguments[0], 'Example');
-        assert.equal(linkToMock.mock.calls[0]!.arguments[1], 'https://example.com');
+        expect(result, '[Example](https://example.com)');
+        expect(linkToMock).toHaveBeenCalledTimes(1);
+        expect(linkToMock.mock.calls[0]![0]).toBe('Example');
+        expect(linkToMock.mock.calls[0]![1]).toBe('https://example.com');
       });
 
       it('should not call customFormatsProvider when format is link', async () => {
-        const getMock = mock.fn(async () => {
+        const getMock = vi.fn(async () => {
           throw new Error('CustomFormatsProvider.get should not be called');
         });
 
@@ -60,14 +59,14 @@ describe('LinkExportService', () => {
           url: 'https://test.com',
         });
 
-        assert.equal(getMock.mock.calls.length, 0);
+        expect(getMock).toHaveBeenCalledTimes(0);
       });
     });
 
     describe('custom format', () => {
       it('should export link using custom format', async () => {
-        const escapeLinkTextMock = mock.fn((text: string) => text.replace('[', '\\['));
-        const renderMock = mock.fn((input: { title: string; url: string; number: number }) =>
+        const escapeLinkTextMock = vi.fn((text: string) => text.replace('[', '\\['));
+        const renderMock = vi.fn((input: { title: string; url: string; number: number }) =>
           `Custom: ${input.title} -> ${input.url}`,
         );
 
@@ -80,7 +79,7 @@ describe('LinkExportService', () => {
           render: renderMock,
         };
 
-        const getMock = mock.fn(async () => mockCustomFormat);
+        const getMock = vi.fn(async () => mockCustomFormat);
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
           get: getMock,
@@ -95,17 +94,17 @@ describe('LinkExportService', () => {
           customFormatSlot: '1',
         });
 
-        assert.equal(result, 'Custom: Test \\[Link] -> https://example.com');
-        assert.equal(getMock.mock.calls.length, 1);
-        assert.equal(getMock.mock.calls[0]!.arguments[0], 'single-link');
-        assert.equal(getMock.mock.calls[0]!.arguments[1], '1');
+        expect(result).toBe('Custom: Test \\[Link] -> https://example.com');
+        expect(getMock).toHaveBeenCalledTimes(1);
+        expect(getMock.mock.calls[0]![0]).toBe('single-link');
+        expect(getMock.mock.calls[0]![1]).toBe('1');
 
-        assert.equal(escapeLinkTextMock.mock.calls.length, 1);
-        assert.equal(escapeLinkTextMock.mock.calls[0]!.arguments[0], 'Test [Link]');
+        expect(escapeLinkTextMock).toHaveBeenCalledTimes(1);
+        expect(escapeLinkTextMock.mock.calls[0]![0]).toBe('Test [Link]');
 
-        assert.equal(renderMock.mock.calls.length, 1);
+        expect(renderMock).toHaveBeenCalledTimes(1);
         const renderCall = renderMock.mock.calls[0]!;
-        assert.deepEqual(renderCall.arguments[0], {
+        expect(renderCall[0]).toEqual({
           title: 'Test \\[Link]',
           url: 'https://example.com',
           number: 1,
@@ -119,14 +118,14 @@ describe('LinkExportService', () => {
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: mock.fn(async () => {
+          get: vi.fn(async () => {
             throw new Error('Should not be called');
           }),
         };
 
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
 
-        await assert.rejects(
+        await expect(
           async () =>
             service.exportLink({
               format: 'custom-format',
@@ -144,14 +143,14 @@ describe('LinkExportService', () => {
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: mock.fn(async () => {
+          get: vi.fn(async () => {
             throw new Error('Should not be called');
           }),
         };
 
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
 
-        await assert.rejects(
+        await expect(
           async () =>
             service.exportLink({
               format: 'custom-format',
@@ -172,14 +171,14 @@ describe('LinkExportService', () => {
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: mock.fn(async () => {
+          get: vi.fn(async () => {
             throw new Error('Should not be called');
           }),
         };
 
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
 
-        await assert.rejects(
+        await expect(
           async () =>
             service.exportLink({
               format: 'invalid' as any,

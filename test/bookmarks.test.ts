@@ -1,5 +1,4 @@
-import { describe, it } from 'node:test';
-import * as assert from 'node:assert';
+import { describe, expect, it } from 'vitest';
 import Markdown from '../src/lib/markdown';
 import { Bookmarks } from '../src/bookmarks';
 
@@ -18,7 +17,7 @@ describe('bookmarks.js', () => {
       };
 
       const actual = bm.toMarkdown(node);
-      assert.equal(actual, '[foo](https://example.com)');
+      expect(actual).toBe('[foo](https://example.com)');
     });
 
     it('works for a folder', () => {
@@ -61,8 +60,7 @@ describe('bookmarks.js', () => {
       };
 
       const actual = bm.toMarkdown(node);
-      assert.equal(
-        actual,
+      expect(actual).toBe(
         '- foo 1\n'
         + '    - [bar 1](http://example.com/1)\n'
         + '    - [bar 2](http://example.com/2)\n'

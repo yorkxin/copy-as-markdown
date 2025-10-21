@@ -1,11 +1,10 @@
-import { describe, test } from 'node:test';
-import * as assert from 'node:assert';
+import { describe, expect } from 'vitest';
 import { Tab, TabList } from '../src/lib/tabs';
 import CustomFormat from '../src/lib/custom-format';
 
 describe('custom-format.js', () => {
   describe('makeRenderInput', () => {
-    test('ungrouped', () => {
+    it('ungrouped', () => {
       const lists: TabList[] = [
         new TabList('', -1, [
           new Tab('Example 1', 'https://example.com/1', -1),
@@ -15,7 +14,7 @@ describe('custom-format.js', () => {
       ];
 
       const actual = CustomFormat.makeRenderInputForTabLists(lists);
-      assert.deepStrictEqual(actual, {
+      expect(actual).toEqual({
         links: [
           { title: 'Example 1', url: 'https://example.com/1', number: 1 },
           { title: 'Example 2', url: 'https://example.com/2', number: 2 },
@@ -47,7 +46,7 @@ describe('custom-format.js', () => {
       });
     });
 
-    test('a group in the middle', () => {
+    it('a group in the middle', () => {
       const lists: TabList[] = [
         new TabList('', -1, [
           new Tab('Example 1', 'https://example.com/1', -1),
@@ -64,7 +63,7 @@ describe('custom-format.js', () => {
       ];
 
       const actual = CustomFormat.makeRenderInputForTabLists(lists);
-      assert.deepEqual(actual, {
+      expect(actual).toEqual({
         links: [
           { title: 'Example 1', url: 'https://example.com/1', number: 1 },
           { title: 'Example 2', url: 'https://example.com/2', number: 2 },
@@ -128,7 +127,7 @@ describe('custom-format.js', () => {
       });
     });
 
-    test('a group at the end', () => {
+    it('a group at the end', () => {
       const lists: TabList[] = [
         new TabList('', -1, [
           new Tab('Example 1', 'https://example.com/1', -1),
@@ -141,7 +140,7 @@ describe('custom-format.js', () => {
       ];
 
       const actual = CustomFormat.makeRenderInputForTabLists(lists);
-      assert.deepStrictEqual(actual, {
+      expect(actual).toEqual({
         links: [
           { title: 'Example 1', url: 'https://example.com/1', number: 1 },
           { title: 'Example 2', url: 'https://example.com/2', number: 2 },

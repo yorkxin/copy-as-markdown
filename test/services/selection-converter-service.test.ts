@@ -1,14 +1,13 @@
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, expect, it, vi } from 'vitest';
 import { createSelectionConverterService } from '../../src/services/selection-converter-service.js';
 import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type { TurndownOptionsProvider } from '../../src/services/selection-converter-service.js';
 import type { Options as TurndownOptions } from 'turndown';
 
-describe('SelectionConverterService', () => {
+describe('selectionConverterService', () => {
   describe('convertSelectionToMarkdown', () => {
     it('should load turndown library and execute conversion', async () => {
-      const executeScriptMock = mock.fn(async () => [
+      const executeScriptMock = vi.fn(async () => [
         { result: '# Heading\n\nParagraph' },
       ]);
 
@@ -44,25 +43,25 @@ describe('SelectionConverterService', () => {
 
       const result = await service.convertSelectionToMarkdown(tab);
 
-      assert.equal(result, '# Heading\n\nParagraph');
-      assert.equal(executeScriptMock.mock.calls.length, 2);
+      expect(result).toBe('# Heading\n\nParagraph');
+      expect(executeScriptMock).toHaveBeenCalledTimes(2);
 
       // First call: load turndown library
       const firstCall = executeScriptMock.mock.calls[0]!;
-      assert.equal(firstCall.arguments[0]!.target.tabId, 123);
-      assert.equal(firstCall.arguments[0]!.target.allFrames, true);
-      assert.deepEqual(firstCall.arguments[0]!.files, ['dist/vendor/turndown.js']);
+      expect(firstCall[0]!.target.tabId).toBe(123);
+      expect(firstCall[0]!.target.allFrames).toBe(true);
+      expect(firstCall[0]!.files).toEqual(['dist/vendor/turndown.js']);
 
       // Second call: execute conversion
       const secondCall = executeScriptMock.mock.calls[1]!;
-      assert.equal(secondCall.arguments[0]!.target.tabId, 123);
-      assert.equal(secondCall.arguments[0]!.target.allFrames, true);
-      assert.ok(typeof secondCall.arguments[0]!.func === 'function');
-      assert.deepEqual(secondCall.arguments[0]!.args, [turndownOptions]);
+      expect(secondCall[0]!.target.tabId).toBe(123);
+      expect(secondCall[0]!.target.allFrames).toBe(true);
+      expect(typeof secondCall[0]!.func === 'function').toBeTruthy();
+      expect(secondCall[0]!.args).toEqual([turndownOptions]);
     });
 
     it('should join results from multiple frames with double newlines', async () => {
-      const executeScriptMock = mock.fn(async (options: any) => {
+      const executeScriptMock = vi.fn(async (options: any) => {
         if (options.files) {
           // Load turndown script
           return [];
@@ -102,12 +101,12 @@ describe('SelectionConverterService', () => {
 
       const result = await service.convertSelectionToMarkdown(tab);
 
-      assert.equal(result, 'Frame 1 content\n\nFrame 2 content\n\nFrame 3 content');
+      expect(result).toBe('Frame 1 content\n\nFrame 2 content\n\nFrame 3 content');
     });
 
     it('should throw error when tab has no id', async () => {
       const mockScriptingAPI: ScriptingAPI = {
-        executeScript: mock.fn(async () => {
+        executeScript: vi.fn(async () => {
           throw new Error('Should not be called');
         }),
       };
@@ -133,20 +132,20 @@ describe('SelectionConverterService', () => {
         mutedInfo: { muted: false },
       };
 
-      await assert.rejects(
+      await expect(
         async () => service.convertSelectionToMarkdown(tab),
         { message: 'tab has no id' },
       );
     });
 
     it('should use turndown options from provider', async () => {
-      const getTurndownOptionsMock = mock.fn(() => ({
+      const getTurndownOptionsMock = vi.fn(() => ({
         headingStyle: 'setext' as const,
         bulletListMarker: '*' as const,
         customOption: 'value',
       }));
 
-      const executeScriptMock = mock.fn(async () => [{ result: 'converted' }]);
+      const executeScriptMock = vi.fn(async () => [{ result: 'converted' }]);
 
       const mockScriptingAPI: ScriptingAPI = {
         executeScript: executeScriptMock,
@@ -175,11 +174,11 @@ describe('SelectionConverterService', () => {
 
       await service.convertSelectionToMarkdown(tab);
 
-      assert.equal(getTurndownOptionsMock.mock.calls.length, 1);
+      expect(getTurndownOptionsMock).toHaveBeenCalledTimes(1);
 
       // Check that options were passed to the conversion function
       const conversionCall = executeScriptMock.mock.calls[1]!;
-      assert.deepEqual(conversionCall.arguments[0]!.args, [{
+      expect(conversionCall[0]!.args).toEqual([{
         headingStyle: 'setext',
         bulletListMarker: '*',
         customOption: 'value',

@@ -2,8 +2,7 @@
  * Unit tests for context menu service
  */
 
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
+import { describe, expect, it, vi } from 'vitest';
 import { createContextMenuService } from '../../src/services/context-menu-service.js';
 import type {
   ContextMenusAPI,
@@ -30,13 +29,13 @@ function createMockCustomFormat(
   };
 }
 
-describe('ContextMenuService', () => {
+describe('contextMenuService', () => {
   describe('createAll', () => {
     it('should remove all existing menus first', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -45,7 +44,7 @@ describe('ContextMenuService', () => {
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async () => []),
+        list: vi.fn(async () => []),
       };
 
       const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
@@ -54,7 +53,7 @@ describe('ContextMenuService', () => {
       await service.createAll();
 
       // Assert
-      assert.strictEqual(
+      expect(
         removeAllMock.mock.calls.length,
         1,
         'removeAll should be called once',
@@ -63,9 +62,9 @@ describe('ContextMenuService', () => {
 
     it('should create basic menus (current-tab and link)', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -74,7 +73,7 @@ describe('ContextMenuService', () => {
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async () => []),
+        list: vi.fn(async () => []),
       };
 
       const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
@@ -87,29 +86,26 @@ describe('ContextMenuService', () => {
 
       // Find current-tab menu
       const currentTabCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'current-tab',
+        (call: any) => call[0]?.id === 'current-tab',
       );
-      assert.ok(currentTabCall, 'current-tab menu should be created');
-      assert.strictEqual(
-        currentTabCall.arguments[0]?.title,
-        'Copy Page Link as Markdown',
-      );
-      assert.deepStrictEqual(currentTabCall.arguments[0]?.contexts, ['page']);
+      expect(currentTabCall, 'current-tab menu should be created').toBeDefined();
+      expect(currentTabCall[0]?.title).toBe('Copy Page Link as Markdown');
+      expect(currentTabCall[0]?.contexts).toEqual(['page']);
 
       // Find link menu
       const linkCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'link',
+        (call: any) => call[0]?.id === 'link',
       );
-      assert.ok(linkCall, 'link menu should be created');
-      assert.strictEqual(linkCall.arguments[0]?.title, 'Copy Link as Markdown');
-      assert.deepStrictEqual(linkCall.arguments[0]?.contexts, ['link']);
+      expect(linkCall, 'link menu should be created').toBeDefined();
+      expect(linkCall[0]?.title).toBe('Copy Link as Markdown');
+      expect(linkCall[0]?.contexts).toEqual(['link']);
     });
 
     it('should create image and selection menus', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -118,7 +114,7 @@ describe('ContextMenuService', () => {
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async () => []),
+        list: vi.fn(async () => []),
       };
 
       const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
@@ -131,27 +127,24 @@ describe('ContextMenuService', () => {
 
       // Find image menu
       const imageCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'image',
+        (call: any) => call[0]?.id === 'image',
       );
-      assert.ok(imageCall, 'image menu should be created');
-      assert.strictEqual(imageCall.arguments[0]?.title, 'Copy Image as Markdown');
+      expect(imageCall, 'image menu should be created').toBeDefined();
+      expect(imageCall[0]?.title).toBe('Copy Image as Markdown');
 
       // Find selection menu
       const selectionCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'selection-as-markdown',
+        (call: any) => call[0]?.id === 'selection-as-markdown',
       );
-      assert.ok(selectionCall, 'selection menu should be created');
-      assert.strictEqual(
-        selectionCall.arguments[0]?.title,
-        'Copy Selection as Markdown',
-      );
+      expect(selectionCall, 'selection menu should be created').toBeDefined();
+      expect(selectionCall[0]?.title).toBe('Copy Selection as Markdown');
     });
 
     it('should create custom format menus for single links', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -162,7 +155,7 @@ describe('ContextMenuService', () => {
       const customFormat = createMockCustomFormat('1', 'My Custom Format');
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async (context) => {
+        list: vi.fn(async (context) => {
           if (context === 'single-link') {
             return [customFormat];
           }
@@ -180,30 +173,24 @@ describe('ContextMenuService', () => {
 
       // Find custom format menu for current-tab
       const customTabCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'current-tab-custom-format-1',
+        (call: any) => call[0]?.id === 'current-tab-custom-format-1',
       );
-      assert.ok(customTabCall, 'custom format menu for page should be created');
-      assert.strictEqual(
-        customTabCall.arguments[0]?.title,
-        'Copy Page Link (My Custom Format)',
-      );
+      expect(customTabCall, 'custom format menu for page should be created').toBeDefined();
+      expect(customTabCall[0]?.title).toBe('Copy Page Link (My Custom Format)');
 
       // Find custom format menu for link
       const customLinkCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'link-custom-format-1',
+        (call: any) => call[0]?.id === 'link-custom-format-1',
       );
-      assert.ok(customLinkCall, 'custom format menu for link should be created');
-      assert.strictEqual(
-        customLinkCall.arguments[0]?.title,
-        'Copy Link (My Custom Format)',
-      );
+      expect(customLinkCall, 'custom format menu for link should be created').toBeDefined();
+      expect(customLinkCall[0]?.title).toBe('Copy Link (My Custom Format)');
     });
 
     it('should not create menus for custom formats with showInMenus=false', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -214,7 +201,7 @@ describe('ContextMenuService', () => {
       const hiddenFormat = createMockCustomFormat('1', 'Hidden Format', false);
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async (context) => {
+        list: vi.fn(async (context) => {
           if (context === 'single-link') {
             return [hiddenFormat];
           }
@@ -232,9 +219,9 @@ describe('ContextMenuService', () => {
 
       // Should not find custom format menu
       const customTabCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'current-tab-custom-format-1',
+        (call: any) => call[0]?.id === 'current-tab-custom-format-1',
       );
-      assert.strictEqual(
+      expect(
         customTabCall,
         undefined,
         'custom format with showInMenus=false should not be created',
@@ -243,9 +230,9 @@ describe('ContextMenuService', () => {
 
     it('should attempt to create Firefox-specific menus', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -254,7 +241,7 @@ describe('ContextMenuService', () => {
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async () => []),
+        list: vi.fn(async () => []),
       };
 
       const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
@@ -265,24 +252,18 @@ describe('ContextMenuService', () => {
       // Assert - should attempt to update current-tab menu for 'tab' context
       const updateCalls = updateMock.mock.calls;
       const updateCurrentTabCall = updateCalls.find(
-        (call: any) => call.arguments[0] === 'current-tab',
+        (call: any) => call[0] === 'current-tab',
       );
 
-      assert.ok(
-        updateCurrentTabCall,
-        'should attempt to update current-tab menu for tab context',
-      );
-      assert.deepStrictEqual(
-        updateCurrentTabCall.arguments[1]?.contexts,
-        ['page', 'tab'],
-      );
+      expect(updateCurrentTabCall, 'should attempt to update current-tab menu for tab context').toBeDefined();
+      expect(updateCurrentTabCall[1]?.contexts).toEqual(['page', 'tab']);
     });
 
     it('should create all tabs menus when Firefox features are supported', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -291,7 +272,7 @@ describe('ContextMenuService', () => {
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async () => []),
+        list: vi.fn(async () => []),
       };
 
       const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
@@ -304,29 +285,29 @@ describe('ContextMenuService', () => {
 
       // Should create all-tabs menus
       const allTabsCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'all-tabs-list',
+        (call: any) => call[0]?.id === 'all-tabs-list',
       );
-      assert.ok(allTabsCall, 'all-tabs-list menu should be created');
+      expect(allTabsCall, 'all-tabs-list menu should be created').toBeDefined();
 
       const allTabsTaskCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'all-tabs-task-list',
+        (call: any) => call[0]?.id === 'all-tabs-task-list',
       );
-      assert.ok(allTabsTaskCall, 'all-tabs-task-list menu should be created');
+      expect(allTabsTaskCall, 'all-tabs-task-list menu should be created').toBeDefined();
 
       // Should create highlighted tabs menus
       const highlightedCall = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'highlighted-tabs-list',
+        (call: any) => call[0]?.id === 'highlighted-tabs-list',
       );
-      assert.ok(highlightedCall, 'highlighted-tabs-list menu should be created');
+      expect(highlightedCall, 'highlighted-tabs-list menu should be created').toBeDefined();
     });
   });
 
   describe('refresh', () => {
     it('should be an alias for createAll', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -335,7 +316,7 @@ describe('ContextMenuService', () => {
       };
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async () => []),
+        list: vi.fn(async () => []),
       };
 
       const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
@@ -344,24 +325,24 @@ describe('ContextMenuService', () => {
       await service.refresh();
 
       // Assert
-      assert.strictEqual(
+      expect(
         removeAllMock.mock.calls.length,
         1,
         'removeAll should be called',
       );
-      assert.ok(
+      expect(
         createMock.mock.calls.length > 0,
         'create should be called',
       );
     });
   });
 
-  describe('Integration: with custom formats', () => {
+  describe('integration: with custom formats', () => {
     it('should create menus for both single and multiple link formats', async () => {
       // Arrange
-      const createMock = mock.fn(() => {});
-      const updateMock = mock.fn(async () => {});
-      const removeAllMock = mock.fn(async () => {});
+      const createMock = vi.fn(() => {});
+      const updateMock = vi.fn(async () => {});
+      const removeAllMock = vi.fn(async () => {});
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -373,7 +354,7 @@ describe('ContextMenuService', () => {
       const multipleFormat = createMockCustomFormat('2', 'Multiple Format');
 
       const mockFormatsProvider: CustomFormatsProvider = {
-        list: mock.fn(async (context) => {
+        list: vi.fn(async (context) => {
           if (context === 'single-link') {
             return [singleFormat];
           }
@@ -394,18 +375,15 @@ describe('ContextMenuService', () => {
 
       // Should have single link custom format menus
       const singleLinkMenu = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'current-tab-custom-format-1',
+        (call: any) => call[0]?.id === 'current-tab-custom-format-1',
       );
-      assert.ok(singleLinkMenu, 'single link custom format menu should be created');
+      expect(singleLinkMenu, 'single link custom format menu should be created').toBeDefined();
 
       // Should have multiple links custom format menus
       const allTabsCustomMenu = createCalls.find(
-        (call: any) => call.arguments[0]?.id === 'all-tabs-custom-format-2',
+        (call: any) => call[0]?.id === 'all-tabs-custom-format-2',
       );
-      assert.ok(
-        allTabsCustomMenu,
-        'all-tabs custom format menu should be created',
-      );
+      expect(allTabsCustomMenu, 'all-tabs custom format menu should be created').toBeDefined();
     });
   });
 });

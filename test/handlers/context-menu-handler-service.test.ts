@@ -2,8 +2,7 @@
  * Unit tests for context menu handler service
  */
 
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
+import { describe, expect, it, vi } from 'vitest';
 import { createContextMenuHandler } from '../../src/handlers/context-menu-handler.js';
 import type { HandlerCore } from '../../src/handlers/handler-core.js';
 import type {
@@ -35,19 +34,19 @@ function createMockMenuInfo(overrides?: Partial<browser.contextMenus.OnClickData
 // Helper to create unused mock stubs
 function createUnusedHandlerCore(): HandlerCore {
   return {
-    exportSingleLink: mock.fn(async () => {
+    exportSingleLink: vi.fn(async () => {
       throw new Error('HandlerCoreService.exportSingleLink should not be called in this test');
     }),
-    exportMultipleTabs: mock.fn(async () => {
+    exportMultipleTabs: vi.fn(async () => {
       throw new Error('HandlerCoreService.exportMultipleTabs should not be called in this test');
     }),
-    convertSelection: mock.fn(async () => {
+    convertSelection: vi.fn(async () => {
       throw new Error('HandlerCoreService.convertSelection should not be called in this test');
     }),
-    formatImage: mock.fn(() => {
+    formatImage: vi.fn(() => {
       throw new Error('HandlerCoreService.formatImage should not be called in this test');
     }),
-    formatLinkedImage: mock.fn(() => {
+    formatLinkedImage: vi.fn(() => {
       throw new Error('HandlerCoreService.formatLinkedImage should not be called in this test');
     }),
   };
@@ -55,7 +54,7 @@ function createUnusedHandlerCore(): HandlerCore {
 
 function createUnusedBookmarksAPI(): BookmarksAPI {
   return {
-    getSubTree: mock.fn(async () => {
+    getSubTree: vi.fn(async () => {
       throw new Error('BookmarksAPI should not be called in this test');
     }),
   };
@@ -63,21 +62,21 @@ function createUnusedBookmarksAPI(): BookmarksAPI {
 
 function createUnusedBookmarksFormatter(): BookmarksFormatter {
   return {
-    toMarkdown: mock.fn(() => {
+    toMarkdown: vi.fn(() => {
       throw new Error('BookmarksFormatter should not be called in this test');
     }),
   };
 }
 
-describe('ContextMenuHandlerService', () => {
+describe('contextMenuHandlerService', () => {
   describe('handleMenuClick - current-tab', () => {
     it('should export current tab as markdown link', async () => {
       // Arrange
       const mockTab = createMockTab({ title: 'Example', url: 'https://example.com' });
-      const exportSingleLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.title, 'Example');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportSingleLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('link');
+        expect(options.title).toBe('Example');
+        expect(options.url).toBe('https://example.com');
         return '[Example](https://example.com)';
       });
 
@@ -98,8 +97,8 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, '[Example](https://example.com)');
-      assert.strictEqual(exportSingleLinkMock.mock.calls.length, 1);
+      expect(result, '[Example](https://example.com)');
+      expect(exportSingleLinkMock).toHaveBeenCalledTimes(1);
     });
 
     it('should throw error when tab is not provided', async () => {
@@ -113,9 +112,7 @@ describe('ContextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'current-tab' });
 
       // Act & Assert
-      await assert.rejects(
-        () => service.handleMenuClick(menuInfo),
-        /tab is required for current-tab menu item/,
+      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for current-tab menu item/,
       );
     });
   });
@@ -123,10 +120,10 @@ describe('ContextMenuHandlerService', () => {
   describe('handleMenuClick - link', () => {
     it('should export regular link as markdown', async () => {
       // Arrange
-      const exportSingleLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.title, 'Click here');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportSingleLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('link');
+        expect(options.title).toBe('Click here');
+        expect(options.url).toBe('https://example.com');
         return '[Click here](https://example.com)';
       });
 
@@ -151,16 +148,16 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      assert.strictEqual(result, '[Click here](https://example.com)');
-      assert.strictEqual(exportSingleLinkMock.mock.calls.length, 1);
+      expect(result, '[Click here](https://example.com)');
+      expect(exportSingleLinkMock).toHaveBeenCalledTimes(1);
     });
 
     it('should export linked image as markdown when mediaType is image', async () => {
       // Arrange
-      const formatLinkedImageMock = mock.fn((alt: string, imageUrl: string, linkUrl: string) => {
-        assert.strictEqual(alt, '');
-        assert.strictEqual(imageUrl, 'https://example.com/image.png');
-        assert.strictEqual(linkUrl, 'https://example.com');
+      const formatLinkedImageMock = vi.fn((alt: string, imageUrl: string, linkUrl: string) => {
+        expect(alt).toBe('');
+        expect(imageUrl).toBe('https://example.com/image.png');
+        expect(linkUrl).toBe('https://example.com');
         return '[![](https://example.com/image.png)](https://example.com)';
       });
 
@@ -186,16 +183,16 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      assert.strictEqual(result, '[![](https://example.com/image.png)](https://example.com)');
-      assert.strictEqual(formatLinkedImageMock.mock.calls.length, 1);
+      expect(result, '[![](https://example.com/image.png)](https://example.com)');
+      expect(formatLinkedImageMock).toHaveBeenCalledTimes(1);
     });
 
     it('should use linkText when selectionText is not available', async () => {
       // Arrange
-      const exportSingleLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.title, 'Link Text');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportSingleLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('link');
+        expect(options.title).toBe('Link Text');
+        expect(options.url).toBe('https://example.com');
         return `[Link Text](https://example.com)`;
       });
 
@@ -220,16 +217,16 @@ describe('ContextMenuHandlerService', () => {
       await service.handleMenuClick(menuInfo);
 
       // Assert
-      assert.strictEqual(exportSingleLinkMock.mock.calls.length, 1);
+      expect(exportSingleLinkMock).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('handleMenuClick - image', () => {
     it('should export image as markdown', async () => {
       // Arrange
-      const formatImageMock = mock.fn((alt: string, url: string) => {
-        assert.strictEqual(alt, '');
-        assert.strictEqual(url, 'https://example.com/image.png');
+      const formatImageMock = vi.fn((alt: string, url: string) => {
+        expect(alt).toBe('');
+        expect(url).toBe('https://example.com/image.png');
         return '![](https://example.com/image.png)';
       });
 
@@ -253,8 +250,8 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      assert.strictEqual(result, '![](https://example.com/image.png)');
-      assert.strictEqual(formatImageMock.mock.calls.length, 1);
+      expect(result, '![](https://example.com/image.png)');
+      expect(formatImageMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -262,8 +259,8 @@ describe('ContextMenuHandlerService', () => {
     it('should convert selection to markdown', async () => {
       // Arrange
       const mockTab = createMockTab();
-      const convertMock = mock.fn(async (tab: browser.tabs.Tab) => {
-        assert.strictEqual(tab, mockTab);
+      const convertMock = vi.fn(async (tab: browser.tabs.Tab) => {
+        expect(tab).toBe(mockTab);
         return 'converted markdown';
       });
 
@@ -284,8 +281,8 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'converted markdown');
-      assert.strictEqual(convertMock.mock.calls.length, 1);
+      expect(result).toBe('converted markdown');
+      expect(convertMock).toHaveBeenCalledTimes(1);
     });
 
     it('should throw error when tab is not provided', async () => {
@@ -299,9 +296,7 @@ describe('ContextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'selection-as-markdown' });
 
       // Act & Assert
-      await assert.rejects(
-        () => service.handleMenuClick(menuInfo),
-        /tab is required for selection-as-markdown menu item/,
+      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for selection-as-markdown menu item/,
       );
     });
   });
@@ -310,11 +305,11 @@ describe('ContextMenuHandlerService', () => {
     it('should handle all-tabs-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'all');
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.listType, 'list');
-        assert.strictEqual(options.windowId, 100);
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('all');
+        expect(options.format).toBe('link');
+        expect(options.listType).toBe('list');
+        expect(options.windowId).toBe(100);
         return 'all tabs list';
       });
 
@@ -335,15 +330,15 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'all tabs list');
-      assert.strictEqual(exportTabsMock.mock.calls.length, 1);
+      expect(result).toBe('all tabs list');
+      expect(exportTabsMock).toHaveBeenCalledTimes(1);
     });
 
     it('should handle all-tabs-task-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.listType, 'task-list');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.listType).toBe('task-list');
         return 'task list';
       });
 
@@ -364,14 +359,14 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'task list');
+      expect(result).toBe('task list');
     });
 
     it('should handle highlighted-tabs-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
         return 'highlighted list';
       });
 
@@ -392,15 +387,15 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'highlighted list');
+      expect(result).toBe('highlighted list');
     });
 
     it('should handle highlighted-tabs-task-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.listType, 'task-list');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.listType).toBe('task-list');
         return 'highlighted task list';
       });
 
@@ -421,7 +416,7 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'highlighted task list');
+      expect(result).toBe('highlighted task list');
     });
 
     it('should throw error when tab is not provided for tab list items', async () => {
@@ -435,9 +430,7 @@ describe('ContextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'all-tabs-list' });
 
       // Act & Assert
-      await assert.rejects(
-        () => service.handleMenuClick(menuInfo),
-        /tab is required for tab list menu item/,
+      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for tab list menu item/,
       );
     });
 
@@ -454,7 +447,7 @@ describe('ContextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'all-tabs-list' });
 
       // Act & Assert
-      await assert.rejects(
+      expect(
         () => service.handleMenuClick(menuInfo, mockTab),
         /tab has no windowId/,
       );
@@ -470,13 +463,13 @@ describe('ContextMenuHandlerService', () => {
         url: 'https://example.com',
       };
 
-      const getSubTreeMock = mock.fn(async (id: string) => {
-        assert.strictEqual(id, 'bookmark-1');
+      const getSubTreeMock = vi.fn(async (id: string) => {
+        expect(id).toBe('bookmark-1');
         return [mockBookmark];
       });
 
-      const toMarkdownMock = mock.fn((bm: browser.bookmarks.BookmarkTreeNode) => {
-        assert.strictEqual(bm, mockBookmark);
+      const toMarkdownMock = vi.fn((bm: browser.bookmarks.BookmarkTreeNode) => {
+        expect(bm).toBe(mockBookmark);
         return '[Example Bookmark](https://example.com)';
       });
 
@@ -503,15 +496,15 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      assert.strictEqual(result, '[Example Bookmark](https://example.com)');
-      assert.strictEqual(getSubTreeMock.mock.calls.length, 1);
-      assert.strictEqual(toMarkdownMock.mock.calls.length, 1);
+      expect(result, '[Example Bookmark](https://example.com)');
+      expect(getSubTreeMock).toHaveBeenCalledTimes(1);
+      expect(toMarkdownMock).toHaveBeenCalledTimes(1);
     });
 
     it('should throw error when bookmark is not found', async () => {
       // Arrange
       const mockBookmarksAPI: BookmarksAPI = {
-        getSubTree: mock.fn(async () => []),
+        getSubTree: vi.fn(async () => []),
       };
 
       const service = createContextMenuHandler(
@@ -526,9 +519,7 @@ describe('ContextMenuHandlerService', () => {
       });
 
       // Act & Assert
-      await assert.rejects(
-        () => service.handleMenuClick(menuInfo),
-        /bookmark not found/,
+      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/bookmark not found/,
       );
     });
 
@@ -543,9 +534,7 @@ describe('ContextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'bookmark-link' });
 
       // Act & Assert
-      await assert.rejects(
-        () => service.handleMenuClick(menuInfo),
-        /bookmarkId is required/,
+      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/bookmarkId is required/,
       );
     });
   });
@@ -554,11 +543,11 @@ describe('ContextMenuHandlerService', () => {
     it('should handle current-tab-custom-format-1', async () => {
       // Arrange
       const mockTab = createMockTab({ title: 'Example', url: 'https://example.com' });
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '1');
-        assert.strictEqual(options.title, 'Example');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('1');
+        expect(options.title).toBe('Example');
+        expect(options.url).toBe('https://example.com');
         return 'custom formatted';
       });
 
@@ -579,17 +568,17 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'custom formatted');
-      assert.strictEqual(exportLinkMock.mock.calls.length, 1);
+      expect(result).toBe('custom formatted');
+      expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });
 
     it('should handle link-custom-format-2', async () => {
       // Arrange
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '2');
-        assert.strictEqual(options.title, 'Link Text');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('2');
+        expect(options.title).toBe('Link Text');
+        expect(options.url).toBe('https://example.com');
         return 'custom link';
       });
 
@@ -614,16 +603,16 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      assert.strictEqual(result, 'custom link');
+      expect(result).toBe('custom link');
     });
 
     it('should handle all-tabs-custom-format-3', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'all');
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '3');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('all');
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('3');
         return 'custom tabs';
       });
 
@@ -644,16 +633,16 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'custom tabs');
+      expect(result).toBe('custom tabs');
     });
 
     it('should handle highlighted-tabs-custom-format-4', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '4');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('4');
         return 'custom highlighted';
       });
 
@@ -674,7 +663,7 @@ describe('ContextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      assert.strictEqual(result, 'custom highlighted');
+      expect(result).toBe('custom highlighted');
     });
   });
 
@@ -690,9 +679,7 @@ describe('ContextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'unknown-menu-item' });
 
       // Act & Assert
-      await assert.rejects(
-        () => service.handleMenuClick(menuInfo),
-        /unknown context menu item: unknown-menu-item/,
+      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/unknown context menu item: unknown-menu-item/,
       );
     });
   });

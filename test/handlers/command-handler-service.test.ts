@@ -2,8 +2,7 @@
  * Unit tests for command handler service
  */
 
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
+import { describe, expect, it, vi } from 'vitest';
 import { createKeyboardCommandHandler } from '../../src/handlers/keyboard-command-handler.js';
 
 import type {
@@ -25,7 +24,7 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 // Helper to create unused mock stubs
 function createUnusedTabsAPI(): TabsAPI {
   return {
-    query: mock.fn(async () => {
+    query: vi.fn(async () => {
       throw new Error('TabsAPI.query should not be called in this test');
     }),
   };
@@ -33,29 +32,29 @@ function createUnusedTabsAPI(): TabsAPI {
 
 function createUnusedHandlerCore(): HandlerCore {
   return {
-    exportSingleLink: mock.fn(async () => {
+    exportSingleLink: vi.fn(async () => {
       throw new Error('HandlerCore.exportSingleLink should not be called in this test');
     }),
-    exportMultipleTabs: mock.fn(async () => {
+    exportMultipleTabs: vi.fn(async () => {
       throw new Error('HandlerCore.exportMultipleTabs should not be called in this test');
     }),
-    convertSelection: mock.fn(async () => {
+    convertSelection: vi.fn(async () => {
       throw new Error('HandlerCore.convertSelection should not be called in this test');
     }),
-    showSuccessBadge: mock.fn(async () => {
+    showSuccessBadge: vi.fn(async () => {
       throw new Error('HandlerCore.showSuccessBadge should not be called in this test');
     }),
-    showErrorBadge: mock.fn(async () => {
+    showErrorBadge: vi.fn(async () => {
       throw new Error('HandlerCore.showErrorBadge should not be called in this test');
     }),
   };
 }
 
-describe('CommandHandlerService', () => {
+describe('commandHandlerService', () => {
   describe('handleCommand - tab resolution', () => {
     it('should use provided tab when available', async () => {
       // Arrange
-      const queryMock = mock.fn(async () => {
+      const queryMock = vi.fn(async () => {
         throw new Error('TabsAPI.query should not be called when tab is provided');
       });
 
@@ -63,7 +62,7 @@ describe('CommandHandlerService', () => {
         query: queryMock,
       };
 
-      const convertMock = mock.fn(async () => 'markdown content');
+      const convertMock = vi.fn(async () => 'markdown content');
       const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         convertSelection: convertMock,
@@ -80,21 +79,21 @@ describe('CommandHandlerService', () => {
       await service.handleCommand('selection-as-markdown', mockTab);
 
       // Assert
-      assert.strictEqual(queryMock.mock.calls.length, 0);
-      assert.strictEqual(convertMock.mock.calls.length, 1);
-      assert.strictEqual(convertMock.mock.calls[0]!.arguments[0], mockTab);
+      expect(queryMock).toHaveBeenCalledTimes(0);
+      expect(convertMock).toHaveBeenCalledTimes(1);
+      expect(convertMock.mock.calls[0]![0]).toBe(mockTab);
     });
 
     it('should query for current tab when not provided', async () => {
       // Arrange
       const mockTab = createMockTab();
-      const queryMock = mock.fn(async () => [mockTab]);
+      const queryMock = vi.fn(async () => [mockTab]);
 
       const mockTabsAPI: TabsAPI = {
         query: queryMock,
       };
 
-      const convertMock = mock.fn(async () => 'markdown content');
+      const convertMock = vi.fn(async () => 'markdown content');
       const mockHandlerCore: HandlerCore = {
         ...createUnusedHandlerCore(),
         convertSelection: convertMock,
@@ -109,19 +108,19 @@ describe('CommandHandlerService', () => {
       await service.handleCommand('selection-as-markdown');
 
       // Assert
-      assert.strictEqual(queryMock.mock.calls.length, 1);
-      assert.deepStrictEqual(queryMock.mock.calls[0]!.arguments[0], {
+      expect(queryMock).toHaveBeenCalledTimes(1);
+      expect(queryMock.mock.calls[0]![0]).toEqual({
         currentWindow: true,
         active: true,
       });
-      assert.strictEqual(convertMock.mock.calls.length, 1);
-      assert.strictEqual(convertMock.mock.calls[0]!.arguments[0], mockTab);
+      expect(convertMock).toHaveBeenCalledTimes(1);
+      expect(convertMock.mock.calls[0]![0]).toBe(mockTab);
     });
 
     it('should throw error if no current tab found', async () => {
       // Arrange
       const mockTabsAPI: TabsAPI = {
-        query: mock.fn(async () => []),
+        query: vi.fn(async () => []),
       };
 
       const service = createKeyboardCommandHandler(
@@ -130,9 +129,7 @@ describe('CommandHandlerService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
-        () => service.handleCommand('selection-as-markdown'),
-        /failed to get current tab/,
+      await expect(async () => service.handleCommand('selection-as-markdown')).rejects.toThrow(/failed to get current tab/,
       );
     });
 
@@ -146,7 +143,7 @@ describe('CommandHandlerService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
+      expect(
         () => service.handleCommand('all-tabs-link-as-list', mockTab),
         /tab has no windowId/,
       );
@@ -157,8 +154,8 @@ describe('CommandHandlerService', () => {
     it('should convert selection to markdown', async () => {
       // Arrange
       const mockTab = createMockTab();
-      const convertMock = mock.fn(async (tab: browser.tabs.Tab) => {
-        assert.strictEqual(tab, mockTab);
+      const convertMock = vi.fn(async (tab: browser.tabs.Tab) => {
+        expect(tab).toBe(mockTab);
         return 'converted markdown';
       });
 
@@ -176,8 +173,8 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('selection-as-markdown', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'converted markdown');
-      assert.strictEqual(convertMock.mock.calls.length, 1);
+      expect(result).toBe('converted markdown');
+      expect(convertMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -189,10 +186,10 @@ describe('CommandHandlerService', () => {
         url: 'https://example.com',
       });
 
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.title, 'Example Site');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('link');
+        expect(options.title).toBe('Example Site');
+        expect(options.url).toBe('https://example.com');
         return '[Example Site](https://example.com)';
       });
 
@@ -210,8 +207,8 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('current-tab-link', mockTab);
 
       // Assert
-      assert.strictEqual(result, '[Example Site](https://example.com)');
-      assert.strictEqual(exportLinkMock.mock.calls.length, 1);
+      expect(result, '[Example Site](https://example.com)');
+      expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -219,11 +216,11 @@ describe('CommandHandlerService', () => {
     it('should handle all-tabs-link-as-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'all');
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.listType, 'list');
-        assert.strictEqual(options.windowId, 100);
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('all');
+        expect(options.format).toBe('link');
+        expect(options.listType).toBe('list');
+        expect(options.windowId).toBe(100);
         return 'tabs as list';
       });
 
@@ -241,17 +238,17 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('all-tabs-link-as-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'tabs as list');
-      assert.strictEqual(exportTabsMock.mock.calls.length, 1);
+      expect(result).toBe('tabs as list');
+      expect(exportTabsMock).toHaveBeenCalledTimes(1);
     });
 
     it('should handle all-tabs-link-as-task-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'all');
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.listType, 'task-list');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('all');
+        expect(options.format).toBe('link');
+        expect(options.listType).toBe('task-list');
         return 'tabs as task list';
       });
 
@@ -269,15 +266,15 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('all-tabs-link-as-task-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'tabs as task list');
+      expect(result).toBe('tabs as task list');
     });
 
     it('should handle all-tabs-title-as-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'title');
-        assert.strictEqual(options.listType, 'list');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('title');
+        expect(options.listType).toBe('list');
         return 'titles list';
       });
 
@@ -295,14 +292,14 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('all-tabs-title-as-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'titles list');
+      expect(result).toBe('titles list');
     });
 
     it('should handle all-tabs-url-as-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'url');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('url');
         return 'urls list';
       });
 
@@ -320,7 +317,7 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('all-tabs-url-as-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'urls list');
+      expect(result).toBe('urls list');
     });
   });
 
@@ -328,10 +325,10 @@ describe('CommandHandlerService', () => {
     it('should handle highlighted-tabs-link-as-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.listType, 'list');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.format).toBe('link');
+        expect(options.listType).toBe('list');
         return 'highlighted tabs list';
       });
 
@@ -349,15 +346,15 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('highlighted-tabs-link-as-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'highlighted tabs list');
+      expect(result).toBe('highlighted tabs list');
     });
 
     it('should handle highlighted-tabs-link-as-task-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.listType, 'task-list');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.listType).toBe('task-list');
         return 'highlighted task list';
       });
 
@@ -375,15 +372,15 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('highlighted-tabs-link-as-task-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'highlighted task list');
+      expect(result).toBe('highlighted task list');
     });
 
     it('should handle highlighted-tabs-title-as-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.format, 'title');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.format).toBe('title');
         return 'highlighted titles';
       });
 
@@ -401,15 +398,15 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('highlighted-tabs-title-as-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'highlighted titles');
+      expect(result).toBe('highlighted titles');
     });
 
     it('should handle highlighted-tabs-url-as-list', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.format, 'url');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.format).toBe('url');
         return 'highlighted urls';
       });
 
@@ -427,7 +424,7 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('highlighted-tabs-url-as-list', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'highlighted urls');
+      expect(result).toBe('highlighted urls');
     });
   });
 
@@ -439,11 +436,11 @@ describe('CommandHandlerService', () => {
         url: 'https://example.com',
       });
 
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '1');
-        assert.strictEqual(options.title, 'Example');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('1');
+        expect(options.title).toBe('Example');
+        expect(options.url).toBe('https://example.com');
         return 'custom formatted link';
       });
 
@@ -461,18 +458,18 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('current-tab-custom-format-1', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'custom formatted link');
-      assert.strictEqual(exportLinkMock.mock.calls.length, 1);
+      expect(result).toBe('custom formatted link');
+      expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });
 
     it('should handle all-tabs-custom-format-2', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'all');
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '2');
-        assert.strictEqual(options.windowId, 100);
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('all');
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('2');
+        expect(options.windowId).toBe(100);
         return 'custom tabs format';
       });
 
@@ -490,16 +487,16 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('all-tabs-custom-format-2', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'custom tabs format');
+      expect(result).toBe('custom tabs format');
     });
 
     it('should handle highlighted-tabs-custom-format-3', async () => {
       // Arrange
       const mockTab = createMockTab({ windowId: 100 });
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '3');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('3');
         return 'custom highlighted format';
       });
 
@@ -517,7 +514,7 @@ describe('CommandHandlerService', () => {
       const result = await service.handleCommand('highlighted-tabs-custom-format-3', mockTab);
 
       // Assert
-      assert.strictEqual(result, 'custom highlighted format');
+      expect(result).toBe('custom highlighted format');
     });
   });
 
@@ -532,7 +529,7 @@ describe('CommandHandlerService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
+      expect(
         () => service.handleCommand('unknown-command', mockTab),
         /unknown keyboard command: unknown-command/,
       );
@@ -548,7 +545,7 @@ describe('CommandHandlerService', () => {
       );
 
       // Act & Assert
-      await assert.rejects(
+      expect(
         () => service.handleCommand('invalid-custom-format-command', mockTab),
         /unknown keyboard command/,
       );
