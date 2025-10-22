@@ -152,10 +152,7 @@ describe('clipboardService', () => {
         mutedInfo: { muted: false },
       };
 
-      expect(
-        async () => service.copy('test text', tab),
-        { message: 'tab has no id' },
-      );
+      await expect(service.copy('test text', tab)).rejects.toThrow('tab has no id');
     });
 
     it('should throw error when content script fails', async () => {
@@ -184,10 +181,7 @@ describe('clipboardService', () => {
         incognito: false,
       };
 
-      expect(
-        async () => service.copy('test text', tab),
-        { message: 'content script failed: Permission denied (method = navigator_api)' },
-      );
+      await expect(service.copy('test text', tab)).rejects.toThrow('content script failed: Permission denied (method = navigator_api)');
     });
 
     it('should throw error when current tab query returns no tabs', async () => {
@@ -204,10 +198,7 @@ describe('clipboardService', () => {
         'chrome-extension://id/dist/static/iframe-copy.html',
       );
 
-      expect(
-        async () => service.copy('test text'),
-        { message: 'failed to get current tab' },
-      );
+      await expect(service.copy('test text')).rejects.toThrow('failed to get current tab');
     });
 
     it('should throw error when executeScript returns no results', async () => {
@@ -235,10 +226,7 @@ describe('clipboardService', () => {
         mutedInfo: { muted: false },
       };
 
-      expect(
-        async () => service.copy('test text', tab),
-        { message: 'no result from content script' },
-      );
+      await expect(service.copy('test text', tab)).rejects.toThrow('no result from content script');
     });
   });
 });

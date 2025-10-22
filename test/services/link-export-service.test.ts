@@ -123,14 +123,12 @@ describe('linkExportService', () => {
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
 
         await expect(
-          async () =>
-            service.exportLink({
-              format: 'custom-format',
-              title: 'Test',
-              url: 'https://example.com',
-            }),
-          { message: 'customFormatSlot is required for custom-format' },
-        );
+          service.exportLink({
+            format: 'custom-format',
+            title: 'Test',
+            url: 'https://example.com',
+          }),
+        ).rejects.toThrow('customFormatSlot is required for custom-format');
       });
 
       it('should throw error when customFormatSlot is null', async () => {
@@ -148,15 +146,13 @@ describe('linkExportService', () => {
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
 
         await expect(
-          async () =>
-            service.exportLink({
-              format: 'custom-format',
-              title: 'Test',
-              url: 'https://example.com',
-              customFormatSlot: null,
-            }),
-          { message: 'customFormatSlot is required for custom-format' },
-        );
+          service.exportLink({
+            format: 'custom-format',
+            title: 'Test',
+            url: 'https://example.com',
+            customFormatSlot: null,
+          }),
+        ).rejects.toThrow('customFormatSlot is required for custom-format');
       });
     });
 
@@ -176,14 +172,12 @@ describe('linkExportService', () => {
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
 
         await expect(
-          async () =>
-            service.exportLink({
-              format: 'invalid' as any,
-              title: 'Test',
-              url: 'https://example.com',
-            }),
-          { message: 'invalid format: invalid' },
-        );
+          service.exportLink({
+            format: 'invalid' as any,
+            title: 'Test',
+            url: 'https://example.com',
+          }),
+        ).rejects.toThrow('invalid format: invalid');
       });
     });
   });

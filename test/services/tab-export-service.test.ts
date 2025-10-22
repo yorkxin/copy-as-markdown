@@ -306,7 +306,7 @@ describe('tabExportService', () => {
       );
 
       // Act & Assert
-      await expect(async () => service.exportTabs({
+      await expect(service.exportTabs({
         scope: 'all',
         format: 'link',
         listType: 'list',
@@ -412,7 +412,7 @@ describe('tabExportService', () => {
       );
 
       // Act & Assert
-      await expect(async () => service.exportTabs({
+      await expect(service.exportTabs({
         scope: 'all',
         format: 'custom-format',
         windowId: 1,
@@ -432,7 +432,7 @@ describe('tabExportService', () => {
       );
 
       // Act & Assert
-      await expect(async () => service.exportTabs({
+      await expect(service.exportTabs({
         scope: 'all',
         format: 'custom-format',
         customFormatSlot: '1',

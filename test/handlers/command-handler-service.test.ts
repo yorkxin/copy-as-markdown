@@ -129,8 +129,7 @@ describe('commandHandlerService', () => {
       );
 
       // Act & Assert
-      await expect(async () => service.handleCommand('selection-as-markdown')).rejects.toThrow(/failed to get current tab/,
-      );
+      await expect(service.handleCommand('selection-as-markdown')).rejects.toThrow(/failed to get current tab/);
     });
 
     it('should throw error if tab has no windowId', async () => {
@@ -143,10 +142,9 @@ describe('commandHandlerService', () => {
       );
 
       // Act & Assert
-      expect(
-        () => service.handleCommand('all-tabs-link-as-list', mockTab),
-        /tab has no windowId/,
-      );
+      await expect(
+        service.handleCommand('all-tabs-link-as-list', mockTab),
+      ).rejects.toThrow(/tab has no windowId/);
     });
   });
 
@@ -529,10 +527,9 @@ describe('commandHandlerService', () => {
       );
 
       // Act & Assert
-      expect(
-        () => service.handleCommand('unknown-command', mockTab),
-        /unknown keyboard command: unknown-command/,
-      );
+      await expect(
+        service.handleCommand('unknown-command', mockTab),
+      ).rejects.toThrow(/unknown keyboard command: unknown-command/);
     });
 
     it('should throw error for malformed custom format command', async () => {
@@ -545,10 +542,9 @@ describe('commandHandlerService', () => {
       );
 
       // Act & Assert
-      expect(
-        () => service.handleCommand('invalid-custom-format-command', mockTab),
-        /unknown keyboard command/,
-      );
+      await expect(
+        service.handleCommand('invalid-custom-format-command', mockTab),
+      ).rejects.toThrow(/unknown keyboard command/);
     });
   });
 });

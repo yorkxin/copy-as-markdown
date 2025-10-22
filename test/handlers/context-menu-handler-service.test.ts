@@ -112,8 +112,7 @@ describe('contextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'current-tab' });
 
       // Act & Assert
-      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for current-tab menu item/,
-      );
+      await expect(service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for current-tab menu item/);
     });
   });
 
@@ -296,8 +295,7 @@ describe('contextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'selection-as-markdown' });
 
       // Act & Assert
-      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for selection-as-markdown menu item/,
-      );
+      await expect(service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for selection-as-markdown menu item/);
     });
   });
 
@@ -430,8 +428,7 @@ describe('contextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'all-tabs-list' });
 
       // Act & Assert
-      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for tab list menu item/,
-      );
+      await expect(service.handleMenuClick(menuInfo)).rejects.toThrow(/tab is required for tab list menu item/);
     });
 
     it('should throw error when tab has no windowId', async () => {
@@ -447,10 +444,9 @@ describe('contextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'all-tabs-list' });
 
       // Act & Assert
-      expect(
-        () => service.handleMenuClick(menuInfo, mockTab),
-        /tab has no windowId/,
-      );
+      await expect(
+        service.handleMenuClick(menuInfo, mockTab),
+      ).rejects.toThrow(/tab has no windowId/);
     });
   });
 
@@ -519,8 +515,7 @@ describe('contextMenuHandlerService', () => {
       });
 
       // Act & Assert
-      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/bookmark not found/,
-      );
+      await expect(service.handleMenuClick(menuInfo)).rejects.toThrow(/bookmark not found/);
     });
 
     it('should throw error when bookmarkId is not provided', async () => {
@@ -534,8 +529,7 @@ describe('contextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'bookmark-link' });
 
       // Act & Assert
-      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/bookmarkId is required/,
-      );
+      await expect(service.handleMenuClick(menuInfo)).rejects.toThrow(/bookmarkId is required/);
     });
   });
 
@@ -679,8 +673,7 @@ describe('contextMenuHandlerService', () => {
       const menuInfo = createMockMenuInfo({ menuItemId: 'unknown-menu-item' });
 
       // Act & Assert
-      await expect(async () => service.handleMenuClick(menuInfo)).rejects.toThrow(/unknown context menu item: unknown-menu-item/,
-      );
+      await expect(service.handleMenuClick(menuInfo)).rejects.toThrow(/unknown context menu item: unknown-menu-item/);
     });
   });
 });

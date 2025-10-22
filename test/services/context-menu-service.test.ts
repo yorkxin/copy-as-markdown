@@ -53,11 +53,7 @@ describe('contextMenuService', () => {
       await service.createAll();
 
       // Assert
-      expect(
-        removeAllMock.mock.calls.length,
-        1,
-        'removeAll should be called once',
-      );
+      expect(removeAllMock).toHaveBeenCalledTimes(1);
     });
 
     it('should create basic menus (current-tab and link)', async () => {
@@ -221,11 +217,7 @@ describe('contextMenuService', () => {
       const customTabCall = createCalls.find(
         (call: any) => call[0]?.id === 'current-tab-custom-format-1',
       );
-      expect(
-        customTabCall,
-        undefined,
-        'custom format with showInMenus=false should not be created',
-      );
+      expect(customTabCall).toBeUndefined();
     });
 
     it('should attempt to create Firefox-specific menus', async () => {
@@ -325,15 +317,8 @@ describe('contextMenuService', () => {
       await service.refresh();
 
       // Assert
-      expect(
-        removeAllMock.mock.calls.length,
-        1,
-        'removeAll should be called',
-      );
-      expect(
-        createMock.mock.calls.length > 0,
-        'create should be called',
-      );
+      expect(removeAllMock).toHaveBeenCalledTimes(1);
+      expect(createMock.mock.calls.length).toBeGreaterThan(0);
     });
   });
 

@@ -144,10 +144,9 @@ describe('runtimeMessageHandlerService', () => {
       );
 
       // Act & Assert
-      expect(
-        () => service.handleMessage('export-current-tab', { tabId: 42, format: 'link' }),
-        /got undefined tab/,
-      );
+      await expect(
+        service.handleMessage('export-current-tab', { tabId: 42, format: 'link' }),
+      ).rejects.toThrow(/got undefined tab/);
     });
   });
 
@@ -229,10 +228,9 @@ describe('runtimeMessageHandlerService', () => {
       );
 
       // Act & Assert
-      expect(
-        () => service.handleMessage('unknown-topic', {}),
-        /Unknown message topic 'unknown-topic'/,
-      );
+      await expect(
+        service.handleMessage('unknown-topic', {}),
+      ).rejects.toThrow(/Unknown message topic 'unknown-topic'/);
     });
   });
 });

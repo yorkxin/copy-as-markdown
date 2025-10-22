@@ -139,10 +139,7 @@ describe('selectionConverterService', () => {
         mutedInfo: { muted: false },
       };
 
-      await expect(
-        async () => service.convertSelectionToMarkdown(tab),
-        { message: 'tab has no id' },
-      );
+      await expect(service.convertSelectionToMarkdown(tab)).rejects.toThrow('tab has no id');
     });
 
     it('should use turndown options from provider', async () => {
