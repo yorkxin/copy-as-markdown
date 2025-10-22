@@ -34,19 +34,13 @@ function createMockMenuInfo(overrides?: Partial<browser.contextMenus.OnClickData
 // Helper to create unused mock stubs
 function createUnusedHandlerCore(): HandlerCore {
   return {
-    exportSingleLink: vi.fn(async () => {
-      throw new Error('HandlerCoreService.exportSingleLink should not be called in this test');
-    }),
-    exportMultipleTabs: vi.fn(async () => {
-      throw new Error('HandlerCoreService.exportMultipleTabs should not be called in this test');
-    }),
-    convertSelection: vi.fn(async () => {
-      throw new Error('HandlerCoreService.convertSelection should not be called in this test');
-    }),
-    formatImage: vi.fn(() => {
+    exportSingleLink: vi.fn().mockRejectedValue(new Error('HandlerCoreService.exportSingleLink should not be called in this test')),
+    exportMultipleTabs: vi.fn().mockRejectedValue(new Error('HandlerCoreService.exportMultipleTabs should not be called in this test')),
+    convertSelection: vi.fn().mockRejectedValue(new Error('HandlerCoreService.convertSelection should not be called in this test')),
+    formatImage: vi.fn().mockImplementation(() => {
       throw new Error('HandlerCoreService.formatImage should not be called in this test');
     }),
-    formatLinkedImage: vi.fn(() => {
+    formatLinkedImage: vi.fn().mockImplementation(() => {
       throw new Error('HandlerCoreService.formatLinkedImage should not be called in this test');
     }),
   };
@@ -54,15 +48,13 @@ function createUnusedHandlerCore(): HandlerCore {
 
 function createUnusedBookmarksAPI(): BookmarksAPI {
   return {
-    getSubTree: vi.fn(async () => {
-      throw new Error('BookmarksAPI should not be called in this test');
-    }),
+    getSubTree: vi.fn().mockRejectedValue(new Error('BookmarksAPI should not be called in this test')),
   };
 }
 
 function createUnusedBookmarksFormatter(): BookmarksFormatter {
   return {
-    toMarkdown: vi.fn(() => {
+    toMarkdown: vi.fn().mockImplementation(() => {
       throw new Error('BookmarksFormatter should not be called in this test');
     }),
   };

@@ -19,12 +19,16 @@ describe('linkExportService', () => {
         const mockMarkdown: MarkdownFormatter = {
           escapeLinkText: text => text,
           linkTo: linkToMock,
+          list: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
+          taskList: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: vi.fn(async () => {
-            throw new Error('CustomFormatsProvider.get should not be called in this test');
-          }),
+          get: vi.fn().mockRejectedValue(new Error('CustomFormatsProvider.get should not be called in this test')),
         };
 
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
@@ -41,13 +45,17 @@ describe('linkExportService', () => {
       });
 
       it('should not call customFormatsProvider when format is link', async () => {
-        const getMock = vi.fn(async () => {
-          throw new Error('CustomFormatsProvider.get should not be called');
-        });
+        const getMock = vi.fn().mockRejectedValue(new Error('CustomFormatsProvider.get should not be called'));
 
         const mockMarkdown: MarkdownFormatter = {
           escapeLinkText: text => text,
           linkTo: (title, url) => `[${title}](${url})`,
+          list: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
+          taskList: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
@@ -76,6 +84,12 @@ describe('linkExportService', () => {
         const mockMarkdown: MarkdownFormatter = {
           escapeLinkText: escapeLinkTextMock,
           linkTo: () => '',
+          list: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
+          taskList: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
         };
 
         const mockCustomFormat: CustomFormat = {
@@ -116,12 +130,16 @@ describe('linkExportService', () => {
         const mockMarkdown: MarkdownFormatter = {
           escapeLinkText: text => text,
           linkTo: () => '',
+          list: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
+          taskList: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: vi.fn(async () => {
-            throw new Error('Should not be called');
-          }),
+          get: vi.fn().mockRejectedValue(new Error('Should not be called')),
         };
 
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
@@ -139,12 +157,16 @@ describe('linkExportService', () => {
         const mockMarkdown: MarkdownFormatter = {
           escapeLinkText: text => text,
           linkTo: () => '',
+          list: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
+          taskList: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: vi.fn(async () => {
-            throw new Error('Should not be called');
-          }),
+          get: vi.fn().mockRejectedValue(new Error('Should not be called')),
         };
 
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);
@@ -165,12 +187,16 @@ describe('linkExportService', () => {
         const mockMarkdown: MarkdownFormatter = {
           escapeLinkText: text => text,
           linkTo: () => '',
+          list: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
+          taskList: vi.fn().mockImplementation(() => {
+            throw new Error('Function not implemented.');
+          }),
         };
 
         const mockCustomFormatsProvider: CustomFormatsProvider = {
-          get: vi.fn(async () => {
-            throw new Error('Should not be called');
-          }),
+          get: vi.fn().mockRejectedValue(new Error('Should not be called')),
         };
 
         const service = createLinkExportService(mockMarkdown, mockCustomFormatsProvider);

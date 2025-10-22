@@ -22,25 +22,19 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 // Helper to create unused mock stubs
 function createUnusedLinkExportService(): LinkExportService {
   return {
-    exportLink: vi.fn(async () => {
-      throw new Error('LinkExportService should not be called in this test');
-    }),
+    exportLink: vi.fn().mockRejectedValue(new Error('LinkExportService should not be called in this test')),
   };
 }
 
 function createUnusedTabExportService(): TabExportService {
   return {
-    exportTabs: vi.fn(async () => {
-      throw new Error('TabExportService should not be called in this test');
-    }),
+    exportTabs: vi.fn().mockRejectedValue(new Error('TabExportService should not be called in this test')),
   };
 }
 
 function createUnusedSelectionConverterService(): SelectionConverterService {
   return {
-    convertSelectionToMarkdown: vi.fn(async () => {
-      throw new Error('SelectionConverterService should not be called in this test');
-    }),
+    convertSelectionToMarkdown: vi.fn().mockRejectedValue(new Error('SelectionConverterService should not be called in this test')),
   };
 }
 

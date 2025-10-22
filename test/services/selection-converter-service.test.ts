@@ -117,9 +117,7 @@ describe('selectionConverterService', () => {
 
     it('should throw error when tab has no id', async () => {
       const mockScriptingAPI: ScriptingAPI = {
-        executeScript: vi.fn(async () => {
-          throw new Error('Should not be called');
-        }),
+        executeScript: vi.fn().mockRejectedValue(new Error('Should not be called')),
       };
 
       const mockTurndownOptionsProvider: TurndownOptionsProvider = {

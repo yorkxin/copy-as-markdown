@@ -21,19 +21,13 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 // Helper to create unused mock stubs
 function createUnusedHandlerCore(): HandlerCore {
   return {
-    exportSingleLink: vi.fn(async () => {
-      throw new Error('HandlerCore.exportSingleLink should not be called in this test');
-    }),
-    exportMultipleTabs: vi.fn(async () => {
-      throw new Error('HandlerCore.exportMultipleTabs should not be called in this test');
-    }),
-    convertSelection: vi.fn(async () => {
-      throw new Error('HandlerCore.convertSelection should not be called in this test');
-    }),
-    formatImage: vi.fn(() => {
+    exportSingleLink: vi.fn().mockRejectedValue(new Error('HandlerCore.exportSingleLink should not be called in this test')),
+    exportMultipleTabs: vi.fn().mockRejectedValue(new Error('HandlerCore.exportMultipleTabs should not be called in this test')),
+    convertSelection: vi.fn().mockRejectedValue(new Error('HandlerCore.convertSelection should not be called in this test')),
+    formatImage: vi.fn().mockImplementation(() => {
       throw new Error('HandlerCore.formatImage should not be called in this test');
     }),
-    formatLinkedImage: vi.fn(() => {
+    formatLinkedImage: vi.fn().mockImplementation(() => {
       throw new Error('HandlerCore.formatLinkedImage should not be called in this test');
     }),
   };
@@ -41,9 +35,7 @@ function createUnusedHandlerCore(): HandlerCore {
 
 function createUnusedTabsAPI(): TabsAPI {
   return {
-    get: vi.fn(async () => {
-      throw new Error('TabsAPI should not be called in this test');
-    }),
+    get: vi.fn().mockRejectedValue(new Error('TabsAPI should not be called in this test')),
   };
 }
 

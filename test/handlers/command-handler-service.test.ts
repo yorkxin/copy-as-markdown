@@ -24,29 +24,17 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 // Helper to create unused mock stubs
 function createUnusedTabsAPI(): TabsAPI {
   return {
-    query: vi.fn(async () => {
-      throw new Error('TabsAPI.query should not be called in this test');
-    }),
+    query: vi.fn().mockRejectedValue(new Error('should not be called')),
   };
 }
 
 function createUnusedHandlerCore(): HandlerCore {
   return {
-    exportSingleLink: vi.fn(async () => {
-      throw new Error('HandlerCore.exportSingleLink should not be called in this test');
-    }),
-    exportMultipleTabs: vi.fn(async () => {
-      throw new Error('HandlerCore.exportMultipleTabs should not be called in this test');
-    }),
-    convertSelection: vi.fn(async () => {
-      throw new Error('HandlerCore.convertSelection should not be called in this test');
-    }),
-    showSuccessBadge: vi.fn(async () => {
-      throw new Error('HandlerCore.showSuccessBadge should not be called in this test');
-    }),
-    showErrorBadge: vi.fn(async () => {
-      throw new Error('HandlerCore.showErrorBadge should not be called in this test');
-    }),
+    exportSingleLink: vi.fn().mockRejectedValue(new Error('Should not be called')),
+    exportMultipleTabs: vi.fn().mockRejectedValue(new Error('Should not be called')),
+    convertSelection: vi.fn().mockRejectedValue(new Error('should not be called')),
+    formatImage: vi.fn().mockRejectedValue(new Error('Should not be called')),
+    formatLinkedImage: vi.fn().mockRejectedValue(new Error('Should not be called')),
   };
 }
 
@@ -58,9 +46,7 @@ describe('commandHandlerService', () => {
   describe('handleCommand - tab resolution', () => {
     it('should use provided tab when available', async () => {
       // Arrange
-      const queryMock = vi.fn(async () => {
-        throw new Error('TabsAPI.query should not be called when tab is provided');
-      });
+      const queryMock = vi.fn().mockRejectedValue(new Error('TabsAPI.query should not be called when tab is provided'));
 
       const mockTabsAPI: TabsAPI = {
         query: queryMock,

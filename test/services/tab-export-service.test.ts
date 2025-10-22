@@ -45,33 +45,25 @@ function createMockCustomFormat(renderOutput: string = 'mocked output') {
 // These throw errors if accidentally called, making test failures clear
 function createUnusedTabsAPI(): TabsAPI {
   return {
-    query: vi.fn(async () => {
-      throw new Error('TabsAPI.query should not be called in this test');
-    }),
+    query: vi.fn().mockRejectedValue(new Error('TabsAPI.query should not be called in this test')),
   };
 }
 
 function createUnusedPermissionsAPI(): PermissionsAPI {
   return {
-    contains: vi.fn(async () => {
-      throw new Error('PermissionsAPI.contains should not be called in this test');
-    }),
+    contains: vi.fn().mockRejectedValue(new Error('PermissionsAPI.contains should not be called in this test')),
   };
 }
 
 function createUnusedWindowsAPI(): WindowsAPI {
   return {
-    create: vi.fn(async () => {
-      throw new Error('WindowsAPI.create should not be called in this test');
-    }),
+    create: vi.fn().mockRejectedValue(new Error('WindowsAPI.create should not be called in this test')),
   };
 }
 
 function createUnusedCustomFormatsProvider(): CustomFormatsProvider {
   return {
-    get: vi.fn(async () => {
-      throw new Error('CustomFormatsProvider.get should not be called in this test');
-    }),
+    get: vi.fn().mockRejectedValue(new Error('CustomFormatsProvider.get should not be called in this test')),
   };
 }
 

@@ -9,17 +9,13 @@ import copy from '../../src/content-script.js';
 
 function createUnusedScriptingAPI(): ScriptingAPI {
   return {
-    executeScript: vi.fn(async () => {
-      throw new Error('ScriptingAPI.executeScript should not be called in this test');
-    }),
+    executeScript: vi.fn().mockRejectedValue(new Error('ScriptingAPI.executeScript should not be called in this test')),
   };
 }
 
 function createUnusedTabsAPI(): TabsAPI {
   return {
-    query: vi.fn(async () => {
-      throw new Error('TabsAPI.query should not be called in this test');
-    }),
+    query: vi.fn().mockRejectedValue(new Error('TabsAPI.query should not be called in this test')),
   };
 }
 
