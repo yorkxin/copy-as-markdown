@@ -2,7 +2,7 @@
  * Unit tests for context menu service
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createContextMenuService } from '../../src/services/context-menu-service.js';
 import type {
   ContextMenusAPI,
@@ -30,6 +30,10 @@ function createMockCustomFormat(
 }
 
 describe('contextMenuService', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('createAll', () => {
     it('should remove all existing menus first', async () => {
       // Arrange

@@ -1,8 +1,12 @@
-import { describe, expect } from 'vitest';
+import { afterEach, describe, expect, vi } from 'vitest';
 import { Tab, TabList } from '../src/lib/tabs';
 import CustomFormat from '../src/lib/custom-format';
 
 describe('custom-format.js', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('makeRenderInput', () => {
     it('ungrouped', () => {
       const lists: TabList[] = [

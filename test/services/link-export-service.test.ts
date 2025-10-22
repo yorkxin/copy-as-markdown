@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createLinkExportService } from '../../src/services/link-export-service.js';
 import type {
   CustomFormat,
@@ -7,6 +7,10 @@ import type {
 } from '../../src/services/shared-types.js';
 
 describe('linkExportService', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('exportLink', () => {
     describe('markdown link format', () => {
       it('should export link in markdown format', async () => {

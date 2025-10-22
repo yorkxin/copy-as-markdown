@@ -2,7 +2,7 @@
  * Unit tests for tab export service
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createTabExportService } from '../../src/services/tab-export-service.js';
 import type {
   CustomFormatsProvider,
@@ -76,6 +76,10 @@ function createUnusedCustomFormatsProvider(): CustomFormatsProvider {
 }
 
 describe('tabExportService', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('exportTabs - basic functionality', () => {
     it('should export all tabs as markdown link list', async () => {
       // Arrange

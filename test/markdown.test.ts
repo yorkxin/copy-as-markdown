@@ -1,7 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Markdown, { TabGroupIndentationStyle, UnorderedListStyle } from '../src/lib/markdown';
 
 describe('markdown', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('default properties', () => {
     const markdown = new Markdown({});
     expect(markdown.alwaysEscapeLinkBracket).toBe(false);

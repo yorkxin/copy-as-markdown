@@ -2,7 +2,7 @@
  * Unit tests for handler core service
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createHandlerCore } from '../../src/handlers/handler-core.js';
 import type { LinkExportService } from '../../src/services/link-export-service.js';
 import type { TabExportService } from '../../src/services/tab-export-service.js';
@@ -45,6 +45,10 @@ function createUnusedSelectionConverterService(): SelectionConverterService {
 }
 
 describe('handlerCoreService', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('exportSingleLink', () => {
     it('should export link in standard format', async () => {
       // Arrange

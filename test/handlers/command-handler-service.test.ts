@@ -2,7 +2,7 @@
  * Unit tests for command handler service
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createKeyboardCommandHandler } from '../../src/handlers/keyboard-command-handler.js';
 
 import type {
@@ -51,6 +51,10 @@ function createUnusedHandlerCore(): HandlerCore {
 }
 
 describe('commandHandlerService', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   describe('handleCommand - tab resolution', () => {
     it('should use provided tab when available', async () => {
       // Arrange
