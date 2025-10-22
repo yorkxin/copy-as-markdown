@@ -81,7 +81,7 @@ describe('commandHandlerService', () => {
       // Assert
       expect(queryMock).toHaveBeenCalledTimes(0);
       expect(convertMock).toHaveBeenCalledTimes(1);
-      expect(convertMock.mock.calls[0]![0]).toBe(mockTab);
+      expect(convertMock).toHaveBeenCalledWith(mockTab);
     });
 
     it('should query for current tab when not provided', async () => {
@@ -109,12 +109,12 @@ describe('commandHandlerService', () => {
 
       // Assert
       expect(queryMock).toHaveBeenCalledTimes(1);
-      expect(queryMock.mock.calls[0]![0]).toEqual({
+      expect(queryMock).toHaveBeenCalledWith({
         currentWindow: true,
         active: true,
       });
       expect(convertMock).toHaveBeenCalledTimes(1);
-      expect(convertMock.mock.calls[0]![0]).toBe(mockTab);
+      expect(convertMock).toHaveBeenCalledWith(mockTab);
     });
 
     it('should throw error if no current tab found', async () => {

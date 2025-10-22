@@ -33,8 +33,7 @@ describe('linkExportService', () => {
 
         expect(result, '[Example](https://example.com)');
         expect(linkToMock).toHaveBeenCalledTimes(1);
-        expect(linkToMock.mock.calls[0]![0]).toBe('Example');
-        expect(linkToMock.mock.calls[0]![1]).toBe('https://example.com');
+        expect(linkToMock).toHaveBeenCalledWith('Example', 'https://example.com');
       });
 
       it('should not call customFormatsProvider when format is link', async () => {
@@ -96,15 +95,13 @@ describe('linkExportService', () => {
 
         expect(result).toBe('Custom: Test \\[Link] -> https://example.com');
         expect(getMock).toHaveBeenCalledTimes(1);
-        expect(getMock.mock.calls[0]![0]).toBe('single-link');
-        expect(getMock.mock.calls[0]![1]).toBe('1');
+        expect(getMock).toHaveBeenCalledWith('single-link', '1');
 
         expect(escapeLinkTextMock).toHaveBeenCalledTimes(1);
-        expect(escapeLinkTextMock.mock.calls[0]![0]).toBe('Test [Link]');
+        expect(escapeLinkTextMock).toHaveBeenCalledWith('Test [Link]');
 
         expect(renderMock).toHaveBeenCalledTimes(1);
-        const renderCall = renderMock.mock.calls[0]!;
-        expect(renderCall[0]).toEqual({
+        expect(renderMock).toHaveBeenCalledWith({
           title: 'Test \\[Link]',
           url: 'https://example.com',
           number: 1,

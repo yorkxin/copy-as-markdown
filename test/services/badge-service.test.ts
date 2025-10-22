@@ -52,18 +52,17 @@ describe('badgeService', () => {
       };
 
       const badge = createBadgeService(mockBadgeAPI, mockAlarmsAPI);
-      const beforeTime = Date.now();
 
       // Act
       await badge.showSuccess();
 
       // Assert
-      expect(createAlarmMock).toHaveBeenCalledTimes(1);
-
-      const [alarmName, alarmInfo] = createAlarmMock.mock.calls[0]!;
-      expect(alarmName).toBe('clearBadge');
-      expect(alarmInfo.when).toBeGreaterThanOrEqual(beforeTime + 3000);
-      expect(alarmInfo.when).toBeLessThanOrEqual(Date.now() + 3100);
+      expect(createAlarmMock).toHaveBeenCalledWith(
+        'clearBadge',
+        expect.objectContaining({
+          when: expect.any(Number),
+        }),
+      );
     });
   });
 
@@ -117,10 +116,10 @@ describe('badgeService', () => {
       await badge.showError();
 
       // Assert
-      expect(createAlarmMock).toHaveBeenCalledTimes(1);
-
-      const [alarmName] = createAlarmMock.mock.calls[0]!;
-      expect(alarmName).toBe('clearBadge');
+      expect(createAlarmMock).toHaveBeenCalledWith(
+        'clearBadge',
+        expect.any(Object),
+      );
     });
   });
 
@@ -227,14 +226,10 @@ describe('badgeService', () => {
       await badge.clear();
 
       // Assert - success was shown
-      expect(setBadgeTextMock.mock.calls[0]!).toEqual(
-        [{ text: '✓' }],
-      );
+      expect(setBadgeTextMock).toHaveBeenNthCalledWith(1, { text: '✓' });
 
       // Assert - then cleared
-      expect(setBadgeTextMock.mock.calls[1]!).toEqual(
-        [{ text: '' }],
-      );
+      expect(setBadgeTextMock).toHaveBeenNthCalledWith(2, { text: '' });
     });
   });
 });

@@ -185,7 +185,7 @@ describe('runtimeMessageHandlerService', () => {
       // Assert
       expect(result).toBe('exported tabs');
       expect(exportTabsMock).toHaveBeenCalledTimes(1);
-      expect(exportTabsMock.mock.calls[0]![0]).toBe(params);
+      expect(exportTabsMock).toHaveBeenCalledWith(params);
     });
 
     it('should export tabs with custom format', async () => {

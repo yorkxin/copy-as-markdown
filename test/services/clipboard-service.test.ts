@@ -5,6 +5,7 @@ import type {
   ClipboardAPI,
   TabsAPI,
 } from '../../src/services/clipboard-service.js';
+import copy from '../../src/content-script.js';
 
 function createUnusedScriptingAPI(): ScriptingAPI {
   return {
@@ -53,11 +54,16 @@ describe('clipboardService', () => {
 
       await service.copy('test text', tab);
 
-      expect(executeScriptMock).toHaveBeenCalledTimes(1);
-      const call = executeScriptMock.mock.calls[0]!;
-      expect(call[0]!.target.tabId).toBe(123);
-      expect(call[0]!.args[0]).toBe('test text');
-      expect(call[0]!.args[1]).toBe('chrome-extension://id/dist/static/iframe-copy.html');
+      expect(executeScriptMock).toHaveBeenCalledExactlyOnceWith({
+        target: {
+          tabId: 123,
+        },
+        args: [
+          'test text',
+          'chrome-extension://id/dist/static/iframe-copy.html',
+        ],
+        func: copy,
+      });
     });
 
     it('should use clipboardAPI when provided', async () => {
@@ -75,8 +81,7 @@ describe('clipboardService', () => {
 
       await service.copy('test text');
 
-      expect(writeTextMock).toHaveBeenCalledTimes(1);
-      expect(writeTextMock.mock.calls[0]![0]).toBe('test text');
+      expect(writeTextMock).toHaveBeenCalledExactlyOnceWith('test text');
     });
 
     it('should get current tab when tab is not provided', async () => {
@@ -114,14 +119,18 @@ describe('clipboardService', () => {
 
       await service.copy('test text');
 
-      expect(queryMock).toHaveBeenCalledTimes(1);
-      expect(queryMock.mock.calls[0]![0]).toEqual({
+      expect(queryMock).toHaveBeenCalledExactlyOnceWith({
         currentWindow: true,
         active: true,
       });
 
-      expect(executeScriptMock).toHaveBeenCalledTimes(1);
-      expect(executeScriptMock.mock.calls[0]![0]!.target.tabId).toBe(456);
+      expect(executeScriptMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          target: expect.objectContaining({
+            tabId: 456,
+          }),
+        }),
+      );
     });
 
     it('should throw error when tab has no id', async () => {

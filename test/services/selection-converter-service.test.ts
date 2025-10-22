@@ -3,6 +3,7 @@ import { createSelectionConverterService } from '../../src/services/selection-co
 import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type { TurndownOptionsProvider } from '../../src/services/selection-converter-service.js';
 import type { Options as TurndownOptions } from 'turndown';
+import { selectionToMarkdown } from '../../src/content-scripts/selection-to-markdown.js';
 
 describe('selectionConverterService', () => {
   describe('convertSelectionToMarkdown', () => {
@@ -47,17 +48,23 @@ describe('selectionConverterService', () => {
       expect(executeScriptMock).toHaveBeenCalledTimes(2);
 
       // First call: load turndown library
-      const firstCall = executeScriptMock.mock.calls[0]!;
-      expect(firstCall[0]!.target.tabId).toBe(123);
-      expect(firstCall[0]!.target.allFrames).toBe(true);
-      expect(firstCall[0]!.files).toEqual(['dist/vendor/turndown.js']);
+      expect(executeScriptMock).toHaveBeenNthCalledWith(1, {
+        target: {
+          tabId: 123,
+          allFrames: true,
+        },
+        files: ['dist/vendor/turndown.js'],
+      });
 
       // Second call: execute conversion
-      const secondCall = executeScriptMock.mock.calls[1]!;
-      expect(secondCall[0]!.target.tabId).toBe(123);
-      expect(secondCall[0]!.target.allFrames).toBe(true);
-      expect(typeof secondCall[0]!.func === 'function').toBeTruthy();
-      expect(secondCall[0]!.args).toEqual([turndownOptions]);
+      expect(executeScriptMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        target: {
+          tabId: 123,
+          allFrames: true,
+        },
+        func: selectionToMarkdown,
+        args: [turndownOptions],
+      }));
     });
 
     it('should join results from multiple frames with double newlines', async () => {
@@ -177,12 +184,13 @@ describe('selectionConverterService', () => {
       expect(getTurndownOptionsMock).toHaveBeenCalledTimes(1);
 
       // Check that options were passed to the conversion function
-      const conversionCall = executeScriptMock.mock.calls[1]!;
-      expect(conversionCall[0]!.args).toEqual([{
-        headingStyle: 'setext',
-        bulletListMarker: '*',
-        customOption: 'value',
-      }]);
+      expect(executeScriptMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        args: [{
+          headingStyle: 'setext',
+          bulletListMarker: '*',
+          customOption: 'value',
+        }],
+      }));
     });
   });
 });

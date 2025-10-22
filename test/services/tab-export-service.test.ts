@@ -154,9 +154,10 @@ describe('tabExportService', () => {
       });
 
       // Assert
-      const queryCall = queryMock.mock.calls[0]!;
-      expect(queryCall[0].highlighted).toBe(true);
-      expect(queryCall[0].windowId).toBe(1);
+      expect(queryMock).toHaveBeenCalledWith({
+        highlighted: true,
+        windowId: 1,
+      });
     });
   });
 
@@ -346,8 +347,7 @@ describe('tabExportService', () => {
       });
 
       // Assert
-      const permissionCall = containsMock.mock.calls[0]!;
-      expect(permissionCall[0]).toEqual(
+      expect(containsMock).toHaveBeenCalledWith(
         { permissions: ['tabs'] },
       );
     });
@@ -396,9 +396,7 @@ describe('tabExportService', () => {
       // Assert
       expect(result).toBe('Custom: 2 links');
       expect(getMock).toHaveBeenCalledTimes(1);
-      expect(getMock.mock.calls[0]!).toEqual(
-        ['multiple-links', '1'],
-      );
+      expect(getMock).toHaveBeenCalledWith('multiple-links', '1');
     });
 
     it('should throw error if custom format is used without customFormatSlot', async () => {
