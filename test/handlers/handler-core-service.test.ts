@@ -2,8 +2,7 @@
  * Unit tests for handler core service
  */
 
-import { describe, it, mock } from 'node:test';
-import assert from 'node:assert';
+import { describe, expect, it, vi } from 'vitest';
 import { createHandlerCore } from '../../src/handlers/handler-core.js';
 import type { LinkExportService } from '../../src/services/link-export-service.js';
 import type { TabExportService } from '../../src/services/tab-export-service.js';
@@ -23,37 +22,31 @@ function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab 
 // Helper to create unused mock stubs
 function createUnusedLinkExportService(): LinkExportService {
   return {
-    exportLink: mock.fn(async () => {
-      throw new Error('LinkExportService should not be called in this test');
-    }),
+    exportLink: vi.fn().mockRejectedValue(new Error('LinkExportService should not be called in this test')),
   };
 }
 
 function createUnusedTabExportService(): TabExportService {
   return {
-    exportTabs: mock.fn(async () => {
-      throw new Error('TabExportService should not be called in this test');
-    }),
+    exportTabs: vi.fn().mockRejectedValue(new Error('TabExportService should not be called in this test')),
   };
 }
 
 function createUnusedSelectionConverterService(): SelectionConverterService {
   return {
-    convertSelectionToMarkdown: mock.fn(async () => {
-      throw new Error('SelectionConverterService should not be called in this test');
-    }),
+    convertSelectionToMarkdown: vi.fn().mockRejectedValue(new Error('SelectionConverterService should not be called in this test')),
   };
 }
 
-describe('HandlerCoreService', () => {
+describe('handlerCoreService', () => {
   describe('exportSingleLink', () => {
     it('should export link in standard format', async () => {
       // Arrange
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.title, 'Example');
-        assert.strictEqual(options.url, 'https://example.com');
-        assert.strictEqual(options.customFormatSlot, undefined);
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('link');
+        expect(options.title).toBe('Example');
+        expect(options.url).toBe('https://example.com');
+        expect(options.customFormatSlot).toBe(undefined);
         return '[Example](https://example.com)';
       });
 
@@ -75,17 +68,17 @@ describe('HandlerCoreService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, '[Example](https://example.com)');
-      assert.strictEqual(exportLinkMock.mock.calls.length, 1);
+      expect(result).toBe('[Example](https://example.com)');
+      expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });
 
     it('should export link in custom format', async () => {
       // Arrange
-      const exportLinkMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '2');
-        assert.strictEqual(options.title, 'Example');
-        assert.strictEqual(options.url, 'https://example.com');
+      const exportLinkMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('2');
+        expect(options.title).toBe('Example');
+        expect(options.url).toBe('https://example.com');
         return 'custom formatted link';
       });
 
@@ -108,19 +101,19 @@ describe('HandlerCoreService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'custom formatted link');
-      assert.strictEqual(exportLinkMock.mock.calls.length, 1);
+      expect(result).toBe('custom formatted link');
+      expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('exportMultipleTabs', () => {
     it('should export all tabs as link list', async () => {
       // Arrange
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'all');
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.listType, 'list');
-        assert.strictEqual(options.windowId, 100);
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('all');
+        expect(options.format).toBe('link');
+        expect(options.listType).toBe('list');
+        expect(options.windowId).toBe(100);
         return 'all tabs as list';
       });
 
@@ -143,16 +136,16 @@ describe('HandlerCoreService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'all tabs as list');
-      assert.strictEqual(exportTabsMock.mock.calls.length, 1);
+      expect(result).toBe('all tabs as list');
+      expect(exportTabsMock).toHaveBeenCalledTimes(1);
     });
 
     it('should export highlighted tabs as task list', async () => {
       // Arrange
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.format, 'link');
-        assert.strictEqual(options.listType, 'task-list');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.format).toBe('link');
+        expect(options.listType).toBe('task-list');
         return 'highlighted tabs as task list';
       });
 
@@ -175,13 +168,13 @@ describe('HandlerCoreService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'highlighted tabs as task list');
+      expect(result).toBe('highlighted tabs as task list');
     });
 
     it('should export tabs as title list', async () => {
       // Arrange
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'title');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('title');
         return 'titles list';
       });
 
@@ -204,13 +197,13 @@ describe('HandlerCoreService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'titles list');
+      expect(result).toBe('titles list');
     });
 
     it('should export tabs as url list', async () => {
       // Arrange
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.format, 'url');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.format).toBe('url');
         return 'urls list';
       });
 
@@ -233,15 +226,15 @@ describe('HandlerCoreService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'urls list');
+      expect(result).toBe('urls list');
     });
 
     it('should export tabs with custom format', async () => {
       // Arrange
-      const exportTabsMock = mock.fn(async (options: any) => {
-        assert.strictEqual(options.scope, 'highlighted');
-        assert.strictEqual(options.format, 'custom-format');
-        assert.strictEqual(options.customFormatSlot, '3');
+      const exportTabsMock = vi.fn(async (options: any) => {
+        expect(options.scope).toBe('highlighted');
+        expect(options.format).toBe('custom-format');
+        expect(options.customFormatSlot).toBe('3');
         return 'custom formatted tabs';
       });
 
@@ -264,7 +257,7 @@ describe('HandlerCoreService', () => {
       });
 
       // Assert
-      assert.strictEqual(result, 'custom formatted tabs');
+      expect(result).toBe('custom formatted tabs');
     });
   });
 
@@ -272,8 +265,8 @@ describe('HandlerCoreService', () => {
     it('should convert selection to markdown', async () => {
       // Arrange
       const mockTab = createMockTab();
-      const convertMock = mock.fn(async (tab: browser.tabs.Tab) => {
-        assert.strictEqual(tab, mockTab);
+      const convertMock = vi.fn(async (tab: browser.tabs.Tab) => {
+        expect(tab).toBe(mockTab);
         return 'converted markdown';
       });
 
@@ -291,8 +284,8 @@ describe('HandlerCoreService', () => {
       const result = await service.convertSelection(mockTab);
 
       // Assert
-      assert.strictEqual(result, 'converted markdown');
-      assert.strictEqual(convertMock.mock.calls.length, 1);
+      expect(result).toBe('converted markdown');
+      expect(convertMock).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -309,7 +302,7 @@ describe('HandlerCoreService', () => {
       const result = service.formatImage('Alt text', 'https://example.com/image.png');
 
       // Assert
-      assert.strictEqual(result, '![Alt text](https://example.com/image.png)');
+      expect(result).toBe('![Alt text](https://example.com/image.png)');
     });
 
     it('should handle empty alt text', () => {
@@ -324,7 +317,7 @@ describe('HandlerCoreService', () => {
       const result = service.formatImage('', 'https://example.com/image.png');
 
       // Assert
-      assert.strictEqual(result, '![](https://example.com/image.png)');
+      expect(result).toBe('![](https://example.com/image.png)');
     });
   });
 
@@ -341,7 +334,7 @@ describe('HandlerCoreService', () => {
       const result = service.formatLinkedImage('Alt text', 'https://example.com/image.png', 'https://example.com');
 
       // Assert
-      assert.strictEqual(result, '[![Alt text](https://example.com/image.png)](https://example.com)');
+      expect(result).toBe('[![Alt text](https://example.com/image.png)](https://example.com)');
     });
 
     it('should handle empty alt text', () => {
@@ -356,7 +349,7 @@ describe('HandlerCoreService', () => {
       const result = service.formatLinkedImage('', 'https://example.com/image.png', 'https://example.com');
 
       // Assert
-      assert.strictEqual(result, '[![](https://example.com/image.png)](https://example.com)');
+      expect(result).toBe('[![](https://example.com/image.png)](https://example.com)');
     });
   });
 });
