@@ -93,7 +93,7 @@ describe('contextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo, mockTab);
 
       // Assert
-      expect(result, '[Example](https://example.com)');
+      expect(result).toBe('[Example](https://example.com)');
       expect(exportSingleLinkMock).toHaveBeenCalledTimes(1);
     });
 
@@ -143,7 +143,7 @@ describe('contextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      expect(result, '[Click here](https://example.com)');
+      expect(result).toBe('[Click here](https://example.com)');
       expect(exportSingleLinkMock).toHaveBeenCalledTimes(1);
     });
 
@@ -178,7 +178,7 @@ describe('contextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      expect(result, '[![](https://example.com/image.png)](https://example.com)');
+      expect(result).toBe('[![](https://example.com/image.png)](https://example.com)');
       expect(formatLinkedImageMock).toHaveBeenCalledTimes(1);
     });
 
@@ -245,7 +245,7 @@ describe('contextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      expect(result, '![](https://example.com/image.png)');
+      expect(result).toBe('![](https://example.com/image.png)');
       expect(formatImageMock).toHaveBeenCalledTimes(1);
     });
   });
@@ -488,7 +488,7 @@ describe('contextMenuHandlerService', () => {
       const result = await service.handleMenuClick(menuInfo);
 
       // Assert
-      expect(result, '[Example Bookmark](https://example.com)');
+      expect(result).toBe('[Example Bookmark](https://example.com)');
       expect(getSubTreeMock).toHaveBeenCalledTimes(1);
       expect(toMarkdownMock).toHaveBeenCalledTimes(1);
     });

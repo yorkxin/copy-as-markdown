@@ -39,7 +39,7 @@ describe('linkExportService', () => {
           url: 'https://example.com',
         });
 
-        expect(result, '[Example](https://example.com)');
+        expect(result).toBe('[Example](https://example.com)');
         expect(linkToMock).toHaveBeenCalledTimes(1);
         expect(linkToMock).toHaveBeenCalledWith('Example', 'https://example.com');
       });

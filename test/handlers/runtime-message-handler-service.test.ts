@@ -83,7 +83,7 @@ describe('runtimeMessageHandlerService', () => {
       });
 
       // Assert
-      expect(result, '[Example](https://example.com)');
+      expect(result).toBe('[Example](https://example.com)');
       expect(getMock).toHaveBeenCalledTimes(1);
       expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });

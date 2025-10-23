@@ -72,7 +72,7 @@ describe('handlerCoreService', () => {
       });
 
       // Assert
-      expect(result, '[Example](https://example.com)');
+      expect(result).toBe('[Example](https://example.com)');
       expect(exportLinkMock).toHaveBeenCalledTimes(1);
     });
 
@@ -306,7 +306,7 @@ describe('handlerCoreService', () => {
       const result = service.formatImage('Alt text', 'https://example.com/image.png');
 
       // Assert
-      expect(result, '![Alt text](https://example.com/image.png)');
+      expect(result).toBe('![Alt text](https://example.com/image.png)');
     });
 
     it('should handle empty alt text', () => {
@@ -321,7 +321,7 @@ describe('handlerCoreService', () => {
       const result = service.formatImage('', 'https://example.com/image.png');
 
       // Assert
-      expect(result, '![](https://example.com/image.png)');
+      expect(result).toBe('![](https://example.com/image.png)');
     });
   });
 
@@ -338,7 +338,7 @@ describe('handlerCoreService', () => {
       const result = service.formatLinkedImage('Alt text', 'https://example.com/image.png', 'https://example.com');
 
       // Assert
-      expect(result, '[![Alt text](https://example.com/image.png)](https://example.com)');
+      expect(result).toBe('[![Alt text](https://example.com/image.png)](https://example.com)');
     });
 
     it('should handle empty alt text', () => {
@@ -353,7 +353,7 @@ describe('handlerCoreService', () => {
       const result = service.formatLinkedImage('', 'https://example.com/image.png', 'https://example.com');
 
       // Assert
-      expect(result, '[![](https://example.com/image.png)](https://example.com)');
+      expect(result).toBe('[![](https://example.com/image.png)](https://example.com)');
     });
   });
 });
