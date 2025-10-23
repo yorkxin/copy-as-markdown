@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createSelectionConverterService } from '../../src/services/selection-converter-service.js';
 import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type { TurndownOptionsProvider } from '../../src/services/selection-converter-service.js';
@@ -6,10 +6,6 @@ import type { Options as TurndownOptions } from 'turndown';
 import { selectionToMarkdown } from '../../src/content-scripts/selection-to-markdown.js';
 
 describe('selectionConverterService', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('convertSelectionToMarkdown', () => {
     it('should load turndown library and execute conversion', async () => {
       const executeScriptMock = vi.fn(async () => [

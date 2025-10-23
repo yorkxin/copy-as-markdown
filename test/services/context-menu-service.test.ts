@@ -2,7 +2,7 @@
  * Unit tests for context menu service
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createContextMenuService } from '../../src/services/context-menu-service.js';
 import type {
   ContextMenusAPI,
@@ -30,16 +30,12 @@ function createMockCustomFormat(
 }
 
 describe('contextMenuService', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('createAll', () => {
     it('should remove all existing menus first', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -62,9 +58,9 @@ describe('contextMenuService', () => {
 
     it('should create basic menus (current-tab and link)', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -101,9 +97,9 @@ describe('contextMenuService', () => {
 
     it('should create image and selection menus', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -138,9 +134,9 @@ describe('contextMenuService', () => {
 
     it('should create custom format menus for single links', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -182,9 +178,9 @@ describe('contextMenuService', () => {
 
     it('should not create menus for custom formats with showInMenus=false', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -218,9 +214,9 @@ describe('contextMenuService', () => {
 
     it('should attempt to create Firefox-specific menus', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -248,9 +244,9 @@ describe('contextMenuService', () => {
 
     it('should create all tabs menus when Firefox features are supported', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -291,9 +287,9 @@ describe('contextMenuService', () => {
   describe('refresh', () => {
     it('should be an alias for createAll', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,
@@ -319,9 +315,9 @@ describe('contextMenuService', () => {
   describe('integration: with custom formats', () => {
     it('should create menus for both single and multiple link formats', async () => {
       // Arrange
-      const createMock = vi.fn(() => {});
-      const updateMock = vi.fn(async () => {});
-      const removeAllMock = vi.fn(async () => {});
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
 
       const mockMenusAPI: ContextMenusAPI = {
         create: createMock,

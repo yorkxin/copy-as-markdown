@@ -2,7 +2,7 @@
  * Unit tests for runtime message handler service
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createRuntimeMessageHandler } from '../../src/handlers/runtime-message-handler.js';
 import type { TabsAPI } from '../../src/handlers/runtime-message-handler.js';
 import type { HandlerCore } from '../../src/handlers/handler-core.js';
@@ -40,10 +40,6 @@ function createUnusedTabsAPI(): TabsAPI {
 }
 
 describe('runtimeMessageHandlerService', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('handleMessage - export-current-tab topic', () => {
     it('should export current tab with link format', async () => {
       // Arrange

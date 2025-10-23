@@ -1,12 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import Markdown from '../src/lib/markdown';
 import { Bookmarks } from '../src/bookmarks';
 
 describe('bookmarks.js', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('toMarkdown', () => {
     const md = new Markdown();
     const bm = new Bookmarks({

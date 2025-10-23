@@ -2,15 +2,11 @@
  * Unit tests for badge service
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createBadgeService } from '../../src/services/badge-service.js';
 import type { AlarmsAPI, BadgeAPI } from '../../src/services/badge-service.js';
 
 describe('badgeService', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('showSuccess', () => {
     it('should set success badge with green color and checkmark', async () => {
       // Arrange

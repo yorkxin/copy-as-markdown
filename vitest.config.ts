@@ -10,5 +10,8 @@ export default defineConfig({
       reporter: ['text', 'html', 'lcov'],
       include: ['src/**/*.ts'],
     },
+    mockReset: true, // Auto-reset mocks between tests
+    restoreMocks: true, // Auto-restore mocks
+    clearMocks: true, // Auto-clear mock history
   },
 });

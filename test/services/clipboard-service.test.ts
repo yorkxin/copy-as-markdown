@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createClipboardService } from '../../src/services/clipboard-service.js';
 import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type {
@@ -20,10 +20,6 @@ function createUnusedTabsAPI(): TabsAPI {
 }
 
 describe('clipboardService', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('copy', () => {
     it('should use content script when clipboardAPI is null', async () => {
       const executeScriptMock = vi.fn(async () => [

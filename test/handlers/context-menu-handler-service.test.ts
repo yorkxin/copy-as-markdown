@@ -2,7 +2,7 @@
  * Unit tests for context menu handler service
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createContextMenuHandler } from '../../src/handlers/context-menu-handler.js';
 import type { HandlerCore } from '../../src/handlers/handler-core.js';
 import type {
@@ -61,10 +61,6 @@ function createUnusedBookmarksFormatter(): BookmarksFormatter {
 }
 
 describe('contextMenuHandlerService', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   describe('handleMenuClick - current-tab', () => {
     it('should export current tab as markdown link', async () => {
       // Arrange
