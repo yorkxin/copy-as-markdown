@@ -10,6 +10,7 @@ firefox-deved/dist/*
 !firefox-deved/dist/.keep
 chrome/dist/*
 !chrome/dist/.keep
+chrome-test/
 .nyc_output
 tmp/*
 
@@ -186,3 +187,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+test-results
+playwright-report
