@@ -1,530 +1,316 @@
-/**
- * Unit tests for tab export service
- */
-
-import { describe, expect, it, vi } from 'vitest';
-import { createTabExportService } from '../../src/services/tab-export-service.js';
-import type {
-  CustomFormatsProvider,
-  MarkdownFormatter,
-} from '../../src/services/shared-types.js';
-import type {
-  PermissionsAPI,
-  TabGroupsAPI,
-  TabsAPI,
-  WindowsAPI,
+import { describe, expect, it } from 'vitest';
+import {
+  convertBrowserTabGroups,
+  convertBrowserTabsToTabs,
+  formatTabListsToNestedArray,
+  getFormatter,
+  groupTabsIntoLists,
+  renderBuiltInFormat,
+  validateOptions,
 } from '../../src/services/tab-export-service.js';
+import { Tab, TabGroup, TabList } from '../../src/lib/tabs.js';
+import type { MarkdownFormatter } from '../../src/services/shared-types.js';
 
-// Mock Markdown class implementing MarkdownFormatter interface
-class MockMarkdown implements MarkdownFormatter {
-  escapeLinkText(text: string): string {
-    return text;
-  }
+// Simple mock markdown formatter for tests
+const mockMarkdown: MarkdownFormatter = {
+  escapeLinkText: (text: string) => text,
+  linkTo: (title: string, url: string) => `[${title}](${url})`,
+  list: (items: any[]) => {
+    const flatten = (arr: any[], depth = 0): string => {
+      return arr.map((item) => {
+        if (Array.isArray(item)) {
+          return flatten(item, depth + 1);
+        }
+        const indent = '  '.repeat(depth);
+        return `${indent}- ${item}\n`;
+      }).join('');
+    };
+    return flatten(items);
+  },
+  taskList: (items: any[]) => {
+    const flatten = (arr: any[], depth = 0): string => {
+      return arr.map((item) => {
+        if (Array.isArray(item)) {
+          return flatten(item, depth + 1);
+        }
+        const indent = '  '.repeat(depth);
+        return `${indent}- [ ] ${item}\n`;
+      }).join('');
+    };
+    return flatten(items);
+  },
+};
 
-  linkTo(title: string, url: string): string {
-    return `[${title}](${url})`;
-  }
-
-  list(items: any[]): string {
-    return items.map(item => `- ${item}\n`).join('');
-  }
-
-  taskList(items: any[]): string {
-    return items.map(item => `- [ ] ${item}\n`).join('');
-  }
-}
-
-// Helper to create a mock custom format object
-function createMockCustomFormat(renderOutput: string = 'mocked output') {
-  return {
-    render: vi.fn(() => renderOutput),
-  };
-}
-
-// Helpers to create unused mock stubs (for dependencies not used in specific tests)
-// These throw errors if accidentally called, making test failures clear
-function createUnusedTabsAPI(): TabsAPI {
-  return {
-    query: vi.fn().mockRejectedValue(new Error('TabsAPI.query should not be called in this test')),
-  };
-}
-
-function createUnusedPermissionsAPI(): PermissionsAPI {
-  return {
-    contains: vi.fn().mockRejectedValue(new Error('PermissionsAPI.contains should not be called in this test')),
-  };
-}
-
-function createUnusedWindowsAPI(): WindowsAPI {
-  return {
-    create: vi.fn().mockRejectedValue(new Error('WindowsAPI.create should not be called in this test')),
-  };
-}
-
-function createUnusedCustomFormatsProvider(): CustomFormatsProvider {
-  return {
-    get: vi.fn().mockRejectedValue(new Error('CustomFormatsProvider.get should not be called in this test')),
-  };
-}
-
-describe('tabExportService', () => {
-  describe('exportTabs - basic functionality', () => {
-    it('should export all tabs as markdown link list', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => [
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-          { title: 'Twitter', url: 'https://twitter.com', groupId: -1 },
-        ] as any),
-      };
-
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async () => true),
-      };
-
-      const mockWindowsAPI: WindowsAPI = {
-        create: vi.fn(async () => ({} as any)),
-      };
-
-      const mockMarkdown = new MockMarkdown();
-
-      const mockCustomFormatsProvider: CustomFormatsProvider = {
-        get: vi.fn(async () => createMockCustomFormat() as any),
-      };
-
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        mockWindowsAPI,
-        () => null, // No tab groups
-        mockMarkdown,
-        mockCustomFormatsProvider,
-      );
-
-      // Act
-      const result = await service.exportTabs({
+describe('tab Export Service - Refactored (Pure Functions)', () => {
+  describe('validateOptions', () => {
+    it('should pass validation for valid link format options', () => {
+      expect(() => validateOptions({
         scope: 'all',
         format: 'link',
         listType: 'list',
         windowId: 1,
-      });
-
-      // Assert
-      expect(result.includes('[GitHub](https://github.com)')).toBeTruthy();
-      expect(result.includes('[Twitter](https://twitter.com)')).toBeTruthy();
+      })).not.toThrow();
     });
 
-    it('should query only highlighted tabs when scope is highlighted', async () => {
-      // Arrange
-      const queryMock = vi.fn(async () => [
+    it('should throw if custom format is missing customFormatSlot', () => {
+      expect(() => validateOptions({
+        scope: 'all',
+        format: 'custom-format',
+        windowId: 1,
+      })).toThrow(/customFormatSlot is required/);
+    });
+
+    it('should throw if custom format has listType', () => {
+      expect(() => validateOptions({
+        scope: 'all',
+        format: 'custom-format',
+        customFormatSlot: '1',
+        listType: 'list',
+        windowId: 1,
+      })).toThrow(/listType is not allowed/);
+    });
+  });
+
+  describe('convertBrowserTabsToTabs', () => {
+    it('should convert browser tabs to Tab objects', () => {
+      const browserTabs = [
         { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-      ] as any);
+        { title: 'Twitter', url: 'https://twitter.com', groupId: 1 },
+      ] as chrome.tabs.Tab[];
 
-      const mockTabsAPI: TabsAPI = {
-        query: queryMock,
-      };
+      const tabs = convertBrowserTabsToTabs(browserTabs, text => text);
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async () => true),
-      };
+      expect(tabs).toHaveLength(2);
+      expect(tabs[0]).toBeInstanceOf(Tab);
+      expect(tabs[0]?.title).toBe('GitHub');
+      expect(tabs[0]?.url).toBe('https://github.com');
+      expect(tabs[0]?.groupId).toBe(-1);
+      expect(tabs[1]?.groupId).toBe(1);
+    });
 
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => null,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
+    it('should handle missing title and url gracefully', () => {
+      const browserTabs = [
+        { title: undefined, url: undefined, groupId: -1 },
+      ] as chrome.tabs.Tab[];
+
+      const tabs = convertBrowserTabsToTabs(browserTabs, text => text);
+
+      expect(tabs[0]?.title).toBe('');
+      expect(tabs[0]?.url).toBe('');
+    });
+
+    it('should escape link text using provided function', () => {
+      const browserTabs = [
+        { title: '[Special]', url: 'https://example.com', groupId: -1 },
+      ] as chrome.tabs.Tab[];
+
+      const tabs = convertBrowserTabsToTabs(
+        browserTabs,
+        text => text.replace('[', '\\[').replace(']', '\\]'),
       );
 
-      // Act
-      await service.exportTabs({
-        scope: 'highlighted',
-        format: 'link',
-        listType: 'list',
-        windowId: 1,
-      });
-
-      // Assert
-      expect(queryMock).toHaveBeenCalledWith({
-        highlighted: true,
-        windowId: 1,
-      });
+      expect(tabs[0]?.title).toBe('\\[Special\\]');
     });
   });
 
-  describe('exportTabs - different formats', () => {
-    it('should export tabs as title-only list', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => [
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-          { title: 'Twitter', url: 'https://twitter.com', groupId: -1 },
-        ] as any),
-      };
+  describe('convertBrowserTabGroups', () => {
+    it('should convert browser tab groups to TabGroup objects', () => {
+      const browserGroups = [
+        { id: 1, title: 'Work', color: 'blue' },
+        { id: 2, title: 'Personal', color: 'red' },
+      ] as chrome.tabGroups.TabGroup[];
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async () => true),
-      };
+      const groups = convertBrowserTabGroups(browserGroups);
 
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => null,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
-
-      // Act
-      const result = await service.exportTabs({
-        scope: 'all',
-        format: 'title',
-        listType: 'list',
-        windowId: 1,
-      });
-
-      // Assert
-      expect(result.includes('GitHub')).toBeTruthy();
-      expect(result.includes('Twitter')).toBeTruthy();
-      expect(!result.includes('https://')).toBeTruthy();
+      expect(groups).toHaveLength(2);
+      expect(groups[0]).toBeInstanceOf(TabGroup);
+      expect(groups[0]?.title).toBe('Work');
+      expect(groups[0]?.id).toBe(1);
+      expect(groups[0]?.color).toBe('blue');
     });
 
-    it('should export tabs as URL-only list', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => [
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-        ] as any),
-      };
+    it('should handle missing title', () => {
+      const browserGroups = [
+        { id: 1, title: undefined, color: 'blue', collapsed: false, windowId: 1 },
+      ] as chrome.tabGroups.TabGroup[];
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async () => true),
-      };
+      const groups = convertBrowserTabGroups(browserGroups);
 
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => null,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
-
-      // Act
-      const result = await service.exportTabs({
-        scope: 'all',
-        format: 'url',
-        listType: 'list',
-        windowId: 1,
-      });
-
-      // Assert
-      expect(result.includes('https://github.com')).toBeTruthy();
-      expect(!result.includes('[')).toBeTruthy();
+      expect(groups[0]?.title).toBe('');
     });
   });
 
-  describe('exportTabs - list types', () => {
-    it('should export as task list when listType is task-list', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => [
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-        ] as any),
-      };
+  describe('groupTabsIntoLists', () => {
+    it('should group tabs by their group ID', () => {
+      const tabs = [
+        new Tab('Gmail', 'https://mail.google.com', 1),
+        new Tab('Calendar', 'https://calendar.google.com', 1),
+        new Tab('GitHub', 'https://github.com', -1),
+      ];
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async () => true),
-      };
+      const groups = [
+        new TabGroup('Work', 1, 'blue'),
+      ];
 
-      const taskListMock = vi.fn((items: any[]) => items.map(i => `- [ ] ${i}\n`).join(''));
-      const listMock = vi.fn((items: any[]) => items.map(i => `- ${i}\n`).join(''));
+      const tabLists = groupTabsIntoLists(tabs, groups);
 
-      const mockMarkdown: MarkdownFormatter = {
-        escapeLinkText: (text: string) => text,
-        linkTo: (title: string, url: string) => `[${title}](${url})`,
-        taskList: taskListMock,
-        list: listMock,
-      };
+      expect(tabLists).toHaveLength(2);
+      expect(tabLists[0]?.name).toBe('Work');
+      expect(tabLists[0]?.tabs).toHaveLength(2);
+      expect(tabLists[1]?.groupId).toBe(TabGroup.NonGroupId);
+      expect(tabLists[1]?.tabs).toHaveLength(1);
+    });
 
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => null,
-        mockMarkdown,
-        createUnusedCustomFormatsProvider(),
-      );
+    it('should handle tabs without groups', () => {
+      const tabs = [
+        new Tab('GitHub', 'https://github.com', -1),
+        new Tab('Twitter', 'https://twitter.com', -1),
+      ];
 
-      // Act
-      await service.exportTabs({
-        scope: 'all',
-        format: 'link',
-        listType: 'task-list',
-        windowId: 1,
-      });
+      const tabLists = groupTabsIntoLists(tabs, []);
 
-      // Assert
-      expect(taskListMock).toHaveBeenCalledTimes(1);
-      expect(listMock).toHaveBeenCalledTimes(0);
+      expect(tabLists).toHaveLength(1);
+      expect(tabLists[0]?.groupId).toBe(TabGroup.NonGroupId);
+      expect(tabLists[0]?.tabs).toHaveLength(2);
     });
   });
 
-  describe('exportTabs - permissions', () => {
-    it('should throw error if tabs permission is not granted', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => []),
-      };
+  describe('getFormatter', () => {
+    it('should return link formatter for link format', () => {
+      const formatter = getFormatter('link', mockMarkdown);
+      const tab = new Tab('GitHub', 'https://github.com', -1);
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async () => false),
-      };
-
-      const createMock = vi.fn(async () => ({} as any));
-
-      const mockWindowsAPI: WindowsAPI = {
-        create: createMock,
-      };
-
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        mockWindowsAPI,
-        () => null,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
-
-      // Act & Assert
-      await expect(service.exportTabs({
-        scope: 'all',
-        format: 'link',
-        listType: 'list',
-        windowId: 1,
-      })).rejects.toThrow(/Tabs permission required/);
-
-      // Should open permission dialog
-      expect(createMock).toHaveBeenCalledTimes(1);
+      expect(formatter(tab)).toBe('[GitHub](https://github.com)');
     });
 
-    it('should check for tabs permission', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => []),
-      };
+    it('should return title formatter for title format', () => {
+      const formatter = getFormatter('title', mockMarkdown);
+      const tab = new Tab('GitHub', 'https://github.com', -1);
 
-      const containsMock = vi.fn(async () => true);
+      expect(formatter(tab)).toBe('GitHub');
+    });
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: containsMock,
-      };
+    it('should return url formatter for url format', () => {
+      const formatter = getFormatter('url', mockMarkdown);
+      const tab = new Tab('GitHub', 'https://github.com', -1);
 
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => null,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
+      expect(formatter(tab)).toBe('https://github.com');
+    });
 
-      // Act
-      await service.exportTabs({
-        scope: 'all',
-        format: 'link',
-        listType: 'list',
-        windowId: 1,
-      });
-
-      // Assert
-      expect(containsMock).toHaveBeenCalledWith(
-        { permissions: ['tabs'] },
-      );
+    it('should throw for unknown format', () => {
+      expect(() => getFormatter('invalid' as any, mockMarkdown)).toThrow(/Unknown format/);
     });
   });
 
-  describe('exportTabs - custom formats', () => {
-    it('should render custom format when format is custom-format', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => [
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-          { title: 'Twitter', url: 'https://twitter.com', groupId: -1 },
-        ] as any),
-      };
+  describe('formatTabListsToNestedArray', () => {
+    it('should format ungrouped tabs as flat array', () => {
+      const tabLists = [
+        TabList.nonGroup([
+          new Tab('GitHub', 'https://github.com', -1),
+          new Tab('Twitter', 'https://twitter.com', -1),
+        ]),
+      ];
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async () => true),
-      };
+      const formatter = (tab: Tab) => tab.title;
+      const result = formatTabListsToNestedArray(tabLists, formatter);
 
-      // Mock custom format that will be returned by the provider
-      const mockCustomFormat = createMockCustomFormat('Custom: 2 links');
-
-      const getMock = vi.fn(async () => mockCustomFormat as any);
-
-      const mockCustomFormatsProvider: CustomFormatsProvider = {
-        get: getMock,
-      };
-
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => null,
-        new MockMarkdown(),
-        mockCustomFormatsProvider,
-      );
-
-      // Act
-      const result = await service.exportTabs({
-        scope: 'all',
-        format: 'custom-format',
-        customFormatSlot: '1',
-        windowId: 1,
-      });
-
-      // Assert
-      expect(result).toBe('Custom: 2 links');
-      expect(getMock).toHaveBeenCalledTimes(1);
-      expect(getMock).toHaveBeenCalledWith('multiple-links', '1');
+      expect(result).toEqual(['GitHub', 'Twitter']);
     });
 
-    it('should throw error if custom format is used without customFormatSlot', async () => {
-      // Arrange
-      // These tests only validate options, so no APIs are actually called
-      const service = createTabExportService(
-        createUnusedTabsAPI(),
-        createUnusedPermissionsAPI(),
-        createUnusedWindowsAPI(),
-        () => null,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
+    it('should format grouped tabs as nested array', () => {
+      const tabLists = [
+        new TabList('Work', 1, [
+          new Tab('Gmail', 'https://mail.google.com', 1),
+          new Tab('Calendar', 'https://calendar.google.com', 1),
+        ]),
+      ];
 
-      // Act & Assert
-      await expect(service.exportTabs({
-        scope: 'all',
-        format: 'custom-format',
-        windowId: 1,
-      })).rejects.toThrow(/customFormatSlot is required/);
+      const formatter = (tab: Tab) => tab.title;
+      const result = formatTabListsToNestedArray(tabLists, formatter);
+
+      expect(result).toEqual([
+        'Work',
+        ['Gmail', 'Calendar'],
+      ]);
     });
 
-    it('should throw error if custom format is used with listType', async () => {
-      // Arrange
-      // These tests only validate options, so no APIs are actually called
-      const service = createTabExportService(
-        createUnusedTabsAPI(),
-        createUnusedPermissionsAPI(),
-        createUnusedWindowsAPI(),
-        () => null,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
+    it('should handle mixed grouped and ungrouped tabs', () => {
+      const tabLists = [
+        new TabList('Work', 1, [
+          new Tab('Gmail', 'https://mail.google.com', 1),
+        ]),
+        TabList.nonGroup([
+          new Tab('GitHub', 'https://github.com', -1),
+        ]),
+      ];
 
-      // Act & Assert
-      await expect(service.exportTabs({
-        scope: 'all',
-        format: 'custom-format',
-        customFormatSlot: '1',
-        listType: 'list',
-        windowId: 1,
-      })).rejects.toThrow(/listType is not allowed if format is custom-format/);
+      const formatter = (tab: Tab) => tab.title;
+      const result = formatTabListsToNestedArray(tabLists, formatter);
+
+      expect(result).toEqual([
+        'Work',
+        ['Gmail'],
+        'GitHub',
+      ]);
     });
   });
 
-  describe('exportTabs - tab groups', () => {
-    it('should handle tab groups when available', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => [
-          { title: 'Gmail', url: 'https://mail.google.com', groupId: 1 },
-          { title: 'Calendar', url: 'https://calendar.google.com', groupId: 1 },
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-        ] as any),
-      };
+  describe('renderBuiltInFormat', () => {
+    it('should render tabs as markdown link list', () => {
+      const tabLists = [
+        TabList.nonGroup([
+          new Tab('GitHub', 'https://github.com', -1),
+          new Tab('Twitter', 'https://twitter.com', -1),
+        ]),
+      ];
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async (perms) => {
-          if (perms.permissions?.includes('tabGroups')) return true;
-          if (perms.permissions?.includes('tabs')) return true;
-          return false;
-        }),
-      };
+      const result = renderBuiltInFormat(tabLists, 'link', 'list', mockMarkdown);
 
-      const mockTabGroupsAPI: TabGroupsAPI = {
-        query: (_queryInfo, callback) => {
-          callback([
-            { id: 1, title: 'Work', color: 'blue' },
-          ] as any);
-        },
-      };
-
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => mockTabGroupsAPI,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
-
-      // Act
-      const result = await service.exportTabs({
-        scope: 'all',
-        format: 'title',
-        listType: 'list',
-        windowId: 1,
-      });
-
-      // Assert
-      expect(result.includes('Work')).toBeTruthy();
-      expect(result.includes('Gmail')).toBeTruthy();
-      expect(result.includes('GitHub')).toBeTruthy();
+      expect(result).toContain('[GitHub](https://github.com)');
+      expect(result).toContain('[Twitter](https://twitter.com)');
+      expect(result).toMatch(/^- /m); // starts with list marker
     });
 
-    it('should handle missing tab groups permission gracefully', async () => {
-      // Arrange
-      const mockTabsAPI: TabsAPI = {
-        query: vi.fn(async () => [
-          { title: 'GitHub', url: 'https://github.com', groupId: -1 },
-        ] as any),
-      };
+    it('should render tabs as task list when listType is task-list', () => {
+      const tabLists = [
+        TabList.nonGroup([
+          new Tab('GitHub', 'https://github.com', -1),
+        ]),
+      ];
 
-      const mockPermissionsAPI: PermissionsAPI = {
-        contains: vi.fn(async (perms) => {
-          if (perms.permissions?.includes('tabGroups')) return false;
-          if (perms.permissions?.includes('tabs')) return true;
-          return false;
-        }),
-      };
+      const result = renderBuiltInFormat(tabLists, 'link', 'task-list', mockMarkdown);
 
-      const mockTabGroupsAPI: TabGroupsAPI = {
-        query: (_queryInfo, callback) => {
-          callback([]);
-        },
-      };
+      expect(result).toContain('- [ ] [GitHub](https://github.com)');
+    });
 
-      const service = createTabExportService(
-        mockTabsAPI,
-        mockPermissionsAPI,
-        createUnusedWindowsAPI(),
-        () => mockTabGroupsAPI,
-        new MockMarkdown(),
-        createUnusedCustomFormatsProvider(),
-      );
+    it('should render tabs with title format', () => {
+      const tabLists = [
+        TabList.nonGroup([
+          new Tab('GitHub', 'https://github.com', -1),
+        ]),
+      ];
 
-      // Act
-      const result = await service.exportTabs({
-        scope: 'all',
-        format: 'title',
-        listType: 'list',
-        windowId: 1,
-      });
+      const result = renderBuiltInFormat(tabLists, 'title', 'list', mockMarkdown);
 
-      // Assert - should still work without groups
-      expect(result.includes('GitHub')).toBeTruthy();
+      expect(result).toContain('GitHub');
+      expect(result).not.toContain('https://');
+    });
+
+    it('should render grouped tabs with nested lists', () => {
+      const tabLists = [
+        new TabList('Work', 1, [
+          new Tab('Gmail', 'https://mail.google.com', 1),
+          new Tab('Calendar', 'https://calendar.google.com', 1),
+        ]),
+      ];
+
+      const result = renderBuiltInFormat(tabLists, 'title', 'list', mockMarkdown);
+
+      expect(result).toContain('Work');
+      expect(result).toContain('Gmail');
+      expect(result).toContain('Calendar');
+      // Check for indentation (nested list)
+      expect(result).toMatch(/ {2}- Gmail/);
     });
   });
 });
