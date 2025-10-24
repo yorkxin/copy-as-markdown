@@ -7,7 +7,8 @@
  *
  * Architecture:
  * - Pure functions for business logic (easy to test, no mocking needed)
- * - Thin service class for browser API interactions
+ * - Service class is browser-agnostic (takes data, returns markdown)
+ * - Browser integration is handled externally
  */
 
 import type Markdown from '../lib/markdown.js';
@@ -16,6 +17,7 @@ import type { TabList } from '../lib/tabs.js';
 import { Tab, TabGroup, TabListGrouper } from '../lib/tabs.js';
 import CustomFormatClass from '../lib/custom-format.js';
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
+import { BrowserTabDataFetcher } from './browser-tab-data-fetcher.js';
 
 // Type Definitions
 export type ExportFormat = 'link' | 'title' | 'url' | 'custom-format';
@@ -51,7 +53,6 @@ export function validateOptions(options: ExportTabsOptions): void {
 
 /**
  * Converts browser tabs to our domain Tab model.
- * Pure function - takes data, returns data.
  */
 export function convertBrowserTabsToTabs(
   browserTabs: chrome.tabs.Tab[],
@@ -66,7 +67,6 @@ export function convertBrowserTabsToTabs(
 
 /**
  * Converts browser tab groups to our domain TabGroup model.
- * Pure function - takes data, returns data.
  */
 export function convertBrowserTabGroups(groups: chrome.tabGroups.TabGroup[]): TabGroup[] {
   return groups.map((group: chrome.tabGroups.TabGroup) =>
@@ -76,7 +76,6 @@ export function convertBrowserTabGroups(groups: chrome.tabGroups.TabGroup[]): Ta
 
 /**
  * Groups tabs into organized lists by tab group.
- * Pure function - no side effects.
  */
 export function groupTabsIntoLists(tabs: Tab[], groups: TabGroup[]): TabList[] {
   return new TabListGrouper(groups).collectTabsByGroup(tabs);
@@ -84,7 +83,6 @@ export function groupTabsIntoLists(tabs: Tab[], groups: TabGroup[]): TabList[] {
 
 /**
  * Gets the appropriate formatter function for the specified format.
- * Pure function - returns another pure function.
  */
 export function getFormatter(
   format: 'link' | 'title' | 'url',
@@ -104,7 +102,6 @@ export function getFormatter(
 
 /**
  * Formats tab lists into a nested array structure for Markdown rendering.
- * Pure function - no side effects, just data transformation.
  */
 export function formatTabListsToNestedArray(
   tabLists: TabList[],
@@ -130,7 +127,6 @@ export function formatTabListsToNestedArray(
 
 /**
  * Renders tabs using a built-in format (link, title, or URL).
- * Pure function - all dependencies passed as parameters.
  */
 export function renderBuiltInFormat(
   tabLists: TabList[],
@@ -183,17 +179,36 @@ export async function renderTabs(
 }
 
 // ==============================================================================
-// SERVICE - Thin wrapper around browser APIs
+// SERVICE - Browser-agnostic (no browser API calls)
 // ==============================================================================
 
 /**
- * Tab Export Service - handles browser API interactions.
- * Most business logic is delegated to pure functions above.
+ * Interface for fetching tab data from browser.
+ * Implement this to provide tab data to the service.
+ */
+export interface TabDataFetcher {
+  /**
+   * Fetch tabs from the specified window.
+   * Should handle permissions and throw errors if needed.
+   */
+  fetchTabs: (scope: ExportScope, windowId: number) => Promise<chrome.tabs.Tab[]>;
+
+  /**
+   * Fetch tab groups from the specified window.
+   * Should return empty array if unavailable.
+   */
+  fetchTabGroups: (windowId: number) => Promise<chrome.tabGroups.TabGroup[]>;
+}
+
+/**
+ * Tab Export Service - browser-agnostic.
+ * Takes tab data and converts it to markdown.
  */
 export class TabExportService {
   constructor(
     private markdown: Markdown,
     private customFormatsProvider: CustomFormatsProvider,
+    private tabDataFetcher: TabDataFetcher,
   ) { }
 
   /**
@@ -201,18 +216,15 @@ export class TabExportService {
    *
    * @throws {TypeError} If format is custom-format but customFormatSlot is missing
    * @throws {TypeError} If format is custom-format but listType is provided
-   * @throws {Error} If tabs permission is not granted
+   * @throws {Error} If tabs permission is not granted (thrown by tabDataFetcher)
    */
   async exportTabs(options: ExportTabsOptions): Promise<string> {
     // Validate (pure function)
     validateOptions(options);
 
-    // Ensure permissions (browser API)
-    await this.ensureTabsPermission();
-
-    // Fetch data (browser API)
-    const browserTabs = await this.fetchBrowserTabs(options.scope, options.windowId);
-    const browserGroups = await this.fetchBrowserTabGroups(options.windowId);
+    // Fetch data (delegated to injected fetcher)
+    const browserTabs = await this.tabDataFetcher.fetchTabs(options.scope, options.windowId);
+    const browserGroups = await this.tabDataFetcher.fetchTabGroups(options.windowId);
 
     // Convert and process (pure functions)
     const tabs = convertBrowserTabsToTabs(
@@ -225,68 +237,29 @@ export class TabExportService {
     // Render (mostly pure, except custom format storage access)
     return renderTabs(tabLists, options, this.markdown, this.customFormatsProvider);
   }
+}
 
-  /**
-   * Ensures tabs permission is granted, shows permission dialog if not.
-   */
-  private async ensureTabsPermission(): Promise<void> {
-    const granted = await browser.permissions.contains({ permissions: ['tabs'] });
-
-    if (!granted) {
-      await browser.windows.create({
-        focused: true,
-        type: 'popup',
-        width: 640,
-        height: 480,
-        url: '/dist/static/permissions.html?permissions=tabs',
-      });
-      throw new Error('Tabs permission required');
-    }
-  }
-
-  /**
-   * Fetches tabs from the specified window.
-   */
-  private async fetchBrowserTabs(
-    scope: ExportScope,
-    windowId: number,
-  ): Promise<chrome.tabs.Tab[]> {
-    return await browser.tabs.query({
-      highlighted: scope === 'highlighted' ? true : undefined,
-      windowId,
-    }) as chrome.tabs.Tab[];
-  }
-
-  /**
-   * Fetches tab groups from the specified window.
-   * Returns empty array if tabGroups permission is not granted or API is unavailable.
-   */
-  private async fetchBrowserTabGroups(windowId: number): Promise<chrome.tabGroups.TabGroup[]> {
-    // Check if tabGroups permission is granted
-    try {
-      const granted = await browser.permissions.contains({ permissions: ['tabGroups'] });
-      if (!granted) {
-        return [];
-      }
-    } catch {
-      // tabGroups permission doesn't exist in this browser
-      return [];
-    }
-
-    // Check if API is available
-    if (typeof chrome === 'undefined' || !chrome.tabGroups) {
-      return [];
-    }
-
-    // Promisify the callback-based API
-    return new Promise((resolve, reject) => {
-      chrome.tabGroups.query({ windowId }, (groups: chrome.tabGroups.TabGroup[]) => {
-        if (chrome.runtime?.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(groups);
-        }
-      });
-    });
-  }
+/**
+ * Creates a tab export service using the browser's native APIs.
+ *
+ * @param markdown - Markdown formatter instance
+ * @param customFormatsProvider - Provider for custom format templates
+ * @example
+ * ```typescript
+ * const tabExportService = createBrowserTabExportService(
+ *   markdownInstance,
+ *   CustomFormatsStorage
+ * );
+ * await tabExportService.exportTabs({...});
+ * ```
+ */
+export function createBrowserTabExportService(
+  markdown: Markdown,
+  customFormatsProvider: CustomFormatsProvider,
+): TabExportService {
+  return new TabExportService(
+    markdown,
+    customFormatsProvider,
+    new BrowserTabDataFetcher(),
+  );
 }

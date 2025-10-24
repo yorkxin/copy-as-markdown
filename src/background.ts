@@ -4,7 +4,7 @@ import { Bookmarks } from './bookmarks.js';
 import CustomFormatsStorage from './storage/custom-formats-storage.js';
 import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
-import { TabExportService } from './services/tab-export-service.js';
+import { createBrowserTabExportService } from './services/tab-export-service.js';
 import { createBrowserClipboardService } from './services/clipboard-service.js';
 import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
@@ -24,7 +24,7 @@ const bookmarks = new Bookmarks({
 // Initialize services
 const badgeService = createBrowserBadgeService();
 const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage);
-const tabExportService = new TabExportService(markdownInstance, CustomFormatsStorage);
+const tabExportService = createBrowserTabExportService(markdownInstance, CustomFormatsStorage);
 const linkExportService = new LinkExportService(markdownInstance, CustomFormatsStorage);
 
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
