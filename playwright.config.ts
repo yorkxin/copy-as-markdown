@@ -12,10 +12,6 @@ export default defineConfig({
   // Maximum time one test can run for
   timeout: 30 * 1000,
 
-  // Cannot run tests in files in parallel because there is only one system clipboard
-  workers: 1,
-  fullyParallel: false,
-
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
 
@@ -43,7 +39,23 @@ export default defineConfig({
   // Configure projects for major browsers
   projects: [
     {
-      name: 'chromium-extension',
+      name: 'ui-tests',
+      testDir: './test/e2e/ui',
+      // Run UI tests in parallel (they don't use clipboard)
+      fullyParallel: true,
+      use: {
+        ...devices['Desktop Chrome'],
+        // IMPORTANT: Must use 'chromium' channel for extensions to work
+        // Chrome and Edge removed command-line flags needed for side-loading
+        channel: 'chromium',
+      },
+    },
+    {
+      name: 'clipboard-tests',
+      testDir: './test/e2e/clipboard',
+      // Run clipboard tests serially (shared system resource)
+      fullyParallel: false,
+      workers: 1,
       use: {
         ...devices['Desktop Chrome'],
         // IMPORTANT: Must use 'chromium' channel for extensions to work

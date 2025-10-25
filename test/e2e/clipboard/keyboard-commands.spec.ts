@@ -4,10 +4,12 @@
  * This file tests keyboard shortcuts by triggering them programmatically
  * and verifying the clipboard output. We test 3 different approaches to
  * see which one works best.
+ *
+ * NOTE: These tests use the system clipboard and run serially via project config
  */
 
-import { expect, test } from './fixtures';
-import { getServiceWorker, resetClipboard, waitForClipboard } from './helpers';
+import { expect, test } from '../fixtures';
+import { getServiceWorker, resetClipboard, waitForClipboard } from '../helpers';
 
 test.describe('Keyboard Commands', () => {
   test.beforeEach(async ({ page }) => {
