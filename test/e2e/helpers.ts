@@ -3,26 +3,30 @@
  */
 
 import type { BrowserContext, Page } from '@playwright/test';
+import clipboard from 'clipboardy';
 
 const CLIPBOARD_SEPARATOR = '=========== CLIPBOARD SEPARATOR ===========';
 
 /**
  * Wait for clipboard content to be populated (with timeout)
+ * Uses Node.js clipboardy library for reliable cross-platform clipboard access
  */
-export async function waitForClipboard(page: Page, timeout = 3000): Promise<string> {
+export async function waitForClipboard(timeout = 3000): Promise<string> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
-    const clipboardText = await page.evaluate(() =>
-      navigator.clipboard.readText(),
-    );
+    try {
+      const clipboardText = await clipboard.read();
 
-    if (clipboardText && clipboardText !== CLIPBOARD_SEPARATOR) {
-      return clipboardText;
+      if (clipboardText && clipboardText !== CLIPBOARD_SEPARATOR) {
+        return clipboardText;
+      }
+    } catch (error) {
+      console.log('Error reading clipboard:', error);
     }
 
     // Wait a bit before checking again
-    await page.waitForTimeout(100);
+    await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   throw new Error(`Clipboard was empty after ${timeout}ms`);
@@ -30,15 +34,39 @@ export async function waitForClipboard(page: Page, timeout = 3000): Promise<stri
 
 /**
  * Clear clipboard content
+ * Uses Node.js clipboardy library for reliable cross-platform clipboard access
+ * Waits until the clipboard is actually cleared to avoid race conditions
  */
-export async function resetClipboard(page: Page): Promise<void> {
+export async function resetClipboard(): Promise<void> {
   try {
-    await page.evaluate(str => navigator.clipboard.writeText(str), CLIPBOARD_SEPARATOR);
+    await clipboard.write(CLIPBOARD_SEPARATOR);
   } catch (error) {
     // Clipboard API might not be available in some contexts
     // That's okay, we'll just skip clearing
     console.log('Could not clear clipboard:', error);
+    return;
   }
+
+  // Wait until clipboard content is the separator to ensure it's been reset
+  const startTime = Date.now();
+  const timeout = 3000;
+
+  while (Date.now() - startTime < timeout) {
+    try {
+      const clipboardText = await clipboard.read();
+
+      if (clipboardText === CLIPBOARD_SEPARATOR) {
+        return;
+      }
+    } catch (error) {
+      console.log('Error reading clipboard:', error);
+    }
+
+    // Wait a bit before checking again
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  console.warn(`Clipboard did not reset to separator after ${timeout}ms`);
 }
 
 /**

@@ -49,6 +49,7 @@
     "@types/turndown": "^5.0.5",
     "@vitest/ui": "^3.2.4",
     "bulma": "^1.0.0",
+    "clipboardy": "^5.0.0",
     "eslint": "^9.37.0",
     "nodemon": "^3.1.0",
     "tsx": "^4.20.6",

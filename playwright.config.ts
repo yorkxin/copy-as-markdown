@@ -12,8 +12,9 @@ export default defineConfig({
   // Maximum time one test can run for
   timeout: 30 * 1000,
 
-  // Run tests in files in parallel
-  fullyParallel: true,
+  // Cannot run tests in files in parallel because there is only one system clipboard
+  workers: 1,
+  fullyParallel: false,
 
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,

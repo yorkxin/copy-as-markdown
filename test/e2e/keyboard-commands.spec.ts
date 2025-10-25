@@ -11,8 +11,8 @@ import { getServiceWorker, resetClipboard, waitForClipboard } from './helpers';
 
 test.describe('Keyboard Commands', () => {
   test.beforeEach(async ({ page }) => {
+    await resetClipboard();
     await page.goto('http://localhost:5566/qa.html');
-    await resetClipboard(page);
   });
 
   test('should copy current tab by directly calling command handler', async ({ page, context }) => {
@@ -27,7 +27,7 @@ test.describe('Keyboard Commands', () => {
     });
 
     // Wait for clipboard to be populated
-    const clipboardText = await waitForClipboard(page, 5000);
+    const clipboardText = await waitForClipboard(5000);
 
     // Verify clipboard contains the expected format
     expect(clipboardText).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
@@ -57,7 +57,7 @@ test.describe('Keyboard Commands', () => {
     });
 
     // Wait for clipboard
-    const clipboardText = await waitForClipboard(page, 3000);
+    const clipboardText = await waitForClipboard(3000);
 
     console.log('Selection as Markdown Result:', clipboardText);
 
@@ -86,7 +86,7 @@ test.describe('Keyboard Commands', () => {
       return chrome.commands.onCommand.dispatch('all-tabs-link-as-list');
     });
 
-    const clipboardText = await waitForClipboard(page, 5000);
+    const clipboardText = await waitForClipboard(5000);
 
     console.log('All Tabs Result:', clipboardText);
 
