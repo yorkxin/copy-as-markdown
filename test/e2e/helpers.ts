@@ -91,9 +91,6 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
     });
   }
 
-  // Log for debugging
-  console.log('Extension service worker URL:', extensionWorker.url());
-
   // Poll until Chrome APIs are ready
   const startTime = Date.now();
   const pollInterval = 500; // Check every 500ms
@@ -109,11 +106,9 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
       };
     });
 
-    console.debug('Service Worker State:', workerState);
-
     // If chrome.commands is available, we're ready
     if (workerState.hasChromeCommands) {
-      console.log('Service worker ready with Chrome APIs');
+      // Service worker ready with Chrome APIs
       return extensionWorker;
     }
 
