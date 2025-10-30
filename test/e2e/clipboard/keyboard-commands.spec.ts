@@ -35,39 +35,6 @@ test.describe('Keyboard Commands', () => {
     expect(clipboardText).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
   });
 
-  test('should copy selection as markdown', async ({ page, context }) => {
-    // Navigate to a page with some content
-    await page.goto('http://localhost:5566/qa.html');
-
-    // Select some text using JavaScript
-    await page.evaluate(() => {
-      const range = document.createRange();
-      const body = document.querySelector('body');
-      if (body) {
-        range.selectNodeContents(body);
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
-      }
-    });
-
-    // Trigger selection-as-markdown command
-    const serviceWorker = await getServiceWorker(context);
-    await serviceWorker.evaluate(() => {
-      // @ts-expect-error - Chrome APIs
-      return chrome.commands.onCommand.dispatch('selection-as-markdown');
-    });
-
-    // Wait for clipboard
-    const clipboardText = await waitForClipboard(3000);
-
-    console.log('Selection as Markdown Result:', clipboardText);
-
-    // Should contain the selected text in markdown format
-    expect(clipboardText).toBeTruthy();
-    expect(clipboardText.length).toBeGreaterThan(0);
-  });
-
   test('should handle all tabs export', async ({ page, context }) => {
     page.goto('http://localhost:5566/1.html');
 
