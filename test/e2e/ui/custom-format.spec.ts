@@ -277,4 +277,114 @@ test.describe('Custom Format UI', () => {
       expect(sampleText).toContain('"isGroup"');
     });
   });
+
+  test.describe('Show in Menus', () => {
+    test('should appear in popup when "show in menus" is enabled (single-link)', async ({ page, extensionId }) => {
+      // Configure custom format via UI
+      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=4&context=single-link`;
+      await page.goto(customFormatUrl);
+      await page.waitForLoadState('networkidle');
+
+      const nameInput = page.locator('#input-name');
+      const templateInput = page.locator('#input-template');
+      const showInMenusCheckbox = page.locator('#input-show-in-menus');
+      const saveButton = page.locator('#save');
+
+      // Configure with "show in menus" enabled
+      await nameInput.fill('Test Menu Format');
+      await templateInput.fill('{{title}} - {{url}}');
+      await showInMenusCheckbox.check();
+      await page.waitForTimeout(200);
+
+      await expect(saveButton).toBeEnabled();
+      await saveButton.click();
+      await page.waitForTimeout(500);
+
+      // Navigate to popup
+      const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html`;
+      await page.goto(popupUrl);
+      await page.waitForLoadState('networkidle');
+
+      // Verify custom format button appears in popup
+      const customFormatButton = page.locator('#current-tab-custom-format-4');
+      await expect(customFormatButton).toBeVisible();
+      await expect(customFormatButton).toContainText('Current tab');
+      await expect(customFormatButton).toContainText('Test Menu Format');
+
+      // Now disable "show in menus" and verify it doesn't appear
+      await page.goto(customFormatUrl);
+      await page.waitForLoadState('networkidle');
+
+      await page.locator('#input-show-in-menus').uncheck();
+      await page.waitForTimeout(200);
+      await page.locator('#save').click();
+      await page.waitForTimeout(500);
+
+      // Navigate back to popup
+      await page.goto(popupUrl);
+      await page.waitForLoadState('networkidle');
+
+      // Verify custom format button does not appear
+      const customFormatButtonAfter = page.locator('#current-tab-custom-format-4');
+      await expect(customFormatButtonAfter).not.toBeVisible();
+    });
+
+    test('should appear in popup when "show in menus" is enabled (multiple-links)', async ({ page, extensionId }) => {
+      // Configure custom format via UI
+      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=5&context=multiple-links`;
+      await page.goto(customFormatUrl);
+      await page.waitForLoadState('networkidle');
+
+      const nameInput = page.locator('#input-name');
+      const templateInput = page.locator('#input-template');
+      const showInMenusCheckbox = page.locator('#input-show-in-menus');
+      const saveButton = page.locator('#save');
+
+      // Configure with "show in menus" enabled
+      await nameInput.fill('Batch Export Format');
+      await templateInput.fill('{{#links}}- [{{title}}]({{url}})\n{{/links}}');
+      await showInMenusCheckbox.check();
+      await page.waitForTimeout(200);
+
+      await expect(saveButton).toBeEnabled();
+      await saveButton.click();
+      await page.waitForTimeout(500);
+
+      // Navigate to popup
+      const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html`;
+      await page.goto(popupUrl);
+      await page.waitForLoadState('networkidle');
+
+      // Verify custom format buttons appear in popup (both all-tabs and highlighted-tabs)
+      const allTabsButton = page.locator('#all-tabs-custom-format-5');
+      await expect(allTabsButton).toBeVisible();
+      await expect(allTabsButton).toContainText('All tabs');
+      await expect(allTabsButton).toContainText('Batch Export Format');
+
+      const highlightedTabsButton = page.locator('#highlighted-tabs-custom-format-5');
+      await expect(highlightedTabsButton).toBeVisible();
+      await expect(highlightedTabsButton).toContainText('Selected tabs');
+      await expect(highlightedTabsButton).toContainText('Batch Export Format');
+
+      // Now disable "show in menus" and verify they don't appear
+      await page.goto(customFormatUrl);
+      await page.waitForLoadState('networkidle');
+
+      await page.locator('#input-show-in-menus').uncheck();
+      await page.waitForTimeout(200);
+      await page.locator('#save').click();
+      await page.waitForTimeout(500);
+
+      // Navigate back to popup
+      await page.goto(popupUrl);
+      await page.waitForLoadState('networkidle');
+
+      // Verify custom format buttons do not appear
+      const allTabsButtonAfter = page.locator('#all-tabs-custom-format-5');
+      await expect(allTabsButtonAfter).not.toBeVisible();
+
+      const highlightedTabsButtonAfter = page.locator('#highlighted-tabs-custom-format-5');
+      await expect(highlightedTabsButtonAfter).not.toBeVisible();
+    });
+  });
 });
