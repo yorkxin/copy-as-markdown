@@ -37,16 +37,25 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
 console.log('Modifying manifest.json for testing...');
 
-// Move 'tabs' from optional_permissions to permissions
-if (manifest.optional_permissions && manifest.optional_permissions.includes('tabs')) {
-  manifest.optional_permissions = manifest.optional_permissions.filter(p => p !== 'tabs');
+/**
+ * Move a permission from optional_permissions to required permissions
+ * @param {string} permission - The permission name to move
+ */
+function moveToRequiredPermission(permission) {
+  if (manifest.optional_permissions && manifest.optional_permissions.includes(permission)) {
+    manifest.optional_permissions = manifest.optional_permissions.filter(p => p !== permission);
 
-  if (!manifest.permissions.includes('tabs')) {
-    manifest.permissions.push('tabs');
+    if (!manifest.permissions.includes(permission)) {
+      manifest.permissions.push(permission);
+    }
+
+    console.log(`  - Moved "${permission}" from optional_permissions to permissions`);
   }
-
-  console.log('  - Moved "tabs" from optional_permissions to permissions');
 }
+
+// Move 'tabs' and 'tabGroups' from optional_permissions to permissions for testing
+moveToRequiredPermission('tabs');
+moveToRequiredPermission('tabGroups');
 
 // Add host_permissions for test fixtures (localhost)
 if (!manifest.host_permissions) {
