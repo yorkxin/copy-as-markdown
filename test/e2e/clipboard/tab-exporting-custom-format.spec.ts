@@ -69,8 +69,7 @@ test.describe('Custom Format', () => {
   });
 
   test.describe('Current Tab - Single Link', () => {
-    test('should use custom format 1 with keyboard shortcut', async ({ page, context, extensionId }) => {
-      // Configure custom format 1 for single links via UI
+    test.beforeEach(async ({ page, extensionId }) => {
       await configureCustomFormatViaUI(page, extensionId, {
         slot: '1',
         context: 'single-link',
@@ -82,7 +81,9 @@ test.describe('Custom Format', () => {
       // Navigate to test page
       await page.goto('http://localhost:5566/qa.html');
       await page.waitForLoadState('networkidle');
+    });
 
+    test('should work with keyboard shortcut', async ({ page, context }) => {
       // Trigger the custom format keyboard command
       const serviceWorker = await getServiceWorker(context);
       await serviceWorker.evaluate(async () => {
@@ -99,34 +100,47 @@ test.describe('Custom Format', () => {
       expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_ <http://localhost:5566/qa.html>');
     });
 
-    test('should use custom format 2 with different template', async ({ page, context, extensionId }) => {
-      // Configure custom format 2 for single links via UI
-      await configureCustomFormatViaUI(page, extensionId, {
-        slot: '2',
-        context: 'single-link',
-        name: 'Simple Format',
-        template: '{{title}}: {{url}}',
-        showInMenus: false,
-      });
-
-      // Navigate to test page
-      await page.goto('http://localhost:5566/qa.html');
-      await page.waitForLoadState('networkidle');
-
-      // Trigger the custom format 2 keyboard command
+    test('should work with popup', async ({ page, context, extensionId }) => {
+      // Get window id from the current page's tab
       const serviceWorker = await getServiceWorker(context);
-      await serviceWorker.evaluate(async () => {
-        const currentTab = await chrome.tabs.getCurrent();
-        // @ts-expect-error - Chrome APIs
-        chrome.commands.onCommand.dispatch('current-tab-custom-format-2', currentTab);
-      });
+
+      await serviceWorker.evaluate(async (extensionId) => {
+        const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
+        if (!tabs[0]) {
+          throw new Error('No active tab found');
+        }
+        const windowId = tabs[0].windowId;
+
+        // Open popup in a new window (not a new tab in the same window)
+        const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html?window=${windowId}`;
+
+        // Create a new window with the popup
+        await chrome.windows.create({
+          url: popupUrl,
+          type: 'popup',
+          width: 400,
+          height: 600,
+        });
+      }, extensionId);
+
+      // Wait for the new window and get its page
+      const popupWindow = await context.waitForEvent('page');
+      await popupWindow.waitForLoadState('networkidle');
+
+      // Click the button for current-tab-custom-format-1
+      const button = popupWindow.locator('#current-tab-custom-format-1');
+      await expect(button).toBeVisible();
+      await button.click();
 
       // Wait for clipboard
       await page.bringToFront();
       const clipboardText = await waitForClipboard(5000);
 
-      // Verify the custom format was applied
-      expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_: http://localhost:5566/qa.html');
+      // Verify clipboard contains the custom format output
+      expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_ <http://localhost:5566/qa.html>');
+
+      // Cleanup
+      await popupWindow.close();
     });
   });
 
