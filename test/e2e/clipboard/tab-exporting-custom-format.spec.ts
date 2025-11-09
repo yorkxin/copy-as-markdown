@@ -256,72 +256,119 @@ test.describe('Custom Format', () => {
 `,
       },
     ].forEach(({ name, tabsAreGrouped, tabsAreHighlighted, setTemplate, commandName, expected }) => {
-      test(`should work with ${name}`, async ({ page, context, extensionId }) => {
-        const optionsPage = await context.newPage();
-        await configureCustomFormatViaUI(optionsPage, extensionId, {
-          slot: '1',
-          context: 'multiple-links',
-          name: 'Custom Template in Test',
-          template: setTemplate,
-          showInMenus: true,
+      test.describe(`should work with ${name}`, async () => {
+        test.beforeEach(async ({ context, extensionId, page }) => {
+          const optionsPage = await context.newPage();
+          await configureCustomFormatViaUI(optionsPage, extensionId, {
+            slot: '1',
+            context: 'multiple-links',
+            name: 'Custom Template in Test',
+            template: setTemplate,
+            showInMenus: true,
+          });
+          await optionsPage.close();
+
+          // Switch back to first page
+          await page.bringToFront();
+
+          const serviceWorker = await getServiceWorker(context);
+          await serviceWorker.evaluate(async ({ tabsAreGrouped, tabsAreHighlighted }) => {
+            const allTabs = await chrome.tabs.query({ currentWindow: true });
+            // Find tabs by URL
+            const tab1 = allTabs.find(tab => tab.url === 'http://localhost:5566/1.html');
+            const tab2 = allTabs.find(tab => tab.url === 'http://localhost:5566/2.html');
+            const tab3 = allTabs.find(tab => tab.url === 'http://localhost:5566/3.html');
+            const tab4 = allTabs.find(tab => tab.url === 'http://localhost:5566/4.html');
+
+            if (!tab1 || !tab2 || !tab3 || !tab4) {
+              throw new Error('Could not find all tabs');
+            }
+
+            if (tabsAreGrouped) {
+              // Create first group with tabs 1 and 2
+              const group1Id = await chrome.tabs.group({
+                tabIds: [tab1.id!, tab2.id!],
+              });
+              await chrome.tabGroups.update(group1Id, {
+                title: 'Group 1',
+                collapsed: false,
+              });
+
+              // Create second group with tab 4 only
+              const group2Id = await chrome.tabs.group({
+                tabIds: [tab4.id!],
+              });
+              await chrome.tabGroups.update(group2Id, {
+                color: 'blue',
+                collapsed: false,
+              });
+            }
+
+            if (tabsAreHighlighted) {
+              await chrome.tabs.update(tab1.id!, { highlighted: true });
+              await chrome.tabs.update(tab3.id!, { highlighted: true });
+            }
+          }, { tabsAreGrouped, tabsAreHighlighted });
         });
-        await optionsPage.close();
 
-        // Switch back to first page
-        await page.bringToFront();
+        test('works with keyboard command', async ({ context, page }) => {
+          const serviceWorker = await getServiceWorker(context);
+          await serviceWorker.evaluate(async (commandName) => {
+            const currentTab = await chrome.tabs.getCurrent();
+            // @ts-expect-error - Chrome APIs
+            chrome.commands.onCommand.dispatch(commandName, currentTab);
+          }, commandName);
 
-        // Trigger all-tabs custom format 1 command
-        const serviceWorker = await getServiceWorker(context);
-        await serviceWorker.evaluate(async ({ tabsAreGrouped, tabsAreHighlighted }) => {
-          const allTabs = await chrome.tabs.query({ currentWindow: true });
-          // Find tabs by URL
-          const tab1 = allTabs.find(tab => tab.url === 'http://localhost:5566/1.html');
-          const tab2 = allTabs.find(tab => tab.url === 'http://localhost:5566/2.html');
-          const tab3 = allTabs.find(tab => tab.url === 'http://localhost:5566/3.html');
-          const tab4 = allTabs.find(tab => tab.url === 'http://localhost:5566/4.html');
+          // Wait for clipboard
+          await page.bringToFront();
+          const clipboardText = await waitForClipboard(5000);
 
-          if (!tab1 || !tab2 || !tab3 || !tab4) {
-            throw new Error('Could not find all tabs');
-          }
+          // Verify output contains all tabs in numbered format
+          expect(clipboardText).toEqual(expected);
+        });
 
-          if (tabsAreGrouped) {
-            // Create first group with tabs 1 and 2
-            const group1Id = await chrome.tabs.group({
-              tabIds: [tab1.id!, tab2.id!],
+        test('works with popup', async ({ context, page }) => {
+          // get window id from the current page's tab
+          const serviceWorker = await getServiceWorker(context);
+
+          await serviceWorker.evaluate(async () => {
+            const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
+            if (!tabs[0]) {
+              throw new Error('No active tab found');
+            }
+            const windowId = tabs[0].windowId;
+
+            // Open popup in a new window (not a new tab in the same window)
+            const popupUrl = `${chrome.runtime.getURL('/dist/static/popup.html')}?window=${windowId}`;
+
+            // Create a new window with the popup
+            await chrome.windows.create({
+              url: popupUrl,
+              type: 'popup',
+              width: 400,
+              height: 600,
             });
-            await chrome.tabGroups.update(group1Id, {
-              title: 'Group 1',
-              collapsed: false,
-            });
+          });
 
-            // Create second group with tab 4 only
-            const group2Id = await chrome.tabs.group({
-              tabIds: [tab4.id!],
-            });
-            await chrome.tabGroups.update(group2Id, {
-              color: 'blue',
-              collapsed: false,
-            });
-          }
+          // Wait for the new window and get its page
+          const popupWindow = await context.waitForEvent('page');
+          await popupWindow.waitForLoadState('networkidle');
 
-          if (tabsAreHighlighted) {
-            await chrome.tabs.update(tab1.id!, { highlighted: true });
-            await chrome.tabs.update(tab3.id!, { highlighted: true });
-          }
-        }, { tabsAreGrouped, tabsAreHighlighted });
+          // Click the button with id = commandName
+          const button = popupWindow.locator(`#${commandName}`);
+          await expect(button).toBeVisible();
+          await button.click();
 
-        await serviceWorker.evaluate(async (commandName) => {
-          const currentTab = await chrome.tabs.getCurrent();
-          // @ts-expect-error - Chrome APIs
-          chrome.commands.onCommand.dispatch(commandName, currentTab);
-        }, commandName);
+          // Wait for clipboard
+          await page.bringToFront();
+          const clipboardText = await waitForClipboard(5000);
 
-        // Wait for clipboard
-        await page.bringToFront();
-        const clipboardText = await waitForClipboard(5000);
+          // Verify output
+          expect(clipboardText).toEqual(expected);
 
-        // Verify output contains all tabs in numbered format
-        expect(clipboardText).toEqual(expected);
+          // Cleanup
+          await popupWindow.close();
+        });
       });
     });
   });
