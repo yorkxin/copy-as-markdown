@@ -64,7 +64,7 @@ async function configureCustomFormatViaUI(
 }
 
 test.describe('Custom Format', () => {
-  test.beforeEach(async ({ }) => {
+  test.beforeEach(async () => {
     await resetClipboard();
   });
 
