@@ -328,9 +328,12 @@ test.describe('Custom Format', () => {
         test('works with keyboard command', async ({ context, page }) => {
           const serviceWorker = await getServiceWorker(context);
           await serviceWorker.evaluate(async (commandName) => {
-            const currentTab = await chrome.tabs.getCurrent();
+            const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
+            if (!tabs[0]) {
+              throw new Error('No active tab found');
+            }
             // @ts-expect-error - Chrome APIs
-            chrome.commands.onCommand.dispatch(commandName, currentTab);
+            chrome.commands.onCommand.dispatch(commandName, tabs[0]);
           }, commandName);
 
           // Wait for clipboard
