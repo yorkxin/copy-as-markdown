@@ -2,71 +2,52 @@
  * Helper utilities for E2E tests
  */
 
-import type { BrowserContext, Page } from '@playwright/test';
-import clipboard from 'clipboardy';
-
-const CLIPBOARD_SEPARATOR = '=========== CLIPBOARD SEPARATOR ===========';
+import type { BrowserContext, Page, Worker } from '@playwright/test';
+import type { ClipboardMockCall } from '../../src/services/clipboard-service.js';
 
 /**
- * Wait for clipboard content to be populated (with timeout)
- * Uses Node.js clipboardy library for reliable cross-platform clipboard access
+ * Get all mock clipboard calls from the service worker
  */
-export async function waitForClipboard(timeout = 3000): Promise<string> {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < timeout) {
-    try {
-      const clipboardText = await clipboard.read();
-
-      if (clipboardText && clipboardText !== CLIPBOARD_SEPARATOR) {
-        return clipboardText;
-      }
-    } catch (error) {
-      console.log('Error reading clipboard:', error);
+export async function getMockClipboardCalls(serviceWorker: Worker): Promise<ClipboardMockCall[]> {
+  return await serviceWorker.evaluate(async () => {
+    const mock = (globalThis as any).__mockClipboardService;
+    if (!mock) {
+      throw new Error('Mock clipboard service not found in service worker');
     }
-
-    // Wait a bit before checking again
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  throw new Error(`Clipboard was empty after ${timeout}ms`);
+    return await mock.getCalls();
+  });
 }
 
 /**
- * Clear clipboard content
- * Uses Node.js clipboardy library for reliable cross-platform clipboard access
- * Waits until the clipboard is actually cleared to avoid race conditions
+ * Reset the mock clipboard service in the service worker
  */
-export async function resetClipboard(): Promise<void> {
-  try {
-    await clipboard.write(CLIPBOARD_SEPARATOR);
-  } catch (error) {
-    // Clipboard API might not be available in some contexts
-    // That's okay, we'll just skip clearing
-    console.log('Could not clear clipboard:', error);
-    return;
-  }
+export async function resetMockClipboard(serviceWorker: Worker): Promise<void> {
+  await serviceWorker.evaluate(async () => {
+    const mock = (globalThis as any).__mockClipboardService;
+    if (!mock) {
+      throw new Error('Mock clipboard service not found in service worker');
+    }
+    await mock.reset();
+  });
+}
 
-  // Wait until clipboard content is the separator to ensure it's been reset
+/**
+ * Wait for the mock clipboard to have at least one call (with timeout)
+ */
+export async function waitForMockClipboard(serviceWorker: Worker, timeout = 3000): Promise<ClipboardMockCall> {
   const startTime = Date.now();
-  const timeout = 3000;
 
   while (Date.now() - startTime < timeout) {
-    try {
-      const clipboardText = await clipboard.read();
-
-      if (clipboardText === CLIPBOARD_SEPARATOR) {
-        return;
-      }
-    } catch (error) {
-      console.log('Error reading clipboard:', error);
+    const calls = await getMockClipboardCalls(serviceWorker);
+    if (calls.length > 0) {
+      return calls[calls.length - 1]!;
     }
 
     // Wait a bit before checking again
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  console.warn(`Clipboard did not reset to separator after ${timeout}ms`);
+  throw new Error(`Mock clipboard had no calls after ${timeout}ms`);
 }
 
 /**

@@ -5,12 +5,12 @@
  * through keyboard shortcuts. This tests the full integration between
  * the custom format UI, storage, and keyboard command handling.
  *
- * NOTE: These tests use the system clipboard and run serially via project config
+ * NOTE: These tests use a mock clipboard service so they can run in parallel
  */
 
-import type { Page } from '@playwright/test';
+import type { Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetClipboard, waitForClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
 
 /**
  * Configure a custom format using the web UI
@@ -64,8 +64,11 @@ async function configureCustomFormatViaUI(
 }
 
 test.describe('Custom Format', () => {
-  test.beforeEach(async () => {
-    await resetClipboard();
+  let serviceWorker: Worker;
+
+  test.beforeEach(async ({ context }) => {
+    serviceWorker = await getServiceWorker(context);
+    await resetMockClipboard(serviceWorker);
   });
 
   test.describe('Current Tab - Single Link', () => {
@@ -83,9 +86,8 @@ test.describe('Custom Format', () => {
       await page.waitForLoadState('networkidle');
     });
 
-    test('should work with keyboard shortcut', async ({ page, context }) => {
+    test('should work with keyboard shortcut', async ({ page }) => {
       // Trigger the custom format keyboard command
-      const serviceWorker = await getServiceWorker(context);
       await serviceWorker.evaluate(async () => {
         const currentTab = await chrome.tabs.getCurrent();
         // @ts-expect-error - Chrome APIs are available in service worker
@@ -94,7 +96,7 @@ test.describe('Custom Format', () => {
 
       // Wait for clipboard to be populated
       await page.bringToFront();
-      const clipboardText = await waitForClipboard(5000);
+      const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
       // Verify clipboard contains the custom format output
       expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_ <http://localhost:5566/qa.html>');
@@ -102,8 +104,6 @@ test.describe('Custom Format', () => {
 
     test('should work with popup', async ({ page, context, extensionId }) => {
       // Get window id from the current page's tab
-      const serviceWorker = await getServiceWorker(context);
-
       await serviceWorker.evaluate(async (extensionId) => {
         const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
         if (!tabs[0]) {
@@ -134,7 +134,7 @@ test.describe('Custom Format', () => {
 
       // Wait for clipboard
       await page.bringToFront();
-      const clipboardText = await waitForClipboard(5000);
+      const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
       // Verify clipboard contains the custom format output
       expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_ <http://localhost:5566/qa.html>');
@@ -285,7 +285,6 @@ test.describe('Custom Format', () => {
           // Switch back to first page
           await page.bringToFront();
 
-          const serviceWorker = await getServiceWorker(context);
           await serviceWorker.evaluate(async ({ tabsAreGrouped, tabsAreHighlighted }) => {
             const allTabs = await chrome.tabs.query({ currentWindow: true });
             // Find tabs by URL
@@ -325,8 +324,7 @@ test.describe('Custom Format', () => {
           }, { tabsAreGrouped, tabsAreHighlighted });
         });
 
-        test('works with keyboard command', async ({ context, page }) => {
-          const serviceWorker = await getServiceWorker(context);
+        test('works with keyboard command', async ({ page }) => {
           await serviceWorker.evaluate(async (commandName) => {
             const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
             if (!tabs[0]) {
@@ -338,7 +336,7 @@ test.describe('Custom Format', () => {
 
           // Wait for clipboard
           await page.bringToFront();
-          const clipboardText = await waitForClipboard(5000);
+          const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
           // Verify output contains all tabs in numbered format
           expect(clipboardText).toEqual(expected);
@@ -346,8 +344,6 @@ test.describe('Custom Format', () => {
 
         test('works with popup', async ({ context, page }) => {
           // get window id from the current page's tab
-          const serviceWorker = await getServiceWorker(context);
-
           await serviceWorker.evaluate(async () => {
             const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
             if (!tabs[0]) {
@@ -378,7 +374,7 @@ test.describe('Custom Format', () => {
 
           // Wait for clipboard
           await page.bringToFront();
-          const clipboardText = await waitForClipboard(5000);
+          const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
           // Verify output
           expect(clipboardText).toEqual(expected);

@@ -2,6 +2,7 @@ import '../vendor/browser-polyfill.js';
 import { TabGroupIndentationStyle, UnorderedListStyle } from './markdown.js';
 
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
+// [sic.] The following keys have spaces at the end since they were introduced (typo). Do not modify.
 const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
 const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
 

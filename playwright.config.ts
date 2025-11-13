@@ -10,7 +10,7 @@ export default defineConfig({
   testDir: './test/e2e',
 
   // Maximum time one test can run for
-  timeout: 30 * 1000,
+  timeout: 10 * 1000,
 
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
@@ -53,9 +53,8 @@ export default defineConfig({
     {
       name: 'clipboard-tests',
       testDir: './test/e2e/clipboard',
-      // Run clipboard tests serially (shared system resource)
-      fullyParallel: false,
-      workers: 1,
+      // Run clipboard tests in parallel (using mock clipboard service)
+      fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
         // IMPORTANT: Must use 'chromium' channel for extensions to work

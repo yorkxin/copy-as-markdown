@@ -5,11 +5,12 @@
  * and verifying the clipboard output. We test 3 different approaches to
  * see which one works best.
  *
- * NOTE: These tests use the system clipboard and run serially via project config
+ * NOTE: These tests use a mock clipboard service for deterministic results
  */
 
+import type { Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetClipboard, waitForClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,12 +19,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 test.describe('Selection as Markdown', () => {
-  test.beforeEach(async ({ page }) => {
-    await resetClipboard();
+  let serviceWorker: Worker;
+
+  test.beforeEach(async ({ page, context }) => {
+    serviceWorker = await getServiceWorker(context);
+    await resetMockClipboard(serviceWorker);
     await page.goto('http://localhost:5566/selection.html');
   });
 
-  test('should copy selection as markdown', async ({ page, context }) => {
+  test('should copy selection as markdown', async ({ page }) => {
     // Select some text using JavaScript
     await page.evaluate(() => {
       const range = document.createRange();
@@ -37,14 +41,13 @@ test.describe('Selection as Markdown', () => {
     });
 
     // Trigger selection-as-markdown command
-    const serviceWorker = await getServiceWorker(context);
     await serviceWorker.evaluate(() => {
       // @ts-expect-error - Chrome APIs
       return chrome.commands.onCommand.dispatch('selection-as-markdown');
     });
 
     // Wait for clipboard
-    const clipboardText = await waitForClipboard(3000);
+    const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
     // Should match the expected markdown output from the fixture
     const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection.md'), 'utf-8');
@@ -80,14 +83,13 @@ test.describe('Selection as Markdown', () => {
       });
 
       // Trigger selection-as-markdown command
-      const serviceWorker = await getServiceWorker(context);
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
         return chrome.commands.onCommand.dispatch('selection-as-markdown');
       });
 
       // Wait for clipboard
-      const clipboardText = await waitForClipboard(3000);
+      const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
       // Should match the expected markdown output with dashes
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-ul-dash.md'), 'utf-8');
@@ -122,14 +124,13 @@ test.describe('Selection as Markdown', () => {
       });
 
       // Trigger selection-as-markdown command
-      const serviceWorker = await getServiceWorker(context);
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
         return chrome.commands.onCommand.dispatch('selection-as-markdown');
       });
 
       // Wait for clipboard
-      const clipboardText = await waitForClipboard(3000);
+      const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
       // Should match the expected markdown output with asterisks
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-ul-asterisk.md'), 'utf-8');
@@ -164,14 +165,13 @@ test.describe('Selection as Markdown', () => {
       });
 
       // Trigger selection-as-markdown command
-      const serviceWorker = await getServiceWorker(context);
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
         return chrome.commands.onCommand.dispatch('selection-as-markdown');
       });
 
       // Wait for clipboard
-      const clipboardText = await waitForClipboard(3000);
+      const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
       // Should match the expected markdown output with plus signs
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-ul-plus.md'), 'utf-8');

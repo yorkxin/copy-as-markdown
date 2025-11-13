@@ -1,16 +1,19 @@
 /**
  * E2E tests for tabs exporting
  *
- * NOTE: These tests use the system clipboard and run serially via project config
+ * NOTE: These tests use a mock clipboard service for parallelization
  */
 
-import type { Page } from '@playwright/test';
+import type { Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetClipboard, waitForClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
 
 test.describe('Tabs Exporting with built-in formats', () => {
-  test.beforeEach(async () => {
-    await resetClipboard();
+  let serviceWorker: Worker;
+
+  test.beforeEach(async ({ context }) => {
+    serviceWorker = await getServiceWorker(context);
+    await resetMockClipboard(serviceWorker);
   });
 
   test.describe('Current Tab - Single Link', () => {
@@ -20,27 +23,24 @@ test.describe('Tabs Exporting with built-in formats', () => {
       await page.waitForLoadState('networkidle');
     });
 
-    test('should work with keyboard shortcut', async ({ page, context }) => {
+    test('should work with keyboard shortcut', async ({ page }) => {
       // Trigger the custom format keyboard command
-      const serviceWorker = await getServiceWorker(context);
       await serviceWorker.evaluate(async () => {
         const currentTab = await chrome.tabs.getCurrent();
         // @ts-expect-error - Chrome APIs are available in service worker
         chrome.commands.onCommand.dispatch('current-tab-link', currentTab);
       });
 
-      // Wait for clipboard to be populated
+      // Wait for mock clipboard to be populated
       await page.bringToFront();
-      const clipboardText = await waitForClipboard(5000);
+      const mockCall = await waitForMockClipboard(serviceWorker, 5000);
 
       // Verify clipboard contains the Markdown link
-      expect(clipboardText).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
+      expect(mockCall.text).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
     });
 
     test('should work with popup', async ({ page, context, extensionId }) => {
       // Get window id from the current page's tab
-      const serviceWorker = await getServiceWorker(context);
-
       await serviceWorker.evaluate(async (extensionId) => {
         const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
         if (!tabs[0]) {
@@ -68,12 +68,12 @@ test.describe('Tabs Exporting with built-in formats', () => {
       await expect(button).toBeVisible();
       await button.click();
 
-      // Wait for clipboard
+      // Wait for mock clipboard
       await page.bringToFront();
-      const clipboardText = await waitForClipboard(5000);
+      const mockCall = await waitForMockClipboard(serviceWorker, 5000);
 
       // Verify clipboard contains the Markdown link
-      expect(clipboardText).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
+      expect(mockCall.text).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
 
       // Cleanup
       await popupWindow.close();
@@ -265,11 +265,10 @@ test.describe('Tabs Exporting with built-in formats', () => {
       },
     ].forEach(({ name, tabsAreGrouped, tabsAreHighlighted, commandName, expected }) => {
       test.describe(`should work with ${name}`, async () => {
-        test.beforeEach(async ({ context, page }) => {
+        test.beforeEach(async ({ page }) => {
           // Switch back to first page
           await page.bringToFront();
 
-          const serviceWorker = await getServiceWorker(context);
           await serviceWorker.evaluate(async ({ tabsAreGrouped, tabsAreHighlighted }) => {
             const allTabs = await chrome.tabs.query({ currentWindow: true });
             // Find tabs by URL
@@ -309,8 +308,7 @@ test.describe('Tabs Exporting with built-in formats', () => {
           }, { tabsAreGrouped, tabsAreHighlighted });
         });
 
-        test('works with keyboard command', async ({ context, page }) => {
-          const serviceWorker = await getServiceWorker(context);
+        test('works with keyboard command', async ({ page }) => {
           await serviceWorker.evaluate(async (commandName) => {
             const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
             if (!tabs[0]) {
@@ -320,18 +318,16 @@ test.describe('Tabs Exporting with built-in formats', () => {
             chrome.commands.onCommand.dispatch(commandName, tabs[0]);
           }, commandName);
 
-          // Wait for clipboard
+          // Wait for mock clipboard
           await page.bringToFront();
-          const clipboardText = await waitForClipboard(5000);
+          const mockCall = await waitForMockClipboard(serviceWorker, 5000);
 
           // Verify output contains all tabs in numbered format
-          expect(clipboardText).toEqual(expected);
+          expect(mockCall.text).toEqual(expected);
         });
 
         test('works with popup', async ({ context }) => {
           // get window id from the current page's tab
-          const serviceWorker = await getServiceWorker(context);
-
           await serviceWorker.evaluate(async () => {
             const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
             if (!tabs[0]) {
@@ -360,12 +356,11 @@ test.describe('Tabs Exporting with built-in formats', () => {
           await expect(button).toBeVisible();
           await button.click();
 
-          // Wait for clipboard
-          // await page.bringToFront();
-          const clipboardText = await waitForClipboard(5000);
+          // Wait for mock clipboard
+          const mockCall = await waitForMockClipboard(serviceWorker, 5000);
 
           // Verify output
-          expect(clipboardText).toEqual(expected);
+          expect(mockCall.text).toEqual(expected);
 
           // Cleanup
           await popupWindow.close();
