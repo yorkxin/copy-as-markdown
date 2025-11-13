@@ -3,7 +3,10 @@
  */
 
 import type { BrowserContext, Page, Worker } from '@playwright/test';
+import { spawn } from 'node:child_process';
 import type { ClipboardMockCall } from '../../src/services/clipboard-service.js';
+
+const CLIPBOARD_SEPARATOR = '=========== CLIPBOARD SEPARATOR ===========';
 
 /**
  * Get all mock clipboard calls from the service worker
@@ -109,6 +112,146 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
   }
 
   throw new Error(`Service worker Chrome APIs not ready after ${timeout}ms`);
+}
+
+async function runClipboardCommand(
+  direction: 'read' | 'write',
+  input?: string,
+): Promise<string> {
+  const commandCandidates = getClipboardCommandCandidates(direction);
+  let lastError: unknown;
+
+  for (const candidate of commandCandidates) {
+    const [command, ...args] = candidate;
+    try {
+      return await execClipboardCommand(command, args, input);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw new Error(`No clipboard command succeeded for ${direction}: ${lastError instanceof Error ? lastError.message : String(lastError)}`);
+}
+
+async function execClipboardCommand(command: string, args: string[], input?: string): Promise<string> {
+  return await new Promise((resolve, reject) => {
+    const child = spawn(command, args);
+    let stdout = '';
+    let stderr = '';
+
+    if (input !== undefined && child.stdin) {
+      child.stdin.write(input);
+      child.stdin.end();
+    }
+
+    child.stdout?.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr?.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(`Command ${command} failed with code ${code}: ${stderr || stdout}`));
+      }
+    });
+  });
+}
+
+function getClipboardCommandCandidates(direction: 'read' | 'write'): string[][] {
+  if (process.platform === 'darwin') {
+    return direction === 'read'
+      ? [['pbpaste']]
+      : [['pbcopy']];
+  }
+
+  if (process.platform === 'win32') {
+    return direction === 'read'
+      ? [['powershell', '-command', 'Get-Clipboard']]
+      : [['powershell', '-command', 'Set-Clipboard -Value ([Console]::In.ReadToEnd())']];
+  }
+
+  // Linux / other Unix (Wayland + X11 fallbacks)
+  const wayland = [
+    ['wl-paste'],
+  ];
+  const waylandWrite = [
+    ['wl-copy'],
+  ];
+
+  if (direction === 'read') {
+    return [
+      ...wayland,
+      ['xclip', '-selection', 'clipboard', '-o'],
+      ['xsel', '--clipboard', '--output'],
+    ];
+  }
+
+  return [
+    ...waylandWrite,
+    ['xclip', '-selection', 'clipboard'],
+    ['xsel', '--clipboard', '--input'],
+  ];
+}
+
+async function readSystemClipboard(): Promise<string> {
+  return await runClipboardCommand('read');
+}
+
+async function writeSystemClipboard(text: string): Promise<void> {
+  await runClipboardCommand('write', text);
+}
+
+export async function resetSystemClipboard(): Promise<void> {
+  await writeSystemClipboard(CLIPBOARD_SEPARATOR);
+
+  const startTime = Date.now();
+  const timeout = 3000;
+
+  while (Date.now() - startTime < timeout) {
+    try {
+      const value = await readSystemClipboard();
+      if (value === CLIPBOARD_SEPARATOR) {
+        return;
+      }
+    } catch (error) {
+      console.warn('Failed to verify clipboard reset:', error);
+    }
+    await wait(100);
+  }
+
+  console.warn(`System clipboard did not reset within ${timeout}ms`);
+}
+
+export async function waitForSystemClipboard(timeout = 3000): Promise<string> {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    try {
+      const value = await readSystemClipboard();
+      if (value && value !== CLIPBOARD_SEPARATOR) {
+        return value;
+      }
+    } catch (error) {
+      console.warn('Failed to read system clipboard:', error);
+    }
+    await wait(100);
+  }
+
+  throw new Error(`System clipboard was empty after ${timeout}ms`);
+}
+
+export async function setMockClipboardMode(serviceWorker: Worker, enabled: boolean): Promise<void> {
+  await serviceWorker.evaluate(async (flag) => {
+    const setter = (globalThis as any).setMockClipboardMode;
+    if (typeof setter !== 'function') {
+      throw new TypeError('setMockClipboardMode is not available');
+    }
+    await setter(flag);
+  }, enabled);
 }
 
 /**

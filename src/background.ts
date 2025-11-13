@@ -30,18 +30,36 @@ const linkExportService = new LinkExportService(markdownInstance, CustomFormatsS
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
 const useNavigatorClipboard = (globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true;
 const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
-// Check if MOCK_CLIPBOARD flag is set (for E2E tests)
-const useMockClipboard = (globalThis as any).MOCK_CLIPBOARD === true;
-const clipboardService = createBrowserClipboardService(
+// Track mock clipboard usage (for E2E tests)
+let useMockClipboard = (globalThis as any).MOCK_CLIPBOARD === true;
+let clipboardService = createBrowserClipboardService(
   useNavigatorClipboard ? navigator.clipboard : null,
   iframeCopyUrl,
   useMockClipboard,
 );
 
+async function setMockClipboardMode(enabled: boolean): Promise<void> {
+  if (useMockClipboard === enabled) {
+    return;
+  }
+  useMockClipboard = enabled;
+  clipboardService = createBrowserClipboardService(
+    useNavigatorClipboard ? navigator.clipboard : null,
+    iframeCopyUrl,
+    useMockClipboard,
+  );
+  if (useMockClipboard) {
+    (globalThis as any).__mockClipboardService = clipboardService;
+  } else {
+    delete (globalThis as any).__mockClipboardService;
+  }
+}
+
 // Expose clipboard service for testing (when in mock mode)
 if (useMockClipboard) {
   (globalThis as any).__mockClipboardService = clipboardService;
 }
+(globalThis as any).setMockClipboardMode = setMockClipboardMode;
 
 // Selection converter service with turndown options provider
 const turndownJsUrl = 'dist/vendor/turndown.js';

@@ -53,12 +53,26 @@ export default defineConfig({
     {
       name: 'clipboard-tests',
       testDir: './test/e2e/clipboard',
+      testIgnore: /clipboard-smoke\.spec\.ts/,
       // Run clipboard tests in parallel (using mock clipboard service)
       fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
         // IMPORTANT: Must use 'chromium' channel for extensions to work
         // Chrome and Edge removed command-line flags needed for side-loading
+        channel: 'chromium',
+      },
+    },
+    {
+      name: 'clipboard-smoke',
+      testDir: './test/e2e/clipboard',
+      testMatch: /clipboard-smoke\.spec\.ts/,
+      fullyParallel: false,
+      workers: 1,
+      dependencies: ['clipboard-tests'],
+      use: {
+        ...devices['Desktop Chrome'],
+        // IMPORTANT: Must use 'chromium' channel for extensions to work
         channel: 'chromium',
       },
     },
