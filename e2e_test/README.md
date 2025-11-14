@@ -1,40 +1,25 @@
-## Dependencies
+# Python Selenium Suite
 
-## macOS
+Only one legacy Selenium test remains (`test_tabs_exporting.py`). It exercises tab exporting via the helper extension and relies on keyboard automation, so it still requires a headed browser environment.
 
-```sh
-# OCR Engine
-brew install tesseract
-```
+## Requirements
 
-## Windows
+- Python 3.11+
+- Chrome for Testing or Firefox (Selenium downloads chromium automatically)
+- The dependencies listed in `requirements.txt`
 
-1. Download Python from Microsoft Store
-2. Install tesseract from https://github.com/UB-Mannheim/tesseract/wiki
-3. Locate the tesseract.exe file
-4. Set env var in PowerShell: 
-   ```ps
-   # When installed for the current user only
-   $env:TESSERACT_PATH="C:\Users\<username>\AppData\Local\Programs\Tesseract-OCR\tesseract.exe"
-   ```
-
-
-## Installation
+Install them with:
 
 ```shell
 pip install -r requirements.txt
 ```
 
-## Run Tests
+## Running
 
+From the repository root:
+
+```shell
+pytest e2e_test/test_tabs_exporting.py
 ```
-pytest
-```
 
-## Known issues
-
-### macOS
-
-OCR fails when the system appearance is set to Dark mode.
-
-Workaround: Set the system appearance to Light mode and run OCR-related tests.
+The test opens real browser windows, interacts with the helper extension, and writes to the OS clipboard. Ensure no other global shortcuts conflict with the `Alt+Shift+*` combos used in `e2e_test/keyboard_shortcuts.py`.
