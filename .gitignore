@@ -12,6 +12,7 @@ chrome/dist/*
 !chrome/dist/.keep
 chrome-test/
 chrome-optional-test/
+firefox-test/
 .nyc_output
 tmp/*
 

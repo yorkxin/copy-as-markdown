@@ -19,6 +19,11 @@ pip install -r requirements.txt
 From the repository root:
 
 ```shell
+# Build the extension bundles and test variants (Chrome + Firefox)
+npm run compile-chrome && npm run compile-firefox
+node scripts/build-test-extension.js
+
+# Run the Selenium test
 pytest e2e_test/test_tabs_exporting.py
 ```
 

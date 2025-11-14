@@ -17,32 +17,50 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '..');
 
-const sourceDir = path.join(rootDir, 'chrome');
-
-const variants = [
+const builds = [
   {
-    name: 'default (permissions pre-granted)',
-    targetDir: 'chrome-test',
-    keepOptionalPermissions: false,
+    sourceDir: path.join(rootDir, 'chrome'),
+    variants: [
+      {
+        name: 'Chrome default (permissions pre-granted)',
+        targetDir: 'chrome-test',
+        keepOptionalPermissions: false,
+        hostPermissions: ['http://localhost:5566/*'],
+      },
+      {
+        name: 'Chrome optional permissions (request flows)',
+        targetDir: 'chrome-optional-test',
+        keepOptionalPermissions: true,
+        hostPermissions: ['http://localhost:5566/*'],
+      },
+    ],
   },
   {
-    name: 'optional permissions (request flows)',
-    targetDir: 'chrome-optional-test',
-    keepOptionalPermissions: true,
+    sourceDir: path.join(rootDir, 'firefox'),
+    variants: [
+      {
+        name: 'Firefox default (permissions pre-granted)',
+        targetDir: 'firefox-test',
+        keepOptionalPermissions: false,
+      },
+    ],
   },
 ];
 
 console.log('Building test extensions...');
 
-for (const variant of variants) {
-  buildTestExtensionVariant(variant);
+for (const buildConfig of builds) {
+  for (const variant of buildConfig.variants) {
+    buildTestExtensionVariant(buildConfig.sourceDir, variant);
+  }
 }
 
 /**
  * Build a single test extension variant
- * @param {{ name: string; targetDir: string; keepOptionalPermissions: boolean }} config
+ * @param {string} sourceDir
+ * @param {{ name: string; targetDir: string; keepOptionalPermissions: boolean; hostPermissions?: string[] }} config
  */
-function buildTestExtensionVariant(config) {
+function buildTestExtensionVariant(sourceDir, config) {
   const variantTargetDir = path.join(rootDir, config.targetDir);
   console.log(`\n→ ${config.name}`);
 
@@ -55,12 +73,15 @@ function buildTestExtensionVariant(config) {
   console.log(`  Copying ${sourceDir} → ${variantTargetDir}`);
   fs.cpSync(sourceDir, variantTargetDir, { recursive: true });
 
-  rewriteManifest(variantTargetDir, config.keepOptionalPermissions);
+  rewriteManifest(variantTargetDir, {
+    keepOptionalPermissions: config.keepOptionalPermissions,
+    hostPermissions: config.hostPermissions ?? [],
+  });
 
   console.log(`  ✓ Built ${config.targetDir}`);
 }
 
-function rewriteManifest(targetDirPath, keepOptionalPermissions) {
+function rewriteManifest(targetDirPath, options) {
   console.log('  Modifying manifest.json');
   const manifestPath = path.join(targetDirPath, 'manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -84,20 +105,23 @@ function rewriteManifest(targetDirPath, keepOptionalPermissions) {
     }
   }
 
-  if (!keepOptionalPermissions) {
+  if (!options.keepOptionalPermissions) {
     moveToRequiredPermission('tabs');
     moveToRequiredPermission('tabGroups');
   } else {
     console.log('    - Keeping tabs/tabGroups optional for permission flow tests');
   }
 
-  if (!manifest.host_permissions) {
-    manifest.host_permissions = [];
-  }
-
-  if (!manifest.host_permissions.includes('http://localhost:5566/*')) {
-    manifest.host_permissions.push('http://localhost:5566/*');
-    console.log('    - Added host_permissions for http://localhost:5566/*');
+  if (options.hostPermissions.length > 0) {
+    if (!manifest.host_permissions) {
+      manifest.host_permissions = [];
+    }
+    for (const hostPermission of options.hostPermissions) {
+      if (!manifest.host_permissions.includes(hostPermission)) {
+        manifest.host_permissions.push(hostPermission);
+        console.log(`    - Added host_permissions for ${hostPermission}`);
+      }
+    }
   }
 
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));

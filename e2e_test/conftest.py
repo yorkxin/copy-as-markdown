@@ -25,7 +25,7 @@ _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 EXTENSION_PATHS = {
     "chrome": os.path.join(_ROOT_DIR, "chrome-test"),
-    "firefox": os.path.join(_ROOT_DIR, "firefox"), # unpacked folder for Firefox
+    "firefox": os.path.join(_ROOT_DIR, "firefox-test"),
 }
 
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
@@ -109,8 +109,16 @@ class BrowserEnvironment:
         script = """
         const enabled = arguments[0];
         const callback = arguments[arguments.length - 1];
+        const msg = { topic: 'set-mock-clipboard', params: { enabled } };
+        let entrypoint;
+        if (typeof browser !== 'undefined') {
+            entrypoint = browser.runtime;
+        } else {
+            entrypoint = chrome.runtime;
+        }
+
         try {
-          chrome.runtime.sendMessage({ topic: 'set-mock-clipboard', params: { enabled } })
+          entrypoint.sendMessage(msg)
             .then(() => callback(true))
             .catch((error) => callback(error?.message || false));
         } catch (error) {
