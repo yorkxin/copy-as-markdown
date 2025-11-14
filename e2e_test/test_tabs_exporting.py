@@ -33,9 +33,6 @@ class TestTabsExporting:
         # Configure keyboard shortcuts using shared helper
         self.browser.setup_keyboard_shortcuts(self.all_keyboard_shortcuts)
 
-        # Setup custom formats using shared helper
-        self.browser.setup_all_custom_formats()
-
         # Open test helper window
         self.browser.open_test_helper_window(self.fixture_server.url)
 

@@ -1,14 +1,11 @@
-import json
 import re
 import subprocess
 import sys
 from textwrap import dedent
 import time
-import pytesseract
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -32,10 +29,6 @@ EXTENSION_PATHS = {
 }
 
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
-
-# Set the path to the Tesseract OCR executable
-if os.name == 'nt':  # Check if running on Windows
-    pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
 
 # Force browser download and avoid using the browsers installed on the system. (See https://github.com/SeleniumHQ/selenium/issues/15627)
 # This is required to make sure we run the Chrome for Testing (CfT).
@@ -80,12 +73,6 @@ class BrowserEnvironment:
             raise ValueError(f"Unsupported browser: {brand}")
     def options_page_url(self):
         return f"{self._extension_base_url}/dist/static/options.html"
-
-    def options_permissions_page_url(self):
-        return f"{self._extension_base_url}/dist/static/options-permissions.html"
-
-    def request_permission_page_url(self, permission: str):
-        return f"{self._extension_base_url}/dist/static/permissions.html?permissions={permission}"
 
     def custom_format_page_url(self, context: str, slot: int):
         return f"{self._extension_base_url}/dist/static/custom-format.html?context={context}&slot={slot}"
@@ -211,59 +198,12 @@ class BrowserEnvironment:
         self.driver.close()
         self.driver.switch_to.window(original_window)
 
-    def setup_all_custom_formats(self):
-        self.macro_setup_custom_formats([
-            CustomFormatConfig(context="single-link", template="{{title}},{{url}}", slot=1, show_in_popup=True),
-            CustomFormatConfig(context="multiple-links", template=dedent("""
-                {{#links}}
-                {{number}},'{{title}}','{{url}}'
-                {{/links}}
-                """).strip(), slot=1, show_in_popup=True),
-            CustomFormatConfig(context="multiple-links", template=dedent("""
-                {{#grouped}}
-                {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
-                {{#links}}
-                    {{number}},title='{{title}}',url='{{url}}'
-                {{/links}}
-                {{/grouped}}
-                """).strip(), slot=2, show_in_popup=True),
-        ])
-
-    def macro_setup_custom_formats(self, custom_formats: List[CustomFormatConfig]):
-        """Setup custom format for the specified context in the specified slot.
-        
-        Args:
-            custom_formats: A list of CustomFormatConfig dictionaries containing
-                context, template, slot, and show_in_popup settings
-        """
-        original_window = self.driver.current_window_handle
-        self.driver.switch_to.new_window('tab')
-
-        # Process each format
-        for fmt in custom_formats:
-            self.driver.get(self.custom_format_page_url(fmt.context, fmt.slot))
-            textarea = self.driver.find_element(By.ID, "input-template")
-            textarea.clear()
-            textarea.send_keys(fmt.template)
-            if fmt.show_in_popup:
-                show_in_popup_checkbox = self.driver.find_element(By.ID, "input-show-in-menus")
-                show_in_popup_checkbox.click()
-            save_button = self.driver.find_element(By.ID, "save")
-            save_button.click()
-
-        self.driver.close()
-        self.driver.switch_to.window(original_window)
-
     def trigger_popup_menu(self, manifest_key: str):
         assert self._popup_window_handle, "Popup window not opened"
         original_window = self.driver.current_window_handle
         self.switch_to_popup()
         self.driver.find_element(By.ID, manifest_key).click()
         self.driver.switch_to.window(original_window)
-
-    def select_all(self):
-        mod = Keys.COMMAND if sys.platform == 'darwin' else Keys.CONTROL
-        self.driver.find_element(By.TAG_NAME, "body").send_keys(mod + "a")
 
     def open_test_helper_window(self, base_url: str) -> str:
         self.driver.switch_to.new_window('tab')
@@ -292,24 +232,6 @@ class BrowserEnvironment:
         """Switch to the demo window via the test helper window"""
         self.driver.switch_to.window(self._test_helper_window_handle)
         self.driver.find_element(By.ID, "switch-to-demo").click()
-
-    def set_highlighted_tabs(self):
-        """
-        Set highlighted tabs in the demo window
-
-        NOTE: This function must be called *AFTER* set_grouped_tabs(), because
-        tab grouping will dismiss all the highlighted tabs.
-        """
-        self.driver.switch_to.window(self._test_helper_window_handle)
-        self.driver.find_element(By.ID, "highlight-tabs").click()
-
-    def set_grouped_tabs(self):
-        self.driver.switch_to.window(self._test_helper_window_handle)
-        self.driver.find_element(By.ID, "group-tabs").click()
-
-    def ungroup_tabs(self):
-        self.driver.switch_to.window(self._test_helper_window_handle)
-        self.driver.find_element(By.ID, "ungroup-tabs").click()
 
     def close_demo_window(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
