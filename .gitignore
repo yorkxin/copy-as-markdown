@@ -11,6 +11,7 @@ firefox-deved/dist/*
 chrome/dist/*
 !chrome/dist/.keep
 chrome-test/
+chrome-optional-test/
 .nyc_output
 tmp/*
 

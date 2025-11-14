@@ -5,9 +5,10 @@
  */
 
 import { test as base, chromium } from '@playwright/test';
-import type { BrowserContext } from '@playwright/test';
+import type { BrowserContext, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { getServiceWorker } from './helpers';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -16,22 +17,24 @@ const __dirname = path.dirname(__filename);
 interface ExtensionFixtures {
   context: BrowserContext;
   extensionId: string;
+  extensionPath: string;
+  serviceWorker: Worker;
 }
 
 export const test = base.extend<ExtensionFixtures>({
-  // eslint-disable-next-line no-empty-pattern
-  context: async ({ }, use) => {
+  extensionPath: [path.join(__dirname, '../../chrome-test'), { option: true }],
+
+  context: async ({ extensionPath }, use) => {
     // Path to test-specific Chrome extension with tabs permission
     // This is built by scripts/build-test-extension.js
-    const pathToExtension = path.join(__dirname, '../../chrome-test');
 
     // Launch persistent context with extension loaded
     // IMPORTANT: Extensions only work in Chromium with persistent context
     const context = await chromium.launchPersistentContext('', {
       headless: false, // Extensions require headed mode
       args: [
-        `--disable-extensions-except=${pathToExtension}`,
-        `--load-extension=${pathToExtension}`,
+        `--disable-extensions-except=${extensionPath}`,
+        `--load-extension=${extensionPath}`,
         // Disable some features that might interfere with testing
         '--disable-blink-features=AutomationControlled',
       ],
@@ -67,6 +70,10 @@ export const test = base.extend<ExtensionFixtures>({
     const extensionId = serviceWorker.url().split('/')[2];
 
     await use(extensionId);
+  },
+  serviceWorker: async ({ context }, use) => {
+    const worker = await getServiceWorker(context);
+    await use(worker);
   },
 });
 

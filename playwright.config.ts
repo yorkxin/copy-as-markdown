@@ -76,6 +76,15 @@ export default defineConfig({
         channel: 'chromium',
       },
     },
+    {
+      name: 'permissions-tests',
+      testDir: './test/e2e/permissions',
+      fullyParallel: true,
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chromium',
+      },
+    },
   ],
 
   // Run local dev server before starting the tests

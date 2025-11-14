@@ -6,7 +6,10 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import type { ClipboardMockCall } from '../../src/services/clipboard-service.js';
 
+import process from 'node:process';
+
 const CLIPBOARD_SEPARATOR = '=========== CLIPBOARD SEPARATOR ===========';
+const MOCK_PERMISSION_STORAGE_KEY = '__pw_mock_optional_permissions__';
 
 /**
  * Get all mock clipboard calls from the service worker
@@ -259,6 +262,96 @@ export async function setMockClipboardMode(serviceWorker: Worker, enabled: boole
  */
 export async function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export async function removeOptionalPermissions(serviceWorker: Worker, permissions: string[]): Promise<void> {
+  await serviceWorker.evaluate(async (perms) => {
+    await chrome.permissions.remove({ permissions: perms });
+  }, permissions);
+}
+
+export async function hasPermissions(serviceWorker: Worker, permissions: string[]): Promise<boolean> {
+  return await serviceWorker.evaluate(async (perms) => {
+    return await chrome.permissions.contains({ permissions: perms });
+  }, permissions);
+}
+
+function registerMockPermissions({ storageKey }: { storageKey: string }) {
+  if (typeof chrome === 'undefined' || !chrome.permissions || (chrome.permissions as any).__pwMocked) {
+    return;
+  }
+
+  const KEY = storageKey;
+
+  function getGranted(): Promise<Set<string>> {
+    return new Promise((resolve) => {
+      chrome.storage.local.get({ [KEY]: [] }, (items) => {
+        const list = Array.isArray(items[KEY]) ? items[KEY] as string[] : [];
+        resolve(new Set(list));
+      });
+    });
+  }
+
+  function saveGranted(set: Set<string>): Promise<void> {
+    return new Promise((resolve) => {
+      chrome.storage.local.set({ [KEY]: Array.from(set) }, () => resolve());
+    });
+  }
+
+  function wrap<T>(handler: (perms: string[]) => Promise<T>) {
+    return (details: { permissions?: string[] } = {}, callback?: (result: T) => void) => {
+      const permissions = details.permissions ?? [];
+      const promise = handler(permissions);
+      if (typeof callback === 'function') {
+        promise.then(result => callback(result));
+        return;
+      }
+      return promise;
+    };
+  }
+
+  chrome.permissions.contains = wrap(async (permissions) => {
+    const granted = await getGranted();
+    return permissions.every(perm => granted.has(perm));
+  });
+
+  chrome.permissions.request = wrap(async (permissions) => {
+    const granted = await getGranted();
+    permissions.forEach(perm => granted.add(perm));
+    await saveGranted(granted);
+    return true;
+  });
+
+  chrome.permissions.remove = wrap(async (permissions) => {
+    const granted = await getGranted();
+    permissions.forEach(perm => granted.delete(perm));
+    await saveGranted(granted);
+    return true;
+  });
+
+  (chrome.permissions as any).__pwMocked = true;
+}
+
+export async function enableMockPermissions(serviceWorker: Worker): Promise<void> {
+  await serviceWorker.evaluate(registerMockPermissions, { storageKey: MOCK_PERMISSION_STORAGE_KEY });
+}
+
+export async function injectMockPermissionsIntoPage(page: Page): Promise<void> {
+  await page.addInitScript(registerMockPermissions, { storageKey: MOCK_PERMISSION_STORAGE_KEY });
+}
+
+export async function ensureCustomFormatsVisible(
+  serviceWorker: Worker,
+  context: 'single-link' | 'multiple-links',
+  slots: string[],
+): Promise<void> {
+  await serviceWorker.evaluate(async ({ ctx, slots }) => {
+    const assignments: Record<string, unknown> = {};
+    for (const slot of slots) {
+      assignments[`custom_formats.${ctx}.${slot}.show_in_menus`] = true;
+    }
+    await chrome.storage.sync.set(assignments);
+  }, { ctx: context, slots });
 }
 
 /**

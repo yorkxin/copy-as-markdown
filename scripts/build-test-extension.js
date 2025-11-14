@@ -21,73 +21,109 @@ const rootDir = path.join(__dirname, '..');
 const sourceDir = path.join(rootDir, 'chrome');
 const targetDir = path.join(rootDir, 'chrome-test');
 
-console.log('Building test extension...');
+const variants = [
+  {
+    name: 'default (permissions pre-granted)',
+    targetDir: 'chrome-test',
+    keepOptionalPermissions: false,
+  },
+  {
+    name: 'optional permissions (request flows)',
+    targetDir: 'chrome-optional-test',
+    keepOptionalPermissions: true,
+  },
+];
 
-// Remove existing test directory
-if (fs.existsSync(targetDir)) {
-  fs.rmSync(targetDir, { recursive: true });
+console.log('Building test extensions...');
+
+for (const variant of variants) {
+  buildTestExtensionVariant(variant);
 }
-
-// Copy chrome directory to chrome-test
-console.log(`Copying ${sourceDir} to ${targetDir}...`);
-fs.cpSync(sourceDir, targetDir, { recursive: true });
-
-// Inject MOCK_CLIPBOARD flag into background.js
-console.log('Injecting MOCK_CLIPBOARD flag into background.js...');
-const backgroundPath = path.join(targetDir, 'dist', 'background.js');
-
-if (fs.existsSync(backgroundPath)) {
-  let backgroundContent = fs.readFileSync(backgroundPath, 'utf8');
-
-  // Inject the MOCK_CLIPBOARD flag at the top of the file
-  backgroundContent = `globalThis.MOCK_CLIPBOARD = true;\n\n${backgroundContent}`;
-
-  fs.writeFileSync(backgroundPath, backgroundContent, 'utf8');
-  console.log('  - Injected MOCK_CLIPBOARD = true into background.js');
-} else {
-  console.error('  ⚠ Warning: background.js not found - did you run compile-chrome?');
-}
-
-// Read and modify manifest.json
-const manifestPath = path.join(targetDir, 'manifest.json');
-const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-
-console.log('Modifying manifest.json for testing...');
 
 /**
- * Move a permission from optional_permissions to required permissions
- * @param {string} permission - The permission name to move
+ * Build a single test extension variant
+ * @param {{ name: string; targetDir: string; keepOptionalPermissions: boolean }} config
  */
-function moveToRequiredPermission(permission) {
-  if (manifest.optional_permissions && manifest.optional_permissions.includes(permission)) {
-    manifest.optional_permissions = manifest.optional_permissions.filter(p => p !== permission);
+function buildTestExtensionVariant(config) {
+  const variantTargetDir = path.join(rootDir, config.targetDir);
+  console.log(`\n→ ${config.name}`);
 
-    if (!manifest.permissions.includes(permission)) {
-      manifest.permissions.push(permission);
-    }
+  // Remove existing directory
+  if (fs.existsSync(variantTargetDir)) {
+    fs.rmSync(variantTargetDir, { recursive: true });
+  }
 
-    console.log(`  - Moved "${permission}" from optional_permissions to permissions`);
+  // Copy chrome directory to variant target
+  console.log(`  Copying ${sourceDir} → ${variantTargetDir}`);
+  fs.cpSync(sourceDir, variantTargetDir, { recursive: true });
+
+  injectMockClipboardFlag(variantTargetDir);
+  rewriteManifest(variantTargetDir, config.keepOptionalPermissions);
+
+  console.log(`  ✓ Built ${config.targetDir}`);
+}
+
+function injectMockClipboardFlag(targetDirPath) {
+  console.log('  Injecting MOCK_CLIPBOARD flag into background.js');
+  const backgroundPath = path.join(targetDirPath, 'dist', 'background.js');
+
+  if (!fs.existsSync(backgroundPath)) {
+    console.error('    ⚠ Warning: background.js not found - did you run compile-chrome?');
+    return;
+  }
+
+  let backgroundContent = fs.readFileSync(backgroundPath, 'utf8');
+  if (!backgroundContent.startsWith('globalThis.MOCK_CLIPBOARD = true;')) {
+    backgroundContent = `globalThis.MOCK_CLIPBOARD = true;\n\n${backgroundContent}`;
+    fs.writeFileSync(backgroundPath, backgroundContent, 'utf8');
+    console.log('    - Injected MOCK_CLIPBOARD = true');
+  } else {
+    console.log('    - MOCK_CLIPBOARD flag already present');
   }
 }
 
-// Move 'tabs' and 'tabGroups' from optional_permissions to permissions for testing
-moveToRequiredPermission('tabs');
-moveToRequiredPermission('tabGroups');
+function rewriteManifest(targetDirPath, keepOptionalPermissions) {
+  console.log('  Modifying manifest.json');
+  const manifestPath = path.join(targetDirPath, 'manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
-// Add host_permissions for test fixtures (localhost)
-if (!manifest.host_permissions) {
-  manifest.host_permissions = [];
+  if (!Array.isArray(manifest.permissions)) {
+    manifest.permissions = [];
+  }
+  if (!Array.isArray(manifest.optional_permissions)) {
+    manifest.optional_permissions = [];
+  }
+
+  function moveToRequiredPermission(permission) {
+    if (manifest.optional_permissions && manifest.optional_permissions.includes(permission)) {
+      manifest.optional_permissions = manifest.optional_permissions.filter(p => p !== permission);
+
+      if (!manifest.permissions.includes(permission)) {
+        manifest.permissions.push(permission);
+      }
+
+      console.log(`    - Moved "${permission}" to permissions`);
+    }
+  }
+
+  if (!keepOptionalPermissions) {
+    moveToRequiredPermission('tabs');
+    moveToRequiredPermission('tabGroups');
+  } else {
+    console.log('    - Keeping tabs/tabGroups optional for permission flow tests');
+  }
+
+  if (!manifest.host_permissions) {
+    manifest.host_permissions = [];
+  }
+
+  if (!manifest.host_permissions.includes('http://localhost:5566/*')) {
+    manifest.host_permissions.push('http://localhost:5566/*');
+    console.log('    - Added host_permissions for http://localhost:5566/*');
+  }
+
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+
+  console.log('    Required:', manifest.permissions.join(', '));
+  console.log('    Optional:', manifest.optional_permissions?.join(', ') || 'None');
 }
-
-if (!manifest.host_permissions.includes('http://localhost:5566/*')) {
-  manifest.host_permissions.push('http://localhost:5566/*');
-  console.log('  - Added host_permissions for http://localhost:5566/*');
-}
-
-// Write modified manifest
-fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-
-console.log('✓ Test extension built successfully at:', targetDir);
-console.log('\nPermissions:');
-console.log('  Required:', manifest.permissions.join(', '));
-console.log('  Optional:', manifest.optional_permissions.join(', '));
