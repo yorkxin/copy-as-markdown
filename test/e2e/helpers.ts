@@ -57,6 +57,34 @@ export async function waitForMockClipboard(serviceWorker: Worker, timeout = 3000
 }
 
 /**
+ * Programmatically trigger a context menu handler by dispatching the Chrome
+ * onClicked event inside the service worker.
+ */
+export async function triggerContextMenu(
+  serviceWorker: Worker,
+  menuItemId: string,
+  info: Partial<browser.contextMenus.OnClickData> = {},
+  tabOverrides: Partial<browser.tabs.Tab> = {},
+): Promise<void> {
+  await serviceWorker.evaluate(async ({ menuItemId, info, tabOverrides }) => {
+    const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!activeTab) {
+      throw new Error('No active tab found');
+    }
+
+    const targetTab = { ...activeTab, ...tabOverrides };
+    const clickInfo: browser.contextMenus.OnClickData = {
+      menuItemId,
+      pageUrl: targetTab.url,
+      ...info,
+    };
+
+    // @ts-expect-error - dispatch exists in Chrome extension context
+    chrome.contextMenus.onClicked.dispatch(clickInfo, targetTab);
+  }, { menuItemId, info, tabOverrides });
+}
+
+/**
  * Get the service worker for the extension
  * Filters by chrome-extension:// URL to ensure we get the extension's worker,
  * not some other service worker (like from PWAs or other extensions)

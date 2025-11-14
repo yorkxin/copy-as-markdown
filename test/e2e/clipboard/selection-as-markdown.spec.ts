@@ -10,7 +10,7 @@
 
 import type { Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, triggerContextMenu, waitForMockClipboard } from '../helpers';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -50,6 +50,25 @@ test.describe('Selection as Markdown', () => {
     const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
     // Should match the expected markdown output from the fixture
+    const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection.md'), 'utf-8');
+    expect(clipboardText).toBe(expectedMarkdown);
+  });
+
+  test('should copy selection via context menu', async ({ page, serviceWorker }) => {
+    await page.evaluate(() => {
+      const range = document.createRange();
+      const body = document.querySelector('body');
+      if (body) {
+        range.selectNodeContents(body);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+    });
+
+    await triggerContextMenu(serviceWorker, 'selection-as-markdown');
+
+    const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
     const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection.md'), 'utf-8');
     expect(clipboardText).toBe(expectedMarkdown);
   });
