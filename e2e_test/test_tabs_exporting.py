@@ -64,7 +64,7 @@ class TestTabsExporting:
         self.browser.switch_to_demo_window()
         Clipboard.clear()
         kbd.press()
-        clipboard_text = self.browser.window.poll_clipboard_content()
+        clipboard_text = Clipboard.poll()
         assert clipboard_text == expected_text
 
     def test_all_tabs_popup_menu(self, set_default_format_style):
@@ -75,5 +75,5 @@ class TestTabsExporting:
         self.browser.switch_to_demo_window()
         Clipboard.clear()
         self.browser.trigger_popup_menu("all-tabs-link-as-list")
-        clipboard_text = self.browser.window.poll_clipboard_content()
+        clipboard_text = Clipboard.poll()
         assert clipboard_text == expected_text
