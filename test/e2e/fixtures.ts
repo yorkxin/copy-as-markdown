@@ -8,7 +8,7 @@ import { test as base, chromium } from '@playwright/test';
 import type { BrowserContext, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getServiceWorker } from './helpers';
+import { getServiceWorker, setMockClipboardMode } from './helpers';
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -73,6 +73,7 @@ export const test = base.extend<ExtensionFixtures>({
   },
   serviceWorker: async ({ context }, use) => {
     const worker = await getServiceWorker(context);
+    await setMockClipboardMode(worker, true);
     await use(worker);
   },
 });

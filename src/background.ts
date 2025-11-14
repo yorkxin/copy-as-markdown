@@ -14,6 +14,9 @@ import { createBrowserContextMenuHandler } from './handlers/context-menu-handler
 import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
+const MOCK_CLIPBOARD_STORAGE_KEY = 'mockClipboardEnabled';
+const mockClipboardStorage: browser.storage.StorageArea = (browser.storage as any).session || browser.storage.local;
+const DEFAULT_MOCK_CLIPBOARD_STATE = false;
 
 // Initialize markdown and bookmarks
 const markdownInstance = new Markdown();
@@ -30,8 +33,12 @@ const linkExportService = new LinkExportService(markdownInstance, CustomFormatsS
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
 const useNavigatorClipboard = (globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true;
 const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
+
+// TODO: refactor the clipboard mock toggle. Managing mock state here is messy.
+// Maybe manage the mock state inside Clipboard Service.
+
 // Track mock clipboard usage (for E2E tests)
-let useMockClipboard = (globalThis as any).MOCK_CLIPBOARD === true;
+let useMockClipboard = DEFAULT_MOCK_CLIPBOARD_STATE;
 let clipboardService = createBrowserClipboardService(
   useNavigatorClipboard ? navigator.clipboard : null,
   iframeCopyUrl,
@@ -39,19 +46,23 @@ let clipboardService = createBrowserClipboardService(
 );
 
 async function setMockClipboardMode(enabled: boolean): Promise<void> {
-  if (useMockClipboard === enabled) {
-    return;
+  if (useMockClipboard !== enabled) {
+    useMockClipboard = enabled;
+    clipboardService = createBrowserClipboardService(
+      useNavigatorClipboard ? navigator.clipboard : null,
+      iframeCopyUrl,
+      useMockClipboard,
+    );
+    if (useMockClipboard) {
+      (globalThis as any).__mockClipboardService = clipboardService;
+    } else {
+      delete (globalThis as any).__mockClipboardService;
+    }
   }
-  useMockClipboard = enabled;
-  clipboardService = createBrowserClipboardService(
-    useNavigatorClipboard ? navigator.clipboard : null,
-    iframeCopyUrl,
-    useMockClipboard,
-  );
-  if (useMockClipboard) {
-    (globalThis as any).__mockClipboardService = clipboardService;
-  } else {
-    delete (globalThis as any).__mockClipboardService;
+  try {
+    await mockClipboardStorage.set({ [MOCK_CLIPBOARD_STORAGE_KEY]: useMockClipboard });
+  } catch (error) {
+    console.error('Failed to persist mock clipboard state', error);
   }
 }
 
@@ -60,6 +71,28 @@ if (useMockClipboard) {
   (globalThis as any).__mockClipboardService = clipboardService;
 }
 (globalThis as any).setMockClipboardMode = setMockClipboardMode;
+
+async function initializeMockClipboardState(): Promise<void> {
+  try {
+    const stored = await mockClipboardStorage.get(MOCK_CLIPBOARD_STORAGE_KEY);
+    const storedValue = stored[MOCK_CLIPBOARD_STORAGE_KEY];
+    if (typeof storedValue === 'boolean') {
+      if (storedValue !== useMockClipboard) {
+        await setMockClipboardMode(storedValue);
+      }
+      return;
+    }
+
+    await mockClipboardStorage.set({ [MOCK_CLIPBOARD_STORAGE_KEY]: DEFAULT_MOCK_CLIPBOARD_STATE });
+    if (useMockClipboard !== DEFAULT_MOCK_CLIPBOARD_STATE) {
+      await setMockClipboardMode(DEFAULT_MOCK_CLIPBOARD_STATE);
+    }
+  } catch (error) {
+    console.error('Failed to initialize mock clipboard state', error);
+  }
+}
+
+initializeMockClipboardState().catch(error => console.error('Mock clipboard init error', error));
 
 // Selection converter service with turndown options provider
 const turndownJsUrl = 'dist/vendor/turndown.js';
@@ -186,6 +219,13 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // Handle copy-to-clipboard message from popup
   if (message.topic === 'copy-to-clipboard') {
     clipboardService.copy(message.params.text)
+      .then(() => sendResponse({ ok: true, text: null }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  if (message.topic === 'set-mock-clipboard') {
+    setMockClipboardMode(message.params?.enabled === true)
       .then(() => sendResponse({ ok: true, text: null }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;

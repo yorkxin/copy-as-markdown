@@ -26,9 +26,11 @@ from e2e_test.helpers import Coords, Window
 from e2e_test.keyboard_shortcuts import KeyboardShortcuts
 
 # Paths to your extensions
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 EXTENSION_PATHS = {
-    "chrome": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "chrome"),  # unpacked folder for Chrome
-    "firefox": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "firefox"), # unpacked folder for Firefox
+    "chrome": os.path.join(_ROOT_DIR, "chrome-test"),
+    "firefox": os.path.join(_ROOT_DIR, "firefox"), # unpacked folder for Firefox
 }
 
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
@@ -127,60 +129,29 @@ class BrowserEnvironment:
         self.driver.close()
         self._popup_window_handle = None
 
-    def macro_grant_permission(self, permission: str) -> bool:
+    def set_mock_clipboard_mode(self, enabled: bool):
+        original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
-        handler = self.driver.current_window_handle
-        self.driver.get(self.options_permissions_page_url())
-        element = self.driver.find_element(By.CSS_SELECTOR, f"[data-request-permission='{permission}']")
-        if element.is_displayed() == False or element.is_enabled() == False:
-            return False
+        self.driver.get(self.options_page_url())
 
-        element.click()
+        script = """
+        const enabled = arguments[0];
+        const callback = arguments[arguments.length - 1];
+        try {
+          chrome.runtime.sendMessage({ topic: 'set-mock-clipboard', params: { enabled } })
+            .then(() => callback(true))
+            .catch((error) => callback(error?.message || false));
+        } catch (error) {
+          callback(error?.message || false);
+        }
+        """
 
-        # No need to check for allow button in Firefox, because the permission is granted automatically.
-        if self.brand == "firefox":
-            return True
+        result = self.driver.execute_async_script(script, enabled)
+        if result is not True:
+            raise RuntimeError(f"Failed to set mock clipboard mode: {result}")
 
-        for _ in range(10):
-            # check if the permission is granted by calling browser API
-            result = self.driver.execute_script(f"return browser.permissions.contains({{permissions: ['{permission}']}});")
-            if result:
-                return True
-
-            # Try OCR
-            # There is a delay until the allow button is clickable
-            # so we need to check the button periodically
-            time.sleep(0.2)
-            
-            found, bbox = self.window.find_phrase_with_ocr("Allow")
-            if found:
-                self.window.click(bbox.center())
-                # move the mouse out of the bbox so that the next screenshot can be recognized by OCR
-                self.window.move_to(Coords(bbox.right() + 100, bbox.bottom() + 100))
-
-        # move to somewhere so that the next screenshot can be recognized by OCR
-        self.window.move_to(Coords(0, 0))
-    
-        raise Exception("Allow button not found")
-
-    def macro_revoke_permission(self, permission: str) -> bool:
-        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
-        element = self.driver.find_element(By.CSS_SELECTOR, f"[data-remove-permission='{permission}']")
-        if element.is_displayed() == False or element.is_enabled() == False:
-            return False
-
-        element.click()
-        return True
-
-    def macro_grant_permissions(self):
-        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
-        for permission in ["tabs", "tabGroups"]:
-            self.macro_grant_permission(permission)
-
-    def macro_revoke_permissions(self):
-        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
-        for permission in ["tabs", "tabGroups"]:
-            self.macro_revoke_permission(permission)
+        self.driver.close()
+        self.driver.switch_to.window(original_window)
 
     def macro_change_format_style(self, ul_style: str, indent_style: str|None = None):
         original_window = self.driver.current_window_handle
@@ -423,7 +394,10 @@ def browser_environment(request):
         else:
             raise ValueError(f"Unsupported browser: {browser}")
 
-        yield BrowserEnvironment(extension_id, helper_extension_id, browser, driver)
+        browser_env = BrowserEnvironment(extension_id, helper_extension_id, browser, driver)
+        browser_env.set_mock_clipboard_mode(False)
+
+        yield browser_env
     finally:
         driver.quit()
 
@@ -594,4 +568,3 @@ def get_scaling_factor():
             return dpi_x / 96.0
         except (AttributeError, OSError):
             return 1.0 # Default to no scaling if all else fails
-

@@ -26,11 +26,7 @@ class TestCurrentTab:
         # Setup custom formats using shared helper
         self.browser.setup_all_custom_formats()
 
-        # Grant tabs permission
-        # XXX: because the popup is using chrome.tabs.query() to get tab with id from parameter,
-        # it is necessary to grant the 'tabs' permission. Technically, 'activeTab' is the tab that opens the popup window.
-        # In the actual Chrome / Firefox, 'tabs' permission is not required to get title / url of the current tab.
-        self.browser.macro_grant_permission("tabs")
+        # Permissions are pre-granted via the chrome-test build; no runtime prompts expected.
 
         # Open test helper window
         self.browser.open_test_helper_window(self.fixture_server.url)

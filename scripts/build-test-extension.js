@@ -5,9 +5,8 @@
  *
  * This script:
  * 1. Copies the chrome/ directory to chrome-test/
- * 2. Injects MOCK_CLIPBOARD flag into background.js to enable clipboard mocking
- * 3. Modifies manifest.json to move 'tabs' from optional to required permissions
- * 4. Used only for E2E testing with Playwright
+ * 2. Modifies manifest.json to move 'tabs' from optional to required permissions
+ * 3. Used only for E2E testing with Playwright
  */
 
 import fs from 'node:fs';
@@ -57,29 +56,9 @@ function buildTestExtensionVariant(config) {
   console.log(`  Copying ${sourceDir} → ${variantTargetDir}`);
   fs.cpSync(sourceDir, variantTargetDir, { recursive: true });
 
-  injectMockClipboardFlag(variantTargetDir);
   rewriteManifest(variantTargetDir, config.keepOptionalPermissions);
 
   console.log(`  ✓ Built ${config.targetDir}`);
-}
-
-function injectMockClipboardFlag(targetDirPath) {
-  console.log('  Injecting MOCK_CLIPBOARD flag into background.js');
-  const backgroundPath = path.join(targetDirPath, 'dist', 'background.js');
-
-  if (!fs.existsSync(backgroundPath)) {
-    console.error('    ⚠ Warning: background.js not found - did you run compile-chrome?');
-    return;
-  }
-
-  let backgroundContent = fs.readFileSync(backgroundPath, 'utf8');
-  if (!backgroundContent.startsWith('globalThis.MOCK_CLIPBOARD = true;')) {
-    backgroundContent = `globalThis.MOCK_CLIPBOARD = true;\n\n${backgroundContent}`;
-    fs.writeFileSync(backgroundPath, backgroundContent, 'utf8');
-    console.log('    - Injected MOCK_CLIPBOARD = true');
-  } else {
-    console.log('    - MOCK_CLIPBOARD flag already present');
-  }
 }
 
 function rewriteManifest(targetDirPath, keepOptionalPermissions) {

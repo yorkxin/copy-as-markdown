@@ -96,7 +96,7 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
     // If chrome.commands is available, we're ready
     if (workerState.hasChromeCommands) {
       // Service worker ready with Chrome APIs
-      return extensionWorker;
+      break;
     }
 
     // Chrome APIs not ready yet, wait and retry
@@ -114,7 +114,12 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
     }
   }
 
-  throw new Error(`Service worker Chrome APIs not ready after ${timeout}ms`);
+  if (!extensionWorker) {
+    throw new Error(`Service worker Chrome APIs not ready after ${timeout}ms`);
+  }
+
+  await setMockClipboardMode(extensionWorker, true);
+  return extensionWorker;
 }
 
 async function runClipboardCommand(
