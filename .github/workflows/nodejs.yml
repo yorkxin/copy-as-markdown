@@ -28,7 +28,6 @@ jobs:
     timeout-minutes: 10
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble
-      options: --user 1001
     steps:
       - uses: actions/checkout@v4
       - name: Install clipboard dependencies
