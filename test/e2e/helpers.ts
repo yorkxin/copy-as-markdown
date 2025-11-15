@@ -171,8 +171,24 @@ async function runClipboardCommand(
 async function execClipboardCommand(command: string, args: string[], input?: string): Promise<string> {
   return await new Promise((resolve, reject) => {
     const child = spawn(command, args);
+    const cmdLabel = [command, ...args].join(' ').trim();
+    const timeoutMs = 1000;
+    console.log(`[clipboard] Running command: ${cmdLabel || command}`);
     let stdout = '';
     let stderr = '';
+    let settled = false;
+    let timer: NodeJS.Timeout | null = null;
+
+    const settle = (cb: () => void) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      if (timer) {
+        clearTimeout(timer);
+      }
+      cb();
+    };
 
     if (input !== undefined && child.stdin) {
       child.stdin.write(input);
@@ -185,14 +201,24 @@ async function execClipboardCommand(command: string, args: string[], input?: str
     child.stderr?.on('data', (chunk) => {
       stderr += chunk.toString();
     });
-    child.on('error', reject);
+    child.on('error', (error) => {
+      console.error(`[clipboard] Command error (${cmdLabel}): ${error.message}`);
+      settle(() => reject(error));
+    });
     child.on('close', (code) => {
+      console.log(`[clipboard] Command exited (${cmdLabel}) with code ${code}`);
       if (code === 0) {
-        resolve(stdout);
+        settle(() => resolve(stdout));
       } else {
-        reject(new Error(`Command ${command} failed with code ${code}: ${stderr || stdout}`));
+        settle(() => reject(new Error(`Command ${command} failed with code ${code}: ${stderr || stdout}`)));
       }
     });
+
+    timer = setTimeout(() => {
+      console.warn(`[clipboard] Command timeout (${cmdLabel}) after ${timeoutMs}ms`);
+      child.kill('SIGKILL');
+      settle(() => reject(new Error(`Command ${command} timed out after ${timeoutMs}ms`)));
+    }, timeoutMs);
   });
 }
 
