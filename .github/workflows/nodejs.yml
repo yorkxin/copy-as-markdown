@@ -36,8 +36,10 @@ jobs:
       - run: npm ci
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+      - name: Build extension
+        run: npm run compile && node ./scripts/build-test-extension.js
       - name: Run Playwright tests
-        run: xvfb-run npm run test:e2e
+        run: xvfb-run -a npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
