@@ -26,6 +26,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --user 1001
     steps:
       - uses: actions/checkout@v4
       - name: Install clipboard dependencies
@@ -38,8 +41,6 @@ jobs:
           node-version-file: '.node-version'
           cache: npm
       - run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
       - name: Build extension
         run: npm run compile && node ./scripts/build-test-extension.js
       - name: Run Playwright tests
