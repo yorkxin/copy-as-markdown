@@ -1,8 +1,14 @@
 # Python Selenium Suite
 
-Only one legacy Selenium test remains (`test_tabs_exporting.py`). It exercises tab exporting via the helper extension and relies on keyboard automation, so it still requires a headed browser environment.
+Playwright still cannot interact with Firefox extension backgrounds or popup contexts, so we keep a small Selenium suite to cover those Firefox-only scenarios:
 
-The keyboard shortcut tests matter because they validate the `content-script.ts` workarounds for missing user gestures, including the Chrome flow that can prompt for the Clipboard Write permission (see <https://github.com/yorkxin/copy-as-markdown/pull/113>).
+- `test_current_tab.py` – keyboard shortcuts and popup flows for current-tab copy (default + custom formats).
+- `test_tabs_exporting.py` – keyboard/popup flows for all/highlighted tabs (including grouped tabs and custom formats).
+
+These tests rely on the helper extension and keyboard automation, so they must run in a headed environment.
+
+The keyboard shortcut cases still matter because they validate the `content-script.ts` workarounds for missing user gestures, including the Chrome flow that can prompt for Clipboard Write permission (see <https://github.com/yorkxin/copy-as-markdown/pull/113>).
+
 
 ## Requirements
 
@@ -21,12 +27,12 @@ pip install -r requirements.txt
 From the repository root:
 
 ```shell
-# Build the extension bundles and test variants (Chrome + Firefox)
-npm run compile-chrome && npm run compile-firefox
+# Build the extension bundles and test variants (Chrome + Firefox MV3)
+npm run compile-chrome
 node scripts/build-test-extension.js
 
-# Run the Selenium test
-pytest e2e_test/test_tabs_exporting.py
+# Run the Selenium suite (Chrome + Firefox)
+pytest e2e_test
 ```
 
-The test opens real browser windows, interacts with the helper extension, and writes to the OS clipboard. Ensure no other global shortcuts conflict with the `Alt+Shift+*` combos used in `e2e_test/keyboard_shortcuts.py`.
+The tests open real browser windows, interact with the helper extension, and write to the OS clipboard. Ensure no other global shortcuts conflict with the `Alt+Shift+*` combos defined in `e2e_test/keyboard_shortcuts.py`.
