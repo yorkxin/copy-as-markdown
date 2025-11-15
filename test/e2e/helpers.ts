@@ -236,26 +236,31 @@ function getClipboardCommandCandidates(direction: 'read' | 'write'): string[][] 
   }
 
   // Linux / other Unix (Wayland + X11 fallbacks)
-  const wayland = [
-    ['wl-paste'],
-  ];
-  const waylandWrite = [
-    ['wl-copy'],
-  ];
+  const hasWayland = Boolean(process.env.WAYLAND_DISPLAY);
+  const hasX11 = Boolean(process.env.DISPLAY);
+  const candidates: string[][] = [];
 
   if (direction === 'read') {
-    return [
-      ...wayland,
-      ['xclip', '-selection', 'clipboard', '-o'],
-      ['xsel', '--clipboard', '--output'],
-    ];
+    if (hasWayland) {
+      candidates.push(['wl-paste']);
+    }
+    if (hasX11) {
+      candidates.push(['xsel', '--clipboard', '--output']);
+    }
+  } else {
+    if (hasWayland) {
+      candidates.push(['wl-copy']);
+    }
+    if (hasX11) {
+      candidates.push(['xsel', '--clipboard', '--input']);
+    }
   }
 
-  return [
-    ...waylandWrite,
-    ['xclip', '-selection', 'clipboard'],
-    ['xsel', '--clipboard', '--input'],
-  ];
+  if (candidates.length === 0) {
+    throw new Error('No clipboard commands available. Install wl-clipboard or {xsel,xclip} and ensure DISPLAY or WAYLAND_DISPLAY is set.');
+  }
+
+  return candidates;
 }
 
 async function readSystemClipboard(): Promise<string> {
