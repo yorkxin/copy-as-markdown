@@ -14,6 +14,7 @@
     "test:e2e:headed": "npm run compile-chrome && node scripts/build-test-extension.js && playwright test --headed",
     "test:e2e:ui": "npm run compile-chrome && node scripts/build-test-extension.js && playwright test --ui",
     "test:e2e:debug": "npm run compile-chrome && node scripts/build-test-extension.js && playwright test --debug",
+    "test:e2e:docker": "docker build -t copy-as-markdown-playwright -f docker/playwright-ci/Dockerfile . && docker run --rm -it --ipc=host -p 9323:9323 copy-as-markdown-playwright",
     "test:all": "npm test && npm run test:e2e",
     "typecheck": "tsc --noEmit",
     "build:ts": "tsc",

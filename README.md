@@ -117,9 +117,36 @@ Unit tests are under `./test/**/*.test.ts`.
 
 To run, use `npm test`.
 
-### E2E Tests
+### Playwright E2E Tests
 
-Using Selenium (Python). Please refer to [e2e_test/](./e2e_test) folder.
+The extension UI and clipboard flows are covered with Playwright. Tests run Chromium in headed mode with a persistent profile, which is required for Chrome extensions.
+
+```sh
+# Builds the Chrome test extension and then runs the Playwright suite
+npm run test:e2e
+```
+
+On Linux without a graphical session you can use Xvfb:
+
+```sh
+xvfb-run -a npm run test:e2e
+```
+
+#### Run in Docker (CI parity)
+
+To mimic the GitHub Actions runner locally, use the provided Dockerfile which is based on the official Playwright image (already contains browsers, fonts, and necessary libraries):
+
+```sh
+npm run test:e2e:docker
+```
+
+For an interactive shell that shares your working tree for faster iteration:
+
+```sh
+docker run --rm -it --ipc=host -v "$(pwd)":/workspace copy-as-markdown-playwright bash
+```
+
+Both commands execute exactly what CI does (`npm run test:e2e`), so you can reproduce CI-only flaky failures locally.
 
 ### QA
 
