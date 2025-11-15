@@ -19,11 +19,16 @@ test.describe.configure({ mode: 'serial' });
 test.describe('Clipboard Smoke Tests', () => {
   let serviceWorker: Worker;
 
-  test.beforeEach(async ({ context, page }) => {
+  test.beforeEach(async ({ context }) => {
     serviceWorker = await getServiceWorker(context);
     await setMockClipboardMode(serviceWorker, false);
-    await resetSystemClipboard();
+  });
 
+  test.beforeEach(async () => {
+    await resetSystemClipboard();
+  });
+
+  test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:5566/qa.html');
     await page.waitForLoadState('networkidle');
   });
