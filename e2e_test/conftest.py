@@ -6,6 +6,7 @@ import time
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -206,12 +207,52 @@ class BrowserEnvironment:
         self.driver.close()
         self.driver.switch_to.window(original_window)
 
+    def setup_all_custom_formats(self):
+        self.macro_setup_custom_formats([
+            CustomFormatConfig(context="single-link", template="{{title}},{{url}}", slot=1, show_in_popup=True),
+            CustomFormatConfig(context="multiple-links", template=dedent("""
+                {{#links}}
+                {{number}},'{{title}}','{{url}}'
+                {{/links}}
+            """).strip(), slot=1, show_in_popup=True),
+            CustomFormatConfig(context="multiple-links", template=dedent("""
+                {{#grouped}}
+                {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
+                {{#links}}
+                    {{number}},title='{{title}}',url='{{url}}'
+                {{/links}}
+                {{/grouped}}
+            """).strip(), slot=2, show_in_popup=True),
+        ])
+
+    def macro_setup_custom_formats(self, custom_formats: List[CustomFormatConfig]):
+        original_window = self.driver.current_window_handle
+        self.driver.switch_to.new_window('tab')
+
+        for fmt in custom_formats:
+            self.driver.get(self.custom_format_page_url(fmt.context, fmt.slot))
+            textarea = self.driver.find_element(By.ID, "input-template")
+            textarea.clear()
+            textarea.send_keys(fmt.template)
+            show_checkbox = self.driver.find_element(By.ID, "input-show-in-menus")
+            if fmt.show_in_popup != show_checkbox.is_selected():
+                show_checkbox.click()
+            save_button = self.driver.find_element(By.ID, "save")
+            save_button.click()
+
+        self.driver.close()
+        self.driver.switch_to.window(original_window)
+
     def trigger_popup_menu(self, manifest_key: str):
         assert self._popup_window_handle, "Popup window not opened"
         original_window = self.driver.current_window_handle
         self.switch_to_popup()
         self.driver.find_element(By.ID, manifest_key).click()
         self.driver.switch_to.window(original_window)
+
+    def select_all(self):
+        mod = Keys.COMMAND if sys.platform == 'darwin' else Keys.CONTROL
+        self.driver.find_element(By.TAG_NAME, "body").send_keys(mod + "a")
 
     def open_test_helper_window(self, base_url: str) -> str:
         self.driver.switch_to.new_window('tab')
