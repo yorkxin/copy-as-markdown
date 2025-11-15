@@ -39,22 +39,10 @@ export default defineConfig({
   // Configure projects for major browsers
   projects: [
     {
-      name: 'ui-tests',
-      testDir: './test/e2e/ui',
-      // Run UI tests in parallel (they don't use clipboard)
-      fullyParallel: true,
-      use: {
-        ...devices['Desktop Chrome'],
-        // IMPORTANT: Must use 'chromium' channel for extensions to work
-        // Chrome and Edge removed command-line flags needed for side-loading
-        channel: 'chromium',
-      },
-    },
-    {
-      name: 'clipboard-tests',
-      testDir: './test/e2e/clipboard',
-      testIgnore: /clipboard-smoke\.spec\.ts/,
-      // Run clipboard tests in parallel (using mock clipboard service)
+      name: 'parallel-tests',
+      // All non-smoke tests can run together
+      testDir: './test/e2e',
+      testIgnore: './test/e2e/clipboard',
       fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
@@ -66,22 +54,12 @@ export default defineConfig({
     {
       name: 'clipboard-smoke',
       testDir: './test/e2e/clipboard',
-      testMatch: /clipboard-smoke\.spec\.ts/,
       fullyParallel: false,
       workers: 1,
-      dependencies: ['clipboard-tests'],
+      dependencies: ['parallel-tests'],
       use: {
         ...devices['Desktop Chrome'],
         // IMPORTANT: Must use 'chromium' channel for extensions to work
-        channel: 'chromium',
-      },
-    },
-    {
-      name: 'permissions-tests',
-      testDir: './test/e2e/permissions',
-      fullyParallel: true,
-      use: {
-        ...devices['Desktop Chrome'],
         channel: 'chromium',
       },
     },
