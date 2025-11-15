@@ -5,7 +5,7 @@ import CustomFormatsStorage from './storage/custom-formats-storage.js';
 import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
 import { createBrowserTabExportService } from './services/tab-export-service.js';
-import { createBrowserClipboardService } from './services/clipboard-service.js';
+import { createBrowserClipboardServiceController } from './services/clipboard-service.js';
 import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
 import { createBrowserHandlerCore } from './handlers/handler-core.js';
@@ -30,10 +30,16 @@ const linkExportService = new LinkExportService(markdownInstance, CustomFormatsS
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
 const useNavigatorClipboard = (globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true;
 const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
-const clipboardService = createBrowserClipboardService(
+
+const clipboardService = createBrowserClipboardServiceController(
   useNavigatorClipboard ? navigator.clipboard : null,
   iframeCopyUrl,
 );
+
+(globalThis as any).setMockClipboardMode = clipboardService.setMockMode;
+
+clipboardService.initializeMockState()
+  .catch(error => console.error('Mock clipboard init error', error));
 
 // Selection converter service with turndown options provider
 const turndownJsUrl = 'dist/vendor/turndown.js';
@@ -137,6 +143,12 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
 // listen to messages from popup
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  // Handle check-mock-clipboard message from popup
+  if (message.topic === 'check-mock-clipboard') {
+    sendResponse({ ok: true, text: clipboardService.isMockMode() ? 'true' : 'false' });
+    return true;
+  }
+
   // Handle badge messages directly in background.ts
   if (message.topic === 'badge') {
     if (message.params.type === 'success') {
@@ -148,6 +160,21 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         .then(() => sendResponse({ ok: true, text: null }))
         .catch(error => sendResponse({ ok: false, error: error.message }));
     }
+    return true;
+  }
+
+  // Handle copy-to-clipboard message from popup
+  if (message.topic === 'copy-to-clipboard') {
+    clipboardService.copy(message.params.text)
+      .then(() => sendResponse({ ok: true, text: null }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
+    return true;
+  }
+
+  if (message.topic === 'set-mock-clipboard') {
+    clipboardService.setMockMode(message.params?.enabled === true)
+      .then(() => sendResponse({ ok: true, text: null }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
 

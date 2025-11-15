@@ -3,6 +3,7 @@ import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 let windowId = -1;
 let tabId = -1;
 let keepOpen = false;
+let useMockClipboard = false;
 
 interface MessageParam {
   format?: string;
@@ -67,7 +68,20 @@ if (formPopupActions) {
     try {
       const response = await sendMessage(message);
       if (response.text) {
-        await navigator.clipboard.writeText(response.text);
+        // Use mock clipboard service for testing, otherwise use navigator.clipboard
+        if (useMockClipboard) {
+          // In test mode, send message to background to use mock clipboard
+          const clipboardResponse = await browser.runtime.sendMessage({
+            topic: 'copy-to-clipboard',
+            params: { text: response.text },
+          }) as MessageResponse | undefined;
+          if (!clipboardResponse?.ok) {
+            throw new Error(clipboardResponse?.error || 'Mock clipboard copy failed');
+          }
+        } else {
+          // In production, use navigator.clipboard (proper approach with user gesture)
+          await navigator.clipboard.writeText(response.text);
+        }
       }
       await browser.runtime.sendMessage({
         topic: 'badge',
@@ -192,7 +206,26 @@ async function showCustomFormatsForCurrentTab(): Promise<void> {
   });
 }
 
+/**
+ * Check if mock clipboard is available in the background service worker
+ * This is only true in test mode when MOCK_CLIPBOARD flag is injected
+ */
+async function checkMockClipboardAvailable(): Promise<boolean> {
+  try {
+    const response = await browser.runtime.sendMessage({
+      topic: 'check-mock-clipboard',
+      params: {},
+    }) as MessageResponse;
+    return response.ok && response.text === 'true';
+  } catch {
+    return false;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
+  // Check if mock clipboard is available for testing
+  useMockClipboard = await checkMockClipboardAvailable();
+
   const crWindow = await getCurrentWindow();
   if (crWindow.id !== undefined) {
     windowId = crWindow.id;

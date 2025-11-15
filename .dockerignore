@@ -1,0 +1,15 @@
+.git
+.github
+.vscode
+.idea
+node_modules
+build
+dist
+playwright-report
+test-results
+chrome-test
+chrome-optional-test
+firefox-test
+*.log
+*.lock-wscript
+npm-debug.log*

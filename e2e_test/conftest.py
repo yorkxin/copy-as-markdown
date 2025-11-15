@@ -1,11 +1,8 @@
-import ctypes
-import json
 import re
 import subprocess
 import sys
 from textwrap import dedent
 import time
-import pytesseract
 import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -22,20 +19,17 @@ from dataclasses import dataclass
 import os
 from typing import List
 
-from e2e_test.helpers import Coords, Window
 from e2e_test.keyboard_shortcuts import KeyboardShortcuts
 
 # Paths to your extensions
+_ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 EXTENSION_PATHS = {
-    "chrome": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "chrome"),  # unpacked folder for Chrome
-    "firefox": os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "firefox"), # unpacked folder for Firefox
+    "chrome": os.path.join(_ROOT_DIR, "chrome-test"),
+    "firefox": os.path.join(_ROOT_DIR, "firefox-test"),
 }
 
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
-
-# Set the path to the Tesseract OCR executable
-if os.name == 'nt':  # Check if running on Windows
-    pytesseract.pytesseract.tesseract_cmd = os.getenv('TESSERACT_PATH', 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe')
 
 # Force browser download and avoid using the browsers installed on the system. (See https://github.com/SeleniumHQ/selenium/issues/15627)
 # This is required to make sure we run the Chrome for Testing (CfT).
@@ -62,7 +56,6 @@ class BrowserEnvironment:
     helper_extension_id: str
     brand: str # chrome or firefox
     driver: webdriver.Chrome|webdriver.Firefox
-    window: Window
     _extension_base_url: str
     _test_helper_window_handle: str
     _demo_window_handle: str
@@ -79,26 +72,8 @@ class BrowserEnvironment:
             self._extension_base_url = f"moz-extension://{extension_id}"
         else:
             raise ValueError(f"Unsupported browser: {brand}")
-        win_pos = driver.get_window_position()
-        win_size_logical = driver.get_window_size()
-
-        scale_factor = 1.0
-        if os.name == 'nt': # Check if running on Windows
-            scale_factor = get_scaling_factor()
-
-        actual_width = int(win_size_logical['width'] * scale_factor)
-        actual_height = int(win_size_logical['height'] * scale_factor)
-
-        self.window = Window(win_pos['y'], win_pos['x'], actual_width, actual_height)
-
     def options_page_url(self):
         return f"{self._extension_base_url}/dist/static/options.html"
-
-    def options_permissions_page_url(self):
-        return f"{self._extension_base_url}/dist/static/options-permissions.html"
-
-    def request_permission_page_url(self, permission: str):
-        return f"{self._extension_base_url}/dist/static/permissions.html?permissions={permission}"
 
     def custom_format_page_url(self, context: str, slot: int):
         return f"{self._extension_base_url}/dist/static/custom-format.html?context={context}&slot={slot}"
@@ -127,60 +102,37 @@ class BrowserEnvironment:
         self.driver.close()
         self._popup_window_handle = None
 
-    def macro_grant_permission(self, permission: str) -> bool:
+    def set_mock_clipboard_mode(self, enabled: bool):
+        original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
-        handler = self.driver.current_window_handle
-        self.driver.get(self.options_permissions_page_url())
-        element = self.driver.find_element(By.CSS_SELECTOR, f"[data-request-permission='{permission}']")
-        if element.is_displayed() == False or element.is_enabled() == False:
-            return False
+        self.driver.get(self.options_page_url())
 
-        element.click()
+        script = """
+        const enabled = arguments[0];
+        const callback = arguments[arguments.length - 1];
+        const msg = { topic: 'set-mock-clipboard', params: { enabled } };
+        let entrypoint;
+        if (typeof browser !== 'undefined') {
+            entrypoint = browser.runtime;
+        } else {
+            entrypoint = chrome.runtime;
+        }
 
-        # No need to check for allow button in Firefox, because the permission is granted automatically.
-        if self.brand == "firefox":
-            return True
+        try {
+          entrypoint.sendMessage(msg)
+            .then(() => callback(true))
+            .catch((error) => callback(error?.message || false));
+        } catch (error) {
+          callback(error?.message || false);
+        }
+        """
 
-        for _ in range(10):
-            # check if the permission is granted by calling browser API
-            result = self.driver.execute_script(f"return browser.permissions.contains({{permissions: ['{permission}']}});")
-            if result:
-                return True
+        result = self.driver.execute_async_script(script, enabled)
+        if result is not True:
+            raise RuntimeError(f"Failed to set mock clipboard mode: {result}")
 
-            # Try OCR
-            # There is a delay until the allow button is clickable
-            # so we need to check the button periodically
-            time.sleep(0.2)
-            
-            found, bbox = self.window.find_phrase_with_ocr("Allow")
-            if found:
-                self.window.click(bbox.center())
-                # move the mouse out of the bbox so that the next screenshot can be recognized by OCR
-                self.window.move_to(Coords(bbox.right() + 100, bbox.bottom() + 100))
-
-        # move to somewhere so that the next screenshot can be recognized by OCR
-        self.window.move_to(Coords(0, 0))
-    
-        raise Exception("Allow button not found")
-
-    def macro_revoke_permission(self, permission: str) -> bool:
-        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
-        element = self.driver.find_element(By.CSS_SELECTOR, f"[data-remove-permission='{permission}']")
-        if element.is_displayed() == False or element.is_enabled() == False:
-            return False
-
-        element.click()
-        return True
-
-    def macro_grant_permissions(self):
-        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
-        for permission in ["tabs", "tabGroups"]:
-            self.macro_grant_permission(permission)
-
-    def macro_revoke_permissions(self):
-        assert self.driver.current_url == self.options_permissions_page_url(), "visit the permissions page first"
-        for permission in ["tabs", "tabGroups"]:
-            self.macro_revoke_permission(permission)
+        self.driver.close()
+        self.driver.switch_to.window(original_window)
 
     def macro_change_format_style(self, ul_style: str, indent_style: str|None = None):
         original_window = self.driver.current_window_handle
@@ -262,7 +214,7 @@ class BrowserEnvironment:
                 {{#links}}
                 {{number}},'{{title}}','{{url}}'
                 {{/links}}
-                """).strip(), slot=1, show_in_popup=True),
+            """).lstrip(), slot=1, show_in_popup=True),
             CustomFormatConfig(context="multiple-links", template=dedent("""
                 {{#grouped}}
                 {{number}},title='{{title}}',url='{{url}}',isGroup={{isGroup}}
@@ -270,28 +222,21 @@ class BrowserEnvironment:
                     {{number}},title='{{title}}',url='{{url}}'
                 {{/links}}
                 {{/grouped}}
-                """).strip(), slot=2, show_in_popup=True),
+            """).lstrip(), slot=2, show_in_popup=True),
         ])
 
     def macro_setup_custom_formats(self, custom_formats: List[CustomFormatConfig]):
-        """Setup custom format for the specified context in the specified slot.
-        
-        Args:
-            custom_formats: A list of CustomFormatConfig dictionaries containing
-                context, template, slot, and show_in_popup settings
-        """
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
 
-        # Process each format
         for fmt in custom_formats:
             self.driver.get(self.custom_format_page_url(fmt.context, fmt.slot))
             textarea = self.driver.find_element(By.ID, "input-template")
             textarea.clear()
             textarea.send_keys(fmt.template)
-            if fmt.show_in_popup:
-                show_in_popup_checkbox = self.driver.find_element(By.ID, "input-show-in-menus")
-                show_in_popup_checkbox.click()
+            show_checkbox = self.driver.find_element(By.ID, "input-show-in-menus")
+            if fmt.show_in_popup != show_checkbox.is_selected():
+                show_checkbox.click()
             save_button = self.driver.find_element(By.ID, "save")
             save_button.click()
 
@@ -338,12 +283,6 @@ class BrowserEnvironment:
         self.driver.find_element(By.ID, "switch-to-demo").click()
 
     def set_highlighted_tabs(self):
-        """
-        Set highlighted tabs in the demo window
-
-        NOTE: This function must be called *AFTER* set_grouped_tabs(), because
-        tab grouping will dismiss all the highlighted tabs.
-        """
         self.driver.switch_to.window(self._test_helper_window_handle)
         self.driver.find_element(By.ID, "highlight-tabs").click()
 
@@ -423,7 +362,10 @@ def browser_environment(request):
         else:
             raise ValueError(f"Unsupported browser: {browser}")
 
-        yield BrowserEnvironment(extension_id, helper_extension_id, browser, driver)
+        browser_env = BrowserEnvironment(extension_id, helper_extension_id, browser, driver)
+        browser_env.set_mock_clipboard_mode(False)
+
+        yield browser_env
     finally:
         driver.quit()
 
@@ -528,70 +470,3 @@ class FixtureServer:
 def fixture_server():
     with FixtureServer() as server:
         yield server
-
-def get_scaling_factor():
-    """Get the current scaling factor for the display on Windows."""
-
-    """   
-    This function was generated by GitHub Copilot, and the author is not sure whether
-    it is correct or not, but it works.
-
-    As for why the default is 96 DPI (from Copilot):
-    
-    The value of 96 DPI (Dots Per Inch) as a standard or default in Windows 
-    (and subsequently in many web and display contexts) is largely historical.
-
-    In the early days of graphical user interfaces, particularly with Windows, a 
-    common screen resolution was 640x480 pixels on a 13-14 inch monitor. At this 
-    size and resolution, 96 DPI was a reasonable approximation that allowed a "point" 
-    in typography (1/72nd of an inch) to be represented by roughly 1.33 pixels (96/72).
-    This made on-screen rendering of fonts and other elements appear at a somewhat 
-    predictable physical size.
-
-    While monitor technology and resolutions have drastically changed, 96 DPI became
-    an entrenched baseline in the Windows operating system for how it internally 
-    calculates scaling and relates logical units (like points or inches) to 
-    physical pixels. When display scaling is set to 100%, Windows assumes the display 
-    is effectively 96 DPI. Higher scaling percentages (e.g., 125%, 150%) mean that 
-    applications are told the effective DPI is higher (e.g., 120 DPI, 144 DPI), and 
-    they should render elements larger.
-
-    So, the `96.0` in your `get_scaling_factor` function serves as this reference point:
-    *   If `dpiX.value` is 96, the scaling factor is `1.0` (100% scaling).
-    *   If `dpiX.value` is 120 (common for 125% scaling), the scaling factor is `1.25`.
-    *   If `dpiX.value` is 144 (common for 150% scaling), the scaling factor is `1.5`.
-
-    It's a convention that has persisted for compatibility and consistency within 
-    the Windows ecosystem.
-    """
-
-
-    assert os.name == 'nt', "This function is only for Windows"
-
-    try:
-        # Query DPI Awareness (Windows 10 and later)
-        awareness = ctypes.c_int()
-        ctypes.windll.shcore.GetProcessDpiAwareness(0, ctypes.byref(awareness))
-        # Query DPI for current monitor (Windows 8.1 and later)
-        monitor = ctypes.windll.user32.MonitorFromWindow(ctypes.windll.user32.GetDesktopWindow(), 2) # MONITOR_DEFAULTTONEAREST
-        dpiX = ctypes.c_uint()
-        dpiY = ctypes.c_uint()
-        ctypes.windll.shcore.GetDpiForMonitor(monitor, 0, ctypes.byref(dpiX), ctypes.byref(dpiY)) # MDT_EFFECTIVE_DPI = 0
-        return dpiX.value / 96.0  # 96 DPI is the default
-    except (AttributeError, OSError):
-        # Fallback for older Windows or if shcore.dll is not found
-        try:
-            # GetDeviceCaps may also be affected by DPI virtualization
-            # but it's a common fallback.
-            # Constants for GetDeviceCaps
-            LOGPIXELSX = 88
-            # Get a device context for the entire screen
-            dc = ctypes.windll.user32.GetDC(0)
-            # Get the logical pixels per inch in the X direction
-            dpi_x = ctypes.windll.gdi32.GetDeviceCaps(dc, LOGPIXELSX)
-            # Release the device context
-            ctypes.windll.user32.ReleaseDC(0, dc)
-            return dpi_x / 96.0
-        except (AttributeError, OSError):
-            return 1.0 # Default to no scaling if all else fails
-

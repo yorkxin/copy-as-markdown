@@ -45,35 +45,8 @@ ALL_SHORTCUTS = {
     "selection-as-markdown": Shortcut(label="Copy Selection as Markdown", manifest_key="selection-as-markdown", keystroke="0"),
     "current-tab-link": Shortcut(label="current tab: [title](url)", manifest_key="current-tab-link", keystroke="2"),
     "current-tab-custom-format-1": Shortcut(label="current tab: custom format 1", manifest_key="current-tab-custom-format-1", keystroke="3"),
-    "current-tab-custom-format-2": Shortcut(label="current tab: custom format 2", manifest_key="current-tab-custom-format-2", keystroke="4"),
-    "current-tab-custom-format-3": Shortcut(label="current tab: custom format 3", manifest_key="current-tab-custom-format-3", keystroke="5"),
-    "current-tab-custom-format-4": Shortcut(label="current tab: custom format 4", manifest_key="current-tab-custom-format-4", keystroke="6"),
-    "current-tab-custom-format-5": Shortcut(label="current tab: custom format 5", manifest_key="current-tab-custom-format-5", keystroke="7"),
     "all-tabs-link-as-list": Shortcut(label="all tabs: - [title](url)", manifest_key="all-tabs-link-as-list", keystroke="8"),
-    "all-tabs-link-as-task-list": Shortcut(label="all tabs: - [ ] [title](url)", manifest_key="all-tabs-link-as-task-list", keystroke="9"),
-    "all-tabs-title-as-list": Shortcut(label="all tabs: - title", manifest_key="all-tabs-title-as-list", keystroke="a"),
-    # skipping b to avoid conflict with Firefox's menu shortcut
-    "all-tabs-url-as-list": Shortcut(label="all tabs: - url", manifest_key="all-tabs-url-as-list", keystroke="c"),
-    "highlighted-tabs-link-as-list": Shortcut(label="selected tabs: - [title](url)", manifest_key="highlighted-tabs-link-as-list", keystroke="d"),
-    # skipping e and f to avoid conflict with Firefox's menu shortcut
-    "highlighted-tabs-link-as-task-list": Shortcut(label="selected tabs: - [ ] [title](url)", manifest_key="highlighted-tabs-link-as-task-list", keystroke="g"),
-    # skipping h to avoid conflict with Firefox's menu shortcut
-    "highlighted-tabs-title-as-list": Shortcut(label="selected tabs: - title", manifest_key="highlighted-tabs-title-as-list", keystroke="i"),
-    "highlighted-tabs-url-as-list": Shortcut(label="selected tabs: - url", manifest_key="highlighted-tabs-url-as-list", keystroke="j"),
-    "all-tabs-custom-format-1": Shortcut(label="all tabs: custom format 1", manifest_key="all-tabs-custom-format-1", keystroke="k"),
-    "all-tabs-custom-format-2": Shortcut(label="all tabs: custom format 2", manifest_key="all-tabs-custom-format-2", keystroke="l"),
-    "all-tabs-custom-format-3": Shortcut(label="all tabs: custom format 3", manifest_key="all-tabs-custom-format-3", keystroke="m"),
-    "all-tabs-custom-format-4": Shortcut(label="all tabs: custom format 4", manifest_key="all-tabs-custom-format-4", keystroke="n"),
-    "all-tabs-custom-format-5": Shortcut(label="all tabs: custom format 5", manifest_key="all-tabs-custom-format-5", keystroke="o"),
-    "highlighted-tabs-custom-format-1": Shortcut(label="selected tabs: custom format 1", manifest_key="highlighted-tabs-custom-format-1", keystroke="p"),
-    "highlighted-tabs-custom-format-2": Shortcut(label="selected tabs: custom format 2", manifest_key="highlighted-tabs-custom-format-2", keystroke="q"),
-    "highlighted-tabs-custom-format-3": Shortcut(label="selected tabs: custom format 3", manifest_key="highlighted-tabs-custom-format-3", keystroke="r"),
-    # skipping s and t to avoid conflict with Firefox's menu shortcut
-    "highlighted-tabs-custom-format-4": Shortcut(label="selected tabs: custom format 4", manifest_key="highlighted-tabs-custom-format-4", keystroke="u"),
-    # skipping v to avoid conflict with Firefox's menu shortcut
-    "highlighted-tabs-custom-format-5": Shortcut(label="selected tabs: custom format 5", manifest_key="highlighted-tabs-custom-format-5", keystroke="w")
 }
-
 
 def init_keyboard_shortcuts(shortcut_keys=None):
     """Initialize keyboard shortcuts configuration
