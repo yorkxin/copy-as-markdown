@@ -173,7 +173,6 @@ async function execClipboardCommand(command: string, args: string[], input?: str
     const child = spawn(command, args);
     const cmdLabel = [command, ...args].join(' ').trim();
     const timeoutMs = 1000;
-    console.log(`[clipboard] Running command: ${cmdLabel || command}`);
     let stdout = '';
     let stderr = '';
     let settled = false;
