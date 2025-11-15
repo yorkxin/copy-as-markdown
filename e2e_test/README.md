@@ -2,6 +2,8 @@
 
 Only one legacy Selenium test remains (`test_tabs_exporting.py`). It exercises tab exporting via the helper extension and relies on keyboard automation, so it still requires a headed browser environment.
 
+The keyboard shortcut tests matter because they validate the `content-script.ts` workarounds for missing user gestures, including the Chrome flow that can prompt for the Clipboard Write permission (see <https://github.com/yorkxin/copy-as-markdown/pull/113>).
+
 ## Requirements
 
 - Python 3.11+
