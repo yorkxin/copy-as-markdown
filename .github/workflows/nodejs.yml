@@ -28,6 +28,10 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+      - name: Install clipboard dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xsel xclip wl-clipboard
       - name: Use Node.js
         uses: actions/setup-node@v5
         with:
