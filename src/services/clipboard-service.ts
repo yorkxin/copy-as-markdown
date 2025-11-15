@@ -176,3 +176,100 @@ export function createBrowserClipboardService(
     iframeUrl,
   );
 }
+
+export interface ClipboardServiceController extends ClipboardService {
+  /**
+   * Toggle mock clipboard mode and persist the preference.
+   */
+  setMockMode: (enabled: boolean) => Promise<void>;
+
+  /**
+   * Initialize the controller by restoring the last saved mock mode.
+   */
+  initializeMockState: () => Promise<void>;
+
+  /**
+   * Return whether the controller is currently using the mock clipboard.
+   */
+  isMockMode: () => boolean;
+}
+
+/**
+ * Create a clipboard service that can toggle between real and mock implementations.
+ * Handles persistence of the mock state and exposes it via globals for E2E tests.
+ */
+export function createBrowserClipboardServiceController(
+  clipboardAPI: ClipboardAPI | null,
+  iframeUrl: string,
+  options?: {
+    storageArea?: browser.storage.StorageArea;
+    storageKey?: string;
+    defaultMockState?: boolean;
+  },
+): ClipboardServiceController {
+  const storageKey = options?.storageKey ?? 'mockClipboardEnabled';
+  const storageArea = options?.storageArea ?? ((browser.storage as any).session || browser.storage.local);
+  const defaultMockState = options?.defaultMockState ?? false;
+
+  let mockMode = defaultMockState;
+  let activeService = createBrowserClipboardService(clipboardAPI, iframeUrl, mockMode);
+
+  function syncGlobalMockService(): void {
+    if (mockMode) {
+      (globalThis as any).__mockClipboardService = activeService;
+    } else if ((globalThis as any).__mockClipboardService) {
+      delete (globalThis as any).__mockClipboardService;
+    }
+  }
+
+  syncGlobalMockService();
+
+  async function persistMockState(): Promise<void> {
+    try {
+      await storageArea.set({ [storageKey]: mockMode });
+    } catch (error) {
+      console.error('Failed to persist mock clipboard state', error);
+    }
+  }
+
+  async function setMockMode(enabled: boolean): Promise<void> {
+    if (mockMode !== enabled) {
+      mockMode = enabled;
+      activeService = createBrowserClipboardService(clipboardAPI, iframeUrl, mockMode);
+      syncGlobalMockService();
+    }
+
+    await persistMockState();
+  }
+
+  async function initializeMockState(): Promise<void> {
+    try {
+      const stored = await storageArea.get(storageKey);
+      const storedValue = stored[storageKey];
+      if (typeof storedValue === 'boolean') {
+        if (storedValue !== mockMode) {
+          await setMockMode(storedValue);
+        } else {
+          await persistMockState();
+        }
+        return;
+      }
+
+      await storageArea.set({ [storageKey]: defaultMockState });
+      if (mockMode !== defaultMockState) {
+        await setMockMode(defaultMockState);
+      }
+    } catch (error) {
+      console.error('Failed to initialize mock clipboard state', error);
+    }
+  }
+
+  return {
+    copy: async (text: string, tab?: browser.tabs.Tab): Promise<void> => {
+      await activeService.copy(text, tab);
+    },
+    setMockMode,
+    initializeMockState,
+    isMockMode: () => mockMode,
+  };
+}
