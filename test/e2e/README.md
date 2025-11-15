@@ -1,134 +1,115 @@
-# Playwright E2E Tests for Chrome Extension
+# Playwright E2E Tests for Copy as Markdown
 
-This test suite uses Playwright to test the "Copy as Markdown" Chrome extension without GUI automation (no OCR, no PyAutoGUI). Tests trigger extension functionality programmatically and verify clipboard output.
+Playwright drives the extension exclusively through Chromium's extension APIs (no OCR or GUI automation). Tests talk directly to the extension's background service worker, so we can trigger commands, open popups, request permissions, and capture clipboard output without manual steps.
 
 ## Test Architecture
 
 ```text
 Playwright (Node.js)
      ↓
-Load Extension in Chromium
+chromium.launchPersistentContext(extensionPath)
      ↓
-Page Context ←→ Extension Context
+Page Context ←→ Extension Service Worker
      ↓              ↓
-Trigger Action → Background Service Worker
+Trigger commands → Chrome APIs (tabs, commands, permissions, storage)
      ↓
-Verify Clipboard (via Node.js clipboardy library)
+Clipboard Mode (mock or real OS clipboard)
 ```
 
-## Test Organization
+- Manifest V3 extensions only work inside a persistent Chromium context, so every spec shares the same `BrowserContext`.
+- The shared service worker fixture exposes helpers that dispatch `chrome.commands.onCommand`, `chrome.contextMenus.onClicked`, etc.
+- Clipboard reads/writes are intercepted by a mock service by default and can be switched to the real OS clipboard for smoke coverage.
 
-Tests are organized into separate projects based on resource usage:
+## Projects & Directories
 
-### UI Tests (`test/e2e/ui/`)
+Everything in `test/e2e` is split by concern, but only the clipboard smoke tests run in their own Playwright project:
 
-- **Execution**: Run in parallel (up to 4 workers)
-- **Tests**: Custom format UI, form validation, preview functionality
-- **No shared resources**: These tests don't use the system clipboard
+| Path | Description | Project |
+| --- | --- | --- |
+| `ui/` | Popup/options UI flows that never touch the system clipboard | `parallel-tests` |
+| `formatting/` | Commands that transform tab/selection data and write to the clipboard | `parallel-tests` |
+| `permissions/` | Optional-permission prompts and grant flows | `parallel-tests` |
+| `clipboard/` | Minimal smoke tests that must touch the real system clipboard | `clipboard-smoke` |
 
-### Clipboard Tests (`test/e2e/clipboard/`)
+`parallel-tests` runs everything except `test/e2e/clipboard` with `fullyParallel: true`. `clipboard-smoke` depends on that project, uses one worker, and toggles the background script into "real clipboard" mode before each spec.
 
-- **Execution**: Run serially (1 worker only)
-- **Tests**: Keyboard shortcuts, custom format keyboard commands
-- **Shared resource**: All tests use the system clipboard, which is a singleton
+## Fixtures & Helpers
 
-This separation allows UI tests to run quickly in parallel while preventing race conditions in clipboard-dependent tests.
+`test/e2e/fixtures.ts` extends Playwright's base test with:
 
-## Test-Specific Extension Build
+- `context`: `chromium.launchPersistentContext` configured with `--disable-extensions-except` so the extension is installed once per project.
+- `page`: Convenience accessor to the first tab inside the persistent context.
+- `extensionPath`: The path passed to Chromium (`chrome-test/` by default, override per-suite for optional-permission tests).
+- `extensionId`: Derived from the service worker URL.
+- `serviceWorker`: Waits for the extension's worker and ensures mock clipboard mode is enabled before each test.
 
-The tests use a test-specific build of the Chrome extension located in `chrome-test/` (gitignored).
+## Test Extension Builds
 
-This directory is automatically created by `scripts/build-test-extension.js` which:
+`npm run test:e2e` first runs `npm run compile && node scripts/build-test-extension.js`, which produces:
 
-1. Copies `chrome/` to `chrome-test/`
-2. Modifies `manifest.json` to grant permissions for automated testing
+- `chrome-test/`: Base Chrome build with `tabs`/`tabGroups` moved to required permissions and host permissions for `http://localhost:5566/*`.
+- `chrome-optional-test/`: Keeps those permissions optional so `test/e2e/permissions` can validate request flows.
+- `firefox-test/`: Maintained for manual experiments, but not exercised in Playwright yet.
+
+Re-run the script anytime the source manifests change.
 
 ## Running Tests
 
 ```bash
-# Run all e2e tests (both projects)
+# Build all test extensions and run every Playwright project headless
 npm run test:e2e
 
-# Run in headed mode (see browser)
+# Headed / inspector variants
 npm run test:e2e:headed
-
-# Run with UI
 npm run test:e2e:ui
-
-# Debug mode
 npm run test:e2e:debug
 
-# Run only UI tests (parallel)
-npx playwright test --project=ui-tests
+# Run a specific project
+npx playwright test --project=parallel-tests
+npx playwright test --project=clipboard-smoke
 
-# Run only clipboard tests (serial)
-npx playwright test --project=clipboard-tests
-
-# List all tests
+# List specs
 npx playwright test --list
 ```
 
-## Writing New Tests
+`playwright.config.ts` also starts `npx http-server fixtures -p 5566 -c-1` automatically (unless `CI` is set) so HTML fixtures are available.
 
-### Fixtures Available
+## Choosing Where To Put New Tests
 
-- `context` - Browser context with extension loaded
-- `extensionId` - The extension's ID
-- `page` - A page in the context
+- Use `test/e2e/ui/` for popup/options UI interactions that never write to the clipboard.
+- Use `test/e2e/formatting/` when you need clipboard assertions but can rely on the mock clipboard (most export commands, custom formats, etc.).
+- Use `test/e2e/permissions/` for scenarios that must request optional permissions. Set `test.use({ extensionPath: OPTIONAL_EXTENSION_PATH })` and enable permission mocks in `beforeEach`.
+- Use `test/e2e/clipboard/` sparingly for high-value smoke coverage that must touch the real system clipboard. These specs toggle mock mode off and run serially.
 
-### Choosing Where to Put Tests
+## Clipboard Modes
 
-**Use `test/e2e/ui/` if:**
+- **Mock clipboard (default):** All background writes go through `__mockClipboardService`. Tests inspect it via `waitForMockClipboard` and stay isolated/parallel.
+- **System clipboard:** `clipboard/clipboard-smoke.spec.ts` calls `setMockClipboardMode(serviceWorker, false)` and uses OS-specific CLI tools to reset and read the actual system clipboard. Because that resource is global, the suite runs serially with a single worker.
 
-- Test doesn't use the system clipboard
-- Test is purely UI/DOM interaction
-- Can run in parallel with other tests
-- Examples: Form validation, preview updates, UI state
+## Permissions Testing
 
-**Use `test/e2e/clipboard/` if:**
+Optional-permission specs combine three pieces:
 
-- Test reads from or writes to the system clipboard
-- Test triggers keyboard shortcuts that copy to clipboard
-- Requires serial execution to avoid race conditions
-- Examples: Keyboard commands, clipboard verification
+1. The `chrome-optional-test` build where tabs/tabGroups stay optional.
+2. Worker-level overrides installed via `enableMockPermissions` so `chrome.permissions.*` can be called programmatically.
+3. Page-level overrides via `injectMockPermissionsIntoPage` so `permissions.html` behaves like Chrome's native bubble.
 
-### Clipboard Access
+That setup lets us assert that:
 
-Tests use the [`clipboardy`](https://www.npmjs.com/package/clipboardy) Node.js library for reliable cross-platform clipboard access:
-
-```typescript
-import { resetClipboard, waitForClipboard } from '../helpers';
-
-// Clear clipboard before test
-await resetClipboard(page);
-
-// Trigger extension action that copies to clipboard
-// ...
-
-// Wait for and verify clipboard content
-const clipboardText = await waitForClipboard(page, 5000);
-expect(clipboardText).toContain('expected content');
-```
-
-**Why clipboardy instead of browser clipboard API?**
-
-- Works regardless of page focus
-- Reliable cross-platform (Windows, macOS, Linux)
-- No "document not focused" errors
-- Direct system clipboard access from Node.js
+- Running commands without `tabs` opens our in-extension permission prompt and does not touch the clipboard.
+- Clicking "Request permission" on `permissions.html` grants `tabs`/`tabGroups` and closes the flow cleanly.
 
 ## Limitations
 
-1. **No native context menu testing** - Browser context menus can't be accessed programmatically
-2. **No real keyboard shortcut testing** - We simulate keyboard shortcuts by directly dispatching command events to the service worker
-3. **System clipboard is singleton** - Clipboard tests must run serially to avoid race conditions (handled via project configuration)
-4. **Extension permissions** - Optional permissions can't be granted in tests since Playwright cannot interact with browser's native UI
-5. **Chrome only** - Playwright doesn't play well with Firefox add-ons
+- Native context menus are still inaccessible, so specs dispatch `chrome.contextMenus.onClicked` directly.
+- Keyboard shortcuts are simulated via `chrome.commands.onCommand.dispatch` with mocked tab payloads.
+- Chrome's real permission bubble is not scriptable; we cover the equivalent UX in our own permission page instead.
+- Tests assume the `chromium` channel, because Chrome/Edge remove the flags needed for side-loading MV3 extensions.
+- Clipboard smoke tests require platform-specific CLI helpers (`pbcopy/pbpaste`, `wl-copy/wl-paste`, `xsel`, or PowerShell). If none are present the suite will fail fast.
 
 ## References
 
 - [Playwright Chrome Extensions Docs](https://playwright.dev/docs/chrome-extensions)
 - [Chrome Extension Testing Best Practices](https://developer.chrome.com/docs/extensions/mv3/tut_testing/)
 - [Chrome Permissions API](https://developer.chrome.com/docs/extensions/reference/api/permissions)
-- [clipboardy - Cross-platform clipboard access](https://www.npmjs.com/package/clipboardy)
 - [Playwright Multi-Project Setup](https://playwright.dev/docs/test-projects)
