@@ -37,6 +37,8 @@ export const test = base.extend<ExtensionFixtures>({
         `--load-extension=${extensionPath}`,
         // Disable some features that might interfere with testing
         '--disable-blink-features=AutomationControlled',
+        // see https://issues.chromium.org/issues/404298968
+        '--disable-features=GlobalShortcutsPortal',
       ],
     });
 
