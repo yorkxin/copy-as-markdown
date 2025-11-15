@@ -24,9 +24,9 @@ async function clearCustomFormatStorage(page: any, slot: string, context: string
 
 test.describe('Custom Format UI', () => {
   test.describe('Single Link Context', () => {
-    test('should load, edit, save, and persist custom format', async ({ page, extensionId }) => {
+    test('should load, edit, save, and persist custom format', async ({ page, extensionBaseUrl }) => {
       // Navigate to custom format page with slot 1 and single-link context
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=1&context=single-link`;
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=1&context=single-link`;
       await page.goto(customFormatUrl);
 
       // Clear storage after navigating to extension page
@@ -92,8 +92,8 @@ test.describe('Custom Format UI', () => {
       await expect(previewTextareaAfterReload).toHaveValue('Example 1 - https://example.com/1');
     });
 
-    test('should show error for invalid template', async ({ page, extensionId }) => {
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=2&context=single-link`;
+    test('should show error for invalid template', async ({ page, extensionBaseUrl }) => {
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=2&context=single-link`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -121,8 +121,8 @@ test.describe('Custom Format UI', () => {
       await expect(saveButton).toBeDisabled();
     });
 
-    test('should use default name when name field is empty', async ({ page, extensionId }) => {
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=3&context=single-link`;
+    test('should use default name when name field is empty', async ({ page, extensionBaseUrl }) => {
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=3&context=single-link`;
       await page.goto(customFormatUrl);
 
       // Clear storage after navigating to extension page
@@ -159,8 +159,8 @@ test.describe('Custom Format UI', () => {
   });
 
   test.describe('Multiple Links Context', () => {
-    test('should handle multiple links template', async ({ page, extensionId }) => {
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=1&context=multiple-links`;
+    test('should handle multiple links template', async ({ page, extensionBaseUrl }) => {
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=1&context=multiple-links`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -199,8 +199,8 @@ test.describe('Custom Format UI', () => {
       await expect(page.locator('#input-show-in-menus')).toBeChecked();
     });
 
-    test('should handle grouped links template', async ({ page, extensionId }) => {
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=2&context=multiple-links`;
+    test('should handle grouped links template', async ({ page, extensionBaseUrl }) => {
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=2&context=multiple-links`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -225,8 +225,8 @@ test.describe('Custom Format UI', () => {
   });
 
   test.describe('Preview Functionality', () => {
-    test('should update preview on input event', async ({ page, extensionId }) => {
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=1&context=single-link`;
+    test('should update preview on input event', async ({ page, extensionBaseUrl }) => {
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=1&context=single-link`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -249,8 +249,8 @@ test.describe('Custom Format UI', () => {
   });
 
   test.describe('Sample Input Display', () => {
-    test('should show sample input for single-link context', async ({ page, extensionId }) => {
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=1&context=single-link`;
+    test('should show sample input for single-link context', async ({ page, extensionBaseUrl }) => {
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=1&context=single-link`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -263,8 +263,8 @@ test.describe('Custom Format UI', () => {
       expect(sampleText).toContain('"number": 1');
     });
 
-    test('should show sample input for multiple-links context', async ({ page, extensionId }) => {
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=1&context=multiple-links`;
+    test('should show sample input for multiple-links context', async ({ page, extensionBaseUrl }) => {
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=1&context=multiple-links`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -279,9 +279,9 @@ test.describe('Custom Format UI', () => {
   });
 
   test.describe('Show in Menus', () => {
-    test('should appear in popup when "show in menus" is enabled (single-link)', async ({ page, extensionId }) => {
+    test('should appear in popup when "show in menus" is enabled (single-link)', async ({ page, extensionBaseUrl }) => {
       // Configure custom format via UI
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=4&context=single-link`;
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=4&context=single-link`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -301,7 +301,7 @@ test.describe('Custom Format UI', () => {
       await page.waitForTimeout(500);
 
       // Navigate to popup
-      const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html`;
+      const popupUrl = `${extensionBaseUrl}/dist/static/popup.html`;
       await page.goto(popupUrl);
       await page.waitForLoadState('networkidle');
 
@@ -329,9 +329,9 @@ test.describe('Custom Format UI', () => {
       await expect(customFormatButtonAfter).not.toBeVisible();
     });
 
-    test('should appear in popup when "show in menus" is enabled (multiple-links)', async ({ page, extensionId }) => {
+    test('should appear in popup when "show in menus" is enabled (multiple-links)', async ({ page, extensionBaseUrl }) => {
       // Configure custom format via UI
-      const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=5&context=multiple-links`;
+      const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=5&context=multiple-links`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -351,7 +351,7 @@ test.describe('Custom Format UI', () => {
       await page.waitForTimeout(500);
 
       // Navigate to popup
-      const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html`;
+      const popupUrl = `${extensionBaseUrl}/dist/static/popup.html`;
       await page.goto(popupUrl);
       await page.waitForLoadState('networkidle');
 

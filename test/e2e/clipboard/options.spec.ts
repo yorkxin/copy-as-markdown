@@ -5,12 +5,12 @@
  * These tests rely on the mock clipboard so they can run in parallel.
  */
 
-import type { Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
+import type { ExtensionWorker } from '../helpers';
 
 test.describe('Options Page - Clipboard Tests', () => {
-  let serviceWorker: Worker;
+  let serviceWorker: ExtensionWorker;
 
   test.beforeEach(async ({ context }) => {
     serviceWorker = await getServiceWorker(context);
@@ -18,7 +18,7 @@ test.describe('Options Page - Clipboard Tests', () => {
   });
 
   test.describe('Unordered List Character Setting', () => {
-    test('should use dash character by default when exporting all tabs', async ({ page, extensionId, context }) => {
+    test('should use dash character by default when exporting all tabs', async ({ page, extensionBaseUrl, context }) => {
       // Navigate to test pages
       await page.goto('http://localhost:5566/0.html');
       await page.waitForLoadState('networkidle');
@@ -28,7 +28,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.waitForLoadState('networkidle');
 
       // Reset settings to default via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
@@ -51,7 +51,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.close();
     });
 
-    test('should use asterisk character when setting is changed', async ({ page, extensionId, context }) => {
+    test('should use asterisk character when setting is changed', async ({ page, extensionBaseUrl, context }) => {
       // Navigate to test pages
       await page.goto('http://localhost:5566/0.html');
       await page.waitForLoadState('networkidle');
@@ -61,7 +61,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.waitForLoadState('networkidle');
 
       // Change setting to asterisk via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
@@ -83,7 +83,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.close();
     });
 
-    test('should use plus character when setting is changed', async ({ page, extensionId, context }) => {
+    test('should use plus character when setting is changed', async ({ page, extensionBaseUrl, context }) => {
       // Navigate to test pages
       await page.goto('http://localhost:5566/0.html');
       await page.waitForLoadState('networkidle');
@@ -93,7 +93,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.waitForLoadState('networkidle');
 
       // Change setting to plus via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
@@ -117,7 +117,7 @@ test.describe('Options Page - Clipboard Tests', () => {
   });
 
   test.describe('Tab Group Indentation Setting', () => {
-    test('should use spaces by default when exporting tabs with tab groups', async ({ page, extensionId, context }) => {
+    test('should use spaces by default when exporting tabs with tab groups', async ({ page, extensionBaseUrl, context }) => {
       // Navigate to test pages
       await page.goto('http://localhost:5566/0.html');
       await page.waitForLoadState('networkidle');
@@ -156,7 +156,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       }
 
       // Reset settings to default via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
@@ -180,7 +180,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page3.close();
     });
 
-    test('should use tab character when setting is changed to tab', async ({ page, extensionId, context }) => {
+    test('should use tab character when setting is changed to tab', async ({ page, extensionBaseUrl, context }) => {
       // Navigate to test pages
       await page.goto('http://localhost:5566/0.html');
       await page.waitForLoadState('networkidle');
@@ -219,7 +219,7 @@ test.describe('Options Page - Clipboard Tests', () => {
       }
 
       // Change setting to tab indentation via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 

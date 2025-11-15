@@ -4,12 +4,12 @@
  * NOTE: These tests use a mock clipboard service for parallelization
  */
 
-import type { Page, Worker } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, waitForMockClipboard, type ExtensionWorker } from '../helpers';
 
 test.describe('Tabs Exporting with built-in formats', () => {
-  let serviceWorker: Worker;
+  let serviceWorker: ExtensionWorker;
 
   test.beforeEach(async ({ context }) => {
     serviceWorker = await getServiceWorker(context);
@@ -39,9 +39,9 @@ test.describe('Tabs Exporting with built-in formats', () => {
       expect(mockCall.text).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
     });
 
-    test('should work with popup', async ({ page, context, extensionId }) => {
+    test('should work with popup', async ({ page, context, extensionBaseUrl }) => {
       // Get window id from the current page's tab
-      await serviceWorker.evaluate(async (extensionId) => {
+      await serviceWorker.evaluate(async (baseUrl) => {
         const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
         if (!tabs[0]) {
           throw new Error('No active tab found');
@@ -49,7 +49,7 @@ test.describe('Tabs Exporting with built-in formats', () => {
         const windowId = tabs[0].windowId;
 
         // Open popup in a new window (not a new tab in the same window)
-        const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html?window=${windowId}`;
+        const popupUrl = `${baseUrl}/dist/static/popup.html?window=${windowId}`;
 
         // Create a new window with the popup
         await chrome.windows.create({
@@ -58,7 +58,7 @@ test.describe('Tabs Exporting with built-in formats', () => {
           width: 400,
           height: 600,
         });
-      }, extensionId);
+      }, extensionBaseUrl);
 
       // Wait for the new window and get its page
       const popupWindow = await context.waitForEvent('page');

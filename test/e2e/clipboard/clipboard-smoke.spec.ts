@@ -3,9 +3,9 @@
  * These run serially to avoid clipboard contention.
  */
 
-import type { Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import {
+  type ExtensionWorker,
   getServiceWorker,
   resetSystemClipboard,
   setMockClipboardMode,
@@ -17,7 +17,7 @@ const EXPECTED_LINK = '[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:556
 test.describe.configure({ mode: 'serial' });
 
 test.describe('Clipboard Smoke Tests', () => {
-  let serviceWorker: Worker;
+  let serviceWorker: ExtensionWorker;
 
   test.beforeEach(async ({ context }) => {
     serviceWorker = await getServiceWorker(context);
@@ -68,14 +68,14 @@ test.describe('Clipboard Smoke Tests', () => {
     expect(clipboardText).toEqual(EXPECTED_LINK);
   });
 
-  test('copies current tab via popup UI', async ({ context, extensionId }) => {
-    await serviceWorker.evaluate(async (extId) => {
+  test('copies current tab via popup UI', async ({ context, extensionBaseUrl }) => {
+    await serviceWorker.evaluate(async (baseUrl) => {
       const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
       if (!tabs[0]) {
         throw new Error('No active tab found');
       }
       const windowId = tabs[0].windowId;
-      const popupUrl = `chrome-extension://${extId}/dist/static/popup.html?window=${windowId}`;
+      const popupUrl = `${baseUrl}/dist/static/popup.html?window=${windowId}`;
 
       await chrome.windows.create({
         url: popupUrl,
@@ -83,7 +83,7 @@ test.describe('Clipboard Smoke Tests', () => {
         width: 400,
         height: 600,
       });
-    }, extensionId);
+    }, extensionBaseUrl);
 
     const popupWindow = await context.waitForEvent('page');
     await popupWindow.waitForLoadState('networkidle');

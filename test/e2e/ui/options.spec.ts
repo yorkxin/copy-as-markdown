@@ -8,8 +8,8 @@ import { expect, test } from '../fixtures';
 
 test.describe('Options Page - UI Tests', () => {
   test.describe('Settings Persistence', () => {
-    test('should persist settings across page reloads', async ({ page, extensionId }) => {
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+    test('should persist settings across page reloads', async ({ page, extensionBaseUrl }) => {
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
 
       // Set all settings to non-default values
       await page.goto(optionsUrl);
@@ -42,8 +42,8 @@ test.describe('Options Page - UI Tests', () => {
       await expect(escapeBracketsCheckboxAfter).toBeChecked();
     });
 
-    test('should reset all settings to default when reset button is clicked', async ({ page, extensionId }) => {
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+    test('should reset all settings to default when reset button is clicked', async ({ page, extensionBaseUrl }) => {
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
 
       // Set all settings to non-default values
       await page.goto(optionsUrl);

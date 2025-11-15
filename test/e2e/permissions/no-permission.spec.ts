@@ -1,9 +1,10 @@
-import type { BrowserContext, Page, Worker } from '@playwright/test';
+import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { expect, test } from '../fixtures';
 import {
+  type ExtensionWorker,
   enableMockPermissions,
   ensureCustomFormatsVisible,
   getMockClipboardCalls,
@@ -61,8 +62,8 @@ test.describe('Tab export permission prompts', () => {
   }
 
   for (const commandName of TAB_EXPORT_COMMANDS) {
-    test(`popup action opens permission page when clicking ${commandName}`, async ({ context, extensionId, serviceWorker }) => {
-      const popupWindow = await openPopupWindow(context, serviceWorker, extensionId);
+    test(`popup action opens permission page when clicking ${commandName}`, async ({ context, extensionBaseUrl, serviceWorker }) => {
+      const popupWindow = await openPopupWindow(context, serviceWorker, extensionBaseUrl);
       try {
         const permissionPagePromise = waitForPermissionPage(context, popupWindow);
 
@@ -81,24 +82,24 @@ test.describe('Tab export permission prompts', () => {
   }
 });
 
-async function openPopupWindow(context: BrowserContext, serviceWorker: Worker, extensionId: string): Promise<Page> {
+async function openPopupWindow(context: BrowserContext, serviceWorker: ExtensionWorker, extensionBaseUrl: string): Promise<Page> {
   const popupPromise = context.waitForEvent('page', { timeout: 5000 });
 
-  await serviceWorker.evaluate(async (id) => {
+  await serviceWorker.evaluate(async (baseUrl) => {
     const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
     const currentTab = tabs[0];
     if (!currentTab?.windowId) {
       throw new Error('No active tab or window id found');
     }
 
-    const popupUrl = `chrome-extension://${id}/dist/static/popup.html?window=${currentTab.windowId}`;
+    const popupUrl = `${baseUrl}/dist/static/popup.html?window=${currentTab.windowId}`;
     await chrome.windows.create({
       url: popupUrl,
       type: 'popup',
       width: 400,
       height: 600,
     });
-  }, extensionId);
+  }, extensionBaseUrl);
 
   const popupWindow = await popupPromise;
   await popupWindow.waitForLoadState('networkidle');
@@ -119,7 +120,7 @@ async function assertPermissionPage(page: Page): Promise<void> {
   await expect(page.locator('#request-permission')).toBeVisible();
 }
 
-async function expectNoClipboardWrites(serviceWorker: Worker): Promise<void> {
+async function expectNoClipboardWrites(serviceWorker: ExtensionWorker): Promise<void> {
   const calls = await getMockClipboardCalls(serviceWorker);
   expect(calls.length).toBe(0);
 }

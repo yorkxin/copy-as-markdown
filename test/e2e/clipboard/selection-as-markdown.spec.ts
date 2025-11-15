@@ -8,9 +8,9 @@
  * NOTE: These tests use a mock clipboard service for deterministic results
  */
 
-import type { Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { getServiceWorker, resetMockClipboard, triggerContextMenu, waitForMockClipboard } from '../helpers';
+import type { ExtensionWorker } from '../helpers';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,7 +19,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 test.describe('Selection as Markdown', () => {
-  let serviceWorker: Worker;
+  let serviceWorker: ExtensionWorker;
 
   test.beforeEach(async ({ page, context }) => {
     serviceWorker = await getServiceWorker(context);
@@ -74,10 +74,10 @@ test.describe('Selection as Markdown', () => {
   });
 
   test.describe('Unordered List Character Setting', () => {
-    test('should use dash character by default', async ({ page, context, extensionId }) => {
+    test('should use dash character by default', async ({ page, context, extensionBaseUrl }) => {
       // Reset settings to default via options page in a new page
       const optionsPage = await context.newPage();
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await optionsPage.goto(optionsUrl);
       await optionsPage.waitForLoadState('networkidle');
 
@@ -115,10 +115,10 @@ test.describe('Selection as Markdown', () => {
       expect(clipboardText).toBe(expectedMarkdown);
     });
 
-    test('should use asterisk character when setting is changed', async ({ page, context, extensionId }) => {
+    test('should use asterisk character when setting is changed', async ({ page, context, extensionBaseUrl }) => {
       // Change setting to asterisk via options page in a new page
       const optionsPage = await context.newPage();
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await optionsPage.goto(optionsUrl);
       await optionsPage.waitForLoadState('networkidle');
 
@@ -156,10 +156,10 @@ test.describe('Selection as Markdown', () => {
       expect(clipboardText).toBe(expectedMarkdown);
     });
 
-    test('should use plus character when setting is changed', async ({ page, context, extensionId }) => {
+    test('should use plus character when setting is changed', async ({ page, context, extensionBaseUrl }) => {
       // Change setting to plus via options page in a new page
       const optionsPage = await context.newPage();
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      const optionsUrl = `${extensionBaseUrl}/dist/static/options.html`;
       await optionsPage.goto(optionsUrl);
       await optionsPage.waitForLoadState('networkidle');
 

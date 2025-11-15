@@ -36,7 +36,7 @@ const builds = [
     ],
   },
   {
-    sourceDir: path.join(rootDir, 'firefox'),
+    sourceDir: path.join(rootDir, 'firefox-mv3'),
     variants: [
       {
         name: 'Firefox default (permissions pre-granted)',

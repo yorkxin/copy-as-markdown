@@ -9,19 +9,19 @@
     "contextMenus",
     "clipboardWrite",
     "scripting",
-    "storage",
-    "tabs"
+    "storage"
   ],
   "optional_permissions": [
-    "bookmarks"
+    "bookmarks",
+    "tabGroups",
+    "tabs"
   ],
   "action": {
     "default_icon": {
       "128": "./dist/static/images/icon-128.png"
     },
     "default_title": "Copy as Markdown...",
-    "default_popup": "./dist/static/popup.html",
-    "browser_style": true
+    "default_popup": "./dist/static/popup.html"
   },
   "icons": {
     "16": "./dist/static/images/icon-16.png",
@@ -113,12 +113,18 @@
     }
   },
   "options_ui": {
-    "page": "./dist/static/options.html"
+    "page": "./dist/static/options.html",
+    "open_in_tab": true
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"]
+    }
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "jid1-tfBgelm3d4bLkQ@jetpack",
-      "strict_min_version": "112.0"
+      "strict_min_version": "128.0"
     }
   }
 }

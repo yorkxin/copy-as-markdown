@@ -8,9 +8,9 @@
  * NOTE: These tests use a mock clipboard service so they can run in parallel
  */
 
-import type { Page, Worker } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, waitForMockClipboard, type ExtensionWorker } from '../helpers';
 
 /**
  * Configure a custom format using the web UI
@@ -18,7 +18,7 @@ import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../h
  */
 async function configureCustomFormatViaUI(
   page: any,
-  extensionId: string,
+  extensionBaseUrl: string,
   options: {
     slot: string;
     context: 'single-link' | 'multiple-links';
@@ -30,7 +30,7 @@ async function configureCustomFormatViaUI(
   const { slot, context, name, template, showInMenus } = options;
 
   // Navigate to custom format page
-  const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=${slot}&context=${context}`;
+  const customFormatUrl = `${extensionBaseUrl}/dist/static/custom-format.html?slot=${slot}&context=${context}`;
   await page.goto(customFormatUrl);
   await page.waitForLoadState('networkidle');
 
@@ -64,7 +64,7 @@ async function configureCustomFormatViaUI(
 }
 
 test.describe('Custom Format', () => {
-  let serviceWorker: Worker;
+  let serviceWorker: ExtensionWorker;
 
   test.beforeEach(async ({ context }) => {
     serviceWorker = await getServiceWorker(context);
@@ -72,8 +72,8 @@ test.describe('Custom Format', () => {
   });
 
   test.describe('Current Tab - Single Link', () => {
-    test.beforeEach(async ({ page, extensionId }) => {
-      await configureCustomFormatViaUI(page, extensionId, {
+    test.beforeEach(async ({ page, extensionBaseUrl }) => {
+      await configureCustomFormatViaUI(page, extensionBaseUrl, {
         slot: '1',
         context: 'single-link',
         name: 'Bracket Link',
@@ -102,9 +102,9 @@ test.describe('Custom Format', () => {
       expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_ <http://localhost:5566/qa.html>');
     });
 
-    test('should work with popup', async ({ page, context, extensionId }) => {
+    test('should work with popup', async ({ page, context, extensionBaseUrl }) => {
       // Get window id from the current page's tab
-      await serviceWorker.evaluate(async (extensionId) => {
+      await serviceWorker.evaluate(async (baseUrl) => {
         const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
         if (!tabs[0]) {
           throw new Error('No active tab found');
@@ -112,7 +112,7 @@ test.describe('Custom Format', () => {
         const windowId = tabs[0].windowId;
 
         // Open popup in a new window (not a new tab in the same window)
-        const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html?window=${windowId}`;
+        const popupUrl = `${baseUrl}/dist/static/popup.html?window=${windowId}`;
 
         // Create a new window with the popup
         await chrome.windows.create({
@@ -121,7 +121,7 @@ test.describe('Custom Format', () => {
           width: 400,
           height: 600,
         });
-      }, extensionId);
+      }, extensionBaseUrl);
 
       // Wait for the new window and get its page
       const popupWindow = await context.waitForEvent('page');
@@ -271,9 +271,9 @@ test.describe('Custom Format', () => {
       },
     ].forEach(({ name, tabsAreGrouped, tabsAreHighlighted, setTemplate, commandName, expected }) => {
       test.describe(`should work with ${name}`, async () => {
-        test.beforeEach(async ({ context, extensionId, page }) => {
+        test.beforeEach(async ({ context, extensionBaseUrl, page }) => {
           const optionsPage = await context.newPage();
-          await configureCustomFormatViaUI(optionsPage, extensionId, {
+          await configureCustomFormatViaUI(optionsPage, extensionBaseUrl, {
             slot: '1',
             context: 'multiple-links',
             name: 'Custom Template in Test',

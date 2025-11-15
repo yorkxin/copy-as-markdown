@@ -10,11 +10,36 @@ import process from 'node:process';
 
 const CLIPBOARD_SEPARATOR = '=========== CLIPBOARD SEPARATOR ===========';
 const MOCK_PERMISSION_STORAGE_KEY = '__pw_mock_optional_permissions__';
+const EXTENSION_PROTOCOLS = ['chrome-extension://', 'moz-extension://'];
+const EXTENSION_READY_POLL_INTERVAL = 500;
+
+type Evaluatable = {
+  evaluate<R, Arg>(pageFunction: (arg: Arg) => R, arg: Arg): Promise<R>;
+  evaluate<R>(pageFunction: (...args: any[]) => R, ...args: any[]): Promise<R>;
+};
+
+export type ExtensionWorker = Worker | Page | Evaluatable;
+
+interface FirefoxExtensionInfo {
+  baseUrl: string;
+  bridgePagePath: string;
+  bridgePage?: Page;
+  bridgeProxy?: Evaluatable;
+}
+
+const firefoxExtensionContexts = new WeakMap<BrowserContext, FirefoxExtensionInfo>();
+
+export function setFirefoxExtensionInfo(
+  context: BrowserContext,
+  info: { baseUrl: string; backgroundPagePath: string },
+): void {
+  firefoxExtensionContexts.set(context, { ...info });
+}
 
 /**
  * Get all mock clipboard calls from the service worker
  */
-export async function getMockClipboardCalls(serviceWorker: Worker): Promise<ClipboardMockCall[]> {
+export async function getMockClipboardCalls(serviceWorker: ExtensionWorker): Promise<ClipboardMockCall[]> {
   return await serviceWorker.evaluate(async () => {
     const mock = (globalThis as any).__mockClipboardService;
     if (!mock) {
@@ -27,7 +52,7 @@ export async function getMockClipboardCalls(serviceWorker: Worker): Promise<Clip
 /**
  * Reset the mock clipboard service in the service worker
  */
-export async function resetMockClipboard(serviceWorker: Worker): Promise<void> {
+export async function resetMockClipboard(serviceWorker: ExtensionWorker): Promise<void> {
   await serviceWorker.evaluate(async () => {
     const mock = (globalThis as any).__mockClipboardService;
     if (!mock) {
@@ -40,7 +65,7 @@ export async function resetMockClipboard(serviceWorker: Worker): Promise<void> {
 /**
  * Wait for the mock clipboard to have at least one call (with timeout)
  */
-export async function waitForMockClipboard(serviceWorker: Worker, timeout = 3000): Promise<ClipboardMockCall> {
+export async function waitForMockClipboard(serviceWorker: ExtensionWorker, timeout = 3000): Promise<ClipboardMockCall> {
   const startTime = Date.now();
 
   while (Date.now() - startTime < timeout) {
@@ -61,7 +86,7 @@ export async function waitForMockClipboard(serviceWorker: Worker, timeout = 3000
  * onClicked event inside the service worker.
  */
 export async function triggerContextMenu(
-  serviceWorker: Worker,
+  serviceWorker: ExtensionWorker,
   menuItemId: string,
   info: Partial<browser.contextMenus.OnClickData> = {},
   tabOverrides: Partial<browser.tabs.Tab> = {},
@@ -85,68 +110,105 @@ export async function triggerContextMenu(
 }
 
 /**
- * Get the service worker for the extension
- * Filters by chrome-extension:// URL to ensure we get the extension's worker,
- * not some other service worker (like from PWAs or other extensions)
- *
- * Also polls to ensure Chrome APIs are ready before returning
+ * Get the service worker or background page for the extension.
+ * Supports both Chromium (service worker) and Firefox (background page) targets.
  */
-export async function getServiceWorker(context: BrowserContext, timeout = 10000) {
-  // Get all service workers and filter for extension workers
-  const serviceWorkers = context.serviceWorkers();
-  let extensionWorker = serviceWorkers.find(sw =>
-    sw.url().startsWith('chrome-extension://'),
-  );
-
-  // If not found yet, wait for it
-  if (!extensionWorker) {
-    extensionWorker = await context.waitForEvent('serviceworker', {
-      predicate: worker => worker.url().startsWith('chrome-extension://'),
-      timeout,
-    });
-  }
-
-  // Poll until Chrome APIs are ready
+export async function getServiceWorker(context: BrowserContext, timeout = 10000): Promise<ExtensionWorker> {
   const startTime = Date.now();
-  const pollInterval = 500; // Check every 500ms
-
   while (Date.now() - startTime < timeout) {
-    const workerState = await extensionWorker.evaluate(() => {
-      // In service worker context, use globalThis which has ServiceWorkerGlobalScope
-      return {
-        readyState: (globalThis as any).registration?.active?.state,
-        hasChrome: typeof chrome !== 'undefined',
-        hasChromeCommands: typeof chrome?.commands !== 'undefined',
-        location: (globalThis as any).location.href,
-      };
-    });
+    const extensionWorker = context.serviceWorkers().find(sw => isExtensionUrl(sw.url()));
+    if (extensionWorker) {
+      const workerState = await extensionWorker.evaluate(() => ({
+        hasCommands: typeof chrome?.commands !== 'undefined',
+        location: (globalThis as any).location?.href,
+      }));
 
-    // If chrome.commands is available, we're ready
-    if (workerState.hasChromeCommands) {
-      // Service worker ready with Chrome APIs
-      break;
+      if (workerState.hasCommands) {
+        await setMockClipboardMode(extensionWorker, true);
+        return extensionWorker;
+      }
     }
 
-    // Chrome APIs not ready yet, wait and retry
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
-
-    // Get fresh service worker reference in case it was restarted
-    const freshWorkers = context.serviceWorkers();
-    const freshWorker = freshWorkers.find(sw =>
-      sw.url().startsWith('chrome-extension://'),
-    );
-
-    if (freshWorker) {
-      extensionWorker = freshWorker;
+    const firefoxInfo = firefoxExtensionContexts.get(context);
+    if (firefoxInfo) {
+      const proxy = await getFirefoxBridgeProxy(context, firefoxInfo);
+      await setMockClipboardMode(proxy as ExtensionWorker, true);
+      return proxy;
     }
+
+    await wait(EXTENSION_READY_POLL_INTERVAL);
   }
 
-  if (!extensionWorker) {
-    throw new Error(`Service worker Chrome APIs not ready after ${timeout}ms`);
+  throw new Error(`Extension background target not ready after ${timeout}ms`);
+}
+
+async function getFirefoxBridgeProxy(
+  context: BrowserContext,
+  info: FirefoxExtensionInfo,
+): Promise<Evaluatable> {
+  if (info.bridgeProxy && info.bridgePage && !info.bridgePage.isClosed()) {
+    return info.bridgeProxy;
   }
 
-  await setMockClipboardMode(extensionWorker, true);
-  return extensionWorker;
+  const bridgePage = await ensureFirefoxBridgePage(context, info);
+  const proxy: Evaluatable = {
+    async evaluate(pageFunction: (...args: any[]) => unknown, ...args: any[]) {
+      const source = pageFunction.toString();
+      return bridgePage.evaluate(({ source, args }) => {
+        const runner = (globalThis as any).__pwBackgroundEval;
+        if (typeof runner !== 'function') {
+          throw new Error('__pwBackgroundEval is not initialized');
+        }
+        return runner(source, args);
+      }, { source, args });
+    },
+  };
+
+  info.bridgeProxy = proxy;
+  info.bridgePage = bridgePage;
+  firefoxExtensionContexts.set(context, info);
+  return proxy;
+}
+
+async function ensureFirefoxBridgePage(
+  context: BrowserContext,
+  info: FirefoxExtensionInfo,
+): Promise<Page> {
+  if (info.bridgePage && !info.bridgePage.isClosed()) {
+    return info.bridgePage;
+  }
+
+  const page = await context.newPage();
+  await page.addInitScript(() => {
+    (globalThis as any).__pwBackgroundEval = (source: string, args: any[]) => {
+      return new Promise((resolve, reject) => {
+        const runtime = typeof browser !== 'undefined' ? browser.runtime : chrome.runtime;
+        runtime.getBackgroundPage((bg: any) => {
+          const error = runtime.lastError;
+          if (error || !bg) {
+            reject(error?.message ?? 'Background page unavailable');
+            return;
+          }
+          try {
+            const fn = eval(`(${source})`);
+            Promise.resolve(fn.apply(bg, args)).then(resolve, reject);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      });
+    };
+  });
+
+  const url = `${info.baseUrl}/${info.bridgePagePath.replace(/^\/+/, '')}`;
+  await page.goto(url, { waitUntil: 'load' });
+  info.bridgePage = page;
+  firefoxExtensionContexts.set(context, info);
+  return page;
+}
+
+function isExtensionUrl(url: string): boolean {
+  return EXTENSION_PROTOCOLS.some(protocol => url.startsWith(protocol));
 }
 
 async function runClipboardCommand(
@@ -309,7 +371,7 @@ export async function waitForSystemClipboard(timeout = 3000): Promise<string> {
   throw new Error(`System clipboard was empty after ${timeout}ms`);
 }
 
-export async function setMockClipboardMode(serviceWorker: Worker, enabled: boolean): Promise<void> {
+export async function setMockClipboardMode(serviceWorker: ExtensionWorker, enabled: boolean): Promise<void> {
   await serviceWorker.evaluate(async (flag) => {
     const setter = (globalThis as any).setMockClipboardMode;
     if (typeof setter !== 'function') {
@@ -326,13 +388,13 @@ export async function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export async function removeOptionalPermissions(serviceWorker: Worker, permissions: string[]): Promise<void> {
+export async function removeOptionalPermissions(serviceWorker: ExtensionWorker, permissions: string[]): Promise<void> {
   await serviceWorker.evaluate(async (perms) => {
     await chrome.permissions.remove({ permissions: perms });
   }, permissions);
 }
 
-export async function hasPermissions(serviceWorker: Worker, permissions: string[]): Promise<boolean> {
+export async function hasPermissions(serviceWorker: ExtensionWorker, permissions: string[]): Promise<boolean> {
   return await serviceWorker.evaluate(async (perms) => {
     return await chrome.permissions.contains({ permissions: perms });
   }, permissions);
@@ -394,7 +456,7 @@ function registerMockPermissions({ storageKey }: { storageKey: string }) {
   (chrome.permissions as any).__pwMocked = true;
 }
 
-export async function enableMockPermissions(serviceWorker: Worker): Promise<void> {
+export async function enableMockPermissions(serviceWorker: ExtensionWorker): Promise<void> {
   await serviceWorker.evaluate(registerMockPermissions, { storageKey: MOCK_PERMISSION_STORAGE_KEY });
 }
 
@@ -403,7 +465,7 @@ export async function injectMockPermissionsIntoPage(page: Page): Promise<void> {
 }
 
 export async function ensureCustomFormatsVisible(
-  serviceWorker: Worker,
+  serviceWorker: ExtensionWorker,
   context: 'single-link' | 'multiple-links',
   slots: string[],
 ): Promise<void> {

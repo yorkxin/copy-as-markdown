@@ -6,6 +6,21 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * See https://playwright.dev/docs/test-configuration
  */
+const targetBrowser = process.env.PW_BROWSER?.toLowerCase() === 'firefox' ? 'firefox' : 'chromium';
+const baseDevice = targetBrowser === 'firefox' ? devices['Desktop Firefox'] : devices['Desktop Chrome'];
+
+function browserUse(overrides: Record<string, unknown> = {}) {
+  const baseUse = {
+    ...baseDevice,
+    browserName: targetBrowser,
+    ...(targetBrowser === 'chromium' ? { channel: 'chromium' } : {}),
+  };
+  return {
+    ...baseUse,
+    ...overrides,
+  };
+}
+
 export default defineConfig({
   testDir: './test/e2e',
 
@@ -43,12 +58,7 @@ export default defineConfig({
       testDir: './test/e2e/ui',
       // Run UI tests in parallel (they don't use clipboard)
       fullyParallel: true,
-      use: {
-        ...devices['Desktop Chrome'],
-        // IMPORTANT: Must use 'chromium' channel for extensions to work
-        // Chrome and Edge removed command-line flags needed for side-loading
-        channel: 'chromium',
-      },
+      use: browserUse(),
     },
     {
       name: 'clipboard-tests',
@@ -56,12 +66,7 @@ export default defineConfig({
       testIgnore: /clipboard-smoke\.spec\.ts/,
       // Run clipboard tests in parallel (using mock clipboard service)
       fullyParallel: true,
-      use: {
-        ...devices['Desktop Chrome'],
-        // IMPORTANT: Must use 'chromium' channel for extensions to work
-        // Chrome and Edge removed command-line flags needed for side-loading
-        channel: 'chromium',
-      },
+      use: browserUse(),
     },
     {
       name: 'clipboard-smoke',
@@ -70,20 +75,13 @@ export default defineConfig({
       fullyParallel: false,
       workers: 1,
       dependencies: ['clipboard-tests'],
-      use: {
-        ...devices['Desktop Chrome'],
-        // IMPORTANT: Must use 'chromium' channel for extensions to work
-        channel: 'chromium',
-      },
+      use: browserUse(),
     },
     {
       name: 'permissions-tests',
       testDir: './test/e2e/permissions',
       fullyParallel: true,
-      use: {
-        ...devices['Desktop Chrome'],
-        channel: 'chromium',
-      },
+      use: browserUse(),
     },
   ],
 
