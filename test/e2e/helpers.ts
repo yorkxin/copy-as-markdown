@@ -128,7 +128,6 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
     }
 
     // Chrome APIs not ready yet, wait and retry
-    console.log('Chrome APIs not ready, waiting...');
     await new Promise(resolve => setTimeout(resolve, pollInterval));
 
     // Get fresh service worker reference in case it was restarted
