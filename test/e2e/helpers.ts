@@ -206,7 +206,6 @@ async function execClipboardCommand(command: string, args: string[], input?: str
       settle(() => reject(error));
     });
     child.on('close', (code) => {
-      console.log(`[clipboard] Command exited (${cmdLabel}) with code ${code}`);
       if (code === 0) {
         settle(() => resolve(stdout));
       } else {
