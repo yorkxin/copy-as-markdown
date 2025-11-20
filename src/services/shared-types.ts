@@ -1,10 +1,3 @@
-/**
- * Shared type definitions used across multiple services
- */
-
-/**
- * Markdown formatter interface for creating markdown-formatted text
- */
 export interface MarkdownFormatter {
   /**
    * Escape special characters in link text
@@ -27,9 +20,6 @@ export interface MarkdownFormatter {
   taskList: (items: any[]) => string;
 }
 
-/**
- * Custom format template
- */
 export interface CustomFormat {
   /**
    * Render the custom format with the given input data
@@ -37,9 +27,6 @@ export interface CustomFormat {
   render: (input: any) => string;
 }
 
-/**
- * Provider for retrieving custom format templates
- */
 export interface CustomFormatsProvider {
   /**
    * Get a custom format by context and slot
@@ -53,9 +40,6 @@ export interface CustomFormatsProvider {
   list?: (context: 'single-link' | 'multiple-links') => Promise<CustomFormat[]>;
 }
 
-/**
- * Browser scripting API for executing scripts in tabs
- */
 export interface ScriptingAPI {
   /**
    * Execute a script in a tab
@@ -73,61 +57,37 @@ export interface ScriptingAPI {
   }) => Promise<Array<{ result?: any }>>;
 }
 
-/**
- * Browser tabs API surface we rely on.
- */
 export interface TabsAPI {
   query: (queryInfo: browser.tabs._QueryQueryInfo) => Promise<browser.tabs.Tab[]>;
   get?: (tabId: number) => Promise<browser.tabs.Tab>;
 }
 
-/**
- * Browser permissions API.
- */
 export interface PermissionsAPI {
   contains: (permissions: { permissions: string[] }) => Promise<boolean>;
 }
 
-/**
- * Browser context menus API.
- */
 export interface ContextMenusAPI {
   create: (createProperties: browser.menus._CreateCreateProperties) => void;
   update: (id: string, updateProperties: browser.menus._UpdateUpdateProperties) => Promise<void>;
   removeAll: () => Promise<void>;
 }
 
-/**
- * Browser clipboard API (navigator.clipboard subset).
- */
 export interface ClipboardAPI {
   writeText: (text: string) => Promise<void>;
 }
 
-/**
- * Browser alarms API.
- */
 export interface AlarmsAPI {
   create: (name: string, alarmInfo: { when: number } | { periodInMinutes: number }) => void;
 }
 
-/**
- * Browser windows API.
- */
 export interface WindowsAPI {
   create: (createData: browser.windows._CreateCreateData) => Promise<browser.windows.Window | undefined>;
 }
 
-/**
- * Browser runtime API (subset).
- */
 export interface RuntimeAPI {
   getURL: (path: string) => string;
 }
 
-/**
- * Tab groups API (Chrome).
- */
 export interface TabGroupsAPI {
   query: (queryInfo: { windowId: number }) => Promise<chrome.tabGroups.TabGroup[]>;
 }

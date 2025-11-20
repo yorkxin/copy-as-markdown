@@ -1,10 +1,3 @@
-/**
- * Browser Tab Data Fetcher
- *
- * Handles fetching tab data from browser APIs.
- * This is the browser-specific adapter for TabExportService.
- */
-
 import type { ExportScope, TabDataFetcher } from './tab-export-service.js';
 
 import type { PermissionsAPI, RuntimeAPI, TabGroupsAPI, TabsAPI, WindowsAPI } from './shared-types.js';
@@ -17,16 +10,9 @@ interface TabDataFetcherDeps {
   tabGroups?: TabGroupsAPI;
 }
 
-/**
- * Browser-specific implementation of TabDataFetcher.
- * Handles all browser API interactions including permissions.
- */
 export class BrowserTabDataFetcher implements TabDataFetcher {
   constructor(private deps: TabDataFetcherDeps) { }
 
-  /**
-   * Ensures tabs permission is granted, shows permission dialog if not.
-   */
   private async ensureTabsPermission(): Promise<void> {
     const granted = await this.deps.permissions.contains({ permissions: ['tabs'] });
 
@@ -42,9 +28,6 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
     }
   }
 
-  /**
-   * Fetches tabs from the specified window.
-   */
   async fetchTabs(scope: ExportScope, windowId: number): Promise<chrome.tabs.Tab[]> {
     await this.ensureTabsPermission();
 
@@ -54,10 +37,6 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
     }) as chrome.tabs.Tab[];
   }
 
-  /**
-   * Fetches tab groups from the specified window.
-   * Returns empty array if tabGroups permission is not granted or API is unavailable.
-   */
   async fetchTabGroups(windowId: number): Promise<chrome.tabGroups.TabGroup[]> {
     const tabGroupsAPI = this.deps.tabGroups;
     if (!tabGroupsAPI) {
