@@ -118,8 +118,6 @@ export type BadgeService = ReturnType<typeof createBadgeService>;
 
 /**
  * Creates a badge service using the browser's native APIs.
- * Automatically detects whether to use browser.browserAction (Firefox MV2)
- * or chrome.action (Chrome MV3).
  *
  * @example
  * ```typescript
@@ -128,9 +126,5 @@ export type BadgeService = ReturnType<typeof createBadgeService>;
  * ```
  */
 export function createBrowserBadgeService(): BadgeService {
-  const badgeAPI = (typeof browser !== 'undefined' && typeof browser.browserAction !== 'undefined')
-    ? browser.browserAction
-    : chrome.action;
-
-  return createBadgeService(badgeAPI, browser.alarms);
+  return createBadgeService(browser.action, browser.alarms);
 }

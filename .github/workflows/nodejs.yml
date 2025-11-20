@@ -23,7 +23,7 @@ jobs:
       - run: npm run lint
       - run: npm install -g web-ext # build tool
       - run: npm run build-chrome
-      - run: npm run build-firefox
+      - run: npm run build-firefox-mv2
       - run: npm run build-firefox-mv3
 
   playwright:
