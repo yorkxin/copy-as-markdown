@@ -77,7 +77,7 @@ export interface ScriptingAPI {
  * Browser tabs API surface we rely on.
  */
 export interface TabsAPI {
-  query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
+  query: (queryInfo: browser.tabs._QueryQueryInfo) => Promise<browser.tabs.Tab[]>;
   get?: (tabId: number) => Promise<browser.tabs.Tab>;
 }
 
@@ -109,4 +109,25 @@ export interface ClipboardAPI {
  */
 export interface AlarmsAPI {
   create: (name: string, alarmInfo: { when: number } | { periodInMinutes: number }) => void;
+}
+
+/**
+ * Browser windows API.
+ */
+export interface WindowsAPI {
+  create: (createData: browser.windows._CreateCreateData) => Promise<browser.windows.Window | undefined>;
+}
+
+/**
+ * Browser runtime API (subset).
+ */
+export interface RuntimeAPI {
+  getURL: (path: string) => string;
+}
+
+/**
+ * Tab groups API (Chrome).
+ */
+export interface TabGroupsAPI {
+  query: (queryInfo: { windowId: number }) => Promise<chrome.tabGroups.TabGroup[]>;
 }
