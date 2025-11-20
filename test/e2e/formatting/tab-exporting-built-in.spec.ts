@@ -115,7 +115,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         expected: `- [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
 - [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
 - [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
-- [Page 4 - Copy as Markdown](http://localhost:5566/4.html)`,
+- [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
+`,
       },
       {
         name: 'all tabs as link, tabs are grouped',
@@ -127,7 +128,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
   - [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
 - [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
 - Untitled blue group
-  - [Page 4 - Copy as Markdown](http://localhost:5566/4.html)`,
+  - [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
+`,
       },
       {
         name: 'highlighted tabs as link, tabs are not grouped',
@@ -135,7 +137,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         tabsAreHighlighted: true,
         commandName: 'highlighted-tabs-link-as-list',
         expected: `- [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
-- [Page 3 - Copy as Markdown](http://localhost:5566/3.html)`,
+- [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
+`,
       },
       {
         name: 'highlighted tabs as link, tabs are grouped',
@@ -144,7 +147,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         commandName: 'highlighted-tabs-link-as-list',
         expected: `- Group 1
   - [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
-- [Page 3 - Copy as Markdown](http://localhost:5566/3.html)`,
+- [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
+`,
       },
       {
         name: 'all tabs as task list, tabs are not grouped',
@@ -154,7 +158,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         expected: `- [ ] [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
 - [ ] [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
 - [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
-- [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)`,
+- [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
+`,
       },
       {
         name: 'all tabs as task list, tabs are grouped',
@@ -166,7 +171,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
   - [ ] [Page 2 - Copy as Markdown](http://localhost:5566/2.html)
 - [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
 - [ ] Untitled blue group
-  - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)`,
+  - [ ] [Page 4 - Copy as Markdown](http://localhost:5566/4.html)
+`,
       },
       {
         name: 'highlighted tabs as task list, tabs are not grouped',
@@ -174,7 +180,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         tabsAreHighlighted: true,
         commandName: 'highlighted-tabs-link-as-task-list',
         expected: `- [ ] [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
-- [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)`,
+- [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
+`,
       },
       {
         name: 'highlighted tabs as task list, tabs are grouped',
@@ -183,20 +190,22 @@ test.describe('Tabs Exporting with built-in formats', () => {
         commandName: 'highlighted-tabs-link-as-task-list',
         expected: `- [ ] Group 1
   - [ ] [Page 1 - Copy as Markdown](http://localhost:5566/1.html)
-- [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)`,
+- [ ] [Page 3 - Copy as Markdown](http://localhost:5566/3.html)
+`,
       },
       {
-        name: 'all tabs as titlest, taas bs are not grouped',
+        name: 'all tabs as title list, tabs are not grouped',
         tabsAreGrouped: false,
         tabsAreHighlighted: false,
         commandName: 'all-tabs-title-as-list',
         expected: `- Page 1 - Copy as Markdown
 - Page 2 - Copy as Markdown
 - Page 3 - Copy as Markdown
-- Page 4 - Copy as Markdown`,
+- Page 4 - Copy as Markdown
+`,
       },
       {
-        name: 'all tabs as titlest, taas bs are grouped',
+        name: 'all tabs as tite list, tabs are grouped',
         tabsAreGrouped: true,
         tabsAreHighlighted: false,
         commandName: 'all-tabs-title-as-list',
@@ -205,7 +214,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
   - Page 2 - Copy as Markdown
 - Page 3 - Copy as Markdown
 - Untitled blue group
-  - Page 4 - Copy as Markdown`,
+  - Page 4 - Copy as Markdown
+`,
       },
       {
         name: 'highlighted tabs title as list, tabs are not grouped',
@@ -213,7 +223,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         tabsAreHighlighted: true,
         commandName: 'highlighted-tabs-title-as-list',
         expected: `- Page 1 - Copy as Markdown
-- Page 3 - Copy as Markdown`,
+- Page 3 - Copy as Markdown
+`,
       },
       {
         name: 'highlighted tabs title as list, tabs are grouped',
@@ -222,7 +233,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         commandName: 'highlighted-tabs-title-as-list',
         expected: `- Group 1
   - Page 1 - Copy as Markdown
-- Page 3 - Copy as Markdown`,
+- Page 3 - Copy as Markdown
+`,
       },
       {
         name: 'all tabs url as list, tabs are not grouped',
@@ -232,7 +244,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         expected: `- http://localhost:5566/1.html
 - http://localhost:5566/2.html
 - http://localhost:5566/3.html
-- http://localhost:5566/4.html`,
+- http://localhost:5566/4.html
+`,
       },
       {
         name: 'all tabs url as list, tabs are grouped',
@@ -244,7 +257,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
   - http://localhost:5566/2.html
 - http://localhost:5566/3.html
 - Untitled blue group
-  - http://localhost:5566/4.html`,
+  - http://localhost:5566/4.html
+`,
       },
       {
         name: 'highlighted tabs url as list, tabs are not grouped',
@@ -252,7 +266,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         tabsAreHighlighted: true,
         commandName: 'highlighted-tabs-url-as-list',
         expected: `- http://localhost:5566/1.html
-- http://localhost:5566/3.html`,
+- http://localhost:5566/3.html
+`,
       },
       {
         name: 'highlighted tabs url as list, tabs are grouped',
@@ -261,7 +276,8 @@ test.describe('Tabs Exporting with built-in formats', () => {
         commandName: 'highlighted-tabs-url-as-list',
         expected: `- Group 1
   - http://localhost:5566/1.html
-- http://localhost:5566/3.html`,
+- http://localhost:5566/3.html
+`,
       },
     ].forEach(({ name, tabsAreGrouped, tabsAreHighlighted, commandName, expected }) => {
       test.describe(`should work with ${name}`, async () => {
