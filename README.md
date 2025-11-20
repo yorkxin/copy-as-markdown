@@ -47,23 +47,32 @@ Here is the folder structure. The platform-specific folders are used to resolve 
 
 ```
 src/               # Shared Source Code
-  lackground.ts
-  ...
+  background.ts
+  handlers/        # Message/command/context-menu handlers
+  services/        # Browser-agnostic logic (+ browser adapters via createBrowser* helpers)
+  ui/              # Popup/options scripts
 chrome/            # Chrome / Chromium files
   dist/            # ../src will be copied here
-  mainfest.json
-  ...
-firefox/           # Firefox Manifest V2 files
+  manifest.json
+firefox-mv2/       # Firefox Manifest V2 files
   dist/            # ../src will be copied here
-  mainfest.json
+  manifest.json
   background.html  # Loads ESModule
-  ...
 firefox-mv3/       # Firefox Manifest V3 files
   dist/            # ../src will be copied here
-  mainfest.json
-  ...
-e2e_test/          # E2E Tests
+  manifest.json
+test/
+  e2e/             # Playwright E2E Tests
+  ...              # Unit Tests
+e2e_test/          # Python E2E Tests
 ```  
+
+### Architecture overview
+
+- Services contain pure logic (e.g., link/tab export, selection conversion) plus thin browser adapters created via `createBrowser*` helpers. Browser dependencies are injected for easier testing.
+- Handlers orchestrate user entry points (context menu, keyboard commands, runtime messages) and delegate to services.
+- UI scripts live under `src/ui` for popup/options pages; static assets under `src/static`.
+
 
 ### Install dependencies
 
