@@ -59,19 +59,10 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
     }
 
     // Check if API is available
-    if (typeof chrome === 'undefined' || !chrome.tabGroups) {
+    if (!chrome.tabGroups || typeof chrome.tabGroups.query !== 'function') {
       return [];
     }
 
-    // Promisify the callback-based API
-    return new Promise((resolve, reject) => {
-      chrome.tabGroups.query({ windowId }, (groups: chrome.tabGroups.TabGroup[]) => {
-        if (chrome.runtime?.lastError) {
-          reject(chrome.runtime.lastError);
-        } else {
-          resolve(groups);
-        }
-      });
-    });
+    return await chrome.tabGroups.query({ windowId }) as chrome.tabGroups.TabGroup[];
   }
 }
