@@ -24,7 +24,7 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
         type: 'popup',
         width: 640,
         height: 480,
-        url: '/dist/static/permissions.html?permissions=tabs',
+        url: browser.runtime.getURL('/dist/static/permissions.html?permissions=tabs'),
       });
       throw new Error('Tabs permission required');
     }
