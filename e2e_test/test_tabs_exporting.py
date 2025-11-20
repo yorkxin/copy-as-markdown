@@ -21,7 +21,7 @@ class TestTabsExporting:
         - [Page 5 - Copy as Markdown]({url}/5.html)
         - [Page 6 - Copy as Markdown]({url}/6.html)
         - [Page 7 - Copy as Markdown]({url}/7.html)
-        """).strip()
+        """).lstrip()
 
     @pytest.fixture(scope="class", autouse=True)
     def setup_browser(self, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):

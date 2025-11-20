@@ -10,23 +10,23 @@ describe('markdown', () => {
   describe('list()', () => {
     it('defaults to dash', () => {
       const markdown = new Markdown();
-      expect(markdown.list(['a', 'b', 'c'])).toBe('- a\n- b\n- c');
+      expect(markdown.list(['a', 'b', 'c'])).toBe('- a\n- b\n- c\n');
     });
 
     it('can set a character', () => {
       const markdown = new Markdown({ unorderedListStyle: UnorderedListStyle.Asterisk });
-      expect(markdown.list(['a', 'b', 'c'])).toBe('* a\n* b\n* c');
+      expect(markdown.list(['a', 'b', 'c'])).toBe('* a\n* b\n* c\n');
     });
 
     describe('nested list', () => {
       it('works', () => {
         const markdown = new Markdown();
-        expect(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']])).toBe('- a\n- b\n  - c\n  - d\n- e\n  - f');
+        expect(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']])).toBe('- a\n- b\n  - c\n  - d\n- e\n  - f\n');
       });
 
       it('can set indentation style', () => {
         const markdown = new Markdown({ indentationStyle: TabGroupIndentationStyle.Tab });
-        expect(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']])).toBe('- a\n- b\n\t- c\n\t- d\n- e\n\t- f');
+        expect(markdown.list(['a', 'b', ['c', 'd'], 'e', ['f']])).toBe('- a\n- b\n\t- c\n\t- d\n- e\n\t- f\n');
       });
     });
   });
@@ -34,7 +34,7 @@ describe('markdown', () => {
   describe('taskList()', () => {
     it('works', () => {
       const markdown = new Markdown();
-      expect(markdown.taskList(['a', 'b', 'c'])).toBe('- [ ] a\n- [ ] b\n- [ ] c');
+      expect(markdown.taskList(['a', 'b', 'c'])).toBe('- [ ] a\n- [ ] b\n- [ ] c\n');
     });
   });
 
