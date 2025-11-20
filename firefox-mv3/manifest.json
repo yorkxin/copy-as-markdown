@@ -9,19 +9,19 @@
     "contextMenus",
     "clipboardWrite",
     "scripting",
-    "storage",
-    "tabs"
+    "storage"
   ],
   "optional_permissions": [
-    "bookmarks"
+    "bookmarks",
+    "tabs",
+    "tabGroups"
   ],
   "action": {
     "default_icon": {
       "128": "./dist/static/images/icon-128.png"
     },
     "default_title": "Copy as Markdown...",
-    "default_popup": "./dist/static/popup.html",
-    "browser_style": true
+    "default_popup": "./dist/static/popup.html"
   },
   "icons": {
     "16": "./dist/static/images/icon-16.png",
