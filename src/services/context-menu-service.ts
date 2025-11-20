@@ -6,18 +6,11 @@
  */
 
 import type CustomFormat from '../lib/custom-format.js';
+import type { ContextMenusAPI } from './shared-types.js';
 
-// Type Definitions
-// Use native browser API types instead of custom definitions
-export interface ContextMenusAPI {
-  create: (createProperties: browser.menus._CreateCreateProperties) => void;
-  update: (id: string, updateProperties: browser.menus._UpdateUpdateProperties) => Promise<void>;
-  removeAll: () => Promise<void>;
-}
-
-export interface CustomFormatsProvider {
+type CustomFormatsListProvider = {
   list: (context: 'single-link' | 'multiple-links') => Promise<CustomFormat[]>;
-}
+};
 
 /**
  * Creates a context menu service instance.
@@ -38,7 +31,7 @@ export interface CustomFormatsProvider {
  */
 export function createContextMenuService(
   contextMenusAPI: ContextMenusAPI,
-  customFormatsProvider: CustomFormatsProvider,
+  customFormatsProvider: CustomFormatsListProvider,
 ) {
   /**
    * Creates all context menus for the extension.
@@ -159,7 +152,7 @@ function createImageAndSelectionMenus(contextMenusAPI: ContextMenusAPI): void {
  */
 async function createFirefoxSpecificMenus(
   contextMenusAPI: ContextMenusAPI,
-  customFormatsProvider: CustomFormatsProvider,
+  customFormatsProvider: CustomFormatsListProvider,
   singleLinkFormats: CustomFormat[],
 ): Promise<void> {
   try {
@@ -295,7 +288,7 @@ function createBookmarkMenu(contextMenusAPI: ContextMenusAPI): void {
  * ```
  */
 export function createBrowserContextMenuService(
-  customFormatsProvider: CustomFormatsProvider,
+  customFormatsProvider: CustomFormatsListProvider,
 ): ContextMenuService {
   return createContextMenuService(browser.contextMenus, customFormatsProvider);
 }

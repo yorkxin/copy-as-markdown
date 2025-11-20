@@ -47,6 +47,10 @@ export interface CustomFormatsProvider {
    * @param slot - The slot number (e.g., '1', '2', '3')
    */
   get: (context: 'single-link' | 'multiple-links', slot: string) => Promise<CustomFormat>;
+  /**
+   * List formats for a context (optional capability).
+   */
+  list?: (context: 'single-link' | 'multiple-links') => Promise<CustomFormat[]>;
 }
 
 /**
@@ -67,4 +71,42 @@ export interface ScriptingAPI {
     files?: string[];
     args?: T;
   }) => Promise<Array<{ result?: any }>>;
+}
+
+/**
+ * Browser tabs API surface we rely on.
+ */
+export interface TabsAPI {
+  query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
+  get?: (tabId: number) => Promise<browser.tabs.Tab>;
+}
+
+/**
+ * Browser permissions API.
+ */
+export interface PermissionsAPI {
+  contains: (permissions: { permissions: string[] }) => Promise<boolean>;
+}
+
+/**
+ * Browser context menus API.
+ */
+export interface ContextMenusAPI {
+  create: (createProperties: browser.menus._CreateCreateProperties) => void;
+  update: (id: string, updateProperties: browser.menus._UpdateUpdateProperties) => Promise<void>;
+  removeAll: () => Promise<void>;
+}
+
+/**
+ * Browser clipboard API (navigator.clipboard subset).
+ */
+export interface ClipboardAPI {
+  writeText: (text: string) => Promise<void>;
+}
+
+/**
+ * Browser alarms API.
+ */
+export interface AlarmsAPI {
+  create: (name: string, alarmInfo: { when: number } | { periodInMinutes: number }) => void;
 }

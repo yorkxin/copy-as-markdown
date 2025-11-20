@@ -2,12 +2,11 @@
  * Service for handling keyboard command shortcuts
  */
 
-import type { HandlerCore } from './handler-core.js';
-import { parseCustomFormatCommand } from './handler-core.js';
-
-export interface TabsAPI {
-  query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
-}
+import type { LinkExportService } from '../services/link-export-service.js';
+import type { SelectionConverterService } from '../services/selection-converter-service.js';
+import type { TabExportService } from '../services/tab-export-service.js';
+import type { TabsAPI } from '../services/shared-types.js';
+import { mustGetCurrentTab, parseCustomFormatCommand, requireWindowId } from '../services/browser-utils.js';
 
 export interface KeyboardCommandHandler {
   /**
@@ -33,39 +32,23 @@ const TAB_EXPORT_COMMANDS: Record<string, { scope: 'all' | 'highlighted'; format
 
 export function createKeyboardCommandHandler(
   tabsAPI: TabsAPI,
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+    selectionConverterService: SelectionConverterService;
+  },
 ): KeyboardCommandHandler {
-  async function mustGetCurrentTab(providedTab?: browser.tabs.Tab): Promise<browser.tabs.Tab> {
-    if (providedTab) {
-      return providedTab;
-    }
-
-    // Note: tab argument may be undefined on Firefox.
-    // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/onCommand
-    const tabs = await tabsAPI.query({
-      currentWindow: true,
-      active: true,
-    });
-    if (tabs.length !== 1) {
-      throw new Error('failed to get current tab');
-    }
-    return tabs[0]!;
-  }
-
   async function handleCommand_(command: string, tab?: browser.tabs.Tab): Promise<string> {
-    const currentTab = await mustGetCurrentTab(tab);
-    const windowId = currentTab.windowId;
-    if (windowId === undefined) {
-      throw new Error('tab has no windowId');
-    }
+    const currentTab = await mustGetCurrentTab(tabsAPI, tab);
+    const windowId = requireWindowId(currentTab);
 
     // Handle special commands
     if (command === 'selection-as-markdown') {
-      return handlerCore.convertSelection(currentTab);
+      return services.selectionConverterService.convertSelectionToMarkdown(currentTab);
     }
 
     if (command === 'current-tab-link') {
-      return handlerCore.exportSingleLink({
+      return services.linkExportService.exportLink({
         format: 'link',
         title: currentTab.title || '',
         url: currentTab.url || '',
@@ -75,7 +58,7 @@ export function createKeyboardCommandHandler(
     // Check if command is in the tab export lookup table
     if (command in TAB_EXPORT_COMMANDS) {
       const params = TAB_EXPORT_COMMANDS[command]!;
-      return handlerCore.exportMultipleTabs({
+      return services.tabExportService.exportTabs({
         ...params,
         windowId,
       });
@@ -87,7 +70,7 @@ export function createKeyboardCommandHandler(
 
       switch (context) {
         case 'current-tab':
-          return handlerCore.exportSingleLink({
+          return services.linkExportService.exportLink({
             format: 'custom-format',
             customFormatSlot: slot,
             title: currentTab.title || '',
@@ -95,7 +78,7 @@ export function createKeyboardCommandHandler(
           });
 
         case 'all-tabs':
-          return handlerCore.exportMultipleTabs({
+          return services.tabExportService.exportTabs({
             scope: 'all',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -103,7 +86,7 @@ export function createKeyboardCommandHandler(
           });
 
         case 'highlighted-tabs':
-          return handlerCore.exportMultipleTabs({
+          return services.tabExportService.exportTabs({
             scope: 'highlighted',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -128,10 +111,14 @@ export function createKeyboardCommandHandler(
 }
 
 export function createKeyboardBrowserCommandHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+    selectionConverterService: SelectionConverterService;
+  },
 ): KeyboardCommandHandler {
   return createKeyboardCommandHandler(
     browser.tabs,
-    handlerCore,
+    services,
   );
 }

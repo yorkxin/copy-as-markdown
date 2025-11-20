@@ -2,8 +2,11 @@
  * Service for handling context menu click events
  */
 
-import type { HandlerCore } from './handler-core.js';
-import { parseCustomFormatCommand } from './handler-core.js';
+import Markdown from '../lib/markdown.js';
+import type { LinkExportService } from '../services/link-export-service.js';
+import type { TabExportService } from '../services/tab-export-service.js';
+import type { SelectionConverterService } from '../services/selection-converter-service.js';
+import { parseCustomFormatCommand, requireWindowId } from '../services/browser-utils.js';
 
 export interface BookmarksAPI {
   getSubTree: (id: string) => Promise<browser.bookmarks.BookmarkTreeNode[]>;
@@ -35,7 +38,11 @@ const TAB_LIST_MENU_ITEMS: Record<string, { scope: 'all' | 'highlighted'; listTy
 };
 
 export function createContextMenuHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+    selectionConverterService: SelectionConverterService;
+  },
   bookmarksAPI: BookmarksAPI,
   bookmarksFormatter: BookmarksFormatter,
 ): ContextMenuHandler {
@@ -50,7 +57,7 @@ export function createContextMenuHandler(
       if (!tab) {
         throw new Error('tab is required for current-tab menu item');
       }
-      return handlerCore.exportSingleLink({
+      return services.linkExportService.exportLink({
         format: 'link',
         title: tab.title || '',
         url: tab.url || '',
@@ -61,7 +68,7 @@ export function createContextMenuHandler(
       // <a href="linkURL"><img src="srcURL" /></a>
       if (info.mediaType === 'image') {
         // TODO: extract image alt text
-        return handlerCore.formatLinkedImage('', info.srcUrl || '', info.linkUrl || '');
+        return Markdown.linkedImage('', info.srcUrl || '', info.linkUrl || '');
       }
 
       // <a href="linkURL">Text</a>
@@ -69,7 +76,7 @@ export function createContextMenuHandler(
       // selectionText for Chrome on Mac only. On Windows it does not highlight text when right-click.
       // TODO: use linkText when Chrome supports it on stable.
       const linkText = info.selectionText || info.linkText || '';
-      return handlerCore.exportSingleLink({
+      return services.linkExportService.exportLink({
         format: 'link',
         title: linkText,
         url: info.linkUrl || '',
@@ -78,14 +85,14 @@ export function createContextMenuHandler(
 
     if (menuItemId === 'image') {
       // TODO: extract image alt text
-      return handlerCore.formatImage('', info.srcUrl || '');
+      return Markdown.imageFor('', info.srcUrl || '');
     }
 
     if (menuItemId === 'selection-as-markdown') {
       if (!tab) {
         throw new Error('tab is required for selection-as-markdown menu item');
       }
-      return handlerCore.convertSelection(tab);
+      return services.selectionConverterService.convertSelectionToMarkdown(tab);
     }
 
     // Check if menu item is in the tab list lookup table (Firefox only)
@@ -93,15 +100,13 @@ export function createContextMenuHandler(
       if (!tab) {
         throw new Error('tab is required for tab list menu item');
       }
-      if (tab.windowId === undefined) {
-        throw new Error('tab has no windowId');
-      }
+      const windowId = requireWindowId(tab);
       const params = TAB_LIST_MENU_ITEMS[menuItemId]!;
-      return handlerCore.exportMultipleTabs({
+      return services.tabExportService.exportTabs({
         scope: params.scope,
         format: 'link',
         listType: params.listType,
-        windowId: tab.windowId,
+        windowId,
       });
     }
 
@@ -126,7 +131,7 @@ export function createContextMenuHandler(
           if (!tab) {
             throw new Error('tab is required for current-tab custom format');
           }
-          return handlerCore.exportSingleLink({
+          return services.linkExportService.exportLink({
             format: 'custom-format',
             customFormatSlot: slot,
             title: tab.title || '',
@@ -139,7 +144,7 @@ export function createContextMenuHandler(
           // selectionText for Chrome on Mac only. On Windows it does not highlight text when right-click.
           // TODO: use linkText when Chrome supports it on stable.
           const linkText = info.selectionText || info.linkText || '';
-          return handlerCore.exportSingleLink({
+          return services.linkExportService.exportLink({
             format: 'custom-format',
             customFormatSlot: slot,
             title: linkText,
@@ -151,14 +156,12 @@ export function createContextMenuHandler(
           if (!tab) {
             throw new Error('tab is required for all-tabs custom format');
           }
-          if (tab.windowId === undefined) {
-            throw new Error('tab has no windowId');
-          }
-          return handlerCore.exportMultipleTabs({
+          const windowId = requireWindowId(tab);
+          return services.tabExportService.exportTabs({
             scope: 'all',
             format: 'custom-format',
             customFormatSlot: slot,
-            windowId: tab.windowId,
+            windowId,
           });
         }
 
@@ -166,14 +169,12 @@ export function createContextMenuHandler(
           if (!tab) {
             throw new Error('tab is required for highlighted-tabs custom format');
           }
-          if (tab.windowId === undefined) {
-            throw new Error('tab has no windowId');
-          }
-          return handlerCore.exportMultipleTabs({
+          const windowId = requireWindowId(tab);
+          return services.tabExportService.exportTabs({
             scope: 'highlighted',
             format: 'custom-format',
             customFormatSlot: slot,
-            windowId: tab.windowId,
+            windowId,
           });
         }
 
@@ -195,11 +196,15 @@ export function createContextMenuHandler(
 }
 
 export function createBrowserContextMenuHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+    selectionConverterService: SelectionConverterService;
+  },
   bookmarksFormatter: BookmarksFormatter,
 ): ContextMenuHandler {
   return createContextMenuHandler(
-    handlerCore,
+    services,
     browser.bookmarks,
     bookmarksFormatter,
   );

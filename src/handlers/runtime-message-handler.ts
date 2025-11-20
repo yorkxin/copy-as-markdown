@@ -2,11 +2,9 @@
  * Service for handling runtime messages from popup and other extension pages
  */
 
-import type { HandlerCore } from './handler-core.js';
-
-export interface TabsAPI {
-  get: (tabId: number) => Promise<browser.tabs.Tab>;
-}
+import type { LinkExportService } from '../services/link-export-service.js';
+import type { TabExportService } from '../services/tab-export-service.js';
+import type { TabsAPI } from '../services/shared-types.js';
 
 export interface RuntimeMessageHandler {
   /**
@@ -19,17 +17,23 @@ export interface RuntimeMessageHandler {
 }
 
 export function createRuntimeMessageHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+  },
   tabsAPI: TabsAPI,
 ): RuntimeMessageHandler {
   async function handleMessage_(topic: string, params: any): Promise<string | null> {
     switch (topic) {
       case 'export-current-tab': {
+        if (!tabsAPI.get) {
+          throw new Error('tabsAPI.get is unavailable');
+        }
         const tab = await tabsAPI.get(params.tabId);
         if (typeof tab === 'undefined') {
           throw new TypeError('got undefined tab');
         }
-        return handlerCore.exportSingleLink({
+        return services.linkExportService.exportLink({
           format: params.format,
           customFormatSlot: params.customFormatSlot,
           title: tab.title || '',
@@ -38,7 +42,7 @@ export function createRuntimeMessageHandler(
       }
 
       case 'export-tabs': {
-        return handlerCore.exportMultipleTabs(params);
+        return services.tabExportService.exportTabs(params);
       }
 
       default: {
@@ -53,10 +57,13 @@ export function createRuntimeMessageHandler(
 }
 
 export function createBrowserRuntimeMessageHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+  },
 ): RuntimeMessageHandler {
   return createRuntimeMessageHandler(
-    handlerCore,
+    services,
     browser.tabs,
   );
 }

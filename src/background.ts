@@ -8,7 +8,6 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardServiceController } from './services/clipboard-service.js';
 import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
-import { createBrowserHandlerCore } from './handlers/handler-core.js';
 import { createKeyboardBrowserCommandHandler } from './handlers/keyboard-command-handler.js';
 import { createBrowserContextMenuHandler } from './handlers/context-menu-handler.js';
 import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
@@ -53,24 +52,23 @@ const selectionConverterService = createBrowserSelectionConverterService(
   turndownJsUrl,
 );
 
-// Handler core (shared by all handlers)
-const handlerCore = createBrowserHandlerCore(
+const handlerServices = {
   linkExportService,
   tabExportService,
   selectionConverterService,
-);
+};
 
 // Keyboard command handler
-const keyboardCommandHandler = createKeyboardBrowserCommandHandler(handlerCore);
+const keyboardCommandHandler = createKeyboardBrowserCommandHandler(handlerServices);
 
 // Context menu handler
 const contextMenuHandler = createBrowserContextMenuHandler(
-  handlerCore,
+  handlerServices,
   bookmarks,
 );
 
 // Runtime message handler
-const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerCore);
+const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerServices);
 
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;

@@ -1,13 +1,6 @@
 import copy from '../content-script.js';
-import type { ScriptingAPI } from './shared-types.js';
-
-export interface TabsAPI {
-  query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
-}
-
-export interface ClipboardAPI {
-  writeText: (text: string) => Promise<void>;
-}
+import type { ClipboardAPI, ScriptingAPI, TabsAPI } from './shared-types.js';
+import { mustGetCurrentTab } from './browser-utils.js';
 
 export interface ClipboardMockCall {
   text: string;
@@ -104,17 +97,6 @@ export function createClipboardService(
   clipboardAPI: ClipboardAPI | null,
   iframeUrl: string,
 ): ClipboardService {
-  async function mustGetCurrentTab(): Promise<browser.tabs.Tab> {
-    const tabs = await tabsAPI.query({
-      currentWindow: true,
-      active: true,
-    });
-    if (tabs.length !== 1) {
-      throw new Error('failed to get current tab');
-    }
-    return tabs[0]!;
-  }
-
   async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Promise<void> {
     if (!tab.id) {
       throw new Error('tab has no id');
@@ -149,7 +131,7 @@ export function createClipboardService(
     // If no tab provided, get the current active tab
     let targetTab = tab;
     if (!targetTab) {
-      targetTab = await mustGetCurrentTab();
+      targetTab = await mustGetCurrentTab(tabsAPI);
     }
 
     await copyUsingContentScript(targetTab, text);
