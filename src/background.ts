@@ -13,6 +13,7 @@ import { createBrowserContextMenuHandler } from './handlers/context-menu-handler
 import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
 import type { KeyboardCommandId } from './contracts/commands.js';
 import type { RuntimeMessage } from './contracts/messages.js';
+import { Flags } from './config/flags.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
@@ -29,7 +30,7 @@ const tabExportService = createBrowserTabExportService(markdownInstance, CustomF
 const linkExportService = new LinkExportService(markdownInstance, CustomFormatsStorage);
 
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
-const useNavigatorClipboard = (globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true;
+const useNavigatorClipboard = Flags.alwaysUseNavigatorClipboard();
 const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
 
 const clipboardService = createBrowserClipboardServiceController(
@@ -104,7 +105,7 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
   }
 });
 
-if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
+if (Flags.periodicallyRefreshMenu()) {
   // Hack for Firefox, in which Context Menu disappears after some time.
   // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
   console.info('Hack PERIDOCIALLY_REFRESH_MENU is enabled');
