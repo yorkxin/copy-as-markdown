@@ -5,12 +5,13 @@
  * Creates menus for copying links, images, selections, tabs, and bookmarks as Markdown.
  */
 
+import { ContextMenuIds } from '../contracts/commands.js';
 import type CustomFormat from '../lib/custom-format.js';
 import type { ContextMenusAPI } from './shared-types.js';
 
-type CustomFormatsListProvider = {
+interface CustomFormatsListProvider {
   list: (context: 'single-link' | 'multiple-links') => Promise<CustomFormat[]>;
-};
+}
 
 /**
  * Creates a context menu service instance.
@@ -91,14 +92,14 @@ export type ContextMenuService = ReturnType<typeof createContextMenuService>;
  */
 function createBasicMenus(contextMenusAPI: ContextMenusAPI): void {
   contextMenusAPI.create({
-    id: 'current-tab',
+    id: ContextMenuIds.CurrentTab,
     title: 'Copy Page Link as Markdown',
     type: 'normal',
     contexts: ['page'],
   });
 
   contextMenusAPI.create({
-    id: 'link',
+    id: ContextMenuIds.Link,
     title: 'Copy Link as Markdown',
     type: 'normal',
     contexts: ['link'],
@@ -132,14 +133,14 @@ function createSingleLinkCustomFormatMenus(
  */
 function createImageAndSelectionMenus(contextMenusAPI: ContextMenusAPI): void {
   contextMenusAPI.create({
-    id: 'image',
+    id: ContextMenuIds.Image,
     title: 'Copy Image as Markdown',
     type: 'normal',
     contexts: ['image'],
   });
 
   contextMenusAPI.create({
-    id: 'selection-as-markdown',
+    id: ContextMenuIds.SelectionAsMarkdown,
     title: 'Copy Selection as Markdown',
     type: 'normal',
     contexts: ['selection'],
@@ -160,7 +161,7 @@ async function createFirefoxSpecificMenus(
       .filter(format => format.showInMenus);
 
     // Update existing menus to also work on tabs
-    await contextMenusAPI.update('current-tab', {
+    await contextMenusAPI.update(ContextMenuIds.CurrentTab, {
       contexts: ['page', 'tab'],
     });
 
@@ -205,14 +206,14 @@ function createAllTabsMenus(
   multipleLinksFormats: CustomFormat[],
 ): void {
   contextMenusAPI.create({
-    id: 'all-tabs-list',
+    id: ContextMenuIds.AllTabsList,
     title: 'Copy All Tabs',
     type: 'normal',
     contexts: ['tab'],
   });
 
   contextMenusAPI.create({
-    id: 'all-tabs-task-list',
+    id: ContextMenuIds.AllTabsTaskList,
     title: 'Copy All Tabs (Task List)',
     type: 'normal',
     contexts: ['tab'],
@@ -236,14 +237,14 @@ function createSelectedTabsMenus(
   multipleLinksFormats: CustomFormat[],
 ): void {
   contextMenusAPI.create({
-    id: 'highlighted-tabs-list',
+    id: ContextMenuIds.HighlightedTabsList,
     title: 'Copy Selected Tabs',
     type: 'normal',
     contexts: ['tab'],
   });
 
   contextMenusAPI.create({
-    id: 'highlighted-tabs-task-list',
+    id: ContextMenuIds.HighlightedTabsTaskList,
     title: 'Copy Selected Tabs (Task List)',
     type: 'normal',
     contexts: ['tab'],
@@ -266,7 +267,7 @@ function createSelectedTabsMenus(
 function createBookmarkMenu(contextMenusAPI: ContextMenusAPI): void {
   try {
     contextMenusAPI.create({
-      id: 'bookmark-link',
+      id: ContextMenuIds.BookmarkLink,
       title: 'Copy Bookmark or Folder as Markdown',
       type: 'normal',
       contexts: ['bookmark'],

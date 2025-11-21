@@ -1,3 +1,5 @@
+import type { RuntimeMessage } from '../contracts/messages.js';
+import type { ExportFormat, ExportScope, ListType } from '../services/tab-export-service.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 
 let windowId = -1;
@@ -5,27 +7,13 @@ let tabId = -1;
 let keepOpen = false;
 let useMockClipboard = false;
 
-interface MessageParam {
-  format?: string;
-  tabId?: number;
-  scope?: string;
-  listType?: string;
-  windowId?: number;
-  customFormatSlot?: string;
-}
-
-interface Message {
-  topic: string;
-  params: MessageParam;
-}
-
 interface MessageResponse {
   ok: boolean;
   text?: string;
   error?: string;
 }
 
-async function sendMessage(message: Message): Promise<MessageResponse> {
+async function sendMessage(message: RuntimeMessage): Promise<MessageResponse> {
   const response = await browser.runtime.sendMessage(message) as MessageResponse | undefined;
 
   if (!response) {
@@ -47,22 +35,35 @@ if (formPopupActions) {
     const button = e.submitter as HTMLButtonElement | null;
     if (!button) return;
 
-    const action = button.value;
+    const action = button.value as 'export-current-tab' | 'export-tabs';
 
-    const message: Message = {
-      topic: action,
-      params: {
-        format: button.dataset.format,
-        customFormatSlot: button.dataset.customFormatSlot,
-      },
-    };
-
+    let message: RuntimeMessage;
     if (action === 'export-current-tab') {
-      message.params.tabId = tabId;
+      const format = (button.dataset.format || 'link') as Extract<ExportFormat, 'link' | 'custom-format'>;
+      message = {
+        topic: 'export-current-tab',
+        params: {
+          format,
+          customFormatSlot: button.dataset.customFormatSlot ?? undefined,
+          tabId,
+        },
+      };
     } else if (action === 'export-tabs') {
-      message.params.scope = button.dataset.scope;
-      message.params.listType = button.dataset.listType;
-      message.params.windowId = windowId;
+      const scope = (button.dataset.scope || 'all') as ExportScope;
+      const format = (button.dataset.format || 'link') as ExportFormat;
+      const listType = button.dataset.listType as ListType | undefined;
+      message = {
+        topic: 'export-tabs',
+        params: {
+          scope,
+          format,
+          listType,
+          customFormatSlot: button.dataset.customFormatSlot ?? undefined,
+          windowId,
+        },
+      };
+    } else {
+      throw new TypeError(`Unknown popup action: ${action}`);
     }
 
     try {
@@ -74,7 +75,7 @@ if (formPopupActions) {
           const clipboardResponse = await browser.runtime.sendMessage({
             topic: 'copy-to-clipboard',
             params: { text: response.text },
-          }) as MessageResponse | undefined;
+          } satisfies RuntimeMessage) as MessageResponse | undefined;
           if (!clipboardResponse?.ok) {
             throw new Error(clipboardResponse?.error || 'Mock clipboard copy failed');
           }
@@ -86,14 +87,14 @@ if (formPopupActions) {
       await browser.runtime.sendMessage({
         topic: 'badge',
         params: { type: 'success' },
-      });
+      } satisfies RuntimeMessage);
     } catch (error) {
       // @ts-expect-error - browser.runtime.lastError is not in types
       browser.runtime.lastError = error;
       await browser.runtime.sendMessage({
         topic: 'badge',
         params: { type: 'fail' },
-      });
+      } satisfies RuntimeMessage);
     } finally {
       if (!keepOpen) { // for tests
         window.close();
@@ -215,7 +216,7 @@ async function checkMockClipboardAvailable(): Promise<boolean> {
     const response = await browser.runtime.sendMessage({
       topic: 'check-mock-clipboard',
       params: {},
-    }) as MessageResponse;
+    } satisfies RuntimeMessage) as MessageResponse;
     return response.ok && response.text === 'true';
   } catch {
     return false;

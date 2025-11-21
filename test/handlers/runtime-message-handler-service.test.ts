@@ -4,10 +4,10 @@ import type { TabsAPI } from '../../src/services/shared-types.js';
 import type { LinkExportService } from '../../src/services/link-export-service.js';
 import type { TabExportService } from '../../src/services/tab-export-service.js';
 
-type Services = {
+interface Services {
   linkExportService: LinkExportService;
   tabExportService: TabExportService;
-};
+}
 
 function createServices(overrides?: Partial<Services>): Services {
   return {
@@ -63,11 +63,17 @@ describe('runtimeMessageHandler', () => {
     );
 
     await expect(handler.handleMessage('export-current-tab', { tabId: 1, format: 'link' }))
-      .rejects.toThrow(/got undefined tab/);
+      .rejects
+      .toThrow(/got undefined tab/);
   });
 
   it('throws on unknown topic', async () => {
     const handler = createRuntimeMessageHandler(createServices(), { get: vi.fn() });
     await expect(handler.handleMessage('nope', {})).rejects.toThrow(/Unknown message topic/);
+  });
+
+  it('throws on unknown topic when provided full message object', async () => {
+    const handler = createRuntimeMessageHandler(createServices(), { get: vi.fn() });
+    await expect(handler.handleMessage({ topic: 'nope', params: {} } as any)).rejects.toThrow(/Unknown message topic/);
   });
 });

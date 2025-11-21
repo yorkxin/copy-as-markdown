@@ -11,6 +11,8 @@ import { createBrowserSelectionConverterService } from './services/selection-con
 import { createKeyboardBrowserCommandHandler } from './handlers/keyboard-command-handler.js';
 import { createBrowserContextMenuHandler } from './handlers/context-menu-handler.js';
 import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
+import type { KeyboardCommandId } from './contracts/commands.js';
+import type { RuntimeMessage } from './contracts/messages.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
@@ -127,7 +129,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 // listen to keyboard shortcuts
 browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
-    const text = await keyboardCommandHandler.handleCommand(command, tab);
+    const text = await keyboardCommandHandler.handleCommand(command as KeyboardCommandId, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
@@ -141,15 +143,16 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
 // listen to messages from popup
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  const runtimeMessage = message as RuntimeMessage;
   // Handle check-mock-clipboard message from popup
-  if (message.topic === 'check-mock-clipboard') {
+  if (runtimeMessage.topic === 'check-mock-clipboard') {
     sendResponse({ ok: true, text: clipboardService.isMockMode() ? 'true' : 'false' });
     return true;
   }
 
   // Handle badge messages directly in background.ts
-  if (message.topic === 'badge') {
-    if (message.params.type === 'success') {
+  if (runtimeMessage.topic === 'badge') {
+    if (runtimeMessage.params.type === 'success') {
       badgeService.showSuccess()
         .then(() => sendResponse({ ok: true, text: null }))
         .catch(error => sendResponse({ ok: false, error: error.message }));
@@ -162,15 +165,15 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   // Handle copy-to-clipboard message from popup
-  if (message.topic === 'copy-to-clipboard') {
-    clipboardService.copy(message.params.text)
+  if (runtimeMessage.topic === 'copy-to-clipboard') {
+    clipboardService.copy(runtimeMessage.params.text)
       .then(() => sendResponse({ ok: true, text: null }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
 
-  if (message.topic === 'set-mock-clipboard') {
-    clipboardService.setMockMode(message.params?.enabled === true)
+  if (runtimeMessage.topic === 'set-mock-clipboard') {
+    clipboardService.setMockMode(runtimeMessage.params?.enabled === true)
       .then(() => sendResponse({ ok: true, text: null }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
@@ -178,7 +181,7 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   // Handle export messages via service
   runtimeMessageHandler
-    .handleMessage(message.topic, message.params)
+    .handleMessage(runtimeMessage)
     .then(text => sendResponse({ ok: true, text }))
     .catch(error => sendResponse({ ok: false, error: error.message }));
 

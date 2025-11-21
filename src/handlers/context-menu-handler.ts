@@ -2,6 +2,8 @@
  * Service for handling context menu click events
  */
 
+import { ContextMenuIds } from '../contracts/commands.js';
+import type { ContextMenuId } from '../contracts/commands.js';
 import Markdown from '../lib/markdown.js';
 import type { LinkExportService } from '../services/link-export-service.js';
 import type { TabExportService } from '../services/tab-export-service.js';
@@ -30,12 +32,27 @@ export interface ContextMenuHandler {
 }
 
 // Lookup table for Firefox tab list menu items
-const TAB_LIST_MENU_ITEMS: Record<string, { scope: 'all' | 'highlighted'; listType: 'list' | 'task-list' }> = {
-  'all-tabs-list': { scope: 'all', listType: 'list' },
-  'all-tabs-task-list': { scope: 'all', listType: 'task-list' },
-  'highlighted-tabs-list': { scope: 'highlighted', listType: 'list' },
-  'highlighted-tabs-task-list': { scope: 'highlighted', listType: 'task-list' },
+type TabListMenuId
+  = | typeof ContextMenuIds.AllTabsList
+    | typeof ContextMenuIds.AllTabsTaskList
+    | typeof ContextMenuIds.HighlightedTabsList
+    | typeof ContextMenuIds.HighlightedTabsTaskList;
+
+const TAB_LIST_MENU_ITEMS: Record<TabListMenuId, { scope: 'all' | 'highlighted'; listType: 'list' | 'task-list' }> = {
+  [ContextMenuIds.AllTabsList]: { scope: 'all', listType: 'list' },
+  [ContextMenuIds.AllTabsTaskList]: { scope: 'all', listType: 'task-list' },
+  [ContextMenuIds.HighlightedTabsList]: { scope: 'highlighted', listType: 'list' },
+  [ContextMenuIds.HighlightedTabsTaskList]: { scope: 'highlighted', listType: 'task-list' },
 };
+
+function isTabListMenuId(id: ContextMenuId): id is TabListMenuId {
+  return (
+    id === ContextMenuIds.AllTabsList
+    || id === ContextMenuIds.AllTabsTaskList
+    || id === ContextMenuIds.HighlightedTabsList
+    || id === ContextMenuIds.HighlightedTabsTaskList
+  );
+}
 
 export function createContextMenuHandler(
   services: {
@@ -50,10 +67,10 @@ export function createContextMenuHandler(
     info: browser.contextMenus.OnClickData,
     tab?: browser.tabs.Tab,
   ): Promise<string> {
-    const menuItemId = info.menuItemId.toString();
+    const menuItemId = info.menuItemId.toString() as ContextMenuId;
 
     // Handle special menu items
-    if (menuItemId === 'current-tab') {
+    if (menuItemId === ContextMenuIds.CurrentTab) {
       if (!tab) {
         throw new Error('tab is required for current-tab menu item');
       }
@@ -64,7 +81,7 @@ export function createContextMenuHandler(
       });
     }
 
-    if (menuItemId === 'link') {
+    if (menuItemId === ContextMenuIds.Link) {
       // <a href="linkURL"><img src="srcURL" /></a>
       if (info.mediaType === 'image') {
         // TODO: extract image alt text
@@ -83,12 +100,12 @@ export function createContextMenuHandler(
       });
     }
 
-    if (menuItemId === 'image') {
+    if (menuItemId === ContextMenuIds.Image) {
       // TODO: extract image alt text
       return Markdown.imageFor('', info.srcUrl || '');
     }
 
-    if (menuItemId === 'selection-as-markdown') {
+    if (menuItemId === ContextMenuIds.SelectionAsMarkdown) {
       if (!tab) {
         throw new Error('tab is required for selection-as-markdown menu item');
       }
@@ -96,7 +113,7 @@ export function createContextMenuHandler(
     }
 
     // Check if menu item is in the tab list lookup table (Firefox only)
-    if (menuItemId in TAB_LIST_MENU_ITEMS) {
+    if (isTabListMenuId(menuItemId)) {
       if (!tab) {
         throw new Error('tab is required for tab list menu item');
       }
@@ -111,7 +128,7 @@ export function createContextMenuHandler(
     }
 
     // Only available on Firefox
-    if (menuItemId === 'bookmark-link') {
+    if (menuItemId === ContextMenuIds.BookmarkLink) {
       if (!info.bookmarkId) {
         throw new Error('bookmarkId is required for bookmark-link menu item');
       }

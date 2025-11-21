@@ -5,11 +5,11 @@ import type { LinkExportService } from '../../src/services/link-export-service.j
 import type { TabExportService } from '../../src/services/tab-export-service.js';
 import type { SelectionConverterService } from '../../src/services/selection-converter-service.js';
 
-type Services = {
+interface Services {
   linkExportService: LinkExportService;
   tabExportService: TabExportService;
   selectionConverterService: SelectionConverterService;
-};
+}
 
 function createMockTab(overrides?: Partial<browser.tabs.Tab>): browser.tabs.Tab {
   return {
