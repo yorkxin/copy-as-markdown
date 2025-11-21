@@ -67,7 +67,7 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
 export function createBrowserTabDataFetcher(): BrowserTabDataFetcher {
   // TODO: Review this, do we need permission checking or not?
   const tabGroupsAPI = (typeof chrome !== 'undefined' && chrome.tabGroups)
-    ? chrome.tabGroups as unknown as TabGroupsAPI
+    ? chrome.tabGroups as TabGroupsAPI
     : undefined;
 
   return new BrowserTabDataFetcher({
