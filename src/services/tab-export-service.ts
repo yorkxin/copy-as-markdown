@@ -1,23 +1,10 @@
-/**
- * Tab Export Service
- *
- * Handles exporting browser tabs as Markdown.
- * Supports different formats (link, title, URL), list types (list, task list),
- * and custom format templates.
- *
- * Architecture:
- * - Pure functions for business logic (easy to test, no mocking needed)
- * - Service class is browser-agnostic (takes data, returns markdown)
- * - Browser integration is handled externally
- */
-
 import type Markdown from '../lib/markdown.js';
 import type { NestedArray } from '../lib/markdown.js';
 import type { TabList } from '../lib/tabs.js';
 import { Tab, TabGroup, TabListGrouper } from '../lib/tabs.js';
 import CustomFormatClass from '../lib/custom-format.js';
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
-import { BrowserTabDataFetcher } from './browser-tab-data-fetcher.js';
+import { createBrowserTabDataFetcher } from './browser-tab-data-fetcher.js';
 
 // Type Definitions
 export type ExportFormat = 'link' | 'title' | 'url' | 'custom-format';
@@ -260,6 +247,6 @@ export function createBrowserTabExportService(
   return new TabExportService(
     markdown,
     customFormatsProvider,
-    new BrowserTabDataFetcher(),
+    createBrowserTabDataFetcher(),
   );
 }

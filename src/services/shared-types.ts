@@ -1,10 +1,3 @@
-/**
- * Shared type definitions used across multiple services
- */
-
-/**
- * Markdown formatter interface for creating markdown-formatted text
- */
 export interface MarkdownFormatter {
   /**
    * Escape special characters in link text
@@ -27,9 +20,6 @@ export interface MarkdownFormatter {
   taskList: (items: any[]) => string;
 }
 
-/**
- * Custom format template
- */
 export interface CustomFormat {
   /**
    * Render the custom format with the given input data
@@ -37,9 +27,6 @@ export interface CustomFormat {
   render: (input: any) => string;
 }
 
-/**
- * Provider for retrieving custom format templates
- */
 export interface CustomFormatsProvider {
   /**
    * Get a custom format by context and slot
@@ -47,11 +34,12 @@ export interface CustomFormatsProvider {
    * @param slot - The slot number (e.g., '1', '2', '3')
    */
   get: (context: 'single-link' | 'multiple-links', slot: string) => Promise<CustomFormat>;
+  /**
+   * List formats for a context (optional capability).
+   */
+  list?: (context: 'single-link' | 'multiple-links') => Promise<CustomFormat[]>;
 }
 
-/**
- * Browser scripting API for executing scripts in tabs
- */
 export interface ScriptingAPI {
   /**
    * Execute a script in a tab
@@ -67,4 +55,39 @@ export interface ScriptingAPI {
     files?: string[];
     args?: T;
   }) => Promise<Array<{ result?: any }>>;
+}
+
+export interface TabsAPI {
+  query: (queryInfo: browser.tabs._QueryQueryInfo) => Promise<browser.tabs.Tab[]>;
+  get?: (tabId: number) => Promise<browser.tabs.Tab>;
+}
+
+export interface PermissionsAPI {
+  contains: (permissions: { permissions: string[] }) => Promise<boolean>;
+}
+
+export interface ContextMenusAPI {
+  create: (createProperties: browser.menus._CreateCreateProperties) => void;
+  update: (id: string, updateProperties: browser.menus._UpdateUpdateProperties) => Promise<void>;
+  removeAll: () => Promise<void>;
+}
+
+export interface ClipboardAPI {
+  writeText: (text: string) => Promise<void>;
+}
+
+export interface AlarmsAPI {
+  create: (name: string, alarmInfo: { when: number } | { periodInMinutes: number }) => void;
+}
+
+export interface WindowsAPI {
+  create: (createData: browser.windows._CreateCreateData) => Promise<browser.windows.Window | undefined>;
+}
+
+export interface RuntimeAPI {
+  getURL: (path: string) => string;
+}
+
+export interface TabGroupsAPI {
+  query: (queryInfo: { windowId: number }) => Promise<chrome.tabGroups.TabGroup[]>;
 }

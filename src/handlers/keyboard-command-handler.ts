@@ -2,12 +2,13 @@
  * Service for handling keyboard command shortcuts
  */
 
-import type { HandlerCore } from './handler-core.js';
-import { parseCustomFormatCommand } from './handler-core.js';
-
-export interface TabsAPI {
-  query: (queryInfo: { currentWindow: true; active: true }) => Promise<browser.tabs.Tab[]>;
-}
+import { KeyboardCommandIds } from '../contracts/commands.js';
+import type { KeyboardCommandId } from '../contracts/commands.js';
+import type { LinkExportService } from '../services/link-export-service.js';
+import type { SelectionConverterService } from '../services/selection-converter-service.js';
+import type { TabExportService } from '../services/tab-export-service.js';
+import type { TabsAPI } from '../services/shared-types.js';
+import { mustGetCurrentTab, parseCustomFormatCommand, requireWindowId } from '../services/browser-utils.js';
 
 export interface KeyboardCommandHandler {
   /**
@@ -16,56 +17,50 @@ export interface KeyboardCommandHandler {
    * @param tab - The active tab (may be undefined on Firefox)
    * @returns The text to copy to clipboard
    */
-  handleCommand: (command: string, tab?: browser.tabs.Tab) => Promise<string>;
+  handleCommand: (command: KeyboardCommandId, tab?: browser.tabs.Tab) => Promise<string>;
 }
 
 // Command lookup table for tab export commands
-const TAB_EXPORT_COMMANDS: Record<string, { scope: 'all' | 'highlighted'; format: 'link' | 'title' | 'url'; listType: 'list' | 'task-list' }> = {
-  'all-tabs-link-as-list': { scope: 'all', format: 'link', listType: 'list' },
-  'all-tabs-link-as-task-list': { scope: 'all', format: 'link', listType: 'task-list' },
-  'all-tabs-title-as-list': { scope: 'all', format: 'title', listType: 'list' },
-  'all-tabs-url-as-list': { scope: 'all', format: 'url', listType: 'list' },
-  'highlighted-tabs-link-as-list': { scope: 'highlighted', format: 'link', listType: 'list' },
-  'highlighted-tabs-link-as-task-list': { scope: 'highlighted', format: 'link', listType: 'task-list' },
-  'highlighted-tabs-title-as-list': { scope: 'highlighted', format: 'title', listType: 'list' },
-  'highlighted-tabs-url-as-list': { scope: 'highlighted', format: 'url', listType: 'list' },
+type TabExportCommandId
+  = | typeof KeyboardCommandIds.AllTabsLinkAsList
+    | typeof KeyboardCommandIds.AllTabsLinkAsTaskList
+    | typeof KeyboardCommandIds.AllTabsTitleAsList
+    | typeof KeyboardCommandIds.AllTabsUrlAsList
+    | typeof KeyboardCommandIds.HighlightedTabsLinkAsList
+    | typeof KeyboardCommandIds.HighlightedTabsLinkAsTaskList
+    | typeof KeyboardCommandIds.HighlightedTabsTitleAsList
+    | typeof KeyboardCommandIds.HighlightedTabsUrlAsList;
+
+const TAB_EXPORT_COMMANDS: Record<TabExportCommandId, { scope: 'all' | 'highlighted'; format: 'link' | 'title' | 'url'; listType: 'list' | 'task-list' }> = {
+  [KeyboardCommandIds.AllTabsLinkAsList]: { scope: 'all', format: 'link', listType: 'list' },
+  [KeyboardCommandIds.AllTabsLinkAsTaskList]: { scope: 'all', format: 'link', listType: 'task-list' },
+  [KeyboardCommandIds.AllTabsTitleAsList]: { scope: 'all', format: 'title', listType: 'list' },
+  [KeyboardCommandIds.AllTabsUrlAsList]: { scope: 'all', format: 'url', listType: 'list' },
+  [KeyboardCommandIds.HighlightedTabsLinkAsList]: { scope: 'highlighted', format: 'link', listType: 'list' },
+  [KeyboardCommandIds.HighlightedTabsLinkAsTaskList]: { scope: 'highlighted', format: 'link', listType: 'task-list' },
+  [KeyboardCommandIds.HighlightedTabsTitleAsList]: { scope: 'highlighted', format: 'title', listType: 'list' },
+  [KeyboardCommandIds.HighlightedTabsUrlAsList]: { scope: 'highlighted', format: 'url', listType: 'list' },
 };
 
 export function createKeyboardCommandHandler(
   tabsAPI: TabsAPI,
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+    selectionConverterService: SelectionConverterService;
+  },
 ): KeyboardCommandHandler {
-  async function mustGetCurrentTab(providedTab?: browser.tabs.Tab): Promise<browser.tabs.Tab> {
-    if (providedTab) {
-      return providedTab;
-    }
-
-    // Note: tab argument may be undefined on Firefox.
-    // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/commands/onCommand
-    const tabs = await tabsAPI.query({
-      currentWindow: true,
-      active: true,
-    });
-    if (tabs.length !== 1) {
-      throw new Error('failed to get current tab');
-    }
-    return tabs[0]!;
-  }
-
-  async function handleCommand_(command: string, tab?: browser.tabs.Tab): Promise<string> {
-    const currentTab = await mustGetCurrentTab(tab);
-    const windowId = currentTab.windowId;
-    if (windowId === undefined) {
-      throw new Error('tab has no windowId');
-    }
+  async function handleCommand_(command: KeyboardCommandId, tab?: browser.tabs.Tab): Promise<string> {
+    const currentTab = await mustGetCurrentTab(tabsAPI, tab);
+    const windowId = requireWindowId(currentTab);
 
     // Handle special commands
-    if (command === 'selection-as-markdown') {
-      return handlerCore.convertSelection(currentTab);
+    if (command === KeyboardCommandIds.SelectionAsMarkdown) {
+      return services.selectionConverterService.convertSelectionToMarkdown(currentTab);
     }
 
-    if (command === 'current-tab-link') {
-      return handlerCore.exportSingleLink({
+    if (command === KeyboardCommandIds.CurrentTabLink) {
+      return services.linkExportService.exportLink({
         format: 'link',
         title: currentTab.title || '',
         url: currentTab.url || '',
@@ -74,8 +69,8 @@ export function createKeyboardCommandHandler(
 
     // Check if command is in the tab export lookup table
     if (command in TAB_EXPORT_COMMANDS) {
-      const params = TAB_EXPORT_COMMANDS[command]!;
-      return handlerCore.exportMultipleTabs({
+      const params = TAB_EXPORT_COMMANDS[command as TabExportCommandId]!;
+      return services.tabExportService.exportTabs({
         ...params,
         windowId,
       });
@@ -87,7 +82,7 @@ export function createKeyboardCommandHandler(
 
       switch (context) {
         case 'current-tab':
-          return handlerCore.exportSingleLink({
+          return services.linkExportService.exportLink({
             format: 'custom-format',
             customFormatSlot: slot,
             title: currentTab.title || '',
@@ -95,7 +90,7 @@ export function createKeyboardCommandHandler(
           });
 
         case 'all-tabs':
-          return handlerCore.exportMultipleTabs({
+          return services.tabExportService.exportTabs({
             scope: 'all',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -103,7 +98,7 @@ export function createKeyboardCommandHandler(
           });
 
         case 'highlighted-tabs':
-          return handlerCore.exportMultipleTabs({
+          return services.tabExportService.exportTabs({
             scope: 'highlighted',
             format: 'custom-format',
             customFormatSlot: slot,
@@ -128,10 +123,14 @@ export function createKeyboardCommandHandler(
 }
 
 export function createKeyboardBrowserCommandHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+    selectionConverterService: SelectionConverterService;
+  },
 ): KeyboardCommandHandler {
   return createKeyboardCommandHandler(
     browser.tabs,
-    handlerCore,
+    services,
   );
 }

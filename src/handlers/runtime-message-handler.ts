@@ -2,47 +2,62 @@
  * Service for handling runtime messages from popup and other extension pages
  */
 
-import type { HandlerCore } from './handler-core.js';
-
-export interface TabsAPI {
-  get: (tabId: number) => Promise<browser.tabs.Tab>;
-}
+import type { RuntimeMessage } from '../contracts/messages.js';
+import type { LinkExportService } from '../services/link-export-service.js';
+import type { TabExportService } from '../services/tab-export-service.js';
+import type { TabsAPI } from '../services/shared-types.js';
 
 export interface RuntimeMessageHandler {
   /**
    * Handle a runtime message
-   * @param topic - The message topic
-   * @param params - The message parameters
+   * @param messageOrTopic - The runtime message or topic
+   * @param params - The runtime message params (when calling with topic only)
    * @returns The result text, or null if no result
    */
-  handleMessage: (topic: string, params: any) => Promise<string | null>;
+  handleMessage: (
+    messageOrTopic: RuntimeMessage | RuntimeMessage['topic'],
+    params?: RuntimeMessage['params'],
+  ) => Promise<string | null>;
 }
 
 export function createRuntimeMessageHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+  },
   tabsAPI: TabsAPI,
 ): RuntimeMessageHandler {
-  async function handleMessage_(topic: string, params: any): Promise<string | null> {
-    switch (topic) {
+  async function handleMessage_(
+    messageOrTopic: RuntimeMessage | RuntimeMessage['topic'],
+    params?: RuntimeMessage['params'],
+  ): Promise<string | null> {
+    const message: RuntimeMessage = (typeof messageOrTopic === 'string')
+      ? { topic: messageOrTopic, params: params as any } as RuntimeMessage
+      : messageOrTopic;
+
+    switch (message.topic) {
       case 'export-current-tab': {
-        const tab = await tabsAPI.get(params.tabId);
+        if (!tabsAPI.get) {
+          throw new Error('tabsAPI.get is unavailable');
+        }
+        const tab = await tabsAPI.get(message.params.tabId);
         if (typeof tab === 'undefined') {
           throw new TypeError('got undefined tab');
         }
-        return handlerCore.exportSingleLink({
-          format: params.format,
-          customFormatSlot: params.customFormatSlot,
+        return services.linkExportService.exportLink({
+          format: message.params.format,
+          customFormatSlot: message.params.customFormatSlot,
           title: tab.title || '',
           url: tab.url || '',
         });
       }
 
       case 'export-tabs': {
-        return handlerCore.exportMultipleTabs(params);
+        return services.tabExportService.exportTabs(message.params);
       }
 
       default: {
-        throw new TypeError(`Unknown message topic '${topic}'`);
+        throw new TypeError(`Unknown message topic '${message.topic}'`);
       }
     }
   }
@@ -53,10 +68,13 @@ export function createRuntimeMessageHandler(
 }
 
 export function createBrowserRuntimeMessageHandler(
-  handlerCore: HandlerCore,
+  services: {
+    linkExportService: LinkExportService;
+    tabExportService: TabExportService;
+  },
 ): RuntimeMessageHandler {
   return createRuntimeMessageHandler(
-    handlerCore,
+    services,
     browser.tabs,
   );
 }

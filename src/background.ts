@@ -8,10 +8,12 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardServiceController } from './services/clipboard-service.js';
 import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
-import { createBrowserHandlerCore } from './handlers/handler-core.js';
 import { createKeyboardBrowserCommandHandler } from './handlers/keyboard-command-handler.js';
 import { createBrowserContextMenuHandler } from './handlers/context-menu-handler.js';
 import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
+import type { KeyboardCommandId } from './contracts/commands.js';
+import type { RuntimeMessage } from './contracts/messages.js';
+import { Flags } from './config/flags.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
 
@@ -28,7 +30,7 @@ const tabExportService = createBrowserTabExportService(markdownInstance, CustomF
 const linkExportService = new LinkExportService(markdownInstance, CustomFormatsStorage);
 
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
-const useNavigatorClipboard = (globalThis as any).ALWAYS_USE_NAVIGATOR_COPY_API === true;
+const useNavigatorClipboard = Flags.alwaysUseNavigatorClipboard();
 const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
 
 const clipboardService = createBrowserClipboardServiceController(
@@ -53,24 +55,23 @@ const selectionConverterService = createBrowserSelectionConverterService(
   turndownJsUrl,
 );
 
-// Handler core (shared by all handlers)
-const handlerCore = createBrowserHandlerCore(
+const handlerServices = {
   linkExportService,
   tabExportService,
   selectionConverterService,
-);
+};
 
 // Keyboard command handler
-const keyboardCommandHandler = createKeyboardBrowserCommandHandler(handlerCore);
+const keyboardCommandHandler = createKeyboardBrowserCommandHandler(handlerServices);
 
 // Context menu handler
 const contextMenuHandler = createBrowserContextMenuHandler(
-  handlerCore,
+  handlerServices,
   bookmarks,
 );
 
 // Runtime message handler
-const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerCore);
+const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerServices);
 
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
@@ -104,7 +105,7 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
   }
 });
 
-if ((globalThis as any).PERIDOCIALLY_REFRESH_MENU === true) {
+if (Flags.periodicallyRefreshMenu()) {
   // Hack for Firefox, in which Context Menu disappears after some time.
   // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
   console.info('Hack PERIDOCIALLY_REFRESH_MENU is enabled');
@@ -129,7 +130,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 // listen to keyboard shortcuts
 browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
-    const text = await keyboardCommandHandler.handleCommand(command, tab);
+    const text = await keyboardCommandHandler.handleCommand(command as KeyboardCommandId, tab);
     await clipboardService.copy(text, tab);
     await badgeService.showSuccess();
     return true;
@@ -143,15 +144,16 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
 // listen to messages from popup
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  const runtimeMessage = message as RuntimeMessage;
   // Handle check-mock-clipboard message from popup
-  if (message.topic === 'check-mock-clipboard') {
+  if (runtimeMessage.topic === 'check-mock-clipboard') {
     sendResponse({ ok: true, text: clipboardService.isMockMode() ? 'true' : 'false' });
     return true;
   }
 
   // Handle badge messages directly in background.ts
-  if (message.topic === 'badge') {
-    if (message.params.type === 'success') {
+  if (runtimeMessage.topic === 'badge') {
+    if (runtimeMessage.params.type === 'success') {
       badgeService.showSuccess()
         .then(() => sendResponse({ ok: true, text: null }))
         .catch(error => sendResponse({ ok: false, error: error.message }));
@@ -164,15 +166,15 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 
   // Handle copy-to-clipboard message from popup
-  if (message.topic === 'copy-to-clipboard') {
-    clipboardService.copy(message.params.text)
+  if (runtimeMessage.topic === 'copy-to-clipboard') {
+    clipboardService.copy(runtimeMessage.params.text)
       .then(() => sendResponse({ ok: true, text: null }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
 
-  if (message.topic === 'set-mock-clipboard') {
-    clipboardService.setMockMode(message.params?.enabled === true)
+  if (runtimeMessage.topic === 'set-mock-clipboard') {
+    clipboardService.setMockMode(runtimeMessage.params?.enabled === true)
       .then(() => sendResponse({ ok: true, text: null }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
@@ -180,7 +182,7 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   // Handle export messages via service
   runtimeMessageHandler
-    .handleMessage(message.topic, message.params)
+    .handleMessage(runtimeMessage)
     .then(text => sendResponse({ ok: true, text }))
     .catch(error => sendResponse({ ok: false, error: error.message }));
 
