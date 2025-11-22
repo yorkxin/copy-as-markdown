@@ -1,126 +1,219 @@
+import { html, render } from '../vendor/uhtml.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 import CustomFormat from '../lib/custom-format.js';
 import type { Context, RenderInput, RenderInputLink } from '../lib/custom-format.js';
+import { menuView } from './menu.js';
 
-class UI {
-  slot: string;
+interface CustomFormatState {
+  ready: boolean;
+  flashMessage: string;
   context: Context;
-  sampleInput: RenderInput | RenderInputLink;
-  elInputName: HTMLInputElement;
-  elInputTemplate: HTMLInputElement;
-  elShowInMenus: HTMLInputElement;
-  elPreview: HTMLTextAreaElement;
-  elErrorTemplate: HTMLDivElement;
-  elSave: HTMLButtonElement;
+  slot: string;
+  name: string;
+  template: string;
+  showInMenus: boolean;
+  preview: string;
+  templateError: boolean;
+}
 
-  constructor(doc: Document) {
-    const params = new URLSearchParams(document.location.search);
-    const slot = params.get('slot');
-    const context = params.get('context') as Context | null;
+const root = document.getElementById('options-permissions-root') ?? document.getElementById('custom-format-root') ?? document.body;
 
-    if (!slot || !context) {
-      throw new TypeError('Missing required URL parameters: slot and context');
-    }
+let state: CustomFormatState = {
+  ready: false,
+  flashMessage: '',
+  context: 'multiple-links',
+  slot: '1',
+  name: '',
+  template: '',
+  showInMenus: false,
+  preview: '',
+  templateError: false,
+};
 
-    this.slot = slot;
-    this.context = context;
-    this.sampleInput = {} as RenderInput | RenderInputLink;
+function setState(next: Partial<CustomFormatState>): void {
+  state = { ...state, ...next };
+  render(root, view(state));
+}
 
-    const placeholder = doc.querySelector<HTMLElement>('[data-placeholder=\'context-in-header\']');
-    if (!placeholder) {
-      throw new Error('Missing placeholder element');
-    }
+function view(s: CustomFormatState) {
+  const disableAll = !s.ready;
+  const defaultName = `Custom Format ${s.slot}`;
+  const displayName = s.name || defaultName;
+  return html`
+  <div class="container section is-max-desktop">
+    <h1 class="title">Copy as Markdown</h1>
+    ${s.flashMessage
+      ? html`<div class="notification is-danger">
+          <button class="delete" aria-label="Close notification" onclick=${() => setState({ flashMessage: '' })}></button>
+          ${s.flashMessage}
+        </div>`
+      : null}
+    <div class="columns">
+      <div class="column is-narrow" id="menu">
+        ${menuView(window.location)}
+      </div>
+      <div class="column">
+        <div class="box">
+          <h2 class="title is-3">${displayName} (<span class="is-small">${s.context === 'multiple-links' ? 'Multiple Links' : 'Single Link'}</span>)</h2>
+          <div class="field">
+            <label class="label">Display</label>
+            <div class="control">
+              <input
+                id="input-show-in-menus"
+                class="checkbox"
+                type="checkbox"
+                checked=${s.showInMenus}
+                disabled=${disableAll}
+                onchange=${(e: Event) => onChangeShowInMenus((e.target as HTMLInputElement).checked)}
+              >
+              <label for="input-show-in-menus">Show in Popup Menu</label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="input-name">Display Name on Menu</label>
+            <div class="control">
+              <input
+                id="input-name"
+                class="input"
+                type="text"
+                placeholder=${defaultName}
+                value=${displayName}
+                disabled=${disableAll}
+                oninput=${(e: Event) => setState({ name: (e.target as HTMLInputElement).value })}
+              >
+            </div>
+          </div>
+          <div class="field">
+            <label class="label" for="input-template">Template</label>
+            <div class="control">
+              <textarea
+                id="input-template"
+                class=${`textarea is-family-code is-size-7 ${s.templateError ? 'is-danger' : ''}`}
+                rows="7"
+                value=${s.template}
+                disabled=${disableAll}
+                oninput=${(e: Event) => onChangeTemplate((e.target as HTMLTextAreaElement).value)}
+              ></textarea>
+            </div>
+            <p id="error-template" class=${`help is-danger ${s.templateError ? '' : 'is-hidden'}`}>Invalid template</p>
+            <details>
+              <summary>Input</summary>
+              <pre class="is-size-7"><code id="sample-input">${JSON.stringify(sampleInputForContext(s.context), null, 2)}</code></pre>
+            </details>
 
-    switch (this.context) {
-      case 'multiple-links':
-        this.sampleInput = UI.sampleInputForTabs;
-        placeholder.textContent = 'Multiple Links';
-        break;
-      case 'single-link':
-        this.sampleInput = UI.sampleInputForOneLink;
-        placeholder.textContent = 'Single Link';
-        break;
-      default:
-        throw new TypeError(`invalid context '${this.context}'`);
-    }
+          </div>
+          <div class="field">
+            <label class="label">Preview</label>
+            <div class="control">
+              <textarea id="preview" class="textarea is-family-code is-size-7" rows="7" disabled>${s.preview}</textarea>
+            </div>
+          </div>
 
-    const elInputName = doc.getElementById('input-name') as HTMLInputElement | null;
-    const elInputTemplate = doc.getElementById('input-template') as HTMLInputElement | null;
-    const elShowInMenus = doc.getElementById('input-show-in-menus') as HTMLInputElement | null;
-    const elPreview = doc.getElementById('preview') as HTMLTextAreaElement | null;
-    const elErrorTemplate = doc.getElementById('error-template') as HTMLDivElement | null;
-    const elSave = doc.getElementById('save') as HTMLButtonElement | null;
-    const elSampleInput = doc.getElementById('sample-input');
+        </div>
 
-    if (!elInputName || !elInputTemplate || !elShowInMenus || !elPreview || !elErrorTemplate || !elSave || !elSampleInput) {
-      throw new Error('Missing required DOM elements');
-    }
+        <div class="field is-grouped">
+          <div class="control">
+            <button
+              id="save"
+              class="button is-primary"
+              disabled=${disableAll || s.templateError}
+              onclick=${onSave}
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
+}
 
-    this.elInputName = elInputName;
-    this.elInputTemplate = elInputTemplate;
-    this.elShowInMenus = elShowInMenus;
-    this.elPreview = elPreview;
-    this.elErrorTemplate = elErrorTemplate;
-    this.elSave = elSave;
+function sampleInputForContext(context: Context): RenderInput | RenderInputLink {
+  if (context === 'single-link') return UI.sampleInputForOneLink;
+  return UI.sampleInputForTabs;
+}
 
-    elSampleInput.textContent = JSON.stringify(this.sampleInput, null, 2);
+async function onChangeShowInMenus(checked: boolean): Promise<void> {
+  setState({ showInMenus: checked });
+}
 
-    this.elInputTemplate.addEventListener('input', () => {
-      this.renderPreview();
+async function onChangeTemplate(value: string): Promise<void> {
+  setState({ template: value });
+  await renderPreview();
+}
+
+async function renderPreview(): Promise<void> {
+  try {
+    const customFormat = new CustomFormat({
+      slot: state.slot,
+      context: state.context,
+      name: state.name,
+      template: state.template,
+      showInMenus: state.showInMenus,
     });
+    const preview = customFormat.render(sampleInputForContext(state.context));
+    setState({ preview, templateError: false, flashMessage: '' });
+  } catch (err) {
+    console.error(err);
+    setState({ preview: '', templateError: true });
+  }
+}
 
-    this.elInputTemplate.addEventListener('change', () => {
-      this.renderPreview();
+async function onSave(): Promise<void> {
+  if (!state.ready || state.templateError) return;
+  try {
+    const customFormat = new CustomFormat({
+      slot: state.slot,
+      context: state.context,
+      name: state.name,
+      template: state.template,
+      showInMenus: state.showInMenus,
     });
-
-    doc.querySelectorAll<HTMLElement>('[data-placeholder="default-name"]')
-      .forEach((el) => {
-        el.textContent = this.defaultName();
-      });
-
-    this.elInputName.placeholder = this.defaultName();
+    await CustomFormatsStorage.save(state.context, state.slot, customFormat);
+    setState({ flashMessage: '' });
+  } catch (error) {
+    console.error('failed to save custom format', error);
+    setState({ flashMessage: 'Failed to save custom format. Please try again.' });
   }
+}
 
-  load(customFormat: CustomFormat): void {
-    this.elInputName.value = customFormat.name === '' ? this.defaultName() : customFormat.name;
-    this.elInputTemplate.value = customFormat.template;
-    this.elShowInMenus.checked = customFormat.showInMenus;
-    this.renderPreview();
+async function loadCustomFormat(context: Context, slot: string): Promise<void> {
+  const customFormat = await CustomFormatsStorage.get(context, slot);
+  setState({
+    context,
+    slot,
+    name: customFormat.name,
+    template: customFormat.template,
+    showInMenus: customFormat.showInMenus,
+    ready: true,
+  });
+  await renderPreview();
+}
+
+function parseParams(): { context: Context; slot: string } {
+  const params = new URLSearchParams(window.location.search);
+  const slot = params.get('slot');
+  const context = params.get('context') as Context | null;
+  if (!slot || !context) {
+    throw new TypeError('Missing required URL parameters: slot and context');
   }
+  return { slot, context };
+}
 
-  current(): CustomFormat {
-    return new CustomFormat({
-      slot: this.slot,
-      context: this.context,
-      name: this.elInputName.value,
-      template: this.elInputTemplate.value,
-      showInMenus: this.elShowInMenus.checked,
-    });
+document.addEventListener('DOMContentLoaded', async () => {
+  render(root, view(state));
+  try {
+    const { slot, context } = parseParams();
+    await loadCustomFormat(context, slot);
+  } catch (error) {
+    console.error('failed to load custom format', error);
+    setState({ flashMessage: 'Failed to load custom format. Please reopen the page.' });
   }
+});
 
-  renderPreview(): void {
-    this.elInputTemplate.classList.remove('is-danger');
-    this.elErrorTemplate.classList.add('is-hidden');
-    this.elSave.disabled = true;
-
-    const customFormat = this.current();
-
-    try {
-      this.elPreview.value = customFormat.render(this.sampleInput);
-      this.elSave.disabled = false;
-    } catch (err) {
-      console.error(err);
-      this.elInputTemplate.classList.add('is-danger');
-      this.elErrorTemplate.classList.remove('is-hidden');
-      this.elPreview.value = '';
-      this.elSave.disabled = true;
-    }
-  }
-
-  defaultName(): string {
-    return `Custom Format ${this.slot}`;
-  }
-
+// Sample inputs reused from old UI
+class UI {
   static get sampleInputForOneLink(): RenderInputLink {
     return { title: 'Example 1', url: 'https://example.com/1', number: 1 };
   }
@@ -198,13 +291,3 @@ class UI {
     };
   }
 }
-
-document.addEventListener('DOMContentLoaded', async () => {
-  const ui = new UI(document);
-  const customFormat = await CustomFormatsStorage.get(ui.context, ui.slot);
-  ui.load(customFormat);
-
-  ui.elSave.addEventListener('click', async () => {
-    await CustomFormatsStorage.save(ui.context, ui.slot, ui.current());
-  });
-});
