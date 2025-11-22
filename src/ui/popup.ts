@@ -62,17 +62,129 @@ function popupView(s: PopupState) {
       <div class="dropdown-content is-radiusless is-shadowless p-0">
         <div id="form-popup-actions">
           <div id="actions-export-current-tab">
-            ${renderCurrentTabButtons()}
+            <button
+              type="button"
+              class="dropdown-item"
+              id="current-tab-link"
+              onclick=${() => handleAction({
+                action: 'export-current-tab',
+                format: 'link',
+              })}
+            >
+              Current tab link
+            </button>
             ${s.singleLinkFormats.map(renderCurrentTabCustomButton)}
           </div>
           <hr class="dropdown-divider" />
           <div id="actions-export-all">
-            ${renderExportAllButtons(s.tabsCount)}
+            <button
+              type="button"
+              class="dropdown-item"
+              id="all-tabs-link-as-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'all',
+                format: 'link',
+                listType: 'list',
+              })}
+            >
+              All tabs link (<span id="display-count-all-tabs">${s.tabsCount}</span>)
+            </button>
+            <button
+              type="button"
+              class="dropdown-item"
+              id="all-tabs-link-as-task-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'all',
+                format: 'link',
+                listType: 'task-list',
+              })}
+            >
+              All tabs link (task list)
+            </button>
+            <button
+              type="button"
+              class="dropdown-item"
+              id="all-tabs-title-as-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'all',
+                format: 'title',
+                listType: 'list',
+              })}
+            >
+              All tabs title
+            </button>
+            <button
+              type="button"
+              class="dropdown-item"
+              id="all-tabs-url-as-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'all',
+                format: 'url',
+                listType: 'list',
+              })}
+            >
+              All tabs URL
+            </button>
             ${s.multipleLinkFormats.map(renderAllTabsCustomButton)}
           </div>
           <hr class="dropdown-divider" />
           <div id="actions-export-highlighted">
-            ${renderExportHighlightedButtons(s.highlightedCount)}
+            <button
+              type="button"
+              class="dropdown-item"
+              id="highlighted-tabs-link-as-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'highlighted',
+                format: 'link',
+                listType: 'list',
+              })}
+            >
+              Selected tabs link (<span id="display-count-highlighted-tabs">${s.highlightedCount}</span>)
+            </button>
+            <button
+              type="button"
+              class="dropdown-item"
+              id="highlighted-tabs-link-as-task-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'highlighted',
+                format: 'link',
+                listType: 'task-list',
+              })}
+            >
+              Selected tabs link (task list)
+            </button>
+            <button
+              type="button"
+              class="dropdown-item"
+              id="highlighted-tabs-title-as-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'highlighted',
+                format: 'title',
+                listType: 'list',
+              })}
+            >
+              Selected tabs title
+            </button>
+            <button
+              type="button"
+              class="dropdown-item"
+              id="highlighted-tabs-url-as-list"
+              onclick=${() => handleAction({
+                action: 'export-tabs',
+                scope: 'highlighted',
+                format: 'url',
+                listType: 'list',
+              })}
+            >
+              Selected tabs URL
+            </button>
             ${s.multipleLinkFormats.map(renderHighlightedTabsCustomButton)}
           </div>
         </div>
@@ -106,101 +218,6 @@ function renderButton({
     >
       ${label}
     </button>
-  `;
-}
-
-function renderCurrentTabButtons() {
-  return renderButton({
-    action: 'export-current-tab',
-    format: 'link',
-    id: 'current-tab-link',
-    label: 'Current tab link',
-  });
-}
-
-function renderExportAllButtons(tabsCount: number) {
-  const btnAllTabsLinkAsList = renderButton({
-    action: 'export-tabs',
-    scope: 'all',
-    format: 'link',
-    listType: 'list',
-    id: 'all-tabs-link-as-list',
-    label: html`All tabs link (<span id="display-count-all-tabs">${tabsCount}</span>)`,
-  });
-
-  const btnAllTabsLinkAsTaskList = renderButton({
-    action: 'export-tabs',
-    scope: 'all',
-    format: 'link',
-    listType: 'task-list',
-    id: 'all-tabs-link-as-task-list',
-    label: 'All tabs link (task list)',
-  });
-
-  const btnAllTabsTitleAsList = renderButton({
-    action: 'export-tabs',
-    scope: 'all',
-    format: 'title',
-    listType: 'list',
-    id: 'all-tabs-title-as-list',
-    label: 'All tabs title',
-  });
-
-  const btnAllTabsUrlAsList = renderButton({
-    action: 'export-tabs',
-    scope: 'all',
-    format: 'url',
-    listType: 'list',
-    id: 'all-tabs-url-as-list',
-    label: 'All tabs URL',
-  });
-
-  return html`
-    ${btnAllTabsLinkAsList}
-    ${btnAllTabsLinkAsTaskList}
-    ${btnAllTabsTitleAsList}
-    ${btnAllTabsUrlAsList}
-  `;
-}
-
-function renderExportHighlightedButtons(highlightedCount: number) {
-  const btnHighlightedTabsLinkAsList = renderButton({
-    action: 'export-tabs',
-    scope: 'highlighted',
-    format: 'link',
-    listType: 'list',
-    id: 'highlighted-tabs-link-as-list',
-    label: html`Selected tabs link (<span id="display-count-highlighted-tabs">${highlightedCount}</span>)`,
-  });
-  const btnHighlightedTabsLinkAsTaskList = renderButton({
-    action: 'export-tabs',
-    scope: 'highlighted',
-    format: 'link',
-    listType: 'task-list',
-    id: 'highlighted-tabs-link-as-task-list',
-    label: 'Selected tabs link (task list)',
-  });
-  const btnHighlightedTabsTitleAsList = renderButton({
-    action: 'export-tabs',
-    scope: 'highlighted',
-    format: 'title',
-    listType: 'list',
-    id: 'highlighted-tabs-title-as-list',
-    label: 'Selected tabs title',
-  });
-  const btnHighlightedTabsUrlAsList = renderButton({
-    action: 'export-tabs',
-    scope: 'highlighted',
-    format: 'url',
-    listType: 'list',
-    id: 'highlighted-tabs-url-as-list',
-    label: 'Selected tabs URL',
-  });
-  return html`
-    ${btnHighlightedTabsLinkAsList}
-    ${btnHighlightedTabsLinkAsTaskList}
-    ${btnHighlightedTabsTitleAsList}
-    ${btnHighlightedTabsUrlAsList}
   `;
 }
 
