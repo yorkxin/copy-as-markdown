@@ -33,6 +33,8 @@ interface ButtonConfig {
   label: ButtonLabel;
 }
 
+type ButtonActionConfig = Pick<ButtonConfig, 'action' | 'scope' | 'format' | 'listType' | 'customFormatSlot'>;
+
 const URL_PARAMS = new URLSearchParams(window.location.search);
 const root = document.getElementById('popup-root') ?? document.body;
 
@@ -58,7 +60,7 @@ function popupView(s: PopupState) {
   <div class="dropdown is-active">
     <div class="dropdown-menu is-relative p-0" role="menu">
       <div class="dropdown-content is-radiusless is-shadowless p-0">
-        <form id="form-popup-actions" onsubmit=${handleSubmit}>
+        <div id="form-popup-actions">
           <div id="actions-export-current-tab">
             ${renderCurrentTabButtons()}
             ${s.singleLinkFormats.map(renderCurrentTabCustomButton)}
@@ -73,7 +75,7 @@ function popupView(s: PopupState) {
             ${renderExportHighlightedButtons(s.highlightedCount)}
             ${s.multipleLinkFormats.map(renderHighlightedTabsCustomButton)}
           </div>
-        </form>
+        </div>
         <hr class="dropdown-divider" />
         <button type="button" class="dropdown-item" id="open-options" onclick=${openOptions}>Options&hellip;</button>
       </div>
@@ -84,25 +86,23 @@ function popupView(s: PopupState) {
 
 function renderButton({
   id,
-  action,
-  scope,
-  format,
-  listType,
-  customFormatSlot,
   label,
+  ...config
 }: ButtonConfig) {
+  const actionConfig: ButtonActionConfig = {
+    action: config.action,
+    scope: config.scope,
+    format: config.format,
+    listType: config.listType,
+    customFormatSlot: config.customFormatSlot,
+  };
+
   return html`
     <button
-      type="submit"
+      type="button"
       class="dropdown-item"
-      name="action"
-      value=${action}
-      data-action=${action}
-      data-scope=${scope ?? null}
-      data-format=${format}
-      data-list-type=${listType ?? null}
-      data-custom-format-slot=${customFormatSlot ?? null}
       id=${id ?? null}
+      onclick=${() => handleAction(actionConfig)}
     >
       ${label}
     </button>
@@ -250,40 +250,34 @@ async function sendMessage(message: RuntimeMessage): Promise<MessageResponse> {
   return response;
 }
 
-async function handleSubmit(e: SubmitEvent): Promise<void> {
-  e.preventDefault();
-  const button = e.submitter as HTMLButtonElement | null;
-  if (!button) return;
-
-  const action = (button.dataset.action || button.value) as 'export-current-tab' | 'export-tabs';
-
+async function handleAction(config: ButtonActionConfig): Promise<void> {
   let message: RuntimeMessage;
-  if (action === 'export-current-tab') {
-    const format = (button.dataset.format || 'link') as Extract<ExportFormat, 'link' | 'custom-format'>;
+  if (config.action === 'export-current-tab') {
+    const format = (config.format || 'link') as Extract<ExportFormat, 'link' | 'custom-format'>;
     message = {
       topic: 'export-current-tab',
       params: {
         format,
-        customFormatSlot: button.dataset.customFormatSlot ?? undefined,
+        customFormatSlot: config.customFormatSlot ?? undefined,
         tabId,
       },
     };
-  } else if (action === 'export-tabs') {
-    const scope = (button.dataset.scope || 'all') as ExportScope;
-    const format = (button.dataset.format || 'link') as ExportFormat;
-    const listType = button.dataset.listType as ListType | undefined;
+  } else if (config.action === 'export-tabs') {
+    const scope = (config.scope || 'all') as ExportScope;
+    const format = (config.format || 'link') as ExportFormat;
+    const listType = config.listType as ListType | undefined;
     message = {
       topic: 'export-tabs',
       params: {
         scope,
         format,
         listType,
-        customFormatSlot: button.dataset.customFormatSlot ?? undefined,
+        customFormatSlot: config.customFormatSlot ?? undefined,
         windowId,
       },
     };
   } else {
-    throw new TypeError(`Unknown popup action: ${action}`);
+    throw new TypeError(`Unknown popup action: ${config.action}`);
   }
 
   try {
