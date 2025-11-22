@@ -14,40 +14,7 @@
   <title>Copy as Markdown Popup</title>
 </head>
 <body>
-<template id="template-current-tab-button">
-  <button type="submit" class="dropdown-item" name="action" value="export-current-tab" data-format="custom-format" data-custom-format-slot="" id="">Current tab </button>
-</template>
-<template id="template-export-tabs-button">
-  <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="all" data-format="custom-format" data-custom-format-slot="" id="">All tabs </button>
-  <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="highlighted" data-format="custom-format" data-custom-format-slot="" id="">Selected tabs </button>
-</template>
-<div class="dropdown is-active">
-  <div class="dropdown-menu is-relative p-0" id="dropdown-menu" role="menu">
-    <div class="dropdown-content is-radiusless is-shadowless p-0">
-      <form id="form-popup-actions">
-        <div id="actions-export-current-tab">
-        <button type="submit" class="dropdown-item" name="action" value="export-current-tab" data-format="link" id="current-tab-link">Current tab link</button>
-        </div>
-        <hr class="dropdown-divider" />
-        <div id="actions-export-all">
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="all" data-format="link" data-list-type="list" id="all-tabs-link-as-list">All tabs link (<span id="display-count-all-tabs">0</span>)</button>
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="all" data-format="link" data-list-type="task-list" id="all-tabs-link-as-task-list">All tabs link (task list)</button>
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="all" data-format="title" data-list-type="list" id="all-tabs-title-as-list">All tabs title</button>
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="all" data-format="url" data-list-type="list" id="all-tabs-url-as-list">All tabs URL</button>
-        </div>
-        <hr class="dropdown-divider" />
-        <div id="actions-export-highlighted">
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="highlighted" data-format="link" data-list-type="list" id="highlighted-tabs-link-as-list">Selected tabs link (<span id="display-count-highlighted-tabs">0</span>)</button>
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="highlighted" data-format="link" data-list-type="task-list" id="highlighted-tabs-link-as-task-list">Selected tabs link (task list)</button>
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="highlighted" data-format="title" data-list-type="list" id="highlighted-tabs-title-as-list">Selected tabs title</button>
-        <button type="submit" class="dropdown-item" name="action" value="export-tabs" data-scope="highlighted" data-format="url" data-list-type="list" id="highlighted-tabs-url-as-list">Selected tabs URL</button>
-        </div>
-      </form>
-      <hr class="dropdown-divider" />
-      <button type="button" class="dropdown-item" id="open-options">Options&hellip;</button>
-    </div>
-  </div>
-</div>
+<div id="popup-root"></div>
 <script src="../vendor/browser-polyfill.js"></script>
 <script src="../ui/popup.js" type="module"></script>
 </body>

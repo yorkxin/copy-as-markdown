@@ -10,6 +10,7 @@ All files in this directory are automatically copied from `node_modules/` during
 - **browser-polyfill.js** - WebExtension polyfill for cross-browser compatibility
 - **bulma.css** - CSS framework for UI styling
 - **turndown.js** - HTML to Markdown converter
+- **uhtml.js** - Lightweight template literal rendering
 
 These files are then copied to `dist/vendor/` in the final extension packages during the build process.
 

@@ -38,7 +38,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "mustache": "^4.2.0"
+    "mustache": "^4.2.0",
+    "uhtml": "^4.7.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
@@ -52,6 +53,7 @@
     "bulma": "^1.0.0",
     "eslint": "^9.37.0",
     "http-server": "^14.1.1",
+    "jsdom": "^24.1.0",
     "nodemon": "^3.1.0",
     "tsx": "^4.20.6",
     "turndown": "^7.1.3",
