@@ -141,3 +141,95 @@ describe('popup UI', () => {
     expect(window.close).toHaveBeenCalled();
   });
 });
+
+it('shows flash on export failure and can be dismissed', async () => {
+  const sendMessageMock = vi.fn(async (message: any) => {
+    if (message.topic === 'export-current-tab') {
+      throw new Error('boom');
+    }
+    if (message.topic === 'badge') {
+      return { ok: true };
+    }
+    if (message.topic === 'check-mock-clipboard') {
+      return { ok: true, text: 'false' };
+    }
+    return { ok: true };
+  });
+
+  (globalThis as any).browser = {
+    runtime: {
+      sendMessage: sendMessageMock,
+      openOptionsPage: vi.fn(),
+      lastError: undefined,
+    },
+    windows: {
+      getCurrent: vi.fn().mockResolvedValue({ id: 1, tabs: [{ id: 1, active: true, highlighted: true }] }),
+      get: vi.fn(),
+    },
+  };
+
+  (navigator as any).clipboard = { writeText: vi.fn() };
+  vi.spyOn(window, 'close').mockImplementation(() => { });
+  listMock.mockResolvedValue([]);
+
+  await import('../../src/ui/popup.js');
+  document.dispatchEvent(new Event('DOMContentLoaded'));
+  await flush();
+
+  const button = document.getElementById('current-tab-link') as HTMLButtonElement;
+  expect(button).toBeTruthy();
+  button.click();
+  await flush();
+
+  const flash = document.querySelector('.notification');
+  expect(flash?.textContent ?? '').toContain('Failed to copy to clipboard');
+
+  const closeBtn = flash?.querySelector('button.delete') as HTMLButtonElement | null;
+  if (closeBtn) {
+    closeBtn.click();
+    await flush();
+  }
+  expect(document.querySelector('.notification')).toBeNull();
+});
+
+it('does not show flash when tabs permission is missing', async () => {
+  const sendMessageMock = vi.fn(async (message: any) => {
+    if (message.topic === 'export-current-tab') {
+      throw new Error('Tabs permission required');
+    }
+    if (message.topic === 'badge') {
+      return { ok: true };
+    }
+    if (message.topic === 'check-mock-clipboard') {
+      return { ok: true, text: 'false' };
+    }
+    return { ok: true };
+  });
+
+  (globalThis as any).browser = {
+    runtime: {
+      sendMessage: sendMessageMock,
+      openOptionsPage: vi.fn(),
+      lastError: undefined,
+    },
+    windows: {
+      getCurrent: vi.fn().mockResolvedValue({ id: 1, tabs: [{ id: 1, active: true, highlighted: true }] }),
+      get: vi.fn(),
+    },
+  };
+
+  (navigator as any).clipboard = { writeText: vi.fn() };
+  vi.spyOn(window, 'close').mockImplementation(() => { });
+  listMock.mockResolvedValue([]);
+
+  await import('../../src/ui/popup.js');
+  document.dispatchEvent(new Event('DOMContentLoaded'));
+  await flush();
+
+  const button = document.getElementById('current-tab-link') as HTMLButtonElement;
+  expect(button).toBeTruthy();
+  button.click();
+  await flush();
+
+  expect(document.querySelector('.notification')).toBeNull();
+});
