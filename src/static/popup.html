@@ -14,7 +14,37 @@
   <title>Copy as Markdown Popup</title>
 </head>
 <body>
-<div id="popup-root"></div>
+<div class="dropdown is-active">
+  <div class="dropdown-menu is-relative p-0" id="dropdown-menu" role="menu">
+    <div class="dropdown-content is-radiusless is-shadowless p-0">
+      <div id="flash-message" class="notification is-danger is-radiusless is-hidden mb-0">
+        <button class="delete" aria-label="Close notification"></button>
+        <span id="flash-text"></span>
+      </div>
+        <div id="form-popup-actions">
+          <div id="actions-export-current-tab">
+            <button type="button" class="dropdown-item" id="current-tab-link">Current tab link</button>
+          </div>
+          <hr class="dropdown-divider" />
+          <div id="actions-export-all">
+          <button type="button" class="dropdown-item" id="all-tabs-link-as-list">All tabs link (<span id="display-count-all-tabs">0</span>)</button>
+          <button type="button" class="dropdown-item" id="all-tabs-link-as-task-list">All tabs link (task list)</button>
+          <button type="button" class="dropdown-item" id="all-tabs-title-as-list">All tabs title</button>
+          <button type="button" class="dropdown-item" id="all-tabs-url-as-list">All tabs URL</button>
+          </div>
+          <hr class="dropdown-divider" />
+          <div id="actions-export-highlighted">
+          <button type="button" class="dropdown-item" id="highlighted-tabs-link-as-list">Selected tabs link (<span id="display-count-highlighted-tabs">0</span>)</button>
+          <button type="button" class="dropdown-item" id="highlighted-tabs-link-as-task-list">Selected tabs link (task list)</button>
+          <button type="button" class="dropdown-item" id="highlighted-tabs-title-as-list">Selected tabs title</button>
+          <button type="button" class="dropdown-item" id="highlighted-tabs-url-as-list">Selected tabs URL</button>
+          </div>
+        </div>
+      <hr class="dropdown-divider" />
+      <button type="button" class="dropdown-item" id="open-options">Options&hellip;</button>
+    </div>
+  </div>
+</div>
 <script src="../vendor/browser-polyfill.js"></script>
 <script src="../ui/popup.js" type="module"></script>
 </body>

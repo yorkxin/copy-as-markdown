@@ -7,8 +7,118 @@
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div id="options-root"></div>
-  <script src="../vendor/browser-polyfill.js"></script>
-  <script src="../ui/options.js" type="module"></script>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+  <div id="flash-error" class="notification is-danger is-hidden">
+    <p></p>
+  </div>
+  <div class="columns">
+    <div class="column is-narrow" id="menu">
+      <aside class="menu">
+        <p class="menu-label">General</p>
+        <ul class="menu-list">
+          <li><a class="is-active" href="options.html">Markdown Style</a></li>
+          <li><a href="options-permissions.html">Permissions</a></li>
+          <p class="menu-label">Formats</p>
+          <li>
+            <a href="multiple-links.html">Multiple Links</a>
+            <ul class="menu-list" data-menu-custom-format-context="multiple-links">
+              <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=multiple-links&slot=1">Custom Format 1</a></li>
+              <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=multiple-links&slot=2">Custom Format 2</a></li>
+              <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=multiple-links&slot=3">Custom Format 3</a></li>
+              <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=multiple-links&slot=4">Custom Format 4</a></li>
+              <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=multiple-links&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+          <li>
+            <a href="single-link.html">Single Link</a>
+            <ul class="menu-list" data-menu-custom-format-context="single-link">
+              <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=single-link&slot=1">Custom Format 1</a></li>
+              <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=single-link&slot=2">Custom Format 2</a></li>
+              <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=single-link&slot=3">Custom Format 3</a></li>
+              <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=single-link&slot=4">Custom Format 4</a></li>
+              <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=single-link&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="menu-label">Others</p>
+        <ul class="menu-list">
+          <li><a href="custom-format-help.html">Help & Examples</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <div class="box content">
+        <h2 class="title is-3">Markdown Style</h2>
+        <form id='form-style-of-unordered-list' class="field">
+          <label class="label">Unordered List Character</label>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="character" value="dash"/>
+              Dashes (<code>-</code>)
+            </label>
+          </div>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="character" value="asterisk"/>
+              Asterisks (<code>*</code>)
+            </label>
+          </div>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="character" value="plus"/>
+              Plus Signs (<code>+</code>)
+            </label>
+          </div>
+        </form>
+
+        <form id='form-style-of-tab-group-indentation' class="field">
+          <label class="label">Tab Group Indentation <span class="tag" data-hide-if-permission-contains="tabGroups">Requires Permission</span></label>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="indentation" value="spaces" data-dependson-permissions="tabGroups"/>
+              Spaces
+            </label>
+          </div>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="indentation" value="tab" data-dependson-permissions="tabGroups"/>
+              Tab
+            </label>
+          </div>
+          <p class="help">
+            CommonMark uses spaces to indent nested lists, which are used when exporting tabs along with tab groups.
+            The number of spaces required depends on the leading characters of the parent item.
+            If your Markdown processor prefers <kbd>tab</kbd> (<code>\t</code>) characters for indentation,
+            choose <strong>Tab</strong> so that Copy as Markdown outputs tabs for indentation.
+            Please note that this option does not affect indentations in the output of Copy Selection as Markdown.
+          </p>
+        </form>
+
+        <form id="form-link-text-always-escape-brackets" class="field">
+          <label class="label">Escaping</label>
+          <div class="control">
+            <label class="checkbox"><input type="checkbox" name="enabled"/> Always escape brackets in link text (<code>[]</code>
+              becomes <code>\[\]</code>)</label>
+          </div>
+          <p class="help">
+            CommonMark allows balanced brackets <code>[]</code> in link text
+            (e.g. <code>[[JIRA-123] My Project](https://link/)</code>).
+            If your Markdown processor does not support this use case, you can enable this feature
+            so that Copy as Markdown always escape brackets in the link text.
+          </p>
+        </form>
+      </div>
+      <div class="field is-grouped">
+        <div class="control">
+          <button id="reset" type="button" class="button is-outlined is-danger">Restore to Default</button>
+        </div>
+      </div>
+    </div>
+  </div>
+    <script src="../vendor/browser-polyfill.js"></script>
+    <script src="../ui/options.js" type="module"></script>
+</div>
 </body>
 </html>

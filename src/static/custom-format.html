@@ -7,8 +7,90 @@
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div id="custom-format-root"></div>
-  <script src="../vendor/browser-polyfill.js"></script>
-  <script src="../ui/custom-format.js" type="module"></script>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+
+  <div class="columns">
+    <div class="column is-narrow" id="menu">
+      <aside class="menu">
+        <p class="menu-label">General</p>
+        <ul class="menu-list">
+          <li><a href="options.html">Markdown Style</a></li>
+          <li><a href="options-permissions.html">Permissions</a></li>
+          <p class="menu-label">Formats</p>
+          <li>
+            <a href="multiple-links.html">Multiple Links</a>
+            <ul class="menu-list">
+              <li><a href="custom-format.html?context=multiple-links&slot=1">Custom Format 1</a></li>
+              <li><a href="custom-format.html?context=multiple-links&slot=2">Custom Format 2</a></li>
+              <li><a href="custom-format.html?context=multiple-links&slot=3">Custom Format 3</a></li>
+              <li><a href="custom-format.html?context=multiple-links&slot=4">Custom Format 4</a></li>
+              <li><a href="custom-format.html?context=multiple-links&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+          <li>
+            <a href="single-link.html">Single Link</a>
+            <ul class="menu-list">
+              <li><a href="custom-format.html?context=single-link&slot=1">Custom Format 1</a></li>
+              <li><a href="custom-format.html?context=single-link&slot=2">Custom Format 2</a></li>
+              <li><a href="custom-format.html?context=single-link&slot=3">Custom Format 3</a></li>
+              <li><a href="custom-format.html?context=single-link&slot=4">Custom Format 4</a></li>
+              <li><a href="custom-format.html?context=single-link&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="menu-label">Others</p>
+        <ul class="menu-list">
+          <li><a href="custom-format-help.html">Help & Examples</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <div class="box">
+        <h2 class="title is-3"><span data-placeholder="default-name">Custom Format</span> (<span class="is-small" data-placeholder="context-in-header"></span>)</h2>
+        <div class="field">
+          <label class="label">Display</label>
+          <div class="control">
+            <input id="input-show-in-menus" class="checkbox" type="checkbox">
+            <label for="input-show-in-menus">Show in Popup Menu</label>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="input-name">Display Name on Menu</label>
+          <div class="control">
+            <input id="input-name" class="input" type="text">
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="input-template">Template</label>
+          <div class="control">
+            <textarea id="input-template" class="textarea is-family-code is-size-7" rows="7"></textarea>
+          </div>
+          <p id="error-template" class="is-hidden help is-danger">Invalid template</p>
+          <details><summary>Input</summary>
+            <pre class="is-size-7"><code id="sample-input"></code></pre>
+          </details>
+
+        </div>
+        <div class="field">
+          <label class="label">Preview</label>
+          <div class="control">
+            <textarea id="preview" class="textarea is-family-code is-size-7" rows="7" disabled></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="field is-grouped">
+        <div class="control">
+          <button id="save" class="button is-primary" disabled>Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../vendor/browser-polyfill.js"></script>
+<script src="../ui/custom-format.js" type="module"></script>
 </body>
 </html>

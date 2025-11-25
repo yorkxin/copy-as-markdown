@@ -7,8 +7,78 @@
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div id="options-permissions-root"></div>
-  <script src="../vendor/browser-polyfill.js"></script>
-  <script src="../ui/options-permissions.js" type="module"></script>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown - Additional Permissions</h1>
+  <div id="flash-error" class="notification is-danger is-hidden">
+    <p></p>
+  </div>
+  <div class="columns">
+    <div class="column is-narrow" id="menu">
+      <aside class="menu">
+        <p class="menu-label">General</p>
+        <ul class="menu-list">
+          <li><a href="options.html">Markdown Style</a></li>
+          <li><a class="is-active" href="options-permissions.html">Permissions</a></li>
+          <p class="menu-label">Formats</p>
+          <li>
+            <a href="multiple-links.html">Multiple Links</a>
+            <ul class="menu-list" data-menu-custom-format-context="multiple-links">
+              <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=multiple-links&slot=1">Custom Format 1</a></li>
+              <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=multiple-links&slot=2">Custom Format 2</a></li>
+              <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=multiple-links&slot=3">Custom Format 3</a></li>
+              <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=multiple-links&slot=4">Custom Format 4</a></li>
+              <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=multiple-links&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+          <li>
+            <a href="single-link.html">Single Link</a>
+            <ul class="menu-list" data-menu-custom-format-context="single-link">
+              <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=single-link&slot=1">Custom Format 1</a></li>
+              <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=single-link&slot=2">Custom Format 2</a></li>
+              <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=single-link&slot=3">Custom Format 3</a></li>
+              <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=single-link&slot=4">Custom Format 4</a></li>
+              <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=single-link&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="menu-label">Others</p>
+        <ul class="menu-list">
+          <li><a href="custom-format-help.html">Help & Examples</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <div class="box content" id="permissions">
+        <h2 class="title is-3">Additional Permissions</h2>
+        <p>Some features require additional permissions. Prompts will appear when permissions are not granted.</p>
+        <h3>Tabs <span class="tag" data-hide-if-permission-contains="tabs">Not Granted</span></h3>
+        <p>Copy all / selected tabs via the popup menu and shortcut keys. Also, via context menus on tabs (Firefox-only).</p>
+        <div class="field">
+          <button class="button is-small is-outlined is-primary" data-request-permission="tabs">Grant Tabs Permission</button>
+          <button class="button is-small is-outlined is-danger" data-remove-permission="tabs">Revoke Tabs Permission</button>
+        </div>
+
+        <h4>Tab Groups <span class="tag" data-hide-if-permission-contains="tabGroups">Not Granted</span></h4>
+        <p>Wrap tabs in your tab groups. Need to grant Tabs permission above.</p>
+        <div class="field">
+          <button class="button is-small is-outlined is-primary" data-request-permission="tabGroups">Grant Tab Groups Permission</button>
+          <button class="button is-small is-outlined is-danger" data-remove-permission="tabGroups">Revoke Tab Groups Permission</button>
+        </div>
+
+        <h3>Bookmarks <span class="tag" data-hide-if-permission-contains="bookmarks">Not Granted</span></h3>
+        <p>Enable context menus on bookmarks (Firefox-only).</p>
+        <div class="field">
+          <button class="button is-small is-outlined is-primary" data-request-permission="bookmarks">Grant Bookmarks Permission</button>
+          <button class="button is-small is-outlined is-danger" data-remove-permission="bookmarks">Revoke Bookmarks Permission</button>
+        </div>
+      </div>
+
+      <button id="revoke-all" type="button" class="button is-outlined is-danger">Revoke All</button>
+    </div>
+  </div>
+</div>
+<script src="../vendor/browser-polyfill.js"></script>
+<script src="../ui/options-permissions.js" type="module"></script>
 </body>
 </html>

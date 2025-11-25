@@ -189,7 +189,7 @@ it('shows flash on export failure and can be dismissed', async () => {
     closeBtn.click();
     await flush();
   }
-  expect(document.querySelector('.notification')).toBeNull();
+  expect(document.querySelector('.notification')?.classList.contains('is-hidden')).toBe(true);
 });
 
 it('does not show flash when tabs permission is missing', async () => {
@@ -231,5 +231,5 @@ it('does not show flash when tabs permission is missing', async () => {
   button.click();
   await flush();
 
-  expect(document.querySelector('.notification')).toBeNull();
+  expect(document.querySelector('.notification')?.classList.contains('is-hidden')).toBe(true);
 });
