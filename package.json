@@ -38,8 +38,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "mustache": "^4.2.0",
-    "uhtml": "^4.7.1"
+    "mustache": "^4.2.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
