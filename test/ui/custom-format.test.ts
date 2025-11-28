@@ -48,13 +48,6 @@ vi.mock('../../src/lib/custom-format.js', () => ({
   default: MockCustomFormat,
 }));
 
-vi.mock('../../src/ui/menu.js', () => ({
-  __esModule: true,
-  menuView: () => null,
-  renderMenu: vi.fn(),
-  default: vi.fn(),
-}));
-
 function resetDom(): void {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
