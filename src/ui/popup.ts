@@ -2,15 +2,58 @@ import type { RuntimeMessage } from '../contracts/messages.js';
 import type { ExportFormat, ExportScope, ListType } from '../services/tab-export-service.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 
-let windowId = -1;
-let tabId = -1;
-let keepOpen = false;
-let useMockClipboard = false;
-
 interface MessageResponse {
   ok: boolean;
   text?: string;
   error?: string;
+}
+
+const URL_PARAMS = new URLSearchParams(window.location.search);
+let windowId = -1;
+let tabId = -1;
+const keepOpen = URL_PARAMS.has('keep_open');
+let useMockClipboard = false;
+let ready = false;
+
+const displayCountOfAllTabs = document.getElementById('display-count-all-tabs');
+const displayCountOfHighlightedTabs = document.getElementById('display-count-highlighted-tabs');
+const actionsExportAll = document.getElementById('actions-export-all') as HTMLDivElement | null;
+const actionsExportHighlighted = document.getElementById('actions-export-highlighted') as HTMLDivElement | null;
+const actionsExportCurrent = document.getElementById('actions-export-current-tab') as HTMLDivElement | null;
+const flash = document.getElementById('flash-message');
+const flashText = document.getElementById('flash-text');
+
+function hideFlash(): void {
+  if (!flash) return;
+  flash.classList.add('is-hidden');
+  if (flashText) flashText.textContent = '';
+}
+
+function showFlash(message: string): void {
+  if (!flash) return;
+  flash.classList.remove('is-hidden');
+  if (flashText) flashText.textContent = message;
+}
+
+function setButtonsDisabled(disabled: boolean): void {
+  document.querySelectorAll<HTMLButtonElement>('#form-popup-actions button').forEach((btn) => {
+    btn.disabled = disabled;
+  });
+}
+
+function createCustomButton({
+  id,
+  label,
+  onClick,
+}: { id: string; label: string; onClick: () => void }): HTMLButtonElement {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'dropdown-item';
+  btn.id = id;
+  btn.textContent = label;
+  btn.addEventListener('click', onClick);
+  btn.disabled = !ready;
+  return btn;
 }
 
 async function sendMessage(message: RuntimeMessage): Promise<MessageResponse> {
@@ -27,94 +70,117 @@ async function sendMessage(message: RuntimeMessage): Promise<MessageResponse> {
   return response;
 }
 
-// Install listeners
-const formPopupActions = document.forms.namedItem('form-popup-actions');
-if (formPopupActions) {
-  formPopupActions.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const button = e.submitter as HTMLButtonElement | null;
-    if (!button) return;
-
-    const action = button.value as 'export-current-tab' | 'export-tabs';
-
-    let message: RuntimeMessage;
-    if (action === 'export-current-tab') {
-      const format = (button.dataset.format || 'link') as Extract<ExportFormat, 'link' | 'custom-format'>;
-      message = {
-        topic: 'export-current-tab',
-        params: {
-          format,
-          customFormatSlot: button.dataset.customFormatSlot ?? undefined,
-          tabId,
-        },
-      };
-    } else if (action === 'export-tabs') {
-      const scope = (button.dataset.scope || 'all') as ExportScope;
-      const format = (button.dataset.format || 'link') as ExportFormat;
-      const listType = button.dataset.listType as ListType | undefined;
-      message = {
-        topic: 'export-tabs',
-        params: {
-          scope,
-          format,
-          listType,
-          customFormatSlot: button.dataset.customFormatSlot ?? undefined,
-          windowId,
-        },
-      };
-    } else {
-      throw new TypeError(`Unknown popup action: ${action}`);
+async function handleExportResponse(text: string): Promise<void> {
+  if (useMockClipboard) {
+    const clipboardResponse = await browser.runtime.sendMessage({
+      topic: 'copy-to-clipboard',
+      params: { text },
+    } satisfies RuntimeMessage) as MessageResponse | undefined;
+    if (!clipboardResponse?.ok) {
+      throw new Error(clipboardResponse?.error || 'Mock clipboard copy failed');
     }
-
-    try {
-      const response = await sendMessage(message);
-      if (response.text) {
-        // Use mock clipboard service for testing, otherwise use navigator.clipboard
-        if (useMockClipboard) {
-          // In test mode, send message to background to use mock clipboard
-          const clipboardResponse = await browser.runtime.sendMessage({
-            topic: 'copy-to-clipboard',
-            params: { text: response.text },
-          } satisfies RuntimeMessage) as MessageResponse | undefined;
-          if (!clipboardResponse?.ok) {
-            throw new Error(clipboardResponse?.error || 'Mock clipboard copy failed');
-          }
-        } else {
-          // In production, use navigator.clipboard (proper approach with user gesture)
-          await navigator.clipboard.writeText(response.text);
-        }
-      }
-      await browser.runtime.sendMessage({
-        topic: 'badge',
-        params: { type: 'success' },
-      } satisfies RuntimeMessage);
-    } catch (error) {
-      // @ts-expect-error - browser.runtime.lastError is not in types
-      browser.runtime.lastError = error;
-      await browser.runtime.sendMessage({
-        topic: 'badge',
-        params: { type: 'fail' },
-      } satisfies RuntimeMessage);
-    } finally {
-      if (!keepOpen) { // for tests
-        window.close();
-      }
-    }
-  });
+  } else {
+    await navigator.clipboard.writeText(text);
+  }
 }
 
-const openOptionsButton = document.getElementById('open-options');
-if (openOptionsButton) {
-  openOptionsButton.addEventListener('click', async () => {
-    await browser.runtime.openOptionsPage();
-    window.close();
-  });
+async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
+  try {
+    await browser.runtime.sendMessage({
+      topic: 'badge',
+      params: { type },
+    } satisfies RuntimeMessage);
+  } catch (error) {
+    console.error('Failed to update badge', error);
+  }
 }
 
-const URL_PARAMS = new URLSearchParams(window.location.search);
+async function performExport(message: RuntimeMessage): Promise<void> {
+  try {
+    const response = await sendMessage(message);
+    if (response.text) {
+      await handleExportResponse(response.text);
+    }
+    await sendBadgeSafe('success');
+    hideFlash();
+    if (!keepOpen) {
+      window.close();
+    }
+  } catch (error) {
+    // @ts-expect-error - browser.runtime.lastError is not in types
+    browser.runtime.lastError = error;
+    await sendBadgeSafe('fail');
+    if (isTabsPermissionError(error)) {
+      return;
+    }
+    showFlash('Failed to copy to clipboard. Please try again.');
+  }
+}
 
-if (URL_PARAMS.has('keep_open')) {
-  keepOpen = true;
+async function exportCurrentTab(
+  format: Extract<ExportFormat, 'link' | 'custom-format'>,
+  customFormatSlot?: string,
+): Promise<void> {
+  if (!ready || tabId === -1) return;
+  const message: RuntimeMessage = {
+    topic: 'export-current-tab',
+    params: {
+      format,
+      customFormatSlot,
+      tabId,
+    },
+  };
+
+  await performExport(message);
+}
+
+async function exportTabs(
+  scope: ExportScope,
+  format: Exclude<ExportFormat, 'custom-format'>,
+  listType: ListType,
+): Promise<void> {
+  if (!ready || windowId === -1) return;
+  const message: RuntimeMessage = {
+    topic: 'export-tabs',
+    params: {
+      scope,
+      format,
+      listType,
+      windowId,
+    },
+  };
+
+  await performExport(message);
+}
+
+async function exportTabsCustomFormat(
+  scope: ExportScope,
+  customFormatSlot: string,
+): Promise<void> {
+  if (!ready || windowId === -1) return;
+  const message: RuntimeMessage = {
+    topic: 'export-tabs',
+    params: {
+      scope,
+      format: 'custom-format',
+      customFormatSlot,
+      windowId,
+    },
+  };
+
+  await performExport(message);
+}
+
+async function checkMockClipboardAvailable(): Promise<boolean> {
+  try {
+    const response = await browser.runtime.sendMessage({
+      topic: 'check-mock-clipboard',
+      params: {},
+    } satisfies RuntimeMessage) as MessageResponse;
+    return response.ok && response.text === 'true';
+  } catch {
+    return false;
+  }
 }
 
 async function getCurrentWindow(): Promise<browser.windows.Window> {
@@ -146,106 +212,120 @@ async function getActiveTabId(crWindow: browser.windows.Window): Promise<number>
   return -1;
 }
 
-async function showCustomFormatsForExportTabs(): Promise<void> {
-  const template = document.getElementById('template-export-tabs-button') as HTMLTemplateElement | null;
-  const divExportAll = document.getElementById('actions-export-all') as HTMLDivElement | null;
-  const divExportHighlighted = document.getElementById('actions-export-highlighted') as HTMLDivElement | null;
+async function loadCustomFormats(): Promise<void> {
+  if (!actionsExportAll || !actionsExportHighlighted || !actionsExportCurrent) return;
 
-  if (!template || !divExportAll || !divExportHighlighted) {
-    throw new Error('Missing required template or container elements');
-  }
+  // clear previous custom buttons
+  actionsExportAll.querySelectorAll('[id^="all-tabs-custom-format"]').forEach(el => el.remove());
+  actionsExportHighlighted.querySelectorAll('[id^="highlighted-tabs-custom-format"]').forEach(el => el.remove());
+  actionsExportCurrent.querySelectorAll('[id^="current-tab-custom-format"]').forEach(el => el.remove());
 
-  const customFormats = await CustomFormatsStorage.list('multiple-links');
-  customFormats.forEach((customFormat) => {
-    if (!customFormat.showInMenus) {
-      return;
-    }
+  const multiple = await CustomFormatsStorage.list('multiple-links');
+  const single = await CustomFormatsStorage.list('single-link');
 
-    const clone = template.content.cloneNode(true) as DocumentFragment;
+  multiple
+    .filter(customFormat => customFormat.showInMenus)
+    .forEach((customFormat) => {
+      const btnAll = createCustomButton({
+        id: `all-tabs-custom-format-${customFormat.slot}`,
+        label: `All tabs (${customFormat.displayName})`,
+        onClick: () => exportTabsCustomFormat('all', customFormat.slot),
+      });
+      actionsExportAll.appendChild(btnAll);
 
-    const btnAll = clone.querySelector<HTMLButtonElement>('button[data-scope="all"]');
-    if (btnAll) {
-      btnAll.dataset.customFormatSlot = customFormat.slot;
-      btnAll.textContent += `(${customFormat.displayName})`;
-      btnAll.id = `all-tabs-custom-format-${customFormat.slot}`;
-      divExportAll.appendChild(btnAll);
-    }
+      const btnHighlighted = createCustomButton({
+        id: `highlighted-tabs-custom-format-${customFormat.slot}`,
+        label: `Selected tabs (${customFormat.displayName})`,
+        onClick: () => exportTabsCustomFormat('highlighted', customFormat.slot),
+      });
+      actionsExportHighlighted.appendChild(btnHighlighted);
+    });
 
-    const btnHighlighted = clone.querySelector<HTMLButtonElement>('button[data-scope="highlighted"]');
-    if (btnHighlighted) {
-      btnHighlighted.dataset.customFormatSlot = customFormat.slot;
-      btnHighlighted.textContent += `(${customFormat.displayName})`;
-      btnHighlighted.id = `highlighted-tabs-custom-format-${customFormat.slot}`;
-      divExportHighlighted.appendChild(btnHighlighted);
-    }
+  single
+    .filter(customFormat => customFormat.showInMenus)
+    .forEach((customFormat) => {
+      const btn = createCustomButton({
+        id: `current-tab-custom-format-${customFormat.slot}`,
+        label: `Current tab (${customFormat.displayName})`,
+        onClick: () => exportCurrentTab('custom-format', customFormat.slot),
+      });
+      actionsExportCurrent.appendChild(btn);
+    });
+}
+
+function wireStaticButtons(): void {
+  const currentTabBtn = document.getElementById('current-tab-link');
+  currentTabBtn?.addEventListener('click', () => exportCurrentTab('link'));
+
+  const allTabsLinkList = document.getElementById('all-tabs-link-as-list');
+  allTabsLinkList?.addEventListener('click', () => exportTabs('all', 'link', 'list'));
+  const allTabsLinkTask = document.getElementById('all-tabs-link-as-task-list');
+  allTabsLinkTask?.addEventListener('click', () => exportTabs('all', 'link', 'task-list'));
+  const allTabsTitleList = document.getElementById('all-tabs-title-as-list');
+  allTabsTitleList?.addEventListener('click', () => exportTabs('all', 'title', 'list'));
+  const allTabsUrlList = document.getElementById('all-tabs-url-as-list');
+  allTabsUrlList?.addEventListener('click', () => exportTabs('all', 'url', 'list'));
+
+  const highlightedLinkList = document.getElementById('highlighted-tabs-link-as-list');
+  highlightedLinkList?.addEventListener('click', () => exportTabs('highlighted', 'link', 'list'));
+  const highlightedLinkTask = document.getElementById('highlighted-tabs-link-as-task-list');
+  highlightedLinkTask?.addEventListener('click', () => exportTabs('highlighted', 'link', 'task-list'));
+  const highlightedTitleList = document.getElementById('highlighted-tabs-title-as-list');
+  highlightedTitleList?.addEventListener('click', () => exportTabs('highlighted', 'title', 'list'));
+  const highlightedUrlList = document.getElementById('highlighted-tabs-url-as-list');
+  highlightedUrlList?.addEventListener('click', () => exportTabs('highlighted', 'url', 'list'));
+
+  const flashClose = flash?.querySelector('button.delete');
+  flashClose?.addEventListener('click', hideFlash);
+
+  const openOptionsButton = document.getElementById('open-options');
+  openOptionsButton?.addEventListener('click', async () => {
+    await browser.runtime.openOptionsPage();
+    window.close();
   });
 }
 
-async function showCustomFormatsForCurrentTab(): Promise<void> {
-  const template = document.getElementById('template-current-tab-button') as HTMLTemplateElement | null;
-  const divExportCurrent = document.getElementById('actions-export-current-tab') as HTMLDivElement | null;
-
-  if (!template || !divExportCurrent) {
-    throw new Error('Missing required template or container elements');
-  }
-
-  const customFormats = await CustomFormatsStorage.list('single-link');
-  customFormats.forEach((customFormat) => {
-    if (!customFormat.showInMenus) {
-      return;
-    }
-
-    const clone = template.content.cloneNode(true) as DocumentFragment;
-
-    const btn = clone.querySelector<HTMLButtonElement>('button[value="export-current-tab"]');
-    if (btn) {
-      btn.dataset.customFormatSlot = customFormat.slot;
-      btn.id = `current-tab-custom-format-${customFormat.slot}`;
-      btn.textContent += `(${customFormat.displayName})`;
-      divExportCurrent.appendChild(btn);
-    }
-  });
-}
-
-/**
- * Check if mock clipboard is available in the background service worker
- * This is only true in test mode when MOCK_CLIPBOARD flag is injected
- */
-async function checkMockClipboardAvailable(): Promise<boolean> {
-  try {
-    const response = await browser.runtime.sendMessage({
-      topic: 'check-mock-clipboard',
-      params: {},
-    } satisfies RuntimeMessage) as MessageResponse;
-    return response.ok && response.text === 'true';
-  } catch {
-    return false;
-  }
-}
-
-document.addEventListener('DOMContentLoaded', async () => {
-  // Check if mock clipboard is available for testing
-  useMockClipboard = await checkMockClipboardAvailable();
-
-  const crWindow = await getCurrentWindow();
-  if (crWindow.id !== undefined) {
-    windowId = crWindow.id;
-  }
-  tabId = await getActiveTabId(crWindow);
-
-  const tabsCount = crWindow.tabs?.length ?? 0;
-  const highlightedCount = crWindow.tabs?.filter((tab: browser.tabs.Tab) => tab.highlighted).length ?? 0;
-
-  const displayCountOfAllTabs = document.getElementById('display-count-all-tabs');
+function setCounts(tabsCount: number, highlightedCount: number): void {
   if (displayCountOfAllTabs) {
     displayCountOfAllTabs.textContent = String(tabsCount);
   }
-
-  const displayCountOfHighlightedTabs = document.getElementById('display-count-highlighted-tabs');
   if (displayCountOfHighlightedTabs) {
     displayCountOfHighlightedTabs.textContent = String(highlightedCount);
   }
+}
 
-  await showCustomFormatsForExportTabs();
-  await showCustomFormatsForCurrentTab();
+function isTabsPermissionError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes('Tabs permission required');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const initPromise = (async () => {
+    try {
+      setButtonsDisabled(true);
+      useMockClipboard = await checkMockClipboardAvailable();
+
+      const crWindow = await getCurrentWindow();
+      if (crWindow.id !== undefined) {
+        windowId = crWindow.id;
+      }
+      tabId = await getActiveTabId(crWindow);
+
+      const tabsCount = crWindow.tabs?.length ?? 0;
+      const highlightedCount = crWindow.tabs?.filter((tab: browser.tabs.Tab) => tab.highlighted).length ?? 0;
+      setCounts(tabsCount, highlightedCount);
+
+      await loadCustomFormats();
+      ready = true;
+      setButtonsDisabled(false);
+      hideFlash();
+    } catch (error) {
+      console.error('Failed to initialize popup', error);
+      showFlash('Failed to load tabs or settings. Please reopen the popup.');
+    }
+  })();
+
+  // expose for tests
+  (window as any).__popupReady = initPromise;
 });
+
+wireStaticButtons();

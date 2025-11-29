@@ -10,21 +10,13 @@ class UI {
   elInputTemplate: HTMLInputElement;
   elShowInMenus: HTMLInputElement;
   elPreview: HTMLTextAreaElement;
-  elErrorTemplate: HTMLDivElement;
+  elErrorTemplate: HTMLParagraphElement;
   elSave: HTMLButtonElement;
 
-  constructor(doc: Document) {
-    const params = new URLSearchParams(document.location.search);
-    const slot = params.get('slot');
-    const context = params.get('context') as Context | null;
-
-    if (!slot || !context) {
-      throw new TypeError('Missing required URL parameters: slot and context');
-    }
-
+  constructor(doc: Document, slot: string, context: Context) {
     this.slot = slot;
     this.context = context;
-    this.sampleInput = {} as RenderInput | RenderInputLink;
+    this.sampleInput = this.context === 'single-link' ? UI.sampleInputForOneLink : UI.sampleInputForTabs;
 
     const placeholder = doc.querySelector<HTMLElement>('[data-placeholder=\'context-in-header\']');
     if (!placeholder) {
@@ -48,7 +40,7 @@ class UI {
     const elInputTemplate = doc.getElementById('input-template') as HTMLInputElement | null;
     const elShowInMenus = doc.getElementById('input-show-in-menus') as HTMLInputElement | null;
     const elPreview = doc.getElementById('preview') as HTMLTextAreaElement | null;
-    const elErrorTemplate = doc.getElementById('error-template') as HTMLDivElement | null;
+    const elErrorTemplate = doc.getElementById('error-template') as HTMLParagraphElement | null;
     const elSave = doc.getElementById('save') as HTMLButtonElement | null;
     const elSampleInput = doc.getElementById('sample-input');
 
@@ -79,6 +71,7 @@ class UI {
       });
 
     this.elInputName.placeholder = this.defaultName();
+    this.highlightMenu();
   }
 
   load(customFormat: CustomFormat): void {
@@ -197,14 +190,34 @@ class UI {
       ],
     };
   }
+
+  private highlightMenu(): void {
+    const menuRoot = document.getElementById('menu');
+    if (!menuRoot) return;
+
+    const slotLink = menuRoot.querySelector<HTMLAnchorElement>(
+      `a[href="custom-format.html?context=${this.context}&slot=${this.slot}"]`,
+    );
+    slotLink?.classList.add('is-active');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const ui = new UI(document);
-  const customFormat = await CustomFormatsStorage.get(ui.context, ui.slot);
-  ui.load(customFormat);
+  try {
+    const params = new URLSearchParams(window.location.search || '');
+    const slot = params.get('slot');
+    const context = params.get('context') as Context | null;
+    if (!slot || !context) {
+      return;
+    }
+    const ui = new UI(document, slot, context);
+    const customFormat = await CustomFormatsStorage.get(ui.context, ui.slot);
+    ui.load(customFormat);
 
-  ui.elSave.addEventListener('click', async () => {
-    await CustomFormatsStorage.save(ui.context, ui.slot, ui.current());
-  });
+    ui.elSave.addEventListener('click', async () => {
+      await CustomFormatsStorage.save(ui.context, ui.slot, ui.current());
+    });
+  } catch (error) {
+    console.error('failed to load custom format', error);
+  }
 });

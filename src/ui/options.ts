@@ -1,42 +1,59 @@
 import type { TabGroupIndentationStyle, UnorderedListStyle } from '../lib/markdown.js';
 import Settings from '../lib/settings.js';
-import * as lib from './lib.js';
+import type { PermissionStatus } from './permissions-ui.js';
+import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
 
-interface FormElements extends HTMLFormControlsCollection {
-  enabled: HTMLInputElement;
-  character: HTMLInputElement;
-  indentation: HTMLInputElement;
+function showFlash(message: string): void {
+  const flash = document.getElementById('flash-error');
+  if (!flash) return;
+  flash.classList.remove('is-hidden');
+  const p = flash.querySelector('p');
+  if (p) p.textContent = message;
 }
 
-interface SettingsForm extends HTMLFormElement {
-  elements: FormElements;
+function hideFlash(): void {
+  const flash = document.getElementById('flash-error');
+  if (!flash) return;
+  flash.classList.add('is-hidden');
+  const p = flash.querySelector('p');
+  if (p) p.textContent = '';
+}
+
+function disableTabGroupIndentation(permissionStatuses: PermissionStatus): void {
+  disableUiIfPermissionsNotGranted(permissionStatuses);
 }
 
 async function loadSettings(): Promise<void> {
   try {
     const settings = await Settings.getAll();
-    const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets') as SettingsForm | null;
-    const formUnorderedList = document.forms.namedItem('form-style-of-unordered-list') as SettingsForm | null;
-    const formTabGroupIndentation = document.forms.namedItem('form-style-of-tab-group-indentation') as SettingsForm | null;
+    const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets');
+    const formUnorderedList = document.forms.namedItem('form-style-of-unordered-list');
+    const formTabGroupIndentation = document.forms.namedItem('form-style-of-tab-group-indentation');
 
     if (formEscapeBrackets) {
-      formEscapeBrackets.elements.enabled.checked = settings.alwaysEscapeLinkBrackets;
+      const checkbox = formEscapeBrackets.elements.namedItem('enabled') as HTMLInputElement | null;
+      if (checkbox) checkbox.checked = settings.alwaysEscapeLinkBrackets;
     }
     if (formUnorderedList) {
-      formUnorderedList.elements.character.value = settings.styleOfUnorderedList;
+      const character = formUnorderedList.elements.namedItem('character') as RadioNodeList | null;
+      if (character) character.value = settings.styleOfUnorderedList;
     }
     if (formTabGroupIndentation) {
-      formTabGroupIndentation.elements.indentation.value = settings.styleOfTabGroupIndentation;
+      const indentation = formTabGroupIndentation.elements.namedItem('indentation') as RadioNodeList | null;
+      if (indentation) indentation.value = settings.styleOfTabGroupIndentation;
     }
+    hideFlash();
   } catch (error) {
     console.error('error getting settings', error);
+    showFlash('Failed to load settings. Please try again.');
   }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettings();
-  const statuses = await lib.loadPermissions();
-  lib.disableUiIfPermissionsNotGranted(statuses);
+  const statuses = await loadPermissions();
+  hideUiIfPermissionsNotGranted(statuses);
+  disableTabGroupIndentation(statuses);
 });
 
 const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets');
@@ -45,9 +62,10 @@ if (formEscapeBrackets) {
     try {
       const target = event.target as HTMLInputElement;
       await Settings.setLinkTextAlwaysEscapeBrackets(target.checked);
-      console.info('settings saved');
+      hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
+      showFlash('Failed to save setting. Please try again.');
     }
   });
 }
@@ -58,9 +76,10 @@ if (formTabGroupIndentation) {
     try {
       const target = event.target as HTMLInputElement;
       await Settings.setStyleTabGroupIndentation(target.value as TabGroupIndentationStyle);
-      console.info('settings saved');
+      hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
+      showFlash('Failed to save setting. Please try again.');
     }
   });
 }
@@ -71,9 +90,10 @@ if (formUnorderedList) {
     try {
       const target = event.target as HTMLInputElement;
       await Settings.setStyleOfUnrderedList(target.value as UnorderedListStyle);
-      console.info('settings saved');
+      hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
+      showFlash('Failed to save setting. Please try again.');
     }
   });
 }
@@ -81,14 +101,19 @@ if (formUnorderedList) {
 const resetButton = document.querySelector('#reset');
 if (resetButton) {
   resetButton.addEventListener('click', async () => {
-    await Settings.reset();
+    try {
+      await Settings.reset();
+      await loadSettings();
+      hideFlash();
+    } catch (error) {
+      console.error('failed to reset settings:', error);
+      showFlash('Failed to reset settings. Please try again.');
+    }
   });
 }
 
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  const hasSettingsChanged = Object.entries(changes)
-    .filter(([key]) => Settings.keys.includes(key))
-    .length > 0;
+  const hasSettingsChanged = Object.keys(changes).some(key => Settings.keys.includes(key));
 
   if (hasSettingsChanged) {
     await loadSettings();
