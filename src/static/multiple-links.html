@@ -54,16 +54,29 @@
         <form id='form-display-items' class="field">
           <label class="label">Commands in Menus</label>
           <p>Choose what items to show in popup menus and context menus.</p>
+          <p class="help">Disable built-in styles to hide the default tab export commands in the popup. On Firefox, these options also reflects context menus on tabs.</p>
           <div class="control">
             <label class="checkbox">
-              <input type="checkbox" disabled checked/>
-              Copy as List
+              <input type="checkbox" name="builtin-multiple-links" data-built-in-style="tabLinkList" checked/>
+              Built-in: Copy tab links as a list
             </label>
           </div>
           <div class="control">
             <label class="checkbox">
-              <input type="checkbox" disabled checked/>
-              Copy as Task List
+              <input type="checkbox" name="builtin-multiple-links-task" data-built-in-style="tabTaskList" checked/>
+              Built-in: Copy tab links as a task list
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="builtin-multiple-links-title" data-built-in-style="tabTitleList" checked/>
+              Built-in: Copy tab titles
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="builtin-multiple-links-url" data-built-in-style="tabUrlList" checked/>
+              Built-in: Copy tab URLs
             </label>
           </div>
           <div class="control">
@@ -102,6 +115,7 @@
   </div>
 </div>
 <script src="../vendor/browser-polyfill.js"></script>
+<script src="../ui/built-in-style-options.js" type="module"></script>
 <script src="../ui/options-ui.js" type="module"></script>
 <script src="../ui/check-custom-formats.js" type="module"></script>
 </body>

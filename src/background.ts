@@ -1,6 +1,7 @@
 import Settings from './lib/settings.js';
 import Markdown from './lib/markdown.js';
 import { Bookmarks } from './bookmarks.js';
+import BuiltInStyleSettings from './lib/built-in-style-settings.js';
 import CustomFormatsStorage from './storage/custom-formats-storage.js';
 import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
@@ -25,7 +26,7 @@ const bookmarks = new Bookmarks({
 
 // Initialize services
 const badgeService = createBrowserBadgeService();
-const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage);
+const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage, BuiltInStyleSettings);
 const tabExportService = createBrowserTabExportService(markdownInstance, CustomFormatsStorage);
 const linkExportService = new LinkExportService(markdownInstance, CustomFormatsStorage);
 
@@ -100,7 +101,11 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
 
 contextMenuService.createAll().then(() => null /* NOP */);
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  if (Object.keys(changes).includes(CustomFormatsStorage.KeyOfLastUpdate())) {
+  const changedKeys = Object.keys(changes);
+  const hasCustomFormatUpdate = changedKeys.includes(CustomFormatsStorage.KeyOfLastUpdate());
+  const hasBuiltInStylesUpdate = changedKeys.some(key => BuiltInStyleSettings.keys.includes(key));
+
+  if (hasCustomFormatUpdate || hasBuiltInStylesUpdate) {
     await contextMenuService.createAll();
   }
 });

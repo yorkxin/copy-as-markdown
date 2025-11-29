@@ -53,12 +53,18 @@
         <h2 class="title is-3">Format - Single Link</h2>
         <form id='form-display-items' class="field">
           <label class="label">Commands in Menus</label>
-          <p>Choose what items to show in popup menus and context menus.</p>
+          <p>Choose what items to show in popup menus and context menus.</p>  
+          <article class="message is-warning">
+            <div class="message-body">
+              <p>With multiple items enabled, some browsers may fold them into a submenu.</p>
+            </div>
+          </article>
           <div class="control">
             <label class="checkbox">
-              <input type="checkbox" disabled checked />
-              Copy as Page Link
+              <input type="checkbox" name="builtin-single-link" data-built-in-style="singleLink" checked />
+              Built-in: Copy page or link as Markdown
             </label>
+            <p class="help ml-5">Turns off the default page/link options</p>
           </div>
           <div class="control">
             <label class="checkbox">
@@ -96,6 +102,7 @@
   </div>
 </div>
 <script src="../vendor/browser-polyfill.js"></script>
+<script src="../ui/built-in-style-options.js" type="module"></script>
 <script src="../ui/options-ui.js" type="module"></script>
 <script src="../ui/check-custom-formats.js" type="module"></script>
 </body>

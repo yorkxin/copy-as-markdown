@@ -7,10 +7,15 @@
 
 import { ContextMenuIds } from '../contracts/commands.js';
 import type CustomFormat from '../lib/custom-format.js';
+import type { BuiltInStyleSettings } from '../lib/built-in-style-settings.js';
 import type { ContextMenusAPI } from './shared-types.js';
 
 interface CustomFormatsListProvider {
   list: (context: 'single-link' | 'multiple-links') => Promise<CustomFormat[]>;
+}
+
+interface BuiltInStyleSettingsProvider {
+  getAll: () => Promise<BuiltInStyleSettings>;
 }
 
 /**
@@ -33,6 +38,7 @@ interface CustomFormatsListProvider {
 export function createContextMenuService(
   contextMenusAPI: ContextMenusAPI,
   customFormatsProvider: CustomFormatsListProvider,
+  builtInStyleSettingsProvider: BuiltInStyleSettingsProvider,
 ) {
   /**
    * Creates all context menus for the extension.
@@ -47,12 +53,13 @@ export function createContextMenuService(
   async function createAll(): Promise<void> {
     await contextMenusAPI.removeAll();
 
+    const builtInStyles = await builtInStyleSettingsProvider.getAll();
     // Fetch custom formats
     const singleLinkFormats = (await customFormatsProvider.list('single-link'))
       .filter(format => format.showInMenus);
 
     // Basic page and link menus
-    createBasicMenus(contextMenusAPI);
+    createBasicMenus(contextMenusAPI, builtInStyles);
 
     // Custom format menus for single links
     createSingleLinkCustomFormatMenus(contextMenusAPI, singleLinkFormats);
@@ -65,6 +72,7 @@ export function createContextMenuService(
       contextMenusAPI,
       customFormatsProvider,
       singleLinkFormats,
+      builtInStyles,
     );
   }
 
@@ -90,20 +98,25 @@ export type ContextMenuService = ReturnType<typeof createContextMenuService>;
 /**
  * Creates basic context menus for page and link.
  */
-function createBasicMenus(contextMenusAPI: ContextMenusAPI): void {
-  contextMenusAPI.create({
-    id: ContextMenuIds.CurrentTab,
-    title: 'Copy Page Link as Markdown',
-    type: 'normal',
-    contexts: ['page'],
-  });
+function createBasicMenus(
+  contextMenusAPI: ContextMenusAPI,
+  builtInStyles: BuiltInStyleSettings,
+): void {
+  if (builtInStyles.singleLink) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.CurrentTab,
+      title: 'Copy Page Link as Markdown',
+      type: 'normal',
+      contexts: ['page'],
+    });
 
-  contextMenusAPI.create({
-    id: ContextMenuIds.Link,
-    title: 'Copy Link as Markdown',
-    type: 'normal',
-    contexts: ['link'],
-  });
+    contextMenusAPI.create({
+      id: ContextMenuIds.Link,
+      title: 'Copy Link as Markdown',
+      type: 'normal',
+      contexts: ['link'],
+    });
+  }
 }
 
 /**
@@ -155,15 +168,18 @@ async function createFirefoxSpecificMenus(
   contextMenusAPI: ContextMenusAPI,
   customFormatsProvider: CustomFormatsListProvider,
   singleLinkFormats: CustomFormat[],
+  builtInStyles: BuiltInStyleSettings,
 ): Promise<void> {
   try {
     const multipleLinksFormats = (await customFormatsProvider.list('multiple-links'))
       .filter(format => format.showInMenus);
 
     // Update existing menus to also work on tabs
-    await contextMenusAPI.update(ContextMenuIds.CurrentTab, {
-      contexts: ['page', 'tab'],
-    });
+    if (builtInStyles.singleLink) {
+      await contextMenusAPI.update(ContextMenuIds.CurrentTab, {
+        contexts: ['page', 'tab'],
+      });
+    }
 
     for (const format of singleLinkFormats) {
       await contextMenusAPI.update(`current-tab-custom-format-${format.slot}`, {
@@ -171,25 +187,35 @@ async function createFirefoxSpecificMenus(
       });
     }
 
-    // Separator
-    contextMenusAPI.create({
-      id: 'separator-1',
-      type: 'separator',
-      contexts: ['tab'],
-    });
+    const shouldShowAnyTabSection = builtInStyles.tabLinkList
+      || builtInStyles.tabTaskList
+      || multipleLinksFormats.length > 0;
+
+    if (shouldShowAnyTabSection) {
+      contextMenusAPI.create({
+        id: 'separator-1',
+        type: 'separator',
+        contexts: ['tab'],
+      });
+    }
 
     // All tabs menus
-    createAllTabsMenus(contextMenusAPI, multipleLinksFormats);
+    if (shouldShowAnyTabSection) {
+      createAllTabsMenus(contextMenusAPI, multipleLinksFormats, builtInStyles);
+    }
 
-    // Separator
-    contextMenusAPI.create({
-      id: 'separator-2',
-      type: 'separator',
-      contexts: ['tab'],
-    });
+    if (shouldShowAnyTabSection) {
+      contextMenusAPI.create({
+        id: 'separator-2',
+        type: 'separator',
+        contexts: ['tab'],
+      });
+    }
 
     // Selected tabs menus
-    createSelectedTabsMenus(contextMenusAPI, multipleLinksFormats);
+    if (shouldShowAnyTabSection) {
+      createSelectedTabsMenus(contextMenusAPI, multipleLinksFormats, builtInStyles);
+    }
 
     // Bookmark menu
     createBookmarkMenu(contextMenusAPI);
@@ -204,20 +230,24 @@ async function createFirefoxSpecificMenus(
 function createAllTabsMenus(
   contextMenusAPI: ContextMenusAPI,
   multipleLinksFormats: CustomFormat[],
+  builtInStyles: BuiltInStyleSettings,
 ): void {
-  contextMenusAPI.create({
-    id: ContextMenuIds.AllTabsList,
-    title: 'Copy All Tabs',
-    type: 'normal',
-    contexts: ['tab'],
-  });
+  if (builtInStyles.tabLinkList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.AllTabsList,
+      title: 'Copy All Tabs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+  }
 
-  contextMenusAPI.create({
-    id: ContextMenuIds.AllTabsTaskList,
-    title: 'Copy All Tabs (Task List)',
-    type: 'normal',
-    contexts: ['tab'],
-  });
+  if (builtInStyles.tabTaskList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.AllTabsTaskList,
+      title: 'Copy All Tabs (Task List)',
+      type: 'normal',
+      contexts: ['tab'],
+    });
 
   for (const format of multipleLinksFormats) {
     contextMenusAPI.create({
@@ -235,20 +265,24 @@ function createAllTabsMenus(
 function createSelectedTabsMenus(
   contextMenusAPI: ContextMenusAPI,
   multipleLinksFormats: CustomFormat[],
+  builtInStyles: BuiltInStyleSettings,
 ): void {
-  contextMenusAPI.create({
-    id: ContextMenuIds.HighlightedTabsList,
-    title: 'Copy Selected Tabs',
-    type: 'normal',
-    contexts: ['tab'],
-  });
+  if (builtInStyles.tabLinkList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.HighlightedTabsList,
+      title: 'Copy Selected Tabs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+  }
 
-  contextMenusAPI.create({
-    id: ContextMenuIds.HighlightedTabsTaskList,
-    title: 'Copy Selected Tabs (Task List)',
-    type: 'normal',
-    contexts: ['tab'],
-  });
+  if (builtInStyles.tabTaskList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.HighlightedTabsTaskList,
+      title: 'Copy Selected Tabs (Task List)',
+      type: 'normal',
+      contexts: ['tab'],
+    });
 
   for (const format of multipleLinksFormats) {
     contextMenusAPI.create({
@@ -284,12 +318,13 @@ function createBookmarkMenu(contextMenusAPI: ContextMenusAPI): void {
  * @example
  * ```typescript
  * import CustomFormatsStorage from './storage/custom-formats-storage.js';
- * const menuService = createBrowserContextMenuService(CustomFormatsStorage);
+ * const menuService = createBrowserContextMenuService(CustomFormatsStorage, BuiltInStyleSettings);
  * await menuService.createAll();
  * ```
  */
 export function createBrowserContextMenuService(
   customFormatsProvider: CustomFormatsListProvider,
+  builtInStyleSettingsProvider: BuiltInStyleSettingsProvider,
 ): ContextMenuService {
-  return createContextMenuService(browser.contextMenus, customFormatsProvider);
+  return createContextMenuService(browser.contextMenus, customFormatsProvider, builtInStyleSettingsProvider);
 }
