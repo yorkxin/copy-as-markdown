@@ -27,13 +27,12 @@ vi.mock('../../src/lib/settings.js', () => ({
   default: settingsMock,
 }));
 
-vi.mock('../../src/ui/lib.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/ui/lib.js')>();
+vi.mock('../../src/ui/permissions-ui.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/ui/permissions-ui.js')>();
   return {
     __esModule: true,
     ...actual,
     loadPermissions: loadPermissionsMock,
-    PermissionStatusValue,
   };
 });
 
@@ -122,5 +121,23 @@ describe('options UI', () => {
       const flash = document.querySelector('.notification.is-danger');
       expect(flash).toBeTruthy();
     });
+  });
+
+  it('hides or shows permission badges based on permissions', async () => {
+    settingsMock.getAll.mockResolvedValue({
+      alwaysEscapeLinkBrackets: false,
+      styleOfUnorderedList: 'dash',
+      styleOfTabGroupIndentation: 'spaces',
+    });
+    loadPermissionsMock.mockResolvedValue(new Map([
+      ['tabGroups', PermissionStatusValue.Yes],
+    ]));
+
+    await import('../../src/ui/options.js');
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    await flush();
+
+    const tag = document.querySelector<HTMLElement>('[data-hide-if-permission-contains="tabGroups"]');
+    expect(tag?.classList.contains('is-hidden')).toBe(true);
   });
 });

@@ -1,16 +1,15 @@
 import Settings from '../lib/settings.js';
-import * as lib from './lib.js';
-import type { PermissionStatus } from './lib.js';
-import { PermissionStatusValue } from './lib.js';
+import type { PermissionStatus } from './permissions-ui.js';
+import { hideUiIfPermissionsNotGranted, loadPermissions, PermissionStatusValue } from './permissions-ui.js';
 
 let permissionStatuses: PermissionStatus = new Map();
 
-async function loadPermissions(): Promise<void> {
-  permissionStatuses = await lib.loadPermissions();
+async function reloadPermissions(): Promise<void> {
+  permissionStatuses = await loadPermissions();
 }
 
 function refreshUi(): void {
-  lib.hideUiIfPermissionsNotGranted(permissionStatuses);
+  hideUiIfPermissionsNotGranted(permissionStatuses);
   document.querySelectorAll<HTMLButtonElement>('[data-request-permission]').forEach((el) => {
     const permName = el.dataset.requestPermission;
     if (!permName) return;
@@ -49,17 +48,17 @@ function refreshUi(): void {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadPermissions();
+  await reloadPermissions();
   refreshUi();
 });
 
 browser.permissions.onAdded.addListener(async () => {
-  await loadPermissions();
+  await reloadPermissions();
   refreshUi();
 });
 
 browser.permissions.onRemoved.addListener(async () => {
-  await loadPermissions();
+  await reloadPermissions();
   refreshUi();
 });
 

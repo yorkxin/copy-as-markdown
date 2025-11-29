@@ -1,6 +1,7 @@
 import type { TabGroupIndentationStyle, UnorderedListStyle } from '../lib/markdown.js';
 import Settings from '../lib/settings.js';
-import * as lib from './lib.js';
+import type { PermissionStatus } from './permissions-ui.js';
+import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
 
 function showFlash(message: string): void {
   const flash = document.getElementById('flash-error');
@@ -18,8 +19,8 @@ function hideFlash(): void {
   if (p) p.textContent = '';
 }
 
-function disableTabGroupIndentation(permissionStatuses: lib.PermissionStatus): void {
-  lib.disableUiIfPermissionsNotGranted(permissionStatuses);
+function disableTabGroupIndentation(permissionStatuses: PermissionStatus): void {
+  disableUiIfPermissionsNotGranted(permissionStatuses);
 }
 
 async function loadSettings(): Promise<void> {
@@ -50,7 +51,8 @@ async function loadSettings(): Promise<void> {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSettings();
-  const statuses = await lib.loadPermissions();
+  const statuses = await loadPermissions();
+  hideUiIfPermissionsNotGranted(statuses);
   disableTabGroupIndentation(statuses);
 });
 

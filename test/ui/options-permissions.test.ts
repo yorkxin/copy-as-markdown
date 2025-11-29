@@ -17,8 +17,8 @@ vi.mock('../../src/lib/settings.js', () => ({
   default: settingsMock,
 }));
 
-vi.mock('../../src/ui/lib.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/ui/lib.js')>();
+vi.mock('../../src/ui/permissions-ui.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/ui/permissions-ui.js')>();
   return {
     __esModule: true,
     ...actual,
@@ -136,5 +136,33 @@ describe('options permissions UI', () => {
 
     expect(settingsMock.reset).toHaveBeenCalled();
     expect(removeMock).toHaveBeenCalledWith({ permissions: ['tabs', 'tabGroups', 'bookmarks'] });
+  });
+
+  it('hides or shows permission badges based on permissions', async () => {
+    loadPermissionsMock.mockResolvedValue(new Map([
+      ['tabs', 'yes'],
+      ['tabGroups', 'unavailable'],
+      ['bookmarks', 'no'],
+    ]));
+    (globalThis as any).browser = {
+      permissions: {
+        request: vi.fn(),
+        remove: vi.fn(),
+        onAdded: { addListener: vi.fn() },
+        onRemoved: { addListener: vi.fn() },
+      },
+    };
+
+    await import('../../src/ui/options-permissions.js');
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    await flush();
+
+    const tabsBadge = document.querySelector<HTMLElement>('[data-hide-if-permission-contains="tabs"]');
+    const tabGroupsBadge = document.querySelector<HTMLElement>('[data-hide-if-permission-contains="tabGroups"]');
+    const bookmarksBadge = document.querySelector<HTMLElement>('[data-hide-if-permission-contains="bookmarks"]');
+
+    expect(tabsBadge?.classList.contains('is-hidden')).toBe(true);
+    expect(tabGroupsBadge?.textContent).toBe('Unsupported');
+    expect(bookmarksBadge?.classList.contains('is-hidden')).toBe(false);
   });
 });
