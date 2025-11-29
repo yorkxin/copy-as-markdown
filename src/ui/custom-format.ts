@@ -71,6 +71,7 @@ class UI {
       });
 
     this.elInputName.placeholder = this.defaultName();
+    this.highlightMenu();
   }
 
   load(customFormat: CustomFormat): void {
@@ -188,6 +189,16 @@ class UI {
         },
       ],
     };
+  }
+
+  private highlightMenu(): void {
+    const menuRoot = document.getElementById('menu');
+    if (!menuRoot) return;
+
+    const slotLink = menuRoot.querySelector<HTMLAnchorElement>(
+      `a[href="custom-format.html?context=${this.context}&slot=${this.slot}"]`,
+    );
+    slotLink?.classList.add('is-active');
   }
 }
 

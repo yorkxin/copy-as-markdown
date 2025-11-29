@@ -152,4 +152,25 @@ describe('custom format UI', () => {
 
     expect(storageMock.save).toHaveBeenCalled();
   });
+
+  it('highlights the active menu links for context and slot', async () => {
+    storageMock.get.mockResolvedValue(new MockCustomFormat({
+      slot: '4',
+      context: 'single-link',
+      name: '',
+      template: 'tmpl',
+      showInMenus: false,
+    }));
+
+    setLocation('?context=single-link&slot=4');
+    await import('../../src/ui/custom-format.js');
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    await flush();
+
+    const slotLink = document.querySelector('#menu a[href="custom-format.html?context=single-link&slot=4"]');
+
+    const sectionLink = document.querySelector('#menu a[href="single-link.html"]');
+    expect(sectionLink?.classList.contains('is-active')).toBe(false);
+    expect(slotLink?.classList.contains('is-active')).toBe(true);
+  });
 });
