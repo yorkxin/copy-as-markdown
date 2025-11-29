@@ -105,12 +105,25 @@ function rewriteManifest(targetDirPath, options) {
     }
   }
 
+  function addRequiredPermission(permission) {
+    if (!manifest.permissions.includes(permission)) {
+      manifest.permissions.push(permission);
+      console.log(`    - Added "${permission}" to permissions`);
+    }
+
+    if (manifest.optional_permissions.includes(permission)) {
+      manifest.optional_permissions = manifest.optional_permissions.filter(p => p !== permission);
+    }
+  }
+
   if (!options.keepOptionalPermissions) {
     moveToRequiredPermission('tabs');
     moveToRequiredPermission('tabGroups');
   } else {
     console.log('    - Keeping tabs/tabGroups optional for permission flow tests');
   }
+
+  addRequiredPermission('bookmarks');
 
   if (options.hostPermissions.length > 0) {
     if (!manifest.host_permissions) {
