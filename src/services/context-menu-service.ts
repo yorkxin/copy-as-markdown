@@ -236,7 +236,7 @@ function createAllTabsMenus(
 ): void {
   if (builtInStyles.tabLinkList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.AllTabsList,
+      id: ContextMenuIds.AllTabsLinkAsList,
       title: 'Copy All Tabs',
       type: 'normal',
       contexts: ['tab'],
@@ -245,7 +245,7 @@ function createAllTabsMenus(
 
   if (builtInStyles.tabTaskList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.AllTabsTaskList,
+      id: ContextMenuIds.AllTabsLinkAsTaskList,
       title: 'Copy All Tabs (Task List)',
       type: 'normal',
       contexts: ['tab'],
@@ -254,7 +254,7 @@ function createAllTabsMenus(
 
   if (builtInStyles.tabTitleList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.AllTabsTitleList,
+      id: ContextMenuIds.AllTabsTitleAsList,
       title: 'Copy All Tab Titles',
       type: 'normal',
       contexts: ['tab'],
@@ -263,7 +263,7 @@ function createAllTabsMenus(
 
   if (builtInStyles.tabUrlList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.AllTabsUrlList,
+      id: ContextMenuIds.AllTabsUrlAsList,
       title: 'Copy All Tab URLs',
       type: 'normal',
       contexts: ['tab'],
@@ -290,7 +290,7 @@ function createSelectedTabsMenus(
 ): void {
   if (builtInStyles.tabLinkList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.HighlightedTabsList,
+      id: ContextMenuIds.HighlightedTabsLinkAsList,
       title: 'Copy Selected Tabs',
       type: 'normal',
       contexts: ['tab'],
@@ -299,7 +299,7 @@ function createSelectedTabsMenus(
 
   if (builtInStyles.tabTaskList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.HighlightedTabsTaskList,
+      id: ContextMenuIds.HighlightedTabsLinkAsTaskList,
       title: 'Copy Selected Tabs (Task List)',
       type: 'normal',
       contexts: ['tab'],
@@ -308,7 +308,7 @@ function createSelectedTabsMenus(
 
   if (builtInStyles.tabTitleList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.HighlightedTabsTitleList,
+      id: ContextMenuIds.HighlightedTabsTitleAsList,
       title: 'Copy Selected Tab Titles',
       type: 'normal',
       contexts: ['tab'],
@@ -317,7 +317,7 @@ function createSelectedTabsMenus(
 
   if (builtInStyles.tabUrlList) {
     contextMenusAPI.create({
-      id: ContextMenuIds.HighlightedTabsUrlList,
+      id: ContextMenuIds.HighlightedTabsUrlAsList,
       title: 'Copy Selected Tab URLs',
       type: 'normal',
       contexts: ['tab'],

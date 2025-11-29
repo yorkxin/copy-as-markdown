@@ -33,36 +33,36 @@ export interface ContextMenuHandler {
 
 // Lookup table for Firefox tab list menu items
 type TabListMenuId
-  = | typeof ContextMenuIds.AllTabsList
-    | typeof ContextMenuIds.AllTabsTaskList
-    | typeof ContextMenuIds.AllTabsTitleList
-    | typeof ContextMenuIds.AllTabsUrlList
-    | typeof ContextMenuIds.HighlightedTabsList
-    | typeof ContextMenuIds.HighlightedTabsTaskList
-    | typeof ContextMenuIds.HighlightedTabsTitleList
-    | typeof ContextMenuIds.HighlightedTabsUrlList;
+  = | typeof ContextMenuIds.AllTabsLinkAsList
+    | typeof ContextMenuIds.AllTabsLinkAsTaskList
+    | typeof ContextMenuIds.AllTabsTitleAsList
+    | typeof ContextMenuIds.AllTabsUrlAsList
+    | typeof ContextMenuIds.HighlightedTabsLinkAsList
+    | typeof ContextMenuIds.HighlightedTabsLinkAsTaskList
+    | typeof ContextMenuIds.HighlightedTabsTitleAsList
+    | typeof ContextMenuIds.HighlightedTabsUrlAsList;
 
 const TAB_LIST_MENU_ITEMS: Record<TabListMenuId, { scope: 'all' | 'highlighted'; listType: 'list' | 'task-list'; format: 'link' | 'title' | 'url' }> = {
-  [ContextMenuIds.AllTabsList]: { scope: 'all', listType: 'list', format: 'link' },
-  [ContextMenuIds.AllTabsTaskList]: { scope: 'all', listType: 'task-list', format: 'link' },
-  [ContextMenuIds.AllTabsTitleList]: { scope: 'all', listType: 'list', format: 'title' },
-  [ContextMenuIds.AllTabsUrlList]: { scope: 'all', listType: 'list', format: 'url' },
-  [ContextMenuIds.HighlightedTabsList]: { scope: 'highlighted', listType: 'list', format: 'link' },
-  [ContextMenuIds.HighlightedTabsTaskList]: { scope: 'highlighted', listType: 'task-list', format: 'link' },
-  [ContextMenuIds.HighlightedTabsTitleList]: { scope: 'highlighted', listType: 'list', format: 'title' },
-  [ContextMenuIds.HighlightedTabsUrlList]: { scope: 'highlighted', listType: 'list', format: 'url' },
+  [ContextMenuIds.AllTabsLinkAsList]: { scope: 'all', listType: 'list', format: 'link' },
+  [ContextMenuIds.AllTabsLinkAsTaskList]: { scope: 'all', listType: 'task-list', format: 'link' },
+  [ContextMenuIds.AllTabsTitleAsList]: { scope: 'all', listType: 'list', format: 'title' },
+  [ContextMenuIds.AllTabsUrlAsList]: { scope: 'all', listType: 'list', format: 'url' },
+  [ContextMenuIds.HighlightedTabsLinkAsList]: { scope: 'highlighted', listType: 'list', format: 'link' },
+  [ContextMenuIds.HighlightedTabsLinkAsTaskList]: { scope: 'highlighted', listType: 'task-list', format: 'link' },
+  [ContextMenuIds.HighlightedTabsTitleAsList]: { scope: 'highlighted', listType: 'list', format: 'title' },
+  [ContextMenuIds.HighlightedTabsUrlAsList]: { scope: 'highlighted', listType: 'list', format: 'url' },
 };
 
 function isTabListMenuId(id: ContextMenuId): id is TabListMenuId {
   return (
-    id === ContextMenuIds.AllTabsList
-    || id === ContextMenuIds.AllTabsTaskList
-    || id === ContextMenuIds.AllTabsTitleList
-    || id === ContextMenuIds.AllTabsUrlList
-    || id === ContextMenuIds.HighlightedTabsList
-    || id === ContextMenuIds.HighlightedTabsTaskList
-    || id === ContextMenuIds.HighlightedTabsTitleList
-    || id === ContextMenuIds.HighlightedTabsUrlList
+    id === ContextMenuIds.AllTabsLinkAsList
+    || id === ContextMenuIds.AllTabsLinkAsTaskList
+    || id === ContextMenuIds.AllTabsTitleAsList
+    || id === ContextMenuIds.AllTabsUrlAsList
+    || id === ContextMenuIds.HighlightedTabsLinkAsList
+    || id === ContextMenuIds.HighlightedTabsLinkAsTaskList
+    || id === ContextMenuIds.HighlightedTabsTitleAsList
+    || id === ContextMenuIds.HighlightedTabsUrlAsList
   );
 }
 
