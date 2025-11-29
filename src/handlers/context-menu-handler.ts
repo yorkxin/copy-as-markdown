@@ -60,7 +60,7 @@ export function createContextMenuHandler(
     tabExportService: TabExportService;
     selectionConverterService: SelectionConverterService;
   },
-  bookmarksAPI: BookmarksAPI,
+  getBookmarksAPI: () => BookmarksAPI | undefined,
   bookmarksFormatter: BookmarksFormatter,
 ): ContextMenuHandler {
   async function handleMenuClick_(
@@ -131,6 +131,10 @@ export function createContextMenuHandler(
     if (menuItemId === ContextMenuIds.BookmarkLink) {
       if (!info.bookmarkId) {
         throw new Error('bookmarkId is required for bookmark-link menu item');
+      }
+      const bookmarksAPI = getBookmarksAPI();
+      if (!bookmarksAPI) {
+        throw new Error('bookmarks API unavailable; ensure permission is granted');
       }
       const bm = await bookmarksAPI.getSubTree(info.bookmarkId);
       if (bm.length === 0) {
@@ -222,7 +226,7 @@ export function createBrowserContextMenuHandler(
 ): ContextMenuHandler {
   return createContextMenuHandler(
     services,
-    browser.bookmarks,
+    () => browser.bookmarks,
     bookmarksFormatter,
   );
 }

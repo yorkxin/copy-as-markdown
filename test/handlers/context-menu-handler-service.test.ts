@@ -40,7 +40,7 @@ describe('contextMenuHandler', () => {
     const exportLinkMock = vi.fn(async () => 'link');
     const handler = createContextMenuHandler(
       createServices({ linkExportService: { exportLink: exportLinkMock } }),
-      { getSubTree: vi.fn() },
+      () => ({ getSubTree: vi.fn() }),
       { toMarkdown: vi.fn() },
     );
 
@@ -57,7 +57,7 @@ describe('contextMenuHandler', () => {
     const convertMock = vi.fn(async () => 'md');
     const handler = createContextMenuHandler(
       createServices({ selectionConverterService: { convertSelectionToMarkdown: convertMock } }),
-      { getSubTree: vi.fn() },
+      () => ({ getSubTree: vi.fn() }),
       { toMarkdown: vi.fn() },
     );
 
@@ -71,7 +71,7 @@ describe('contextMenuHandler', () => {
     const exportTabsMock = vi.fn(async () => 'tabs');
     const handler = createContextMenuHandler(
       createServices({ tabExportService: { exportTabs: exportTabsMock } }),
-      { getSubTree: vi.fn() },
+      () => ({ getSubTree: vi.fn() }),
       { toMarkdown: vi.fn() },
     );
 
@@ -86,11 +86,31 @@ describe('contextMenuHandler', () => {
     });
   });
 
+  it('exports bookmark link markdown', async () => {
+    const bookmarkNode = {
+      id: 'bm-1',
+      title: 'Example',
+      url: 'https://example.com',
+    } as browser.bookmarks.BookmarkTreeNode;
+    const getSubTreeMock = vi.fn().mockResolvedValue([bookmarkNode]);
+    const toMarkdownMock = vi.fn(() => 'bookmark-md');
+    const handler = createContextMenuHandler(
+      createServices(),
+      () => ({ getSubTree: getSubTreeMock }),
+      { toMarkdown: toMarkdownMock },
+    );
+
+    const result = await handler.handleMenuClick({ menuItemId: 'bookmark-link', bookmarkId: 'bm-1' } as any);
+    expect(result).toBe('bookmark-md');
+    expect(getSubTreeMock).toHaveBeenCalledWith('bm-1');
+    expect(toMarkdownMock).toHaveBeenCalledWith(bookmarkNode);
+  });
+
   it('parses custom format for current tab', async () => {
     const exportLinkMock = vi.fn(async () => 'custom');
     const handler = createContextMenuHandler(
       createServices({ linkExportService: { exportLink: exportLinkMock } }),
-      { getSubTree: vi.fn() },
+      () => ({ getSubTree: vi.fn() }),
       { toMarkdown: vi.fn() },
     );
 
