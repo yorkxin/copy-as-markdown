@@ -189,6 +189,8 @@ async function createFirefoxSpecificMenus(
 
     const shouldShowAnyTabSection = builtInStyles.tabLinkList
       || builtInStyles.tabTaskList
+      || builtInStyles.tabTitleList
+      || builtInStyles.tabUrlList
       || multipleLinksFormats.length > 0;
 
     if (shouldShowAnyTabSection) {
@@ -248,6 +250,25 @@ function createAllTabsMenus(
       type: 'normal',
       contexts: ['tab'],
     });
+  }
+
+  if (builtInStyles.tabTitleList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.AllTabsTitleList,
+      title: 'Copy All Tab Titles',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+  }
+
+  if (builtInStyles.tabUrlList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.AllTabsUrlList,
+      title: 'Copy All Tab URLs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+  }
 
   for (const format of multipleLinksFormats) {
     contextMenusAPI.create({
@@ -283,6 +304,25 @@ function createSelectedTabsMenus(
       type: 'normal',
       contexts: ['tab'],
     });
+  }
+
+  if (builtInStyles.tabTitleList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.HighlightedTabsTitleList,
+      title: 'Copy Selected Tab Titles',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+  }
+
+  if (builtInStyles.tabUrlList) {
+    contextMenusAPI.create({
+      id: ContextMenuIds.HighlightedTabsUrlList,
+      title: 'Copy Selected Tab URLs',
+      type: 'normal',
+      contexts: ['tab'],
+    });
+  }
 
   for (const format of multipleLinksFormats) {
     contextMenusAPI.create({

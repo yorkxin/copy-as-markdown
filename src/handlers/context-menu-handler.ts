@@ -35,22 +35,34 @@ export interface ContextMenuHandler {
 type TabListMenuId
   = | typeof ContextMenuIds.AllTabsList
     | typeof ContextMenuIds.AllTabsTaskList
+    | typeof ContextMenuIds.AllTabsTitleList
+    | typeof ContextMenuIds.AllTabsUrlList
     | typeof ContextMenuIds.HighlightedTabsList
-    | typeof ContextMenuIds.HighlightedTabsTaskList;
+    | typeof ContextMenuIds.HighlightedTabsTaskList
+    | typeof ContextMenuIds.HighlightedTabsTitleList
+    | typeof ContextMenuIds.HighlightedTabsUrlList;
 
-const TAB_LIST_MENU_ITEMS: Record<TabListMenuId, { scope: 'all' | 'highlighted'; listType: 'list' | 'task-list' }> = {
-  [ContextMenuIds.AllTabsList]: { scope: 'all', listType: 'list' },
-  [ContextMenuIds.AllTabsTaskList]: { scope: 'all', listType: 'task-list' },
-  [ContextMenuIds.HighlightedTabsList]: { scope: 'highlighted', listType: 'list' },
-  [ContextMenuIds.HighlightedTabsTaskList]: { scope: 'highlighted', listType: 'task-list' },
+const TAB_LIST_MENU_ITEMS: Record<TabListMenuId, { scope: 'all' | 'highlighted'; listType: 'list' | 'task-list'; format: 'link' | 'title' | 'url' }> = {
+  [ContextMenuIds.AllTabsList]: { scope: 'all', listType: 'list', format: 'link' },
+  [ContextMenuIds.AllTabsTaskList]: { scope: 'all', listType: 'task-list', format: 'link' },
+  [ContextMenuIds.AllTabsTitleList]: { scope: 'all', listType: 'list', format: 'title' },
+  [ContextMenuIds.AllTabsUrlList]: { scope: 'all', listType: 'list', format: 'url' },
+  [ContextMenuIds.HighlightedTabsList]: { scope: 'highlighted', listType: 'list', format: 'link' },
+  [ContextMenuIds.HighlightedTabsTaskList]: { scope: 'highlighted', listType: 'task-list', format: 'link' },
+  [ContextMenuIds.HighlightedTabsTitleList]: { scope: 'highlighted', listType: 'list', format: 'title' },
+  [ContextMenuIds.HighlightedTabsUrlList]: { scope: 'highlighted', listType: 'list', format: 'url' },
 };
 
 function isTabListMenuId(id: ContextMenuId): id is TabListMenuId {
   return (
     id === ContextMenuIds.AllTabsList
     || id === ContextMenuIds.AllTabsTaskList
+    || id === ContextMenuIds.AllTabsTitleList
+    || id === ContextMenuIds.AllTabsUrlList
     || id === ContextMenuIds.HighlightedTabsList
     || id === ContextMenuIds.HighlightedTabsTaskList
+    || id === ContextMenuIds.HighlightedTabsTitleList
+    || id === ContextMenuIds.HighlightedTabsUrlList
   );
 }
 
@@ -121,7 +133,7 @@ export function createContextMenuHandler(
       const params = TAB_LIST_MENU_ITEMS[menuItemId]!;
       return services.tabExportService.exportTabs({
         scope: params.scope,
-        format: 'link',
+        format: params.format,
         listType: params.listType,
         windowId,
       });

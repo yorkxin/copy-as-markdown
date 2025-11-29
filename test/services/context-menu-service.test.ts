@@ -8,6 +8,7 @@ import type {
   ContextMenusAPI,
   CustomFormatsProvider,
 } from '../../src/services/context-menu-service.js';
+import type { BuiltInStyleSettings } from '../../src/lib/built-in-style-settings.js';
 
 // Mock CustomFormat interface (matches what the service expects)
 interface MockCustomFormat {
@@ -30,6 +31,19 @@ function createMockCustomFormat(
 }
 
 describe('contextMenuService', () => {
+  function makeBuiltInProvider(overrides: Partial<BuiltInStyleSettings> = {}) {
+    const defaults: BuiltInStyleSettings = {
+      singleLink: true,
+      tabLinkList: true,
+      tabTaskList: true,
+      tabTitleList: false,
+      tabUrlList: false,
+    };
+    return {
+      getAll: vi.fn(async () => ({ ...defaults, ...overrides })),
+    };
+  }
+
   describe('createAll', () => {
     it('should remove all existing menus first', async () => {
       // Arrange
@@ -47,7 +61,7 @@ describe('contextMenuService', () => {
         list: vi.fn(async () => []),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();
@@ -72,7 +86,7 @@ describe('contextMenuService', () => {
         list: vi.fn(async () => []),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();
@@ -111,7 +125,7 @@ describe('contextMenuService', () => {
         list: vi.fn(async () => []),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();
@@ -155,7 +169,7 @@ describe('contextMenuService', () => {
         }),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();
@@ -199,7 +213,7 @@ describe('contextMenuService', () => {
         }),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();
@@ -228,7 +242,7 @@ describe('contextMenuService', () => {
         list: vi.fn(async () => []),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();
@@ -258,7 +272,7 @@ describe('contextMenuService', () => {
         list: vi.fn(async () => []),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();
@@ -282,6 +296,41 @@ describe('contextMenuService', () => {
         }),
       );
     });
+
+    it('should create all built-in tab menus when enabled', async () => {
+      const createMock = vi.fn(() => { });
+      const updateMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
+
+      const mockMenusAPI: ContextMenusAPI = {
+        create: createMock,
+        update: updateMock,
+        removeAll: removeAllMock,
+      };
+
+      const mockFormatsProvider: CustomFormatsProvider = {
+        list: vi.fn(async () => []),
+      };
+
+      const builtIns = makeBuiltInProvider({
+        tabLinkList: true,
+        tabTaskList: true,
+        tabTitleList: true,
+        tabUrlList: true,
+      });
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, builtIns);
+
+      await service.createAll();
+
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-task-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-title-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-url-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-task-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-title-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-url-list' }));
+    });
   });
 
   describe('refresh', () => {
@@ -301,7 +350,7 @@ describe('contextMenuService', () => {
         list: vi.fn(async () => []),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.refresh();
@@ -340,7 +389,7 @@ describe('contextMenuService', () => {
         }),
       };
 
-      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider);
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, makeBuiltInProvider());
 
       // Act
       await service.createAll();

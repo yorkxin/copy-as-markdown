@@ -19,6 +19,13 @@ async function initCheckbox(checkbox: HTMLInputElement): Promise<void> {
   if (format.showInMenus) {
     checkbox.setAttribute('checked', 'true');
   }
+  const label = checkbox.closest('label');
+  const labelSpan = label?.querySelector<HTMLElement>('[data-custom-format-label]');
+  if (labelSpan) {
+    const baseLabel = `Copy as Custom Format ${format.slot}`;
+    const suffix = format.displayName !== format.defaultName ? ` (${format.displayName})` : '';
+    labelSpan.textContent = `${baseLabel}${suffix}`;
+  }
   checkbox.addEventListener('change', async (e) => {
     await setVisibility(
       format.slot,

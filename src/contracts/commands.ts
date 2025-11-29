@@ -31,8 +31,12 @@ export const ContextMenuIds = {
   SelectionAsMarkdown: 'selection-as-markdown',
   AllTabsList: 'all-tabs-list',
   AllTabsTaskList: 'all-tabs-task-list',
+  AllTabsTitleList: 'all-tabs-title-list',
+  AllTabsUrlList: 'all-tabs-url-list',
   HighlightedTabsList: 'highlighted-tabs-list',
   HighlightedTabsTaskList: 'highlighted-tabs-task-list',
+  HighlightedTabsTitleList: 'highlighted-tabs-title-list',
+  HighlightedTabsUrlList: 'highlighted-tabs-url-list',
   BookmarkLink: 'bookmark-link',
 } as const;
 
