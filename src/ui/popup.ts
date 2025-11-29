@@ -95,10 +95,6 @@ async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
   }
 }
 
-function clearFlash(): void {
-  hideFlash();
-}
-
 async function performExport(message: RuntimeMessage): Promise<void> {
   try {
     const response = await sendMessage(message);
@@ -106,7 +102,7 @@ async function performExport(message: RuntimeMessage): Promise<void> {
       await handleExportResponse(response.text);
     }
     await sendBadgeSafe('success');
-    clearFlash();
+    hideFlash();
     if (!keepOpen) {
       window.close();
     }
