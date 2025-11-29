@@ -280,19 +280,19 @@ describe('contextMenuService', () => {
       // Assert
       expect(createMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: 'all-tabs-list',
+          id: 'all-tabs-link-as-list',
         }),
       );
 
       expect(createMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: 'all-tabs-task-list',
+          id: 'all-tabs-link-as-task-list',
         }),
       );
 
       expect(createMock).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: 'highlighted-tabs-list',
+          id: 'highlighted-tabs-link-as-list',
         }),
       );
     });
@@ -322,14 +322,14 @@ describe('contextMenuService', () => {
 
       await service.createAll();
 
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-list' }));
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-task-list' }));
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-title-list' }));
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-url-list' }));
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-list' }));
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-task-list' }));
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-title-list' }));
-      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-url-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-link-as-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-link-as-task-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-title-as-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'all-tabs-url-as-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-link-as-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-link-as-task-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-title-as-list' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-url-as-list' }));
     });
   });
 

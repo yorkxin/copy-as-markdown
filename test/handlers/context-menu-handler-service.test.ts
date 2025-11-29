@@ -76,7 +76,7 @@ describe('contextMenuHandler', () => {
     );
 
     const tab = createMockTab({ windowId: 5 });
-    const result = await handler.handleMenuClick({ menuItemId: 'highlighted-tabs-list' } as any, tab);
+    const result = await handler.handleMenuClick({ menuItemId: 'highlighted-tabs-link-as-list' } as any, tab);
     expect(result).toBe('tabs');
     expect(exportTabsMock).toHaveBeenCalledWith({
       scope: 'highlighted',
