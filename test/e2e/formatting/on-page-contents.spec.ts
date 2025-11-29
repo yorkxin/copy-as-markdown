@@ -7,7 +7,7 @@ import {
 
 const QA_PAGE_URL = 'http://localhost:5566/qa.html';
 
-test.describe('Context Menu', () => {
+test.describe('On-Page contents', () => {
   test.beforeEach(async ({ page, serviceWorker }) => {
     await resetMockClipboard(serviceWorker);
     await page.goto(QA_PAGE_URL);
