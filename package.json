@@ -34,7 +34,8 @@
     "lint:fix": "eslint . --fix",
     "clean": "rm -rf ./build/* ./dist/* ./{firefox-mv2,firefox-mv3,chrome}/dist/* ./{firefox-test,chrome-test,chrome-optional-test}/*",
     "convert-images": "./scripts/convert-images.sh",
-    "postinstall": "node scripts/postinstall.js"
+    "postinstall": "node scripts/postinstall.js",
+    "test:browser": "vitest --project browser"
   },
   "license": "MIT",
   "dependencies": {
@@ -42,12 +43,13 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
-    "@playwright/test": "^1.56.1",
+    "@playwright/test": "^1.57.0",
     "@types/chrome": "^0.1.31",
     "@types/firefox-webext-browser": "^143.0.0",
     "@types/mustache": "^4.2.6",
     "@types/nodemon": "^1.19.6",
     "@types/turndown": "^5.0.5",
+    "@vitest/browser": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "bulma": "^1.0.0",
     "eslint": "^9.37.0",
@@ -55,6 +57,7 @@
     "http-server": "^14.1.1",
     "jsdom": "^24.1.0",
     "nodemon": "^3.1.0",
+    "playwright": "^1.57.0",
     "tsx": "^4.20.6",
     "turndown": "^7.1.3",
     "typescript": "^5.4.0",

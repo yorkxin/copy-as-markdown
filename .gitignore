@@ -191,3 +191,4 @@ cython_debug/
 .pypirc
 test-results
 playwright-report
+test/**/__screenshots__
