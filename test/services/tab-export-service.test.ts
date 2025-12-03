@@ -106,7 +106,7 @@ describe('tab Export Service - Refactored (Pure Functions)', () => {
 
       const tabs = convertBrowserTabsToTabs(
         browserTabs,
-        text => text.replace('[', '\\[').replace(']', '\\]'),
+        text => text.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]'),
       );
 
       expect(tabs[0]?.title).toBe('\\[Special\\]');
