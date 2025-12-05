@@ -65,4 +65,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     showFlash('Failed to load settings. Please refresh.');
   }
 });
-
