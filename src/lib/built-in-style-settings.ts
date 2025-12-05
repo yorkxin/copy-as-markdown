@@ -1,5 +1,3 @@
-import '../vendor/browser-polyfill.js';
-
 export type BuiltInStyleKey
   = | 'singleLink'
     | 'tabLinkList'
