@@ -19,7 +19,7 @@ jobs:
           node-version-file: '.node-version'
           cache: npm
       - run: npm ci
-      - run: npm test
+      - run: npm run test:unit
       - run: npm run lint
       - run: npm install -g web-ext # build tool
       - run: npm run build-chrome
@@ -31,7 +31,7 @@ jobs:
     needs: build
     timeout-minutes: 10
     container:
-      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      image: mcr.microsoft.com/playwright:v1.57.0-noble
     steps:
       - uses: actions/checkout@v4
       - name: Install clipboard dependencies
@@ -43,6 +43,8 @@ jobs:
           node-version-file: '.node-version'
           cache: npm
       - run: npm ci
+      - name: Run Vitest UI tests in browser
+        run: npm run test:browser
       - name: Run Playwright tests
         run: xvfb-run -a npm run test:e2e
       - uses: actions/upload-artifact@v4
