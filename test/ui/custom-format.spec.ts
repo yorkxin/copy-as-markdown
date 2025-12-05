@@ -1,5 +1,5 @@
 import { page } from '@vitest/browser/context';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { UI } from '../../src/ui/custom-format.js';
 import CustomFormat from '../../src/lib/custom-format.js';
 
