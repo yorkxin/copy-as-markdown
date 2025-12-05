@@ -2,7 +2,7 @@ import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 import CustomFormat from '../lib/custom-format.js';
 import type { Context, RenderInput, RenderInputLink } from '../lib/custom-format.js';
 
-class UI {
+export class UI {
   slot: string;
   context: Context;
   sampleInput: RenderInput | RenderInputLink;

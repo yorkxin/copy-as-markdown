@@ -9,7 +9,7 @@
 <body>
 <div class="container section is-max-desktop">
   <h1 class="title">Copy as Markdown</h1>
-  <div id="flash-error" class="notification is-danger is-hidden">
+  <div id="flash-error" data-testid="flash-error" class="notification is-danger is-hidden">
     <p></p>
   </div>
   <div class="columns">
@@ -74,7 +74,7 @@
         </form>
 
         <form id='form-style-of-tab-group-indentation' class="field">
-          <label class="label">Tab Group Indentation <span class="tag" data-hide-if-permission-contains="tabGroups">Requires Permission</span></label>
+          <label class="label">Tab Group Indentation <span class="tag" data-hide-if-permission-contains="tabGroups" data-testid="requires-permissions-tab-groups">Requires Permission</span></label>
           <div class="control">
             <label class="radio">
               <input type="radio" name="indentation" value="spaces" data-dependson-permissions="tabGroups"/>

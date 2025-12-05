@@ -52,21 +52,21 @@
       <div class="box content" id="permissions">
         <h2 class="title is-3">Additional Permissions</h2>
         <p>Some features require additional permissions. Prompts will appear when permissions are not granted.</p>
-        <h3>Tabs <span class="tag" data-hide-if-permission-contains="tabs">Not Granted</span></h3>
+        <h3>Tabs <span class="tag" data-hide-if-permission-contains="tabs" data-testid="tabs-not-granted">Not Granted</span></h3>
         <p>Copy all / selected tabs via the popup menu and shortcut keys. Also, via context menus on tabs (Firefox-only).</p>
         <div class="field">
           <button class="button is-small is-outlined is-primary" data-request-permission="tabs">Grant Tabs Permission</button>
           <button class="button is-small is-outlined is-danger" data-remove-permission="tabs">Revoke Tabs Permission</button>
         </div>
 
-        <h4>Tab Groups <span class="tag" data-hide-if-permission-contains="tabGroups">Not Granted</span></h4>
+        <h4>Tab Groups <span class="tag" data-hide-if-permission-contains="tabGroups" data-testid="tab-groups-not-granted">Not Granted</span></h4>
         <p>Wrap tabs in your tab groups. Need to grant Tabs permission above.</p>
         <div class="field">
           <button class="button is-small is-outlined is-primary" data-request-permission="tabGroups">Grant Tab Groups Permission</button>
           <button class="button is-small is-outlined is-danger" data-remove-permission="tabGroups">Revoke Tab Groups Permission</button>
         </div>
 
-        <h3>Bookmarks <span class="tag" data-hide-if-permission-contains="bookmarks">Not Granted</span></h3>
+        <h3>Bookmarks <span class="tag" data-hide-if-permission-contains="bookmarks" data-testid="bookmarks-not-granted">Not Granted</span></h3>
         <p>Enable context menus on bookmarks (Firefox-only).</p>
         <div class="field">
           <button class="button is-small is-outlined is-primary" data-request-permission="bookmarks">Grant Bookmarks Permission</button>
