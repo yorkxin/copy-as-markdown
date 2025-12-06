@@ -440,11 +440,11 @@ class FixtureServer:
         
         # Find an available port
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('', 0))
+            s.bind(('127.0.0.1', 0))
             self.port = s.getsockname()[1]
         
         # Create and start the server in a separate thread
-        self.server = http.server.HTTPServer(("", self.port), 
+        self.server = http.server.HTTPServer(("127.0.0.1", self.port), 
             lambda *args: http.server.SimpleHTTPRequestHandler(*args, directory=fixtures_dir))
         self.server_thread = threading.Thread(target=self.server.serve_forever)
         self.server_thread.daemon = True

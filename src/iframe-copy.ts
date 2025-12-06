@@ -28,7 +28,7 @@ window.addEventListener('message', (event: MessageEvent<CopyMessage>) => {
       }
 
       const textBox = document.getElementById('copy') as HTMLTextAreaElement;
-      textBox.innerHTML = text;
+      textBox.value = text;
       textBox.select();
       const result = document.execCommand('Copy');
       if (result) {
@@ -42,7 +42,7 @@ window.addEventListener('message', (event: MessageEvent<CopyMessage>) => {
           options,
         );
       }
-      textBox.innerHTML = '';
+      textBox.value = '';
       break;
     }
 
