@@ -10,7 +10,7 @@
 
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, triggerContextMenu, waitForMockClipboard } from '../helpers';
 
 /**
  * Configure a custom format using the web UI
@@ -339,6 +339,14 @@ test.describe('Custom Format', () => {
           const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
           // Verify output contains all tabs in numbered format
+          expect(clipboardText).toEqual(expected);
+        });
+
+        test('works with context menu', async ({ page }) => {
+          await triggerContextMenu(serviceWorker, commandName);
+
+          await page.bringToFront();
+          const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
           expect(clipboardText).toEqual(expected);
         });
 

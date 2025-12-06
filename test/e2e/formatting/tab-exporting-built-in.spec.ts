@@ -6,7 +6,7 @@
 
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetMockClipboard, waitForMockClipboard } from '../helpers';
+import { getServiceWorker, resetMockClipboard, triggerContextMenu, waitForMockClipboard } from '../helpers';
 
 test.describe('Tabs Exporting with built-in formats', () => {
   let serviceWorker: Worker;
@@ -36,6 +36,14 @@ test.describe('Tabs Exporting with built-in formats', () => {
       const mockCall = await waitForMockClipboard(serviceWorker, 5000);
 
       // Verify clipboard contains the Markdown link
+      expect(mockCall.text).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
+    });
+
+    test('should work with context menu', async ({ page }) => {
+      await triggerContextMenu(serviceWorker, 'current-tab');
+
+      await page.bringToFront();
+      const mockCall = await waitForMockClipboard(serviceWorker, 5000);
       expect(mockCall.text).toEqual('[[QA] \\*\\*Hello\\*\\* \\_World\\_](http://localhost:5566/qa.html)');
     });
 
@@ -339,6 +347,14 @@ test.describe('Tabs Exporting with built-in formats', () => {
           const mockCall = await waitForMockClipboard(serviceWorker, 5000);
 
           // Verify output contains all tabs in numbered format
+          expect(mockCall.text).toEqual(expected);
+        });
+
+        test('works with context menu', async ({ page }) => {
+          await triggerContextMenu(serviceWorker, commandName);
+
+          await page.bringToFront();
+          const mockCall = await waitForMockClipboard(serviceWorker, 5000);
           expect(mockCall.text).toEqual(expected);
         });
 

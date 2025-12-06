@@ -9,7 +9,7 @@
 <body>
 <div class="container section is-max-desktop">
   <h1 class="title">Copy as Markdown</h1>
-  <div id="flash-error" class="notification is-danger is-hidden">
+  <div id="flash-error" data-testid="flash-error" class="notification is-danger is-hidden">
     <p></p>
   </div>
   <div class="columns">
@@ -54,46 +54,59 @@
         <form id='form-display-items' class="field">
           <label class="label">Commands in Menus</label>
           <p>Choose what items to show in popup menus and context menus.</p>
+          <p class="help">Disable built-in styles to hide the default tab export commands in the popup. On Firefox, these options also reflects context menus on tabs.</p>
           <div class="control">
             <label class="checkbox">
-              <input type="checkbox" disabled checked/>
-              Copy as List
+              <input type="checkbox" name="builtin-multiple-links" data-built-in-style="tabLinkList" checked/>
+              Built-in: Copy tab links as a list
             </label>
           </div>
           <div class="control">
             <label class="checkbox">
-              <input type="checkbox" disabled checked/>
-              Copy as Task List
+              <input type="checkbox" name="builtin-multiple-links-task" data-built-in-style="tabTaskList" checked/>
+              Built-in: Copy tab links as a task list
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="builtin-multiple-links-title" data-built-in-style="tabTitleList" checked/>
+              Built-in: Copy tab titles
+            </label>
+          </div>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="builtin-multiple-links-url" data-built-in-style="tabUrlList" checked/>
+              Built-in: Copy tab URLs
             </label>
           </div>
           <div class="control">
             <label class="checkbox">
               <input type="checkbox" name="custom-format-1" data-custom-format-slot="1" data-custom-format-context="multiple-links"/>
-              Copy as Custom Format 1
+              <span data-custom-format-label>Copy as Custom Format 1</span>
             </label>
           </div>
           <div class="control">
             <label class="checkbox">
               <input type="checkbox" name="custom-format-2" data-custom-format-slot="2" data-custom-format-context="multiple-links"/>
-              Copy as Custom Format 2
+              <span data-custom-format-label>Copy as Custom Format 2</span>
             </label>
           </div>
           <div class="control">
             <label class="checkbox">
               <input type="checkbox" name="custom-format-3" data-custom-format-slot="3" data-custom-format-context="multiple-links"/>
-              Copy as Custom Format 3
+              <span data-custom-format-label>Copy as Custom Format 3</span>
             </label>
           </div>
           <div class="control">
             <label class="checkbox">
               <input type="checkbox" name="custom-format-4" data-custom-format-slot="4" data-custom-format-context="multiple-links"/>
-              Copy as Custom Format 4
+              <span data-custom-format-label>Copy as Custom Format 4</span>
             </label>
           </div>
           <div class="control">
             <label class="checkbox">
               <input type="checkbox" name="custom-format-5" data-custom-format-slot="5" data-custom-format-context="multiple-links"/>
-              Copy as Custom Format 5
+              <span data-custom-format-label>Copy as Custom Format 5</span>
             </label>
           </div>
         </form>
@@ -102,7 +115,7 @@
   </div>
 </div>
 <script src="../vendor/browser-polyfill.js"></script>
-<script src="../ui/options-ui.js" type="module"></script>
+<script src="../ui/built-in-style-options.js" type="module"></script>
 <script src="../ui/check-custom-formats.js" type="module"></script>
 </body>
 </html>

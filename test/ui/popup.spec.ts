@@ -2,11 +2,18 @@ import { page } from '@vitest/browser/context';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 const listMock = vi.fn();
+const getAllBuiltInStylesMock = vi.fn();
 
 // Mock the storage module before any imports
 vi.mock('../../src/storage/custom-formats-storage.js', () => ({
   default: {
     list: listMock,
+  },
+}));
+
+vi.mock('../../src/lib/built-in-style-settings.js', () => ({
+  default: {
+    getAll: getAllBuiltInStylesMock,
   },
 }));
 
@@ -91,6 +98,16 @@ describe('popup UI', () => {
       ];
     });
 
+    getAllBuiltInStylesMock.mockImplementation(async () => {
+      return {
+        singleLink: true,
+        tabLinkList: false,
+        tabTaskList: false,
+        tabTitleList: false,
+        tabUrlList: false,
+      };
+    });
+
     // Load the popup module - this will register DOM event listeners
     await import('../../src/ui/popup.js');
 
@@ -121,8 +138,9 @@ describe('popup UI', () => {
     clipboardMock.mockClear();
     closeMock.mockClear();
 
-    const button = page.getByText('Current Tab Link');
+    const button = page.getByRole('button', { name: 'Current tab link' });
     await expect.element(button).toBeInTheDocument();
+    await expect.element(button).toBeEnabled();
     await button.click();
 
     expect(sendMessageMock).toHaveBeenCalledWith(expect.objectContaining({

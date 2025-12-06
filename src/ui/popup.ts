@@ -1,6 +1,8 @@
 import type { RuntimeMessage } from '../contracts/messages.js';
 import type { ExportFormat, ExportScope, ListType } from '../services/tab-export-service.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
+import type { BuiltInStyleSettings } from '../lib/built-in-style-settings.js';
+import BuiltInStyleSettingsStorage from '../lib/built-in-style-settings.js';
 
 interface MessageResponse {
   ok: boolean;
@@ -20,6 +22,9 @@ const displayCountOfHighlightedTabs = document.getElementById('display-count-hig
 const actionsExportAll = document.getElementById('actions-export-all') as HTMLDivElement | null;
 const actionsExportHighlighted = document.getElementById('actions-export-highlighted') as HTMLDivElement | null;
 const actionsExportCurrent = document.getElementById('actions-export-current-tab') as HTMLDivElement | null;
+const dividerAfterCurrent = document.getElementById('divider-after-current');
+const dividerBetweenTabGroups = document.getElementById('divider-between-tab-groups');
+const dividerBeforeOptions = document.getElementById('divider-before-options');
 const flash = document.getElementById('flash-message');
 const flashText = document.getElementById('flash-text');
 
@@ -39,6 +44,36 @@ function setButtonsDisabled(disabled: boolean): void {
   document.querySelectorAll<HTMLButtonElement>('#form-popup-actions button').forEach((btn) => {
     btn.disabled = disabled;
   });
+}
+
+function toggleButtonVisibility(id: string, visible: boolean): void {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.toggle('is-hidden', !visible);
+  }
+}
+
+function updateSectionVisibility(): void {
+  const sections = [actionsExportCurrent, actionsExportAll, actionsExportHighlighted];
+  const visibility = sections.map((section) => {
+    if (!section) return false;
+    const hasVisibleButton = section.querySelector('button:not(.is-hidden)') !== null;
+    section.classList.toggle('is-hidden', !hasVisibleButton);
+    return hasVisibleButton;
+  });
+
+  const [currentVisible, allVisible, highlightedVisible] = visibility;
+  const anyTabExportsVisible = allVisible || highlightedVisible;
+
+  if (dividerAfterCurrent) {
+    dividerAfterCurrent.classList.toggle('is-hidden', !(currentVisible && anyTabExportsVisible));
+  }
+  if (dividerBetweenTabGroups) {
+    dividerBetweenTabGroups.classList.toggle('is-hidden', !(allVisible && highlightedVisible));
+  }
+  if (dividerBeforeOptions) {
+    dividerBeforeOptions.classList.toggle('is-hidden', !(currentVisible || anyTabExportsVisible));
+  }
 }
 
 function createCustomButton({
@@ -251,6 +286,8 @@ async function loadCustomFormats(): Promise<void> {
       });
       actionsExportCurrent.appendChild(btn);
     });
+
+  updateSectionVisibility();
 }
 
 function wireStaticButtons(): void {
@@ -294,6 +331,22 @@ function setCounts(tabsCount: number, highlightedCount: number): void {
   }
 }
 
+function applyBuiltInVisibility(settings: BuiltInStyleSettings): void {
+  toggleButtonVisibility('current-tab-link', settings.singleLink);
+
+  toggleButtonVisibility('all-tabs-link-as-list', settings.tabLinkList);
+  toggleButtonVisibility('highlighted-tabs-link-as-list', settings.tabLinkList);
+  toggleButtonVisibility('all-tabs-link-as-task-list', settings.tabTaskList);
+  toggleButtonVisibility('highlighted-tabs-link-as-task-list', settings.tabTaskList);
+
+  toggleButtonVisibility('all-tabs-title-as-list', settings.tabTitleList);
+  toggleButtonVisibility('highlighted-tabs-title-as-list', settings.tabTitleList);
+  toggleButtonVisibility('all-tabs-url-as-list', settings.tabUrlList);
+  toggleButtonVisibility('highlighted-tabs-url-as-list', settings.tabUrlList);
+
+  updateSectionVisibility();
+}
+
 function isTabsPermissionError(error: unknown): boolean {
   return error instanceof Error && error.message.includes('Tabs permission required');
 }
@@ -313,6 +366,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const tabsCount = crWindow.tabs?.length ?? 0;
       const highlightedCount = crWindow.tabs?.filter((tab: browser.tabs.Tab) => tab.highlighted).length ?? 0;
       setCounts(tabsCount, highlightedCount);
+
+      const styles = await BuiltInStyleSettingsStorage.getAll();
+      applyBuiltInVisibility(styles);
 
       await loadCustomFormats();
       ready = true;

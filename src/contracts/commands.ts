@@ -29,10 +29,14 @@ export const ContextMenuIds = {
   Link: 'link',
   Image: 'image',
   SelectionAsMarkdown: 'selection-as-markdown',
-  AllTabsList: 'all-tabs-list',
-  AllTabsTaskList: 'all-tabs-task-list',
-  HighlightedTabsList: 'highlighted-tabs-list',
-  HighlightedTabsTaskList: 'highlighted-tabs-task-list',
+  AllTabsLinkAsList: 'all-tabs-link-as-list',
+  AllTabsLinkAsTaskList: 'all-tabs-link-as-task-list',
+  AllTabsTitleAsList: 'all-tabs-title-as-list',
+  AllTabsUrlAsList: 'all-tabs-url-as-list',
+  HighlightedTabsLinkAsList: 'highlighted-tabs-link-as-list',
+  HighlightedTabsLinkAsTaskList: 'highlighted-tabs-link-as-task-list',
+  HighlightedTabsTitleAsList: 'highlighted-tabs-title-as-list',
+  HighlightedTabsUrlAsList: 'highlighted-tabs-url-as-list',
   BookmarkLink: 'bookmark-link',
 } as const;
 
