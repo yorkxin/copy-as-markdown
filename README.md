@@ -81,13 +81,13 @@ npm install -g web-ext
 npm install
 ```
 
-### Debugging
+## Debugging
 
 Use the script `scripts/debug.js` that runs an auto-reload process. Usage:
 
 ```sh
 npm debug-chrome
-npm debug-firefox
+npm debug-firefox-mv2
 npm debug-firefox-mv3
 ```
 
@@ -96,13 +96,25 @@ For manual debugging without auto-reload:
 - Chrome: [Window] Menu -> Extensions -> Load unpacked extension
 - Firefox: [Tools] Menu -> Add-ons -> [Gear] Icon -> Debug Add-ons -> Load Temporary Add-on
 
-#### Debug with Firefox XPI Package
+### Firefox Testing with XPI
 
 To debug some behaviors such as Firefox restarts (for example, are context menus installed properly),
 it is necessary to build an XPI package and install it on Firefox. Temporary Add-Ons won't be enough
 because they get uninstalled after Firefox quits.
 
-Firefox checks the signature when installing XPI. To do so,
+Firefox checks the signature when installing XPI, which cannot be disabled in the release build of Firefox.
+Please use **Firefox Developer Edition, Nightly, or unbranded Beta** versions to sideload an unsigned XPI.
+See *[Testing persistent and restart features (Extension Workshop)](https://extensionworkshop.com/documentation/develop/testing-persistent-and-restart-features/)* for more details.
+
+1. `npm run build-firefox-mv3`. The XPI will be saved in `./build/firefox-mv3` folder.
+2. In Firefox Developr Edition, go to `about:flags`, set `xpinstall.signatures.required` to `false`. Restart the browser
+3. Go to `about:addons`, drag and drop th XPI file into this page to install.
+4. Restart the browser to verify behaviors on restart.
+
+### Signing XPI
+
+If sideloading on the release build of Firefox is necessary,
+here are the steps to sign the extesnion via AMO:
 
 1. Grab [API keys](https://addons.mozilla.org/en-US/developers/addon/api/key/) from Firefox Add-On
 2. Bump version in `manifest.json`. Note that AMO only accepts version numbers in `X.Y.Z` format where all 3 segments are numbers without zero prefixes.
