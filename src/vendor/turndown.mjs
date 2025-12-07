@@ -579,12 +579,36 @@ function createHTMLParser () {
   var Parser = function () {};
 
   {
-    var domino = require('domino');
-    Parser.prototype.parseFromString = function (string) {
-      return domino.createDocument(string)
-    };
+    if (shouldUseActiveX()) {
+      Parser.prototype.parseFromString = function (string) {
+        var doc = new window.ActiveXObject('htmlfile');
+        doc.designMode = 'on'; // disable on-page scripts
+        doc.open();
+        doc.write(string);
+        doc.close();
+        return doc
+      };
+    } else {
+      Parser.prototype.parseFromString = function (string) {
+        var doc = document.implementation.createHTMLDocument('');
+        doc.open();
+        doc.write(string);
+        doc.close();
+        return doc
+      };
+    }
   }
   return Parser
+}
+
+function shouldUseActiveX () {
+  var useActiveX = false;
+  try {
+    document.implementation.createHTMLDocument('').open();
+  } catch (e) {
+    if (root.ActiveXObject) useActiveX = true;
+  }
+  return useActiveX
 }
 
 var HTMLParser = canParseHTMLNatively() ? root.DOMParser : createHTMLParser();

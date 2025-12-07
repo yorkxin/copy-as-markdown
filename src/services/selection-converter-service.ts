@@ -35,6 +35,7 @@ export function createSelectionConverterService(
     }
 
     // Execute the conversion function in all frames
+    // turndown.js must be loaded in the content because it parses the HTML using DOM API.
     const results = await scriptingAPI.executeScript({
       target: { tabId: tab.id, allFrames: true },
       func: selectionToMarkdown,
