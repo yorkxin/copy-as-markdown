@@ -116,7 +116,9 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "dist/static/iframe-copy.html"
+        "dist/static/iframe-copy.html",
+        "dist/vendor/turndown.mjs",
+        "dist/vendor/turndown-plugin-gfm.mjs"
       ],
       "matches": [
         "<all_urls>"

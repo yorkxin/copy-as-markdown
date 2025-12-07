@@ -28,7 +28,8 @@ describe('selectionConverterService', () => {
       const service = createSelectionConverterService(
         mockScriptingAPI,
         mockTurndownOptionsProvider,
-        'dist/vendor/turndown.js',
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
       );
 
       const tab: browser.tabs.Tab = {
@@ -45,25 +46,19 @@ describe('selectionConverterService', () => {
       const result = await service.convertSelectionToMarkdown(tab);
 
       expect(result).toBe('# Heading\n\nParagraph');
-      expect(executeScriptMock).toHaveBeenCalledTimes(2);
+      expect(executeScriptMock).toHaveBeenCalledTimes(1);
 
-      // First call: load turndown library
-      expect(executeScriptMock).toHaveBeenNthCalledWith(1, {
-        target: {
-          tabId: 123,
-          allFrames: true,
-        },
-        files: ['dist/vendor/turndown.js'],
-      });
-
-      // Second call: execute conversion
-      expect(executeScriptMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      expect(executeScriptMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
         target: {
           tabId: 123,
           allFrames: true,
         },
         func: selectionToMarkdown,
-        args: [turndownOptions],
+        args: [
+          'dist/vendor/turndown.mjs',
+          'dist/vendor/turndown-plugin-gfm.mjs',
+          turndownOptions,
+        ],
       }));
     });
 
@@ -92,7 +87,8 @@ describe('selectionConverterService', () => {
       const service = createSelectionConverterService(
         mockScriptingAPI,
         mockTurndownOptionsProvider,
-        'dist/vendor/turndown.js',
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
       );
 
       const tab: browser.tabs.Tab = {
@@ -123,7 +119,8 @@ describe('selectionConverterService', () => {
       const service = createSelectionConverterService(
         mockScriptingAPI,
         mockTurndownOptionsProvider,
-        'dist/vendor/turndown.js',
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
       );
 
       const tab: browser.tabs.Tab = {
@@ -160,7 +157,8 @@ describe('selectionConverterService', () => {
       const service = createSelectionConverterService(
         mockScriptingAPI,
         mockTurndownOptionsProvider,
-        'dist/vendor/turndown.js',
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
       );
 
       const tab: browser.tabs.Tab = {
@@ -179,12 +177,16 @@ describe('selectionConverterService', () => {
       expect(getTurndownOptionsMock).toHaveBeenCalledTimes(1);
 
       // Check that options were passed to the conversion function
-      expect(executeScriptMock).toHaveBeenNthCalledWith(2, expect.objectContaining({
-        args: [{
-          headingStyle: 'setext',
-          bulletListMarker: '*',
-          customOption: 'value',
-        }],
+      expect(executeScriptMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        args: [
+          'dist/vendor/turndown.mjs',
+          'dist/vendor/turndown-plugin-gfm.mjs',
+          {
+            headingStyle: 'setext',
+            bulletListMarker: '*',
+            customOption: 'value',
+          },
+        ],
       }));
     });
   });

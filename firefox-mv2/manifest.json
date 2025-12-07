@@ -114,6 +114,10 @@
     "page": "./dist/static/options.html",
     "open_in_tab": true
   },
+  "web_accessible_resources": [
+    "dist/vendor/turndown.mjs",
+    "dist/vendor/turndown-plugin-gfm.mjs"
+  ],
   "browser_specific_settings": {
     "gecko": {
       "id": "jid1-tfBgelm3d4bLkQ@jetpack",

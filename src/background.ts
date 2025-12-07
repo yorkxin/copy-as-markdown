@@ -44,8 +44,6 @@ const clipboardService = createBrowserClipboardServiceController(
 clipboardService.initializeMockState()
   .catch(error => console.error('Mock clipboard init error', error));
 
-// Selection converter service with turndown options provider
-const turndownJsUrl = 'dist/vendor/turndown.js';
 const selectionConverterService = createBrowserSelectionConverterService(
   {
     getTurndownOptions: () => ({
@@ -53,7 +51,8 @@ const selectionConverterService = createBrowserSelectionConverterService(
       bulletListMarker: markdownInstance.unorderedListChar,
     }),
   },
-  turndownJsUrl,
+  chrome.runtime.getURL('dist/vendor/turndown.mjs'),
+  chrome.runtime.getURL('dist/vendor/turndown-plugin-gfm.mjs'),
 );
 
 const handlerServices = {

@@ -1,4 +1,5 @@
 import type { Options as TurndownOptions } from 'turndown';
+import type { tables } from '@truto/turndown-plugin-gfm';
 
 /**
  * This function executes in the content script context.
@@ -6,11 +7,18 @@ import type { Options as TurndownOptions } from 'turndown';
  *
  * NOTE: This function should be executed in content script.
  */
-export function selectionToMarkdown(turndownOptions: TurndownOptions): string {
-  const TurndownService = (globalThis as any).TurndownService;
+export async function selectionToMarkdown(turndownJsURL: string, gfmJsURL: string, turndownOptions: TurndownOptions): Promise<Promise<string>> {
+  // Load ESM in content script.
+  // See https://stackoverflow.com/a/53033388
+  const turndownModule = await import(turndownJsURL);
+  const TurndownService = turndownModule.default;
+  const gfmPluginModule = await import(gfmJsURL);
+  const gfmTablePlugin = gfmPluginModule.tables as typeof tables;
+
   const turndownService = new TurndownService(turndownOptions)
     .remove('script')
     .remove('style');
+  turndownService.use(gfmTablePlugin);
   const sel = getSelection();
   const container = document.createElement('div');
   if (!sel) {

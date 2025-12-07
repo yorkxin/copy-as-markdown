@@ -34,3 +34,9 @@ In March 2016, two relevant informational Internet [RFCs](http://localhost:5566/
 
 -   RFC [7763](https://datatracker.ietf.org/doc/html/rfc7763) introduced [MIME](http://localhost:5566/wiki/MIME "MIME") type `text/markdown`.
 -   RFC [7764](https://datatracker.ietf.org/doc/html/rfc7764) discussed and registered the variants [MultiMarkdown](http://localhost:5566/wiki/MultiMarkdown "MultiMarkdown"), GitHub Flavored Markdown (GFM), [Pandoc](http://localhost:5566/wiki/Pandoc "Pandoc"), and Markdown Extra among others.[\[30\]](http://localhost:5566/selection.html#cite_note-IANA-31)
+
+table
+
+| foo | bar |
+| --- | --- |
+| baz | bim |

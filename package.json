@@ -45,6 +45,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
     "@playwright/test": "^1.57.0",
+    "@truto/turndown-plugin-gfm": "^1.0.2",
     "@types/chrome": "^0.1.31",
     "@types/firefox-webext-browser": "^143.0.0",
     "@types/mustache": "^4.2.6",
