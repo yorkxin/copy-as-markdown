@@ -53,6 +53,27 @@ Everything in `test/e2e` is split by concern, but only the clipboard smoke tests
 
 Re-run the script anytime the source manifests change.
 
+## Install Dependencies
+
+```bash
+npx playwright install-deps
+```
+
+On Fedora Linux:
+
+```bash
+sudo dnf install -y \
+  atk at-spi2-atk cups-libs libdrm libxkbcommon libXcomposite \
+  libXdamage libXrandr mesa-libgbm pango cairo alsa-lib \
+  liberation-fonts nss gtk3 libxshmfence libX11 libxcb
+```
+
+## Install Browsers
+
+```bash
+npx playwright install
+```
+
 ## Running Tests
 
 ```bash
