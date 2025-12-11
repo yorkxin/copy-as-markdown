@@ -22,7 +22,7 @@
     "compile-chrome": "node scripts/compile.js chrome",
     "compile-firefox-mv2": "node scripts/compile.js firefox-mv2",
     "compile-firefox-mv3": "node scripts/compile.js firefox-mv3",
-    "build-chrome": "npm run compile-chrome && zip -r build/chrome.zip chrome/",
+    "build-chrome": "npm run compile-chrome && zip -r build/chrome.zip chrome/ -x \"*.DS_Store\" -x \".keep\"",
     "build-firefox-mv2": "npm run compile-firefox-mv2 && npx web-ext build -s firefox-mv2/ -a build/firefox-mv2/",
     "build-firefox-mv3": "npm run compile-firefox-mv3 && npx web-ext build -s firefox-mv3/ -a build/firefox-mv3/",
     "debug-chrome": "node scripts/debug.js chrome",
