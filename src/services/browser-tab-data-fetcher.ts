@@ -7,7 +7,7 @@ interface TabDataFetcherDeps {
   tabs: TabsAPI;
   windows: WindowsAPI;
   runtime: RuntimeAPI;
-  tabGroups?: TabGroupsAPI;
+  tabGroups: () => TabGroupsAPI | undefined;
 }
 
 export class BrowserTabDataFetcher implements TabDataFetcher {
@@ -38,7 +38,7 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
   }
 
   async fetchTabGroups(windowId: number): Promise<chrome.tabGroups.TabGroup[]> {
-    const tabGroupsAPI = this.deps.tabGroups;
+    const tabGroupsAPI = this.deps.tabGroups();
     if (!tabGroupsAPI) {
       return [];
     }
@@ -65,16 +65,13 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
  * Default browser-backed data fetcher factory.
  */
 export function createBrowserTabDataFetcher(): BrowserTabDataFetcher {
-  // TODO: Review this, do we need permission checking or not?
-  const tabGroupsAPI = (typeof chrome !== 'undefined' && chrome.tabGroups)
-    ? chrome.tabGroups as TabGroupsAPI
-    : undefined;
-
   return new BrowserTabDataFetcher({
     permissions: browser.permissions,
     tabs: browser.tabs,
     windows: browser.windows,
     runtime: browser.runtime,
-    tabGroups: tabGroupsAPI,
+    tabGroups: () => (typeof chrome !== 'undefined' && chrome.tabGroups)
+      ? chrome.tabGroups as TabGroupsAPI
+      : undefined,
   });
 }
