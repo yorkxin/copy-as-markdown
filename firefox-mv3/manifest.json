@@ -130,7 +130,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "jid1-tfBgelm3d4bLkQ@jetpack",
-      "strict_min_version": "112.0"
+      "strict_min_version": "139.0"
     }
   }
 }
