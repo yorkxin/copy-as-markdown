@@ -6,7 +6,6 @@ import CustomFormatClass from '../lib/custom-format.js';
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
 import { createBrowserTabDataFetcher } from './browser-tab-data-fetcher.js';
 
-// Type Definitions
 export type ExportFormat = 'link' | 'title' | 'url' | 'custom-format';
 export type ListType = 'list' | 'task-list';
 export type ExportScope = 'all' | 'highlighted';
@@ -19,14 +18,6 @@ export interface ExportTabsOptions {
   windowId: number;
 }
 
-// ==============================================================================
-// PURE FUNCTIONS - Business logic that can be tested without mocking
-// ==============================================================================
-
-/**
- * Validates export options.
- * Pure function - no dependencies, easy to test.
- */
 export function validateOptions(options: ExportTabsOptions): void {
   if (options.format === 'custom-format') {
     if (options.listType !== null && options.listType !== undefined) {
@@ -165,14 +156,6 @@ export async function renderTabs(
   return renderBuiltInFormat(tabLists, options.format, options.listType, markdown);
 }
 
-// ==============================================================================
-// SERVICE - Browser-agnostic (no browser API calls)
-// ==============================================================================
-
-/**
- * Interface for fetching tab data from browser.
- * Implement this to provide tab data to the service.
- */
 export interface TabDataFetcher {
   /**
    * Fetch tabs from the specified window.
@@ -187,10 +170,6 @@ export interface TabDataFetcher {
   fetchTabGroups: (windowId: number) => Promise<chrome.tabGroups.TabGroup[]>;
 }
 
-/**
- * Tab Export Service - browser-agnostic.
- * Takes tab data and converts it to markdown.
- */
 export class TabExportService {
   constructor(
     private markdown: Markdown,

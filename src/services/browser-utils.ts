@@ -1,6 +1,3 @@
-/**
- * Small browser helpers shared across handlers/services.
- */
 import type { TabsAPI } from './shared-types.js';
 
 /**

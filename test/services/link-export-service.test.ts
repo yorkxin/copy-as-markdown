@@ -1,12 +1,3 @@
-/**
- * Link Export Service Tests - Pure function approach
- *
- * Notice:
- * - Minimal mocking (only for custom format provider when needed)
- * - Tests are simple and fast
- * - Focus on business logic, not plumbing
- */
-
 import { describe, expect, it, vi } from 'vitest';
 import {
   LinkExportService,
@@ -19,7 +10,6 @@ import type {
   MarkdownFormatter,
 } from '../../src/services/shared-types.js';
 
-// Simple mock markdown formatter for tests
 const mockMarkdown: MarkdownFormatter = {
   escapeLinkText: (text: string) => text.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]'),
   linkTo: (title: string, url: string) => `[${title}](${url})`,

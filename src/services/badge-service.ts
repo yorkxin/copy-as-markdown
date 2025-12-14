@@ -1,15 +1,6 @@
-/**
- * Badge Service
- *
- * Handles browser extension badge (icon badge text and color) for visual feedback.
- * Shows success/error states that auto-clear after a timeout.
- */
-
-// Type Definitions
 type ColorArray = [number, number, number, number];
 type BadgeColor = string | ColorArray;
 
-// Constants
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
 const COLOR_TRANSPARENT: ColorArray = [0, 0, 0, 0];

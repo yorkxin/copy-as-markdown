@@ -1,10 +1,3 @@
-/**
- * Context Menu Service
- *
- * Handles browser extension context menu (right-click menu) creation and management.
- * Creates menus for copying links, images, selections, tabs, and bookmarks as Markdown.
- */
-
 import { ContextMenuIds } from '../contracts/commands.js';
 import type CustomFormat from '../lib/custom-format.js';
 import type { BuiltInStyleSettings } from '../lib/built-in-style-settings.js';

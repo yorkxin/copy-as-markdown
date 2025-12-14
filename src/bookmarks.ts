@@ -1,9 +1,6 @@
 import type Markdown from './lib/markdown.js';
 import type { NestedArray } from './lib/markdown.js';
 
-/**
- * Bookmarks handles bookmarks formatting
- */
 export class Bookmarks {
   private _markdown: Markdown;
 

@@ -11,7 +11,6 @@ import {
 import { Tab, TabGroup, TabList } from '../../src/lib/tabs.js';
 import type { MarkdownFormatter } from '../../src/services/shared-types.js';
 
-// Simple mock markdown formatter for tests
 const mockMarkdown: MarkdownFormatter = {
   escapeLinkText: (text: string) => text,
   linkTo: (title: string, url: string) => `[${title}](${url})`,

@@ -1,10 +1,3 @@
-/**
- * Selection Converter Service
- *
- * Handles converting HTML selections in browser tabs to Markdown format.
- * Uses the Turndown library to perform HTML-to-Markdown conversion.
- */
-
 import type { Options as TurndownOptions } from 'turndown';
 import type { ScriptingAPI } from './shared-types.js';
 import { selectionToMarkdown } from '../content-scripts/selection-to-markdown.js';

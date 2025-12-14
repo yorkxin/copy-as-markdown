@@ -1,13 +1,3 @@
-/**
- * Link Export Service
- *
- * Handles exporting single links as Markdown or custom formats.
- *
- * Architecture:
- * - Pure functions for business logic (easy to test, no mocking needed)
- * - Thin service class wrapper
- */
-
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
 
 // Type Definitions
@@ -20,14 +10,6 @@ export interface LinkExportOptions {
   customFormatSlot?: string | null;
 }
 
-// ==============================================================================
-// PURE FUNCTIONS - Business logic that can be tested without mocking
-// ==============================================================================
-
-/**
- * Validates link export options.
- * Pure function - no dependencies, easy to test.
- */
 export function validateLinkExportOptions(options: LinkExportOptions): void {
   if (options.format === 'custom-format' && !options.customFormatSlot) {
     throw new TypeError('customFormatSlot is required for custom-format');
@@ -53,14 +35,6 @@ export async function renderCustomFormatLink(
   return customFormat.render(input);
 }
 
-// ==============================================================================
-// SERVICE - Thin wrapper
-// ==============================================================================
-
-/**
- * Link Export Service - handles link formatting.
- * Most business logic is delegated to pure functions above.
- */
 export class LinkExportService {
   constructor(
     private markdown: MarkdownFormatter,
