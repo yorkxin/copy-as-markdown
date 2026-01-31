@@ -109,6 +109,21 @@
             so that Copy as Markdown always escape brackets in the link text.
           </p>
         </form>
+
+        <form id="form-decode-urls" class="field">
+          <label class="label">URL Decoding</label>
+          <div class="control">
+            <label class="checkbox">
+              <input type="checkbox" name="enabled"/>
+              Decode URL-encoded Unicode characters
+            </label>
+          </div>
+          <p class="help">
+            When enabled, URL-encoded Unicode characters (like <code>%E4%B8%AD%E6%96%87</code>)
+            will be decoded to their original characters (like <code>中文</code>) in markdown links.
+            This makes URLs more readable but may break compatibility with some markdown processors.
+          </p>
+        </form>
       </div>
       <div class="field is-grouped">
         <div class="control">

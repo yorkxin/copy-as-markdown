@@ -15,6 +15,7 @@ export default class Markdown {
   alwaysEscapeLinkBracket: boolean;
   unorderedListStyle: UnorderedListStyle;
   indentationStyle: TabGroupIndentationStyle;
+  decodeURLs: boolean;
 
   static DefaultTitle(): string {
     return '(No Title)';
@@ -24,10 +25,12 @@ export default class Markdown {
     alwaysEscapeLinkBracket = false,
     unorderedListStyle = UnorderedListStyle.Dash,
     indentationStyle = TabGroupIndentationStyle.Spaces,
+    decodeURLs = false,
   } = {}) {
     this.alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
     this.unorderedListStyle = unorderedListStyle;
     this.indentationStyle = indentationStyle;
+    this.decodeURLs = decodeURLs;
   }
 
   /**
@@ -121,7 +124,32 @@ export default class Markdown {
     } else {
       titleToUse = this.escapeLinkText(title);
     }
-    return `[${titleToUse}](${url})`;
+
+    let urlToUse = url;
+    if (this.decodeURLs) {
+      try {
+        // Decode the entire URL for readability
+        urlToUse = decodeURI(url);
+
+        // Re-encode characters that break markdown URL syntax
+        // Space and parentheses need to remain encoded to maintain markdown compatibility
+        // Space (%20) terminates the URL in some markdown parsers
+        // Closing parenthesis (%29) would prematurely end the URL in markdown [title](url)
+        urlToUse = urlToUse.replace(/[ ()]/g, (char) => {
+          switch (char) {
+            case ' ': return '%20';
+            case '(': return '%28';
+            case ')': return '%29';
+            default: return char;
+          }
+        });
+      } catch (error) {
+        // Fall back to original URL if decoding fails
+        console.warn('Failed to decode URL:', url, error);
+      }
+    }
+
+    return `[${titleToUse}](${urlToUse})`;
   }
 
   static imageFor(title: string, url: string): string {

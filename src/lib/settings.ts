@@ -5,11 +5,13 @@ const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
 // [sic.] The following keys have spaces at the end since they were introduced (typo). Do not modify.
 const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
 const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
+const SKDecodeURLs = 'decodeURLs';
 
 interface Settings {
   alwaysEscapeLinkBrackets: boolean;
   styleOfUnorderedList: UnorderedListStyle;
   styleOfTabGroupIndentation: TabGroupIndentationStyle;
+  decodeURLs: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export default {
       [SKLinkTextAlwaysEscapeBrackets]: false,
       [SKStyleOfUnorderedList]: UnorderedListStyle.Dash,
       [SKStyleTabGroupIndentation]: TabGroupIndentationStyle.Spaces,
+      [SKDecodeURLs]: false,
     };
   },
 
@@ -50,6 +53,12 @@ export default {
     });
   },
 
+  async setDecodeURLs(value: boolean): Promise<void> {
+    await browser.storage.sync.set({
+      [SKDecodeURLs]: value,
+    });
+  },
+
   async reset(): Promise<void> {
     await browser.storage.sync.remove(this.keys);
   },
@@ -61,6 +70,7 @@ export default {
       alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets] as boolean,
       styleOfUnorderedList: all[SKStyleOfUnorderedList] as UnorderedListStyle,
       styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation] as TabGroupIndentationStyle,
+      decodeURLs: all[SKDecodeURLs] as boolean,
     };
   },
 };

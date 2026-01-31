@@ -99,4 +99,59 @@ describe('markdown', () => {
       });
     });
   });
+
+  describe('linkTo() with URL decoding', () => {
+    describe('decodeURLs=false (default)', () => {
+      const markdown = new Markdown({ decodeURLs: false });
+
+      it('preserves encoded URLs', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/%E4%B8%AD%E6%96%87'))
+          .toBe('[Test](https://example.com/%E4%B8%AD%E6%96%87)');
+      });
+
+      it('preserves already decoded URLs', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/中文'))
+          .toBe('[Test](https://example.com/中文)');
+      });
+    });
+
+    describe('decodeURLs=true', () => {
+      const markdown = new Markdown({ decodeURLs: true });
+
+      it('decodes URL-encoded Unicode characters', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/%E4%B8%AD%E6%96%87'))
+          .toBe('[Test](https://example.com/中文)');
+      });
+
+      it('keeps spaces encoded for markdown compatibility', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/hello%20world'))
+          .toBe('[Test](https://example.com/hello%20world)'); // Space remains %20
+      });
+
+      it('keeps parentheses encoded for markdown compatibility', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/page%28with%29parens'))
+          .toBe('[Test](https://example.com/page%28with%29parens)'); // Parentheses remain encoded
+      });
+
+      it('decodes query parameters', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/search?q=%E4%B8%AD%E6%96%87'))
+          .toBe('[Test](https://example.com/search?q=中文)');
+      });
+
+      it('passes through already decoded URLs', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/中文'))
+          .toBe('[Test](https://example.com/中文)');
+      });
+
+      it('falls back to original URL on malformed encoding', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/%ZZ'))
+          .toBe('[Test](https://example.com/%ZZ)');
+      });
+
+      it('handles mixed encoded/decoded URLs', () => {
+        expect(markdown.linkTo('Test', 'https://example.com/%E4%B8%AD%E6%96%87/decoded'))
+          .toBe('[Test](https://example.com/中文/decoded)');
+      });
+    });
+  });
 });

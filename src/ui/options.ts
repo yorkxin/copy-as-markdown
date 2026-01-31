@@ -29,6 +29,7 @@ async function loadSettings(): Promise<void> {
     const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets');
     const formUnorderedList = document.forms.namedItem('form-style-of-unordered-list');
     const formTabGroupIndentation = document.forms.namedItem('form-style-of-tab-group-indentation');
+    const formDecodeURLs = document.forms.namedItem('form-decode-urls');
 
     if (formEscapeBrackets) {
       const checkbox = formEscapeBrackets.elements.namedItem('enabled') as HTMLInputElement | null;
@@ -41,6 +42,10 @@ async function loadSettings(): Promise<void> {
     if (formTabGroupIndentation) {
       const indentation = formTabGroupIndentation.elements.namedItem('indentation') as RadioNodeList | null;
       if (indentation) indentation.value = settings.styleOfTabGroupIndentation;
+    }
+    if (formDecodeURLs) {
+      const checkbox = formDecodeURLs.elements.namedItem('enabled') as HTMLInputElement | null;
+      if (checkbox) checkbox.checked = settings.decodeURLs;
     }
     hideFlash();
   } catch (error) {
@@ -90,6 +95,20 @@ if (formUnorderedList) {
     try {
       const target = event.target as HTMLInputElement;
       await Settings.setStyleOfUnrderedList(target.value as UnorderedListStyle);
+      hideFlash();
+    } catch (error) {
+      console.error('failed to save settings:', error);
+      showFlash('Failed to save setting. Please try again.');
+    }
+  });
+}
+
+const formDecodeURLs = document.forms.namedItem('form-decode-urls');
+if (formDecodeURLs) {
+  formDecodeURLs.addEventListener('change', async (event) => {
+    try {
+      const target = event.target as HTMLInputElement;
+      await Settings.setDecodeURLs(target.checked);
       hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
