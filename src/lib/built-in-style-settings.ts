@@ -1,5 +1,6 @@
 export type BuiltInStyleKey
   = | 'singleLink'
+    | 'singleLinkWithoutEncoding'
     | 'tabLinkList'
     | 'tabTaskList'
     | 'tabTitleList'
@@ -7,6 +8,7 @@ export type BuiltInStyleKey
 
 export interface BuiltInStyleSettings {
   singleLink: boolean;
+  singleLinkWithoutEncoding: boolean;
   tabLinkList: boolean;
   tabTaskList: boolean;
   tabTitleList: boolean;
@@ -15,6 +17,7 @@ export interface BuiltInStyleSettings {
 
 const StorageKeys: Record<BuiltInStyleKey, string> = {
   singleLink: 'builtin.style.singleLink',
+  singleLinkWithoutEncoding: 'builtin.style.singleLinkWithoutEncoding',
   tabLinkList: 'builtin.style.tabLinkList',
   tabTaskList: 'builtin.style.tabTaskList',
   tabTitleList: 'builtin.style.tabTitleList',
@@ -23,6 +26,7 @@ const StorageKeys: Record<BuiltInStyleKey, string> = {
 
 const defaultSettings: BuiltInStyleSettings = {
   singleLink: true,
+  singleLinkWithoutEncoding: true,
   tabLinkList: true,
   tabTaskList: true,
   tabTitleList: true,
@@ -32,6 +36,7 @@ const defaultSettings: BuiltInStyleSettings = {
 function toStorage(settings: BuiltInStyleSettings): Record<string, boolean> {
   return {
     [StorageKeys.singleLink]: settings.singleLink,
+    [StorageKeys.singleLinkWithoutEncoding]: settings.singleLinkWithoutEncoding,
     [StorageKeys.tabLinkList]: settings.tabLinkList,
     [StorageKeys.tabTaskList]: settings.tabTaskList,
     [StorageKeys.tabTitleList]: settings.tabTitleList,
@@ -48,6 +53,7 @@ export default {
 
     return {
       singleLink: Boolean(stored[StorageKeys.singleLink]),
+      singleLinkWithoutEncoding: Boolean(stored[StorageKeys.singleLinkWithoutEncoding]),
       tabLinkList: Boolean(stored[StorageKeys.tabLinkList]),
       tabTaskList: Boolean(stored[StorageKeys.tabTaskList]),
       tabTitleList: Boolean(stored[StorageKeys.tabTitleList]),

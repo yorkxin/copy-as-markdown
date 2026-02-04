@@ -182,6 +182,13 @@ describe('tab Export Service - Refactored (Pure Functions)', () => {
       expect(formatter(tab)).toBe('[GitHub](https://github.com)');
     });
 
+    it('should return link formatter with selective decoding for link-without-encoding format', () => {
+      const formatter = getFormatter('link-without-encoding', mockMarkdown);
+      const tab = new Tab('Test', 'https://example.com/%E4%B8%AD%E6%96%87%20test%28%29', -1);
+
+      expect(formatter(tab)).toBe('[Test](https://example.com/中文%20test%28%29)');
+    });
+
     it('should return title formatter for title format', () => {
       const formatter = getFormatter('title', mockMarkdown);
       const tab = new Tab('GitHub', 'https://github.com', -1);
@@ -268,6 +275,19 @@ describe('tab Export Service - Refactored (Pure Functions)', () => {
       expect(result).toContain('[GitHub](https://github.com)');
       expect(result).toContain('[Twitter](https://twitter.com)');
       expect(result).toMatch(/^- /m); // starts with list marker
+    });
+
+    it('should render tabs as markdown link list with selective decoding for link-without-encoding', () => {
+      const tabLists = [
+        TabList.nonGroup([
+          new Tab('Test', 'https://example.com/%E4%B8%AD%E6%96%87%20test%28%29', -1),
+        ]),
+      ];
+
+      const result = renderBuiltInFormat(tabLists, 'link-without-encoding', 'list', mockMarkdown);
+
+      expect(result).toContain('[Test](https://example.com/中文%20test%28%29)');
+      expect(result).toMatch(/^- /m);
     });
 
     it('should render tabs as task list when listType is task-list', () => {

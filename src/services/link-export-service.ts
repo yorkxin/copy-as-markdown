@@ -1,7 +1,8 @@
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
+import { selectivelyDecodeUrl } from '../lib/url-utils.js';
 
 // Type Definitions
-export type LinkExportFormat = 'link' | 'custom-format';
+export type LinkExportFormat = 'link' | 'link-without-encoding' | 'custom-format';
 
 export interface LinkExportOptions {
   format: LinkExportFormat;
@@ -60,6 +61,11 @@ export class LinkExportService {
     switch (options.format) {
       case 'link':
         return this.markdown.linkTo(options.title, options.url);
+
+      case 'link-without-encoding': {
+        const decodedUrl = selectivelyDecodeUrl(options.url);
+        return this.markdown.linkTo(options.title, decodedUrl);
+      }
 
       case 'custom-format':
         // We already validated that customFormatSlot exists

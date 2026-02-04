@@ -5,8 +5,9 @@ import { Tab, TabGroup, TabListGrouper } from '../lib/tabs.js';
 import CustomFormatClass from '../lib/custom-format.js';
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
 import { createBrowserTabDataFetcher } from './browser-tab-data-fetcher.js';
+import { selectivelyDecodeUrl } from '../lib/url-utils.js';
 
-export type ExportFormat = 'link' | 'title' | 'url' | 'custom-format';
+export type ExportFormat = 'link' | 'link-without-encoding' | 'title' | 'url' | 'custom-format';
 export type ListType = 'list' | 'task-list';
 export type ExportScope = 'all' | 'highlighted';
 
@@ -63,12 +64,14 @@ export function groupTabsIntoLists(tabs: Tab[], groups: TabGroup[]): TabList[] {
  * Gets the appropriate formatter function for the specified format.
  */
 export function getFormatter(
-  format: 'link' | 'title' | 'url',
+  format: 'link' | 'link-without-encoding' | 'title' | 'url',
   markdown: MarkdownFormatter,
 ): (tab: Tab) => string {
   switch (format) {
     case 'link':
       return tab => markdown.linkTo(tab.title, tab.url);
+    case 'link-without-encoding':
+      return tab => markdown.linkTo(tab.title, selectivelyDecodeUrl(tab.url));
     case 'title':
       return tab => tab.title;
     case 'url':
@@ -104,11 +107,11 @@ export function formatTabListsToNestedArray(
 }
 
 /**
- * Renders tabs using a built-in format (link, title, or URL).
+ * Renders tabs using a built-in format (link, link-without-encoding, title, or URL).
  */
 export function renderBuiltInFormat(
   tabLists: TabList[],
-  format: 'link' | 'title' | 'url',
+  format: 'link' | 'link-without-encoding' | 'title' | 'url',
   listType: ListType,
   markdown: MarkdownFormatter,
 ): string {

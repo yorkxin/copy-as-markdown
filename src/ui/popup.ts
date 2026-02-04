@@ -153,7 +153,7 @@ async function performExport(message: RuntimeMessage): Promise<void> {
 }
 
 async function exportCurrentTab(
-  format: Extract<ExportFormat, 'link' | 'custom-format'>,
+  format: Extract<ExportFormat, 'link' | 'link-without-encoding' | 'custom-format'>,
   customFormatSlot?: string,
 ): Promise<void> {
   if (!ready || tabId === -1) return;
@@ -294,6 +294,9 @@ function wireStaticButtons(): void {
   const currentTabBtn = document.getElementById('current-tab-link');
   currentTabBtn?.addEventListener('click', () => exportCurrentTab('link'));
 
+  const currentTabWithoutEncodingBtn = document.getElementById('current-tab-link-without-encoding');
+  currentTabWithoutEncodingBtn?.addEventListener('click', () => exportCurrentTab('link-without-encoding'));
+
   const allTabsLinkList = document.getElementById('all-tabs-link-as-list');
   allTabsLinkList?.addEventListener('click', () => exportTabs('all', 'link', 'list'));
   const allTabsLinkTask = document.getElementById('all-tabs-link-as-task-list');
@@ -333,6 +336,7 @@ function setCounts(tabsCount: number, highlightedCount: number): void {
 
 function applyBuiltInVisibility(settings: BuiltInStyleSettings): void {
   toggleButtonVisibility('current-tab-link', settings.singleLink);
+  toggleButtonVisibility('current-tab-link-without-encoding', settings.singleLinkWithoutEncoding);
 
   toggleButtonVisibility('all-tabs-link-as-list', settings.tabLinkList);
   toggleButtonVisibility('highlighted-tabs-link-as-list', settings.tabLinkList);

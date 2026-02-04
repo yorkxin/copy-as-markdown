@@ -12,7 +12,7 @@ import type {
 
 const mockMarkdown: MarkdownFormatter = {
   escapeLinkText: (text: string) => text.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]'),
-  linkTo: (title: string, url: string) => `[${title}](${url})`,
+  linkTo: vi.fn((title: string, url: string) => `[${title}](${url})`),
   list: vi.fn().mockImplementation(() => {
     throw new Error('list() should not be called in link export tests');
   }),
@@ -147,6 +147,26 @@ describe('linkExportService', () => {
         });
 
         expect(getMock).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('link-without-encoding format', () => {
+      it('should export link with selective decoding', async () => {
+        const mockProvider: CustomFormatsProvider = {
+          get: vi.fn().mockRejectedValue(new Error('Should not be called')),
+        };
+
+        const service = new LinkExportService(mockMarkdown, mockProvider);
+
+        const result = await service.exportLink({
+          format: 'link-without-encoding',
+          title: 'Example',
+          url: 'https://example.com/%E4%B8%AD%E6%96%87%20test%28%29',
+        });
+
+        expect(result).toBe('[Example](https://example.com/中文%20test%28%29)');
+        expect(mockProvider.get).not.toHaveBeenCalled();
+        expect(mockMarkdown.linkTo).toHaveBeenCalledWith('Example', 'https://example.com/中文%20test%28%29');
       });
     });
 

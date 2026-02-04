@@ -101,6 +101,7 @@ describe('popup UI', () => {
     getAllBuiltInStylesMock.mockImplementation(async () => {
       return {
         singleLink: true,
+        singleLinkWithoutEncoding: true,
         tabLinkList: false,
         tabTaskList: false,
         tabTitleList: false,
@@ -145,6 +146,30 @@ describe('popup UI', () => {
 
     expect(sendMessageMock).toHaveBeenCalledWith(expect.objectContaining({
       topic: 'export-current-tab',
+    }));
+    expect(clipboardMock).toHaveBeenCalledWith('copied text');
+    expect(closeMock).toHaveBeenCalled();
+  });
+
+  it('has working button click handler for link without encoding', async () => {
+    const sendMessageMock = (globalThis as any).browser.runtime.sendMessage;
+    const clipboardMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
+    const closeMock = window.close as ReturnType<typeof vi.fn>;
+
+    sendMessageMock.mockClear();
+    clipboardMock.mockClear();
+    closeMock.mockClear();
+
+    const button = page.getByRole('button', { name: 'Current tab link without encoding' });
+    await expect.element(button).toBeInTheDocument();
+    await expect.element(button).toBeEnabled();
+    await button.click();
+
+    expect(sendMessageMock).toHaveBeenCalledWith(expect.objectContaining({
+      topic: 'export-current-tab',
+      params: expect.objectContaining({
+        format: 'link-without-encoding',
+      }),
     }));
     expect(clipboardMock).toHaveBeenCalledWith('copied text');
     expect(closeMock).toHaveBeenCalled();

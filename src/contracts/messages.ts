@@ -12,7 +12,7 @@ export interface ExportCurrentTabMessage {
   topic: 'export-current-tab';
   params: {
     tabId: number;
-    format: 'link' | 'custom-format';
+    format: 'link' | 'link-without-encoding' | 'custom-format';
     customFormatSlot?: string | null;
   };
 }
