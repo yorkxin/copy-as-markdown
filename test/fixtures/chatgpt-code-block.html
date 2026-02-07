@@ -1,0 +1,24 @@
+<pre
+  class="overflow-visible! px-0!"
+  data-start="167"
+  data-end="553"
+><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">js</div><div class="sticky top-[calc(var(--sticky-padding-top)+9*var(--spacing))]"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="複製"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-j9921kii.svg#ce3544" fill="currentColor"></use></svg>複製程式碼</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-js"><span><span><span class="hljs-keyword">class</span></span><span> </span><span><span class="hljs-title class_">Example</span></span><span> {
+  #privateField = </span><span><span class="hljs-number">42</span></span><span>;
+
+  #</span><span><span class="hljs-title function_">privateMethod</span></span><span>(</span><span><span class="hljs-params"></span></span><span>) {
+    </span><span><span class="hljs-variable language_">console</span></span><span>.</span><span><span class="hljs-title function_">log</span></span><span>(</span><span><span class="hljs-string">'This is private'</span></span><span>);
+  }
+
+  </span><span><span class="hljs-title function_">publicMethod</span></span><span>(</span><span><span class="hljs-params"></span></span><span>) {
+    </span><span><span class="hljs-variable language_">console</span></span><span>.</span><span><span class="hljs-title function_">log</span></span><span>(</span><span><span class="hljs-variable language_">this</span></span><span>.#privateField); </span><span><span class="hljs-comment">// ✅ OK</span></span><span>
+    </span><span><span class="hljs-variable language_">this</span></span><span>.#</span><span><span class="hljs-title function_">privateMethod</span></span><span>();            </span><span><span class="hljs-comment">// ✅ OK</span></span><span>
+  }
+}
+
+</span><span><span class="hljs-keyword">const</span></span><span> e = </span><span><span class="hljs-keyword">new</span></span><span> </span><span><span class="hljs-title class_">Example</span></span><span>();
+e.</span><span><span class="hljs-title function_">publicMethod</span></span><span>();
+
+</span><span><span class="hljs-comment">// ❌ These cause errors:</span></span><span>
+</span><span><span class="hljs-variable language_">console</span></span><span>.</span><span><span class="hljs-title function_">log</span></span><span>(e.#privateField); </span><span><span class="hljs-comment">// SyntaxError</span></span><span>
+e.#</span><span><span class="hljs-title function_">privateMethod</span></span><span>();           </span><span><span class="hljs-comment">// SyntaxError</span></span><span>
+</span></span></code></div></div></pre>

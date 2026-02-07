@@ -63,6 +63,38 @@ export async function selectionToMarkdown(
   container.querySelectorAll('img').forEach((value) => {
     value.setAttribute('src', value.src);
   });
+
+  // Normalize wrapped PRE blocks into canonical <pre><code>...</code></pre>.
+  // This keeps matching conservative and delegates markdown rendering details
+  // (fenced vs indented, language handling, fence sizing) to Turndown built-ins.
+  container.querySelectorAll('pre').forEach((pre) => {
+    if (pre.firstElementChild?.nodeName === 'CODE') {
+      return;
+    }
+
+    const codeNodes = pre.querySelectorAll('code');
+    if (codeNodes.length !== 1) {
+      return;
+    }
+
+    const codeNode = codeNodes[0]!;
+    const className = codeNode.getAttribute('class') || '';
+    const hasLanguageClass = /\blanguage-\S+\b/.test(className);
+    const codeText = codeNode.textContent || '';
+    const hasMultilineCode = codeText.includes('\n');
+
+    // Conservative matcher: avoid rewriting instructional <pre> content.
+    if (!hasLanguageClass && !hasMultilineCode) {
+      return;
+    }
+
+    const normalizedCode = document.createElement('code');
+    if (className) {
+      normalizedCode.setAttribute('class', className);
+    }
+    normalizedCode.textContent = codeText;
+    pre.replaceChildren(normalizedCode);
+  });
   const html = container.innerHTML;
   return turndownService.turndown(html);
 }
