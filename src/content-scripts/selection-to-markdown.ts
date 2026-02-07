@@ -1,4 +1,4 @@
-import type { Options as TurndownOptions } from 'turndown';
+import type { Rule, Options as TurndownOptions } from 'turndown';
 import type { tables } from '@truto/turndown-plugin-gfm';
 
 /**
@@ -7,18 +7,44 @@ import type { tables } from '@truto/turndown-plugin-gfm';
  *
  * NOTE: This function should be executed in content script.
  */
-export async function selectionToMarkdown(turndownJsURL: string, gfmJsURL: string, turndownOptions: TurndownOptions): Promise<Promise<string>> {
+export async function selectionToMarkdown(
+  turndownJsURL: string,
+  gfmJsURL: string,
+  turndownOptions: TurndownOptions,
+): Promise<Promise<string>> {
   // Load ESM in content script.
   // See https://stackoverflow.com/a/53033388
   const turndownModule = await import(turndownJsURL);
   const TurndownService = turndownModule.default;
   const gfmPluginModule = await import(gfmJsURL);
   const gfmTablePlugin = gfmPluginModule.tables as typeof tables;
+  // Turndown wraps <p> with blank lines, and inside <li> that becomes an indented
+  // blank line between bullet items (e.g. "- item\n    \n- item"), which breaks
+  // tight-list formatting for common selections like <li><p>...</p></li>.
+  // This rule flattens only single-paragraph list items and leaves multi-paragraph
+  // or nested-list items on Turndown's default loose-list behavior.
+  const singleParagraphInListItemRule: Rule = {
+    filter(node) {
+      const parent = node.parentElement;
+      return (
+        node.nodeName === 'P'
+        && parent?.nodeName === 'LI'
+        && parent.childElementCount === 1
+      );
+    },
+    replacement(content) {
+      return content;
+    },
+  };
 
   const turndownService = new TurndownService(turndownOptions)
     .remove('script')
     .remove('style');
   turndownService.use(gfmTablePlugin);
+  turndownService.addRule(
+    'singleParagraphInListItem',
+    singleParagraphInListItemRule,
+  );
   const sel = getSelection();
   const container = document.createElement('div');
   if (!sel) {
