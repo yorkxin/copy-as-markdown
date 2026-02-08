@@ -18,22 +18,24 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const selectionCodeBlockLines = [
-  'Lorem ipsum dolor sit, amet consectetur adipisicing elit.',
-  '  Ratione nobis aperiam unde magni libero minima eaque at placeat',
-  '    molestiae odio! Ducimus ullam, nisi nostrum qui libero quidem culpa a ab.',
+  'const greet = (name) => {',
+  '  console.log(`hello, ${name}`);',
+  '};',
+  'greet(\'world\');',
 ];
 
-async function selectNodeBySelector(page: Page, selector: string): Promise<void> {
-  await page.evaluate((targetSelector) => {
+async function selectPreByCodeLanguage(page: Page, language: string): Promise<void> {
+  await page.evaluate((lang) => {
     const range = document.createRange();
-    const target = document.querySelector(targetSelector);
-    if (target) {
-      range.selectNode(target);
+    const codeNode = document.querySelector(`pre > code.language-${lang}`);
+    const pre = codeNode?.closest('pre');
+    if (pre) {
+      range.selectNode(pre);
       const selection = window.getSelection();
       selection?.removeAllRanges();
       selection?.addRange(range);
     }
-  }, selector);
+  }, language);
 }
 
 async function setCodeBlockStyleOption(
@@ -124,7 +126,7 @@ test.describe('Selection as Markdown', () => {
     test('should use fenced code block by default', async ({ page, context, extensionId }) => {
       await resetSettingsToDefault(context, extensionId);
       await page.waitForLoadState('networkidle');
-      await selectNodeBySelector(page, 'pre');
+      await selectPreByCodeLanguage(page, 'js');
 
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
@@ -132,14 +134,14 @@ test.describe('Selection as Markdown', () => {
       });
 
       const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
-      const expectedMarkdown = `\`\`\`\n${selectionCodeBlockLines.join('\n')}\n\`\`\``;
+      const expectedMarkdown = `\`\`\`js\n${selectionCodeBlockLines.join('\n')}\n\`\`\``;
       expect(clipboardText).toBe(expectedMarkdown);
     });
 
     test('should use indented code block when setting is changed', async ({ page, context, extensionId }) => {
       await setCodeBlockStyleOption(context, extensionId, 'indented');
       await page.waitForLoadState('networkidle');
-      await selectNodeBySelector(page, 'pre');
+      await selectPreByCodeLanguage(page, 'js');
 
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
