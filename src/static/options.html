@@ -73,6 +73,26 @@
           </div>
         </form>
 
+        <form id='form-style-of-code-block' class="field">
+          <label class="label">Code Block Style</label>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="code-block-style" value="fenced"/>
+              Fenced code block (<code>```lang</code>)
+            </label>
+          </div>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="code-block-style" value="indented"/>
+              Indented code block (4 spaces)
+            </label>
+          </div>
+          <p class="help">
+            Controls how Copy Selection as Markdown renders code blocks.
+            Fenced style keeps language tags for syntax highlighting, while indented style omits language tags.
+          </p>
+        </form>
+
         <form id='form-style-of-tab-group-indentation' class="field">
           <label class="label">Tab Group Indentation <span class="tag" data-hide-if-permission-contains="tabGroups" data-testid="requires-permissions-tab-groups">Requires Permission</span></label>
           <div class="control">

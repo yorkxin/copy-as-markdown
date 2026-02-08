@@ -16,7 +16,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v5
         with:
-          node-version-file: '.node-version'
+          node-version-file: ".node-version"
           cache: npm
       - run: npm ci
       - run: npm run test:unit
@@ -36,11 +36,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install clipboard dependencies
         run: |
-          apt-get update && apt-get install -y xsel 
+          apt-get update && apt-get install -y xsel
       - name: Use Node.js
         uses: actions/setup-node@v5
         with:
-          node-version-file: '.node-version'
+          node-version-file: ".node-version"
           cache: npm
       - run: npm ci
       - name: Run Vitest UI tests in browser

@@ -1,5 +1,6 @@
 import type { TabGroupIndentationStyle, UnorderedListStyle } from '../lib/markdown.js';
 import Settings from '../lib/settings.js';
+import type { CodeBlockStyle } from '../lib/settings.js';
 import type { PermissionStatus } from './permissions-ui.js';
 import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
 
@@ -28,6 +29,7 @@ async function loadSettings(): Promise<void> {
     const settings = await Settings.getAll();
     const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets');
     const formUnorderedList = document.forms.namedItem('form-style-of-unordered-list');
+    const formCodeBlockStyle = document.forms.namedItem('form-style-of-code-block');
     const formTabGroupIndentation = document.forms.namedItem('form-style-of-tab-group-indentation');
 
     if (formEscapeBrackets) {
@@ -37,6 +39,10 @@ async function loadSettings(): Promise<void> {
     if (formUnorderedList) {
       const character = formUnorderedList.elements.namedItem('character') as RadioNodeList | null;
       if (character) character.value = settings.styleOfUnorderedList;
+    }
+    if (formCodeBlockStyle) {
+      const codeBlockStyle = formCodeBlockStyle.elements.namedItem('code-block-style') as RadioNodeList | null;
+      if (codeBlockStyle) codeBlockStyle.value = settings.styleOfCodeBlock;
     }
     if (formTabGroupIndentation) {
       const indentation = formTabGroupIndentation.elements.namedItem('indentation') as RadioNodeList | null;
@@ -90,6 +96,20 @@ if (formUnorderedList) {
     try {
       const target = event.target as HTMLInputElement;
       await Settings.setStyleOfUnrderedList(target.value as UnorderedListStyle);
+      hideFlash();
+    } catch (error) {
+      console.error('failed to save settings:', error);
+      showFlash('Failed to save setting. Please try again.');
+    }
+  });
+}
+
+const formCodeBlockStyle = document.forms.namedItem('form-style-of-code-block');
+if (formCodeBlockStyle) {
+  formCodeBlockStyle.addEventListener('change', async (event) => {
+    try {
+      const target = event.target as HTMLInputElement;
+      await Settings.setStyleOfCodeBlock(target.value as CodeBlockStyle);
       hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);

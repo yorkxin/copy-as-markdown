@@ -8,7 +8,7 @@
  * NOTE: These tests use a mock clipboard service for deterministic results
  */
 
-import type { Worker } from '@playwright/test';
+import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { getServiceWorker, resetMockClipboard, triggerContextMenu, waitForMockClipboard } from '../helpers';
 import { readFile } from 'node:fs/promises';
@@ -17,6 +17,55 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const selectionCodeBlockLines = [
+  'const greet = (name) => {',
+  `  console.log(\`hello, \${name}\`);`,
+  '};',
+  'greet(\'world\');',
+];
+
+async function selectPreByCodeLanguage(page: Page, language: string): Promise<void> {
+  await page.evaluate((lang) => {
+    const range = document.createRange();
+    const codeNode = document.querySelector(`pre > code.language-${lang}`);
+    const pre = codeNode?.closest('pre');
+    if (pre) {
+      range.selectNode(pre);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
+  }, language);
+}
+
+async function setCodeBlockStyleOption(
+  context: BrowserContext,
+  extensionId: string,
+  style: 'fenced' | 'indented',
+): Promise<void> {
+  const optionsPage = await context.newPage();
+  const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+  await optionsPage.goto(optionsUrl);
+  await optionsPage.waitForLoadState('networkidle');
+  await optionsPage.locator(`input[name="code-block-style"][value="${style}"]`).check();
+  await optionsPage.waitForTimeout(500);
+  await optionsPage.close();
+}
+
+async function resetSettingsToDefault(
+  context: BrowserContext,
+  extensionId: string,
+): Promise<void> {
+  const optionsPage = await context.newPage();
+  const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+  await optionsPage.goto(optionsUrl);
+  await optionsPage.waitForLoadState('networkidle');
+
+  const resetButton = optionsPage.locator('#reset');
+  await resetButton.click();
+  await optionsPage.waitForTimeout(500);
+  await optionsPage.close();
+}
 
 test.describe('Selection as Markdown', () => {
   let serviceWorker: Worker;
@@ -71,6 +120,38 @@ test.describe('Selection as Markdown', () => {
     const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
     const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection.md'), 'utf-8');
     expect(clipboardText).toBe(expectedMarkdown);
+  });
+
+  test.describe('Code Block Style Setting', () => {
+    test('should use fenced code block by default', async ({ page, context, extensionId }) => {
+      await resetSettingsToDefault(context, extensionId);
+      await page.waitForLoadState('networkidle');
+      await selectPreByCodeLanguage(page, 'js');
+
+      await serviceWorker.evaluate(() => {
+        // @ts-expect-error - Chrome APIs
+        return chrome.commands.onCommand.dispatch('selection-as-markdown');
+      });
+
+      const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
+      const expectedMarkdown = `\`\`\`js\n${selectionCodeBlockLines.join('\n')}\n\`\`\``;
+      expect(clipboardText).toBe(expectedMarkdown);
+    });
+
+    test('should use indented code block when setting is changed', async ({ page, context, extensionId }) => {
+      await setCodeBlockStyleOption(context, extensionId, 'indented');
+      await page.waitForLoadState('networkidle');
+      await selectPreByCodeLanguage(page, 'js');
+
+      await serviceWorker.evaluate(() => {
+        // @ts-expect-error - Chrome APIs
+        return chrome.commands.onCommand.dispatch('selection-as-markdown');
+      });
+
+      const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
+      const expectedMarkdown = `    ${selectionCodeBlockLines.join('\n    ')}`;
+      expect(clipboardText).toBe(expectedMarkdown);
+    });
   });
 
   test.describe('Unordered List Character Setting', () => {

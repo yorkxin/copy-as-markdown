@@ -25,10 +25,23 @@ Lorem _ipsum_ **dolor sit** _amet_ **consectetur** **_adipisicing_** [elit](http
 
 > Lorem _ipsum_ **dolor sit** _amet_ **consectetur** **_adipisicing_** [elit](https://example.com/). `Corrupti fugit` officia nemo porro nam ipsam dignissimos aliquid harum officiis consectetur quasi quaerat quis repellat minus eveniet aspernatur, ratione dolorum natus.
 
-    Lorem ipsum dolor sit, amet consectetur adipisicing elit.
-      Ratione nobis aperiam unde magni libero minima eaque at placeat
-        molestiae odio! Ducimus ullam, nisi nostrum qui libero quidem culpa a ab.
-    
+```
+Lorem ipsum dolor sit, amet consectetur adipisicing elit.
+  Ratione nobis aperiam unde magni libero minima eaque at placeat
+    molestiae odio! Ducimus ullam, nisi nostrum qui libero quidem culpa a ab.
+```
+
+```js
+const greet = (name) => {
+  console.log(`hello, ${name}`);
+};
+greet('world');
+```
+
+```bash
+npm run build
+npm run test
+```
 
 In March 2016, two relevant informational Internet [RFCs](http://localhost:5566/wiki/Request_for_Comments "Request for Comments") were published:
 

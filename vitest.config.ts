@@ -23,6 +23,11 @@ export default defineConfig({
             // https://vitest.dev/guide/browser/playwright
             instances: [
               { browser: 'chromium' },
+              // TODO: Playwright container on GitHub Actions refuses to run Firefox
+              // even with -e HOME=/root or -w /root workarounds, as suggested in the doc.
+              // Also tried to run with --user=1001 but that prevents installing xsel clipboard tool.
+              // Need to find another workaround before Firefox can be enabled on CI :/
+              // { browser: 'firefox' },
             ],
           },
         },

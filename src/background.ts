@@ -1,4 +1,5 @@
 import Settings from './lib/settings.js';
+import type { CodeBlockStyle } from './lib/settings.js';
 import Markdown from './lib/markdown.js';
 import { Bookmarks } from './bookmarks.js';
 import BuiltInStyleSettings from './lib/built-in-style-settings.js';
@@ -20,6 +21,7 @@ const ALARM_REFRESH_MENU = 'refreshMenu';
 
 // Initialize markdown and bookmarks
 const markdownInstance = new Markdown();
+let selectionCodeBlockStyle: CodeBlockStyle = 'fenced';
 const bookmarks = new Bookmarks({
   markdown: markdownInstance,
 });
@@ -49,6 +51,7 @@ const selectionConverterService = createBrowserSelectionConverterService(
     getTurndownOptions: () => ({
       headingStyle: 'atx',
       bulletListMarker: markdownInstance.unorderedListChar,
+      codeBlockStyle: selectionCodeBlockStyle,
     }),
   },
   chrome.runtime.getURL('dist/vendor/turndown.mjs'),
@@ -85,6 +88,7 @@ async function refreshMarkdownInstance(): Promise<void> {
   markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
   markdownInstance.unorderedListStyle = settings.styleOfUnorderedList;
   markdownInstance.indentationStyle = settings.styleOfTabGroupIndentation;
+  selectionCodeBlockStyle = settings.styleOfCodeBlock;
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
