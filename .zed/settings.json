@@ -16,5 +16,8 @@
         "source.fixAll.eslint": true,
       },
     },
+    "HTML": {
+      "format_on_save": "off",
+    },
   },
 }
