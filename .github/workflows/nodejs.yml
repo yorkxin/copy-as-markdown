@@ -32,12 +32,12 @@ jobs:
     timeout-minutes: 10
     container:
       image: mcr.microsoft.com/playwright:v1.57.0-noble
-      options: --user 1001
+      options: -w /root
     steps:
       - uses: actions/checkout@v4
       - name: Install clipboard dependencies
         run: |
-          sudo apt-get update && apt-get install -y xsel
+          apt-get update && apt-get install -y xsel
       - name: Use Node.js
         uses: actions/setup-node@v5
         with:
