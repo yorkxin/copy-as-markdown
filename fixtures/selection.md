@@ -31,6 +31,18 @@ Lorem ipsum dolor sit, amet consectetur adipisicing elit.
     molestiae odio! Ducimus ullam, nisi nostrum qui libero quidem culpa a ab.
 ```
 
+```js
+const greet = (name) => {
+  console.log(`hello, ${name}`);
+};
+greet('world');
+```
+
+```bash
+npm run build
+npm run test
+```
+
 In March 2016, two relevant informational Internet [RFCs](http://localhost:5566/wiki/Request_for_Comments "Request for Comments") were published:
 
 -   RFC [7763](https://datatracker.ietf.org/doc/html/rfc7763) introduced [MIME](http://localhost:5566/wiki/MIME "MIME") type `text/markdown`.
