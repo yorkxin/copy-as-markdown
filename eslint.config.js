@@ -24,6 +24,7 @@ export default antfu({
     'dist/**',
     'build/**',
     'activate', // python libraries
+    '.zed/**',
   ],
 
   // Rule overrides
