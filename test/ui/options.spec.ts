@@ -5,6 +5,7 @@ const settingsMock = {
   getAll: vi.fn(),
   setLinkTextAlwaysEscapeBrackets: vi.fn(),
   setStyleOfUnrderedList: vi.fn(),
+  setStyleOfCodeBlock: vi.fn(),
   setStyleTabGroupIndentation: vi.fn(),
   reset: vi.fn(),
   keys: [],
@@ -60,6 +61,7 @@ describe('options UI - with permissions granted', () => {
     settingsMock.getAll.mockResolvedValue({
       alwaysEscapeLinkBrackets: true,
       styleOfUnorderedList: 'asterisk',
+      styleOfCodeBlock: 'indented',
       styleOfTabGroupIndentation: 'tab',
     });
     loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.Yes]]));
@@ -81,11 +83,14 @@ describe('options UI - with permissions granted', () => {
 
     const tabRadio = page.getByRole('radio', { name: /^Tab$/ });
     await expect.element(tabRadio).toBeChecked();
+
+    const indentedCodeBlockRadio = page.getByRole('radio', { name: /Indented code block/ });
+    await expect.element(indentedCodeBlockRadio).toBeChecked();
   });
 
   it('enables tab group indentation when permission is granted', async () => {
     // Verify that tab group indentation options are enabled when permission is granted
-    const spacesRadio = page.getByRole('radio', { name: /Spaces/ });
+    const spacesRadio = page.getByRole('radio', { name: /^Spaces$/ });
     await expect.element(spacesRadio).toBeEnabled();
 
     const tabRadio = page.getByRole('radio', { name: /^Tab$/ });
@@ -128,6 +133,18 @@ describe('options UI - with permissions granted', () => {
     const flash = page.getByTestId('flash-error');
     await expect.element(flash).toBeVisible();
   });
+
+  it('saves code block style on change', async () => {
+    settingsMock.setStyleOfCodeBlock.mockClear();
+    settingsMock.setStyleOfCodeBlock.mockResolvedValue(undefined);
+
+    const fencedRadio = page.getByRole('radio', { name: /Fenced code block/ });
+    await expect.element(fencedRadio).toBeInTheDocument();
+
+    await fencedRadio.click();
+
+    expect(settingsMock.setStyleOfCodeBlock).toHaveBeenCalledWith('fenced');
+  });
 });
 
 describe('options UI - with permissions denied', () => {
@@ -140,6 +157,7 @@ describe('options UI - with permissions denied', () => {
     settingsMock.getAll.mockResolvedValue({
       alwaysEscapeLinkBrackets: false,
       styleOfUnorderedList: 'dash',
+      styleOfCodeBlock: 'fenced',
       styleOfTabGroupIndentation: 'spaces',
     });
     loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.No]]));
@@ -151,7 +169,7 @@ describe('options UI - with permissions denied', () => {
   });
 
   it('disables tab group indentation when permission not granted', async () => {
-    const spacesRadio = page.getByRole('radio', { name: /Spaces/ });
+    const spacesRadio = page.getByRole('radio', { name: /^Spaces$/ });
     await expect.element(spacesRadio).toBeDisabled();
 
     const tabRadio = page.getByRole('radio', { name: /^Tab$/ });
