@@ -21,6 +21,10 @@ test.describe('Current tab link without encoding', () => {
       // Navigate to test page
       await page.goto('http://localhost:5566/qa.html');
       await page.waitForLoadState('networkidle');
+      // Enable the "Current tab link without encoding" option for testing
+      await serviceWorker.evaluate(async () => {
+        await chrome.storage.sync.set({ 'builtin.style.singleLinkWithoutEncoding': true });
+      });
     });
 
     test('should decode Unicode characters while keeping spaces/parentheses encoded', async ({ page, context, extensionId }) => {

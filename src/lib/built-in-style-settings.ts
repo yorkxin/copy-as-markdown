@@ -26,7 +26,7 @@ const StorageKeys: Record<BuiltInStyleKey, string> = {
 
 const defaultSettings: BuiltInStyleSettings = {
   singleLink: true,
-  singleLinkWithoutEncoding: true,
+  singleLinkWithoutEncoding: false,
   tabLinkList: true,
   tabTaskList: true,
   tabTitleList: true,
