@@ -21,7 +21,7 @@ Optional:
 
 ## AI Disclosure
 
-<!-- Check one. Be responsible. 
+<!-- Check one. Be honest. 
 
 It is okay to use coding agents to discover, build features and fix bugs, 
 but you are ultimately responsible for the patch.
@@ -29,4 +29,4 @@ but you are ultimately responsible for the patch.
 This project does not welcome YOLO coding. -->
 
 - [ ] I used coding agents to create this patch. I understand and am responsible for all the code it generates.
-- [ ] I did not use any coding agent to create this patch. I am reponsible for all the code I wrote.
+- [ ] I did not use any coding agent to create this patch. I am responsible for all the code I wrote.
