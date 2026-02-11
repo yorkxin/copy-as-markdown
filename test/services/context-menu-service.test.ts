@@ -337,6 +337,46 @@ describe('contextMenuService', () => {
       expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-title-as-list' }));
       expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-url-as-list' }));
     });
+
+    it('should not include a separator as the first item in "tab" context', async () => {
+      const calls: browser.menus._CreateCreateProperties[] = [];
+      const createMock = vi.fn((args: browser.menus._CreateCreateProperties) => {
+        calls.push(args);
+      });
+      const removeMock = vi.fn(async () => { });
+      const removeAllMock = vi.fn(async () => { });
+
+      const mockMenusAPI: ContextMenusAPI = {
+        create: createMock,
+        remove: removeMock,
+        removeAll: removeAllMock,
+      };
+
+      const mockFormatsProvider: CustomFormatsListProvider = {
+        list: vi.fn(async () => []),
+      };
+
+      const builtIns = makeBuiltInProvider({
+        singleLink: false,
+        tabLinkList: true,
+        tabTaskList: false,
+        tabTitleList: false,
+        tabUrlList: false,
+      });
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, builtIns);
+
+      await service.createAll();
+
+      expect(createMock).not.toHaveBeenCalledWith(expect.objectContaining({ id: 'separator-tab-1' }));
+      expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'separator-tab-2' }));
+
+      expect(calls.filter(call => call.contexts?.includes('tab'))).toEqual([
+        expect.objectContaining({ id: 'tmp-tab', contexts: ['tab'] }),
+        expect.objectContaining({ id: 'all-tabs-link-as-list', type: 'normal', contexts: ['tab'] }),
+        expect.objectContaining({ id: 'separator-tab-2', type: 'separator', contexts: ['tab'] }),
+        expect.objectContaining({ id: 'highlighted-tabs-link-as-list', type: 'normal', contexts: ['tab'] }),
+      ]);
+    });
   });
 
   describe('refresh', () => {

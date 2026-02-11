@@ -89,6 +89,13 @@ export function createContextMenuService(
       menus = menus.concat(createBookmarkMenu());
     }
 
+    // the only potential separator is assigned to the `tab` context so check if the separator is at the first item
+    const i = menus.findIndex(menu => (menu.contexts || []).includes('tab'));
+    if (i !== -1 && menus[i]!.type === 'separator') {
+      // drop the element at i
+      menus = menus.slice(0, i).concat(menus.slice(i + 1, menus.length));
+    }
+
     menus.forEach(menu => contextMenusAPI.create(menu));
   }
 
@@ -207,7 +214,7 @@ function createFirefoxSpecificMenus(
 
   if (shouldShowAnyTabSection) {
     menus = menus.concat({
-      id: 'separator-1',
+      id: 'separator-tab-1',
       type: 'separator',
       contexts: ['tab'],
     });
@@ -220,7 +227,7 @@ function createFirefoxSpecificMenus(
 
   if (shouldShowAnyTabSection) {
     menus = menus.concat({
-      id: 'separator-2',
+      id: 'separator-tab-2',
       type: 'separator',
       contexts: ['tab'],
     });
