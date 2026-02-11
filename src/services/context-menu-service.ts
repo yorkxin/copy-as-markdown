@@ -3,7 +3,7 @@ import type CustomFormat from '../lib/custom-format.js';
 import type { BuiltInStyleSettings } from '../lib/built-in-style-settings.js';
 import type { ContextMenusAPI } from './shared-types.js';
 
-interface CustomFormatsListProvider {
+export interface CustomFormatsListProvider {
   list: (context: 'single-link' | 'multiple-links') => Promise<CustomFormat[]>;
 }
 
@@ -46,27 +46,50 @@ export function createContextMenuService(
   async function createAll(): Promise<void> {
     await contextMenusAPI.removeAll();
 
+    const supportTab = await checkContextMenuSupport(contextMenusAPI, 'tab');
+    const supportBookmark = await checkContextMenuSupport(contextMenusAPI, 'bookmark');
+
     const builtInStyles = await builtInStyleSettingsProvider.getAll();
     // Fetch custom formats
     const singleLinkFormats = (await customFormatsProvider.list('single-link'))
       .filter(format => format.showInMenus);
 
+    const multipleLinksFormats = (await customFormatsProvider.list('multiple-links'))
+      .filter(format => format.showInMenus);
+
+    let menus: browser.menus._CreateCreateProperties[] = [];
     // Basic page and link menus
-    createBasicMenus(contextMenusAPI, builtInStyles);
+    menus = menus.concat(createBasicMenus(builtInStyles));
 
     // Custom format menus for single links
-    createSingleLinkCustomFormatMenus(contextMenusAPI, singleLinkFormats);
+    menus = menus.concat(createSingleLinkCustomFormatMenus(singleLinkFormats));
 
     // Image and selection menus
-    createImageAndSelectionMenus(contextMenusAPI);
+    menus = menus.concat(createImageAndSelectionMenus());
 
-    // Firefox-specific: Tab and bookmark menus
-    await createFirefoxSpecificMenus(
-      contextMenusAPI,
-      customFormatsProvider,
-      singleLinkFormats,
-      builtInStyles,
-    );
+    if (supportTab) {
+      // Firefox-specific: Tab menus
+      menus = menus.concat(createFirefoxSpecificMenus(
+        multipleLinksFormats,
+        builtInStyles,
+      ));
+
+      // Update existing menus to also work on tabs on Firefox
+      if (builtInStyles.singleLink) {
+        menus.find(menu => menu.id === ContextMenuIds.CurrentTab)!.contexts = ['page', 'tab'];
+      }
+
+      for (const format of singleLinkFormats) {
+        menus.find(menu => menu.id === `current-tab-custom-format-${format.slot}`)!.contexts = ['page', 'tab'];
+      }
+    }
+
+    if (supportBookmark) {
+      // Firefox-specific Bookmark menu
+      menus = menus.concat(createBookmarkMenu());
+    }
+
+    menus.forEach(menu => contextMenusAPI.create(menu));
   }
 
   return {
@@ -88,147 +111,139 @@ export function createContextMenuService(
 
 export type ContextMenuService = ReturnType<typeof createContextMenuService>;
 
+async function checkContextMenuSupport(contextMenusAPI: ContextMenusAPI, testContext: browser.menus.ContextType): Promise<boolean> {
+  try {
+    const id = `tmp-${testContext}`;
+    contextMenusAPI.create({
+      id,
+      contexts: [
+        testContext,
+      ],
+    });
+    await contextMenusAPI.remove(id);
+    return true;
+  } catch {
+    console.info(`Context menus with context = ${testContext} is not supported in this browser`);
+    return false;
+  }
+}
+
 /**
  * Creates basic context menus for page and link.
  */
 function createBasicMenus(
-  contextMenusAPI: ContextMenusAPI,
   builtInStyles: BuiltInStyleSettings,
-): void {
+): browser.menus._CreateCreateProperties[] {
   if (builtInStyles.singleLink) {
-    contextMenusAPI.create({
-      id: ContextMenuIds.CurrentTab,
-      title: 'Copy Page Link as Markdown',
-      type: 'normal',
-      contexts: ['page'],
-    });
+    return [
+      {
+        id: ContextMenuIds.CurrentTab,
+        title: 'Copy Page Link as Markdown',
+        type: 'normal',
+        contexts: ['page'],
+      },
 
-    contextMenusAPI.create({
-      id: ContextMenuIds.Link,
-      title: 'Copy Link as Markdown',
-      type: 'normal',
-      contexts: ['link'],
-    });
+      {
+        id: ContextMenuIds.Link,
+        title: 'Copy Link as Markdown',
+        type: 'normal',
+        contexts: ['link'],
+      },
+    ];
   }
+
+  return [];
 }
 
 /**
  * Creates custom format menus for single links.
  */
 function createSingleLinkCustomFormatMenus(
-  contextMenusAPI: ContextMenusAPI,
   formats: CustomFormat[],
-): void {
-  for (const format of formats) {
-    contextMenusAPI.create({
-      id: `current-tab-custom-format-${format.slot}`,
-      title: `Copy Page Link (${format.displayName})`,
-      contexts: ['page'],
-    });
-
-    contextMenusAPI.create({
-      id: `link-custom-format-${format.slot}`,
-      title: `Copy Link (${format.displayName})`,
-      contexts: ['link'],
-    });
-  }
+): browser.menus._CreateCreateProperties[] {
+  return formats.map(format => [{
+    id: `current-tab-custom-format-${format.slot}`,
+    title: `Copy Page Link (${format.displayName})`,
+    contexts: ['page'] as browser.menus.ContextType[],
+  }, {
+    id: `link-custom-format-${format.slot}`,
+    title: `Copy Link (${format.displayName})`,
+    contexts: ['link'] as browser.menus.ContextType[],
+  }],
+  ).flat();
 }
 
 /**
  * Creates menus for images and text selection.
  */
-function createImageAndSelectionMenus(contextMenusAPI: ContextMenusAPI): void {
-  contextMenusAPI.create({
+function createImageAndSelectionMenus(): browser.menus._CreateCreateProperties[] {
+  return [{
     id: ContextMenuIds.Image,
     title: 'Copy Image as Markdown',
     type: 'normal',
     contexts: ['image'],
-  });
-
-  contextMenusAPI.create({
+  }, {
     id: ContextMenuIds.SelectionAsMarkdown,
     title: 'Copy Selection as Markdown',
     type: 'normal',
     contexts: ['selection'],
-  });
+  }];
 }
 
 /**
  * Creates Firefox-specific context menus (tabs and bookmarks).
  * These features are only available in Firefox.
  */
-async function createFirefoxSpecificMenus(
-  contextMenusAPI: ContextMenusAPI,
-  customFormatsProvider: CustomFormatsListProvider,
-  singleLinkFormats: CustomFormat[],
+function createFirefoxSpecificMenus(
+  multipleLinksFormats: CustomFormat[],
   builtInStyles: BuiltInStyleSettings,
-): Promise<void> {
-  try {
-    const multipleLinksFormats = (await customFormatsProvider.list('multiple-links'))
-      .filter(format => format.showInMenus);
+): browser.menus._CreateCreateProperties[] {
+  let menus: browser.menus._CreateCreateProperties[] = [];
+  const shouldShowAnyTabSection = builtInStyles.tabLinkList
+    || builtInStyles.tabTaskList
+    || builtInStyles.tabTitleList
+    || builtInStyles.tabUrlList
+    || multipleLinksFormats.length > 0;
 
-    // Update existing menus to also work on tabs
-    if (builtInStyles.singleLink) {
-      await contextMenusAPI.update(ContextMenuIds.CurrentTab, {
-        contexts: ['page', 'tab'],
-      });
-    }
-
-    for (const format of singleLinkFormats) {
-      await contextMenusAPI.update(`current-tab-custom-format-${format.slot}`, {
-        contexts: ['page', 'tab'],
-      });
-    }
-
-    const shouldShowAnyTabSection = builtInStyles.tabLinkList
-      || builtInStyles.tabTaskList
-      || builtInStyles.tabTitleList
-      || builtInStyles.tabUrlList
-      || multipleLinksFormats.length > 0;
-
-    if (shouldShowAnyTabSection) {
-      contextMenusAPI.create({
-        id: 'separator-1',
-        type: 'separator',
-        contexts: ['tab'],
-      });
-    }
-
-    // All tabs menus
-    if (shouldShowAnyTabSection) {
-      createAllTabsMenus(contextMenusAPI, multipleLinksFormats, builtInStyles);
-    }
-
-    if (shouldShowAnyTabSection) {
-      contextMenusAPI.create({
-        id: 'separator-2',
-        type: 'separator',
-        contexts: ['tab'],
-      });
-    }
-
-    // Selected tabs menus
-    if (shouldShowAnyTabSection) {
-      createSelectedTabsMenus(contextMenusAPI, multipleLinksFormats, builtInStyles);
-    }
-
-    // Bookmark menu
-    createBookmarkMenu(contextMenusAPI);
-  } catch {
-    console.info('Firefox-specific context menus not supported in this browser');
+  if (shouldShowAnyTabSection) {
+    menus = menus.concat({
+      id: 'separator-1',
+      type: 'separator',
+      contexts: ['tab'],
+    });
   }
+
+  // All tabs menus
+  if (shouldShowAnyTabSection) {
+    menus = menus.concat(createAllTabsMenus(multipleLinksFormats, builtInStyles));
+  }
+
+  if (shouldShowAnyTabSection) {
+    menus = menus.concat({
+      id: 'separator-2',
+      type: 'separator',
+      contexts: ['tab'],
+    });
+  }
+
+  // Selected tabs menus
+  if (shouldShowAnyTabSection) {
+    menus = menus.concat(createSelectedTabsMenus(multipleLinksFormats, builtInStyles));
+  }
+
+  return menus;
 }
 
 /**
  * Creates menus for copying all tabs in the current window.
  */
 function createAllTabsMenus(
-  contextMenusAPI: ContextMenusAPI,
   multipleLinksFormats: CustomFormat[],
   builtInStyles: BuiltInStyleSettings,
-): void {
+): browser.menus._CreateCreateProperties[] {
+  let menus: browser.menus._CreateCreateProperties[] = [];
   if (builtInStyles.tabLinkList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.AllTabsLinkAsList,
       title: 'Copy All Tabs',
       type: 'normal',
@@ -237,7 +252,7 @@ function createAllTabsMenus(
   }
 
   if (builtInStyles.tabTaskList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.AllTabsLinkAsTaskList,
       title: 'Copy All Tabs (Task List)',
       type: 'normal',
@@ -246,7 +261,7 @@ function createAllTabsMenus(
   }
 
   if (builtInStyles.tabTitleList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.AllTabsTitleAsList,
       title: 'Copy All Tab Titles',
       type: 'normal',
@@ -255,7 +270,7 @@ function createAllTabsMenus(
   }
 
   if (builtInStyles.tabUrlList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.AllTabsUrlAsList,
       title: 'Copy All Tab URLs',
       type: 'normal',
@@ -264,25 +279,27 @@ function createAllTabsMenus(
   }
 
   for (const format of multipleLinksFormats) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: `all-tabs-custom-format-${format.slot}`,
       title: `Copy All Tabs (${format.displayName})`,
       type: 'normal',
       contexts: ['tab'],
     });
   }
+
+  return menus;
 }
 
 /**
  * Creates menus for copying selected/highlighted tabs.
  */
 function createSelectedTabsMenus(
-  contextMenusAPI: ContextMenusAPI,
   multipleLinksFormats: CustomFormat[],
   builtInStyles: BuiltInStyleSettings,
-): void {
+): browser.menus._CreateCreateProperties[] {
+  let menus: browser.menus._CreateCreateProperties[] = [];
   if (builtInStyles.tabLinkList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.HighlightedTabsLinkAsList,
       title: 'Copy Selected Tabs',
       type: 'normal',
@@ -291,7 +308,7 @@ function createSelectedTabsMenus(
   }
 
   if (builtInStyles.tabTaskList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.HighlightedTabsLinkAsTaskList,
       title: 'Copy Selected Tabs (Task List)',
       type: 'normal',
@@ -300,7 +317,7 @@ function createSelectedTabsMenus(
   }
 
   if (builtInStyles.tabTitleList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.HighlightedTabsTitleAsList,
       title: 'Copy Selected Tab Titles',
       type: 'normal',
@@ -309,7 +326,7 @@ function createSelectedTabsMenus(
   }
 
   if (builtInStyles.tabUrlList) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: ContextMenuIds.HighlightedTabsUrlAsList,
       title: 'Copy Selected Tab URLs',
       type: 'normal',
@@ -318,7 +335,7 @@ function createSelectedTabsMenus(
   }
 
   for (const format of multipleLinksFormats) {
-    contextMenusAPI.create({
+    menus = menus.concat({
       id: `highlighted-tabs-custom-format-${format.slot}`,
       title: `Copy Selected Tabs (${format.displayName})`,
       type: 'normal',
@@ -326,21 +343,23 @@ function createSelectedTabsMenus(
       contexts: ['tab'],
     });
   }
+  return menus;
 }
 
 /**
  * Creates menu for copying bookmarks (Firefox only).
  */
-function createBookmarkMenu(contextMenusAPI: ContextMenusAPI): void {
+function createBookmarkMenu(): browser.menus._CreateCreateProperties[] {
   try {
-    contextMenusAPI.create({
+    return [{
       id: ContextMenuIds.BookmarkLink,
       title: 'Copy Bookmark or Folder as Markdown',
       type: 'normal',
       contexts: ['bookmark'],
-    });
+    }];
   } catch {
     console.info('Bookmark context menus not supported in this browser');
+    return [];
   }
 }
 

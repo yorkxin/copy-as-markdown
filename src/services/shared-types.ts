@@ -68,7 +68,7 @@ export interface PermissionsAPI {
 
 export interface ContextMenusAPI {
   create: (createProperties: browser.menus._CreateCreateProperties) => void;
-  update: (id: string, updateProperties: browser.menus._UpdateUpdateProperties) => Promise<void>;
+  remove: (id: string) => Promise<void>;
   removeAll: () => Promise<void>;
 }
 
