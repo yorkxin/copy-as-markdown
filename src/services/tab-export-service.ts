@@ -5,6 +5,7 @@ import { Tab, TabGroup, TabListGrouper } from '../lib/tabs.js';
 import CustomFormatClass from '../lib/custom-format.js';
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
 import { createBrowserTabDataFetcher } from './browser-tab-data-fetcher.js';
+import { cleanUrl } from '../lib/url-cleaner.js';
 
 export type ExportFormat = 'link' | 'title' | 'url' | 'custom-format';
 export type ListType = 'list' | 'task-list';
@@ -35,10 +36,11 @@ export function validateOptions(options: ExportTabsOptions): void {
 export function convertBrowserTabsToTabs(
   browserTabs: chrome.tabs.Tab[],
   escapeLinkText: (text: string) => string,
+  urlCleaner: (url: string) => string = url => url,
 ): Tab[] {
   return browserTabs.map(tab => new Tab(
     escapeLinkText(tab.title || ''),
-    tab.url || '',
+    urlCleaner(tab.url || ''),
     tab.groupId || TabGroup.NonGroupId,
   ));
 }
@@ -193,9 +195,11 @@ export class TabExportService {
     const browserGroups = await this.tabDataFetcher.fetchTabGroups(options.windowId);
 
     // Convert and process (pure functions)
+    // Clean URLs to remove tracking parameters
     const tabs = convertBrowserTabsToTabs(
       browserTabs,
       text => this.markdown.escapeLinkText(text),
+      cleanUrl,
     );
     const groups = convertBrowserTabGroups(browserGroups);
     const tabLists = groupTabsIntoLists(tabs, groups);

@@ -127,7 +127,8 @@ describe('linkExportService', () => {
           url: 'https://example.com',
         });
 
-        expect(result).toBe('[Example](https://example.com)');
+        // Note: URL is normalized by cleanUrl (adds trailing slash)
+        expect(result).toBe('[Example](https://example.com/)');
         expect(mockProvider.get).not.toHaveBeenCalled();
       });
 
@@ -169,11 +170,12 @@ describe('linkExportService', () => {
           customFormatSlot: '1',
         });
 
-        expect(result).toBe('Custom: Test \\[Link\\] -> https://example.com');
+        // Note: URL is normalized by cleanUrl (adds trailing slash)
+        expect(result).toBe('Custom: Test \\[Link\\] -> https://example.com/');
         expect(mockProvider.get).toHaveBeenCalledWith('single-link', '1');
         expect(mockCustomFormat.render).toHaveBeenCalledWith({
           title: 'Test \\[Link\\]',
-          url: 'https://example.com',
+          url: 'https://example.com/',
           number: 1,
         });
       });
