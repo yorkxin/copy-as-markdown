@@ -9,48 +9,51 @@ interface CopyResponse {
   reason?: string;
 }
 
-window.addEventListener('message', (event: MessageEvent<CopyMessage>) => {
-  if (!event.source) {
-    throw new Error('No event source');
-  }
-  const options: WindowPostMessageOptions = {
-    targetOrigin: event.origin,
+window.addEventListener('message', async (event: MessageEvent<CopyMessage>) => {
+  const replyPort = event.ports[0];
+
+  const respond = (response: CopyResponse) => {
+    if (replyPort) {
+      replyPort.postMessage(response);
+      return;
+    }
+    if (!event.source) {
+      throw new Error('No reply channel');
+    }
+    event.source.postMessage(response, {
+      targetOrigin: '*',
+    });
   };
+
   switch (event.data.cmd) {
     case 'copy': {
       const { text } = event.data;
       if (text === '' || !text) {
-        event.source.postMessage(
-          { topic: 'iframe-copy-response', ok: false, reason: 'no text' } as CopyResponse,
-          options,
-        );
+        respond({ topic: 'iframe-copy-response', ok: false, reason: 'no text' } as CopyResponse);
         return;
       }
 
-      const textBox = document.getElementById('copy') as HTMLTextAreaElement;
-      textBox.value = text;
-      textBox.select();
-      const result = document.execCommand('Copy');
-      if (result) {
-        event.source.postMessage(
-          { topic: 'iframe-copy-response', ok: true } as CopyResponse,
-          options,
-        );
-      } else {
-        event.source.postMessage(
-          { topic: 'iframe-copy-response', ok: false, reason: 'execCommand returned false' } as CopyResponse,
-          options,
-        );
+      try {
+        await navigator.clipboard.writeText(text);
+        respond({ topic: 'iframe-copy-response', ok: true } as CopyResponse);
+        return;
+      } catch {
+        const textBox = document.getElementById('copy') as HTMLTextAreaElement;
+        textBox.value = text;
+        textBox.select();
+        const result = document.execCommand('Copy');
+        if (result) {
+          respond({ topic: 'iframe-copy-response', ok: true } as CopyResponse);
+        } else {
+          respond({ topic: 'iframe-copy-response', ok: false, reason: 'execCommand returned false' } as CopyResponse);
+        }
+        textBox.value = '';
       }
-      textBox.value = '';
       break;
     }
 
     default: {
-      event.source.postMessage(
-        { topic: 'iframe-copy-response', ok: false, reason: `unknown command ${event.data.cmd}` } as CopyResponse,
-        options,
-      );
+      respond({ topic: 'iframe-copy-response', ok: false, reason: `unknown command ${event.data.cmd}` } as CopyResponse);
     }
   }
 });

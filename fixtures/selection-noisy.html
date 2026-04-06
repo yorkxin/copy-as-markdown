@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Selection With Message Noise</title>
+</head>
+<body>
+  <main id="content">
+    <h2>Specs and Compatibility</h2>
+    <p>Technical Specifications</p>
+
+    <h5>Headphone</h5>
+    <ul>
+      <li><strong>Driver:</strong> 1.57 in(40mm) Biocellulose</li>
+      <li><strong>Weight:</strong> 10.22 oz(290 g)</li>
+    </ul>
+
+    <h5>Battery &amp; Charging</h5>
+    <ul>
+      <li><strong>Battery type:</strong> rechargeable</li>
+      <li><strong>No lighting:</strong> up to 90 hrs</li>
+    </ul>
+  </main>
+
+  <script>
+    window.addEventListener('copy', (event) => {
+      const selectedText = window.getSelection()?.toString().trim();
+      if (!selectedText) {
+        return;
+      }
+
+      event.clipboardData?.setData('text/plain', selectedText);
+      event.preventDefault();
+    });
+
+    window.addEventListener('message', (event) => {
+      if (!event.origin || event.origin === window.location.origin || event.origin === 'null') {
+        return;
+      }
+
+      Promise.reject(new Error('Message origin not allowed'));
+    });
+
+    window.setInterval(() => {
+      window.postMessage({ topic: 'fixture-noise' }, window.location.origin);
+    }, 25);
+  </script>
+</body>
+</html>
