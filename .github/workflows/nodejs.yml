@@ -9,6 +9,18 @@ on:
       - master
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: ".node-version"
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +32,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:unit
-      - run: npm run lint
       - run: npm install -g web-ext # build tool
       - run: npm run build-chrome
       - run: npm run build-firefox-mv2
