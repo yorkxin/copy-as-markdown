@@ -39,8 +39,13 @@ export function createSelectionConverterService(
       ],
     });
 
-    // Join results from all frames with double newlines
-    return results.map(frame => frame.result as string).join('\n\n');
+    // Only one frame should contain the active selection in normal cases.
+    // Some pages also include blank iframes, which would otherwise contribute
+    // extra separators and show up as trailing blank lines in the final output.
+    return results
+      .map(frame => frame.result as string)
+      .filter(result => result !== '')
+      .join('\n\n');
   }
 
   return {

@@ -107,6 +107,44 @@ describe('selectionConverterService', () => {
       expect(result).toBe('Frame 1 content\n\nFrame 2 content\n\nFrame 3 content');
     });
 
+    it('should ignore empty frame results when joining', async () => {
+      const executeScriptMock = vi.fn(async () => [
+        { result: '# Astro A20 X' },
+        { result: '' },
+        { result: '' },
+      ]);
+
+      const mockScriptingAPI: ScriptingAPI = {
+        executeScript: executeScriptMock,
+      };
+
+      const mockTurndownOptionsProvider: TurndownOptionsProvider = {
+        getTurndownOptions: () => ({ headingStyle: 'atx' }),
+      };
+
+      const service = createSelectionConverterService(
+        mockScriptingAPI,
+        mockTurndownOptionsProvider,
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
+      );
+
+      const tab: browser.tabs.Tab = {
+        id: 457,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 1,
+        active: true,
+        incognito: false,
+        mutedInfo: { muted: false },
+      };
+
+      const result = await service.convertSelectionToMarkdown(tab);
+
+      expect(result).toBe('# Astro A20 X');
+    });
+
     it('should throw error when tab has no id', async () => {
       const mockScriptingAPI: ScriptingAPI = {
         executeScript: vi.fn().mockRejectedValue(new Error('Should not be called')),

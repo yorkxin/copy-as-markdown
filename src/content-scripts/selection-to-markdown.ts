@@ -96,5 +96,5 @@ export async function selectionToMarkdown(
     pre.replaceChildren(normalizedCode);
   });
   const html = container.innerHTML;
-  return turndownService.turndown(html);
+  return turndownService.turndown(html).replace(/\n+$/, '');
 }
