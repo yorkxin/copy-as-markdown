@@ -36,7 +36,6 @@ window.addEventListener('message', async (event: MessageEvent<CopyMessage>) => {
       try {
         await navigator.clipboard.writeText(text);
         respond({ topic: 'iframe-copy-response', ok: true } as CopyResponse);
-        return;
       } catch {
         const textBox = document.getElementById('copy') as HTMLTextAreaElement;
         textBox.value = text;

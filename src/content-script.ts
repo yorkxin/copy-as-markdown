@@ -95,6 +95,10 @@ export default async function copy(text: string, iframeSrc: string): Promise<Cop
     let settled = false;
     let timeoutId = 0;
 
+    const handleLoad = () => {
+      iframe.contentWindow?.postMessage({ cmd: 'copy', text: t }, '*', [channel.port2]);
+    };
+
     const cleanup = () => {
       iframe.removeEventListener('load', handleLoad);
       channel.port1.onmessage = null;
@@ -124,10 +128,6 @@ export default async function copy(text: string, iframeSrc: string): Promise<Cop
       } else {
         settle(() => reject(new KnownFailureError(event.data.reason || 'iframe copy failed')));
       }
-    };
-
-    const handleLoad = () => {
-      iframe.contentWindow?.postMessage({ cmd: 'copy', text: t }, '*', [channel.port2]);
     };
 
     iframe.addEventListener('load', handleLoad, { once: true });
