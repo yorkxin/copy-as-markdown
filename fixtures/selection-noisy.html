@@ -38,7 +38,7 @@
         return;
       }
 
-      Promise.reject(new Error('Message origin not allowed'));
+      void Promise.reject(new Error('Message origin not allowed'));
     });
 
     window.setInterval(() => {

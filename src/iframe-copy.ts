@@ -21,7 +21,7 @@ window.addEventListener('message', async (event: MessageEvent<CopyMessage>) => {
       throw new Error('No reply channel');
     }
     event.source.postMessage(response, {
-      targetOrigin: '*',
+      targetOrigin: event.origin,
     });
   };
 
