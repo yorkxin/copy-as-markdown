@@ -61,7 +61,6 @@ export default async function copy(text: string, iframeSrc: string): Promise<Cop
       await navigator.clipboard.writeText(t);
       return true;
     }
-    console.debug(`clipboard-write permission state: ${ret?.state}`);
     throw new KnownFailureError('no permission to call navigator.clipboard API');
   };
 
@@ -92,29 +91,50 @@ export default async function copy(text: string, iframeSrc: string): Promise<Cop
     iframe.height = '10';
     iframe.style.position = 'absolute';
     iframe.style.left = '-100px';
-    document.body.appendChild(iframe);
-    window.addEventListener('message', (event) => {
-      switch (event.data.topic) {
-        case 'iframe-copy-response': {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-          if (event.data.ok) {
-            resolve(true);
-          } else {
-            reject(new KnownFailureError(event.data.reason));
-          }
-          break;
-        }
-        default: {
-          reject(new Error(`unknown topic ${event.data.topic}`));
-        }
-      }
-    });
+    const channel = new MessageChannel();
+    let settled = false;
+    let timeoutId = 0;
 
-    setTimeout(() => {
-      iframe.contentWindow?.postMessage({ cmd: 'copy', text: t }, '*');
-    }, 100);
+    const handleLoad = () => {
+      iframe.contentWindow?.postMessage({ cmd: 'copy', text: t }, '*', [channel.port2]);
+    };
+
+    const cleanup = () => {
+      iframe.removeEventListener('load', handleLoad);
+      channel.port1.onmessage = null;
+      channel.port1.close();
+      window.clearTimeout(timeoutId);
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    };
+
+    const settle = (fn: () => void) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
+      fn();
+    };
+
+    channel.port1.onmessage = (event: MessageEvent) => {
+      if (typeof event.data !== 'object' || event.data === null || event.data.topic !== 'iframe-copy-response') {
+        return;
+      }
+
+      if (event.data.ok) {
+        settle(() => resolve(true));
+      } else {
+        settle(() => reject(new KnownFailureError(event.data.reason || 'iframe copy failed')));
+      }
+    };
+
+    iframe.addEventListener('load', handleLoad, { once: true });
+    document.body.appendChild(iframe);
+    timeoutId = window.setTimeout(() => {
+      settle(() => reject(new KnownFailureError('iframe copy timed out')));
+    }, 5000);
   });
 
   try {
@@ -122,7 +142,6 @@ export default async function copy(text: string, iframeSrc: string): Promise<Cop
     return Promise.resolve({ ok: true, method: 'navigator_api' });
   } catch (error) {
     if (error instanceof KnownFailureError) {
-      console.debug(error);
       // try next method
     } else {
       const err = error as Error;
@@ -131,23 +150,22 @@ export default async function copy(text: string, iframeSrc: string): Promise<Cop
   }
 
   try {
-    await useOnPageTextarea(text);
-    return Promise.resolve({ ok: true, method: 'textarea' });
+    await useIframeTextarea(text);
+    return Promise.resolve({ ok: true, method: 'iframe' });
   } catch (error) {
     if (error instanceof KnownFailureError) {
-      console.debug(error);
       // try next method
     } else {
       const err = error as Error;
-      return Promise.resolve({ ok: false, error: `${err.name} ${err.message}`, method: 'textarea' });
+      return Promise.resolve({ ok: false, error: `${err.name} ${err.message}`, method: 'iframe' });
     }
   }
 
   try {
-    await useIframeTextarea(text);
-    return Promise.resolve({ ok: true, method: 'iframe' });
+    await useOnPageTextarea(text);
+    return Promise.resolve({ ok: true, method: 'textarea' });
   } catch (error) {
     const err = error as Error;
-    return Promise.resolve({ ok: false, error: `${err.name} ${err.message}`, method: 'iframe' });
+    return Promise.resolve({ ok: false, error: `${err.name} ${err.message}`, method: 'textarea' });
   }
 }
