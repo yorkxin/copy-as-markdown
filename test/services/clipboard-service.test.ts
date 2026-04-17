@@ -197,6 +197,51 @@ describe('clipboardService', () => {
       await expect(service.copy('test text')).rejects.toThrow('failed to get current tab');
     });
 
+    it('does nothing when text is empty string (clipboardAPI path)', async () => {
+      const writeTextMock = vi.fn<(text: string) => Promise<void>>(async () => {});
+      const mockClipboardAPI: ClipboardAPI = { writeText: writeTextMock };
+
+      const service = createClipboardService(
+        createUnusedScriptingAPI(),
+        createUnusedTabsAPI(),
+        mockClipboardAPI,
+        'chrome-extension://id/dist/static/iframe-copy.html',
+      );
+
+      await service.copy('');
+
+      expect(writeTextMock).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when text is empty string (content script path)', async () => {
+      const executeScriptMock = vi.fn(async () => [
+        { result: { ok: true, method: 'navigator_api' } },
+      ]);
+      const mockScriptingAPI: ScriptingAPI = { executeScript: executeScriptMock };
+
+      const service = createClipboardService(
+        mockScriptingAPI,
+        createUnusedTabsAPI(),
+        null,
+        'chrome-extension://id/dist/static/iframe-copy.html',
+      );
+
+      const tab: browser.tabs.Tab = {
+        id: 123,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 1,
+        active: true,
+        incognito: false,
+        mutedInfo: { muted: false },
+      };
+
+      await service.copy('', tab);
+
+      expect(executeScriptMock).not.toHaveBeenCalled();
+    });
+
     it('should throw error when executeScript returns no results', async () => {
       const executeScriptMock = vi.fn(async () => []);
 
