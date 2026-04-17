@@ -121,6 +121,10 @@ export function createClipboardService(
   }
 
   async function copy_(text: string, tab?: browser.tabs.Tab): Promise<void> {
+    if (text === '') {
+      return;
+    }
+
     // If clipboardAPI is provided, use it directly (for ALWAYS_USE_NAVIGATOR_COPY_API mode)
     if (clipboardAPI) {
       await clipboardAPI.writeText(text);
