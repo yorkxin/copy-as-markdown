@@ -128,6 +128,10 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
   }
 });
 
+browser.runtime.onStartup.addListener(async () => {
+  await clearPendingPopupFeedback();
+});
+
 contextMenuService.createAll().then(() => null /* NOP */);
 browser.storage.sync.onChanged.addListener(async (changes) => {
   const changedKeys = Object.keys(changes);
