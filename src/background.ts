@@ -10,11 +10,12 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardServiceController } from './services/clipboard-service.js';
 import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
+import { createBrowserPendingPopupFeedbackService } from './services/pending-popup-feedback-service.js';
 import { createKeyboardBrowserCommandHandler } from './handlers/keyboard-command-handler.js';
 import { createBrowserContextMenuHandler } from './handlers/context-menu-handler.js';
 import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
 import type { KeyboardCommandId } from './contracts/commands.js';
-import type { RuntimeMessage } from './contracts/messages.js';
+import type { PendingPopupFeedbackCode, RuntimeMessage } from './contracts/messages.js';
 import { Flags } from './config/flags.js';
 
 const ALARM_REFRESH_MENU = 'refreshMenu';
@@ -35,6 +36,8 @@ const linkExportService = new LinkExportService(markdownInstance, CustomFormatsS
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
 const useNavigatorClipboard = Flags.alwaysUseNavigatorClipboard();
 const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
+const pendingPopupFeedbackService = createBrowserPendingPopupFeedbackService();
+const EMPTY_RESULT_FEEDBACK: PendingPopupFeedbackCode = 'empty-result';
 
 const clipboardService = createBrowserClipboardServiceController(
   useNavigatorClipboard ? navigator.clipboard : null,
@@ -76,6 +79,24 @@ const contextMenuHandler = createBrowserContextMenuHandler(
 // Runtime message handler
 const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerServices);
 
+async function setPendingPopupFeedback(feedback: PendingPopupFeedbackCode): Promise<void> {
+  try {
+    await pendingPopupFeedbackService.set(feedback);
+    await badgeService.showWarning();
+  } catch (error) {
+    console.error('Failed to persist pending popup feedback', error);
+  }
+}
+
+async function clearPendingPopupFeedback(): Promise<void> {
+  try {
+    await pendingPopupFeedbackService.clear();
+    await badgeService.clear();
+  } catch (error) {
+    console.error('Failed to clear pending popup feedback', error);
+  }
+}
+
 async function refreshMarkdownInstance(): Promise<void> {
   let settings;
   try {
@@ -93,13 +114,22 @@ async function refreshMarkdownInstance(): Promise<void> {
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === badgeService.getClearAlarmName()) {
-    await badgeService.clear();
+    const pendingPopupFeedback = await pendingPopupFeedbackService.get();
+    if (pendingPopupFeedback) {
+      await badgeService.showWarning();
+    } else {
+      await badgeService.clear();
+    }
   }
 
   if (alarm.name === ALARM_REFRESH_MENU) {
     await browser.contextMenus.removeAll();
     await contextMenuService.createAll();
   }
+});
+
+browser.runtime.onStartup.addListener(async () => {
+  await clearPendingPopupFeedback();
 });
 
 contextMenuService.createAll().then(() => null /* NOP */);
@@ -125,8 +155,13 @@ if (Flags.periodicallyRefreshMenu()) {
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await contextMenuHandler.handleMenuClick(info, tab);
-    await clipboardService.copy(text, tab);
-    await badgeService.showSuccess();
+    const didCopy = await clipboardService.copy(text, tab);
+    if (didCopy) {
+      await clearPendingPopupFeedback();
+      await badgeService.showSuccess();
+    } else {
+      await setPendingPopupFeedback(EMPTY_RESULT_FEEDBACK);
+    }
     return true;
   } catch (error) {
     console.error(error);
@@ -139,8 +174,13 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
     const text = await keyboardCommandHandler.handleCommand(command as KeyboardCommandId, tab);
-    await clipboardService.copy(text, tab);
-    await badgeService.showSuccess();
+    const didCopy = await clipboardService.copy(text, tab);
+    if (didCopy) {
+      await clearPendingPopupFeedback();
+      await badgeService.showSuccess();
+    } else {
+      await setPendingPopupFeedback(EMPTY_RESULT_FEEDBACK);
+    }
     return true;
   } catch (e) {
     console.error(e);
@@ -156,6 +196,18 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   // Handle check-mock-clipboard message from popup
   if (runtimeMessage.topic === 'check-mock-clipboard') {
     sendResponse({ ok: true, text: clipboardService.isMockMode() ? 'true' : 'false' });
+    return true;
+  }
+
+  if (runtimeMessage.topic === 'consume-pending-popup-feedback') {
+    pendingPopupFeedbackService.consume()
+      .then(async (feedback) => {
+        if (feedback) {
+          await badgeService.clear();
+        }
+        sendResponse({ ok: true, feedback });
+      })
+      .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
 
@@ -175,8 +227,14 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   // Handle copy-to-clipboard message from popup
   if (runtimeMessage.topic === 'copy-to-clipboard') {
-    clipboardService.copy(runtimeMessage.params.text)
-      .then(() => sendResponse({ ok: true, text: null }))
+    const text = runtimeMessage.params.text;
+    clipboardService.copy(text)
+      .then(async (didCopy) => {
+        if (didCopy) {
+          await clearPendingPopupFeedback();
+        }
+        sendResponse({ ok: true, text: null, copied: didCopy });
+      })
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }

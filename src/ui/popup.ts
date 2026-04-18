@@ -1,4 +1,4 @@
-import type { RuntimeMessage } from '../contracts/messages.js';
+import type { PendingPopupFeedbackCode, RuntimeMessage } from '../contracts/messages.js';
 import type { ExportFormat, ExportScope, ListType } from '../services/tab-export-service.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 import type { BuiltInStyleSettings } from '../lib/built-in-style-settings.js';
@@ -7,8 +7,13 @@ import BuiltInStyleSettingsStorage from '../lib/built-in-style-settings.js';
 interface MessageResponse {
   ok: boolean;
   text?: string;
+  copied?: boolean;
+  feedback?: PendingPopupFeedbackCode | null;
   error?: string;
 }
+
+type FlashKind = 'error' | 'warning';
+type ExportOutcome = 'copied' | 'empty';
 
 const URL_PARAMS = new URLSearchParams(window.location.search);
 let windowId = -1;
@@ -31,13 +36,26 @@ const flashText = document.getElementById('flash-text');
 function hideFlash(): void {
   if (!flash) return;
   flash.classList.add('is-hidden');
+  flash.classList.remove('is-danger', 'is-warning');
   if (flashText) flashText.textContent = '';
 }
 
-function showFlash(message: string): void {
+function showFlash(kind: FlashKind, message: string): void {
   if (!flash) return;
+  flash.classList.remove('is-danger', 'is-warning');
+  flash.classList.add(kind === 'error' ? 'is-danger' : 'is-warning');
   flash.classList.remove('is-hidden');
   if (flashText) flashText.textContent = message;
+}
+
+function pendingPopupFeedbackMessage(feedback: PendingPopupFeedbackCode): { kind: FlashKind; message: string } {
+  switch (feedback) {
+    case 'empty-result':
+      return {
+        kind: 'warning',
+        message: 'Nothing to copy. The last command produced empty text.',
+      };
+  }
 }
 
 function setButtonsDisabled(disabled: boolean): void {
@@ -105,7 +123,11 @@ async function sendMessage(message: RuntimeMessage): Promise<MessageResponse> {
   return response;
 }
 
-async function handleExportResponse(text: string): Promise<void> {
+async function handleExportResponse(text: string): Promise<ExportOutcome> {
+  if (text === '') {
+    return 'empty';
+  }
+
   if (useMockClipboard) {
     const clipboardResponse = await browser.runtime.sendMessage({
       topic: 'copy-to-clipboard',
@@ -114,9 +136,11 @@ async function handleExportResponse(text: string): Promise<void> {
     if (!clipboardResponse?.ok) {
       throw new Error(clipboardResponse?.error || 'Mock clipboard copy failed');
     }
-  } else {
-    await navigator.clipboard.writeText(text);
+    return clipboardResponse.copied === false ? 'empty' : 'copied';
   }
+
+  await navigator.clipboard.writeText(text);
+  return 'copied';
 }
 
 async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
@@ -133,14 +157,17 @@ async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
 async function performExport(message: RuntimeMessage): Promise<void> {
   try {
     const response = await sendMessage(message);
-    if (response.text) {
-      await handleExportResponse(response.text);
+    const outcome = await handleExportResponse(response.text ?? '');
+    if (outcome === 'copied') {
+      await sendBadgeSafe('success');
+      hideFlash();
+      if (!keepOpen) {
+        window.close();
+      }
+      return;
     }
-    await sendBadgeSafe('success');
-    hideFlash();
-    if (!keepOpen) {
-      window.close();
-    }
+
+    showFlash('warning', 'Nothing to copy. This format rendered empty text.');
   } catch (error) {
     // @ts-expect-error - browser.runtime.lastError is not in types
     browser.runtime.lastError = error;
@@ -148,7 +175,7 @@ async function performExport(message: RuntimeMessage): Promise<void> {
     if (isTabsPermissionError(error)) {
       return;
     }
-    showFlash('Failed to copy to clipboard. Please try again.');
+    showFlash('error', 'Failed to copy to clipboard. Please try again.');
   }
 }
 
@@ -216,6 +243,15 @@ async function checkMockClipboardAvailable(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+async function consumePendingPopupFeedback(): Promise<PendingPopupFeedbackCode | null> {
+  const response = await sendMessage({
+    topic: 'consume-pending-popup-feedback',
+    params: {},
+  } satisfies RuntimeMessage);
+
+  return response.feedback ?? null;
 }
 
 async function getCurrentWindow(): Promise<browser.windows.Window> {
@@ -371,12 +407,18 @@ document.addEventListener('DOMContentLoaded', () => {
       applyBuiltInVisibility(styles);
 
       await loadCustomFormats();
+      const pendingFeedback = await consumePendingPopupFeedback();
       ready = true;
       setButtonsDisabled(false);
-      hideFlash();
+      if (pendingFeedback) {
+        const flashFeedback = pendingPopupFeedbackMessage(pendingFeedback);
+        showFlash(flashFeedback.kind, flashFeedback.message);
+      } else {
+        hideFlash();
+      }
     } catch (error) {
       console.error('Failed to initialize popup', error);
-      showFlash('Failed to load tabs or settings. Please reopen the popup.');
+      showFlash('error', 'Failed to load tabs or settings. Please reopen the popup.');
     }
   })();
 

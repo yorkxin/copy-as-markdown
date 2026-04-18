@@ -29,6 +29,10 @@ window.addEventListener('message', async (event: MessageEvent<CopyMessage>) => {
     case 'copy': {
       const { text } = event.data;
       if (text === '' || !text) {
+        // NOTE: in this case the caller from content-script.ts would try the next method,
+        // but really since there is no text it should not try anymore.
+        // The call site should instead avoid calling clipboard service when the text is empty,
+        // becuase there is nothing that can be written to the clipboard.
         respond({ topic: 'iframe-copy-response', ok: false, reason: 'no text' } as CopyResponse);
         return;
       }

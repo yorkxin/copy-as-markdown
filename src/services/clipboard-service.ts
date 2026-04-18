@@ -12,8 +12,9 @@ export interface ClipboardService {
   /**
    * Copy text to clipboard.
    * If tab is not provided, will attempt to get the current active tab.
+   * @returns `true` if the clipboard was updated, `false` for a no-op.
    */
-  copy: (text: string, tab?: browser.tabs.Tab) => Promise<void>;
+  copy: (text: string, tab?: browser.tabs.Tab) => Promise<boolean>;
 
   /**
    * Get all recorded clipboard copy calls (only available in mock mode)
@@ -56,27 +57,33 @@ export function createMockClipboardService(): ClipboardService {
   }
 
   // Helper to save calls to storage
-  async function saveCallsToStorage(calls: ClipboardMockCall[]): Promise<void> {
+  async function saveCallsToStorage(calls: ClipboardMockCall[]): Promise<boolean> {
     try {
       if (browser.storage?.session) {
         await browser.storage.session.set({ [STORAGE_KEY]: calls });
       } else {
         await browser.storage.local.set({ [STORAGE_KEY]: calls });
       }
+      return true;
     } catch (error) {
       console.error('Failed to save mock clipboard calls:', error);
+      return false;
     }
   }
 
   return {
-    copy: async (text: string, tab?: browser.tabs.Tab): Promise<void> => {
+    copy: async (text: string, tab?: browser.tabs.Tab): Promise<boolean> => {
+      if (text === '') {
+        return false;
+      }
+
       const calls = await getCallsFromStorage();
       calls.push({
         text,
         tab,
         timestamp: Date.now(),
       });
-      await saveCallsToStorage(calls);
+      return await saveCallsToStorage(calls);
     },
     getCalls: async () => {
       return await getCallsFromStorage();
@@ -97,7 +104,7 @@ export function createClipboardService(
   clipboardAPI: ClipboardAPI | null,
   iframeUrl: string,
 ): ClipboardService {
-  async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Promise<void> {
+  async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Promise<boolean> {
     if (!tab.id) {
       throw new Error('tab has no id');
     }
@@ -115,16 +122,20 @@ export function createClipboardService(
     }
     const { result } = firstResult;
     if (result.ok) {
-      return;
+      return true;
     }
     throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
   }
 
-  async function copy_(text: string, tab?: browser.tabs.Tab): Promise<void> {
+  async function copy_(text: string, tab?: browser.tabs.Tab): Promise<boolean> {
+    if (text === '') {
+      return false;
+    }
+
     // If clipboardAPI is provided, use it directly (for ALWAYS_USE_NAVIGATOR_COPY_API mode)
     if (clipboardAPI) {
       await clipboardAPI.writeText(text);
-      return;
+      return true;
     }
 
     // Otherwise use content script approach
@@ -133,8 +144,7 @@ export function createClipboardService(
     if (!targetTab) {
       targetTab = await mustGetCurrentTab(tabsAPI);
     }
-
-    await copyUsingContentScript(targetTab, text);
+    return await copyUsingContentScript(targetTab, text);
   }
 
   return {
@@ -247,8 +257,8 @@ export function createBrowserClipboardServiceController(
   }
 
   return {
-    copy: async (text: string, tab?: browser.tabs.Tab): Promise<void> => {
-      await activeService.copy(text, tab);
+    copy: async (text: string, tab?: browser.tabs.Tab): Promise<boolean> => {
+      return await activeService.copy(text, tab);
     },
     setMockMode,
     initializeMockState,

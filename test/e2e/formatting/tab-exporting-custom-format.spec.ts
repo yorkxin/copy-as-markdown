@@ -10,7 +10,13 @@
 
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, resetMockClipboard, triggerContextMenu, waitForMockClipboard } from '../helpers';
+import {
+  getMockClipboardCalls,
+  getServiceWorker,
+  resetMockClipboard,
+  triggerContextMenu,
+  waitForMockClipboard,
+} from '../helpers';
 
 /**
  * Configure a custom format using the web UI
@@ -63,6 +69,28 @@ async function configureCustomFormatViaUI(
   await page.waitForTimeout(500);
 }
 
+async function openPopupWindow(serviceWorker: Worker, context: any, extensionId: string) {
+  await serviceWorker.evaluate(async (extId) => {
+    const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
+    if (!tabs[0]) {
+      throw new Error('No active tab found');
+    }
+    const windowId = tabs[0].windowId;
+    const popupUrl = `chrome-extension://${extId}/dist/static/popup.html?window=${windowId}`;
+
+    await chrome.windows.create({
+      url: popupUrl,
+      type: 'popup',
+      width: 400,
+      height: 600,
+    });
+  }, extensionId);
+
+  const popupWindow = await context.waitForEvent('page');
+  await popupWindow.waitForLoadState('networkidle');
+  return popupWindow;
+}
+
 test.describe('Custom Format', () => {
   let serviceWorker: Worker;
 
@@ -103,29 +131,7 @@ test.describe('Custom Format', () => {
     });
 
     test('should work with popup', async ({ page, context, extensionId }) => {
-      // Get window id from the current page's tab
-      await serviceWorker.evaluate(async (extensionId) => {
-        const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
-        if (!tabs[0]) {
-          throw new Error('No active tab found');
-        }
-        const windowId = tabs[0].windowId;
-
-        // Open popup in a new window (not a new tab in the same window)
-        const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html?window=${windowId}`;
-
-        // Create a new window with the popup
-        await chrome.windows.create({
-          url: popupUrl,
-          type: 'popup',
-          width: 400,
-          height: 600,
-        });
-      }, extensionId);
-
-      // Wait for the new window and get its page
-      const popupWindow = await context.waitForEvent('page');
-      await popupWindow.waitForLoadState('networkidle');
+      const popupWindow = await openPopupWindow(serviceWorker, context, extensionId);
 
       // Click the button for current-tab-custom-format-1
       const button = popupWindow.locator('#current-tab-custom-format-1');
@@ -141,6 +147,36 @@ test.describe('Custom Format', () => {
 
       // Cleanup
       await popupWindow.close();
+    });
+
+    test('shows deferred popup warning once when keyboard command renders empty output', async ({ page, context, extensionId }) => {
+      await configureCustomFormatViaUI(page, extensionId, {
+        slot: '1',
+        context: 'single-link',
+        name: 'Empty Link',
+        template: '',
+        showInMenus: true,
+      });
+
+      await page.goto('http://localhost:5566/qa.html');
+      await page.waitForLoadState('networkidle');
+
+      await serviceWorker.evaluate(async () => {
+        // @ts-expect-error - Chrome APIs are available in service worker
+        chrome.commands.onCommand.dispatch('current-tab-custom-format-1');
+      });
+
+      await expect.poll(async () => {
+        return (await getMockClipboardCalls(serviceWorker)).length;
+      }).toBe(0);
+
+      const popupWindow = await openPopupWindow(serviceWorker, context, extensionId);
+      await expect(popupWindow.getByText('Nothing to copy. The last command produced empty text.')).toBeVisible();
+      await popupWindow.close();
+
+      const popupWindowAgain = await openPopupWindow(serviceWorker, context, extensionId);
+      await expect(popupWindowAgain.getByText('Nothing to copy. The last command produced empty text.')).toHaveCount(0);
+      await popupWindowAgain.close();
     });
   });
 

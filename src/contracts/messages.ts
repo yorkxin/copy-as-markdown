@@ -3,6 +3,8 @@
  */
 import type { ExportTabsOptions } from '../services/tab-export-service.js';
 
+export type PendingPopupFeedbackCode = 'empty-result';
+
 export interface BadgeMessage {
   topic: 'badge';
   params: { type: 'success' | 'fail' };
@@ -37,13 +39,19 @@ export interface SetMockClipboardMessage {
   params: { enabled: boolean };
 }
 
+export interface ConsumePendingPopupFeedbackMessage {
+  topic: 'consume-pending-popup-feedback';
+  params: Record<string, never>;
+}
+
 export type RuntimeMessage
   = | BadgeMessage
     | ExportCurrentTabMessage
     | ExportTabsMessage
     | CopyToClipboardMessage
     | CheckMockClipboardMessage
-    | SetMockClipboardMessage;
+    | SetMockClipboardMessage
+    | ConsumePendingPopupFeedbackMessage;
 
 export type RuntimeMessageTopic = RuntimeMessage['topic'];
 

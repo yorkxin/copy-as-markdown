@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createClipboardService } from '../../src/services/clipboard-service.js';
+import { createClipboardService, createMockClipboardService } from '../../src/services/clipboard-service.js';
 import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type {
   ClipboardAPI,
@@ -197,6 +197,51 @@ describe('clipboardService', () => {
       await expect(service.copy('test text')).rejects.toThrow('failed to get current tab');
     });
 
+    it('does nothing when text is empty string (clipboardAPI path)', async () => {
+      const writeTextMock = vi.fn<(text: string) => Promise<void>>(async () => {});
+      const mockClipboardAPI: ClipboardAPI = { writeText: writeTextMock };
+
+      const service = createClipboardService(
+        createUnusedScriptingAPI(),
+        createUnusedTabsAPI(),
+        mockClipboardAPI,
+        'chrome-extension://id/dist/static/iframe-copy.html',
+      );
+
+      await expect(service.copy('')).resolves.toBe(false);
+
+      expect(writeTextMock).not.toHaveBeenCalled();
+    });
+
+    it('does nothing when text is empty string (content script path)', async () => {
+      const executeScriptMock = vi.fn(async () => [
+        { result: { ok: true, method: 'navigator_api' } },
+      ]);
+      const mockScriptingAPI: ScriptingAPI = { executeScript: executeScriptMock };
+
+      const service = createClipboardService(
+        mockScriptingAPI,
+        createUnusedTabsAPI(),
+        null,
+        'chrome-extension://id/dist/static/iframe-copy.html',
+      );
+
+      const tab: browser.tabs.Tab = {
+        id: 123,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 1,
+        active: true,
+        incognito: false,
+        mutedInfo: { muted: false },
+      };
+
+      await expect(service.copy('', tab)).resolves.toBe(false);
+
+      expect(executeScriptMock).not.toHaveBeenCalled();
+    });
+
     it('should throw error when executeScript returns no results', async () => {
       const executeScriptMock = vi.fn(async () => []);
 
@@ -223,6 +268,63 @@ describe('clipboardService', () => {
       };
 
       await expect(service.copy('test text', tab)).rejects.toThrow('no result from content script');
+    });
+  });
+
+  describe('mock copy', () => {
+    it('records non-empty copies', async () => {
+      const sessionGetMock = vi.fn(async () => ({ mockClipboardCalls: [] }));
+      const sessionSetMock = vi.fn(async () => undefined);
+
+      (globalThis as any).browser = {
+        storage: {
+          session: {
+            get: sessionGetMock,
+            set: sessionSetMock,
+          },
+          local: {
+            get: vi.fn(),
+            set: vi.fn(),
+          },
+        },
+      };
+
+      const service = createMockClipboardService();
+
+      await expect(service.copy('test text')).resolves.toBe(true);
+
+      expect(sessionSetMock).toHaveBeenCalledExactlyOnceWith({
+        mockClipboardCalls: [
+          expect.objectContaining({
+            text: 'test text',
+          }),
+        ],
+      });
+    });
+
+    it('does not record empty-string copies', async () => {
+      const sessionGetMock = vi.fn(async () => ({ mockClipboardCalls: [] }));
+      const sessionSetMock = vi.fn(async () => undefined);
+
+      (globalThis as any).browser = {
+        storage: {
+          session: {
+            get: sessionGetMock,
+            set: sessionSetMock,
+          },
+          local: {
+            get: vi.fn(),
+            set: vi.fn(),
+          },
+        },
+      };
+
+      const service = createMockClipboardService();
+
+      await expect(service.copy('')).resolves.toBe(false);
+
+      expect(sessionGetMock).not.toHaveBeenCalled();
+      expect(sessionSetMock).not.toHaveBeenCalled();
     });
   });
 });
