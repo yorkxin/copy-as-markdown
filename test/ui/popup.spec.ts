@@ -149,4 +149,39 @@ describe('popup UI', () => {
     expect(clipboardMock).toHaveBeenCalledWith('copied text');
     expect(closeMock).toHaveBeenCalled();
   });
+
+  it('does not show success or close the popup when export returns empty text', async () => {
+    const sendMessageMock = (globalThis as any).browser.runtime.sendMessage;
+    const clipboardMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
+    const closeMock = window.close as ReturnType<typeof vi.fn>;
+
+    sendMessageMock.mockClear();
+    clipboardMock.mockClear();
+    closeMock.mockClear();
+    sendMessageMock.mockImplementation(async (message: any) => {
+      if (message.topic === 'check-mock-clipboard') {
+        return { ok: true, text: 'false' };
+      }
+      if (message.topic === 'export-current-tab' || message.topic === 'export-tabs') {
+        return { ok: true, text: '' };
+      }
+      if (message.topic === 'copy-to-clipboard') {
+        return { ok: true, copied: false };
+      }
+      if (message.topic === 'badge') {
+        return { ok: true };
+      }
+      return { ok: true };
+    });
+
+    const button = page.getByRole('button', { name: 'Current tab link' });
+    await button.click();
+
+    expect(clipboardMock).not.toHaveBeenCalled();
+    expect(sendMessageMock).toHaveBeenCalledTimes(1);
+    expect(sendMessageMock).toHaveBeenCalledWith(expect.objectContaining({
+      topic: 'export-current-tab',
+    }));
+    expect(closeMock).not.toHaveBeenCalled();
+  });
 });

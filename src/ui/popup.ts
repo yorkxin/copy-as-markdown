@@ -7,6 +7,7 @@ import BuiltInStyleSettingsStorage from '../lib/built-in-style-settings.js';
 interface MessageResponse {
   ok: boolean;
   text?: string;
+  copied?: boolean;
   error?: string;
 }
 
@@ -105,7 +106,11 @@ async function sendMessage(message: RuntimeMessage): Promise<MessageResponse> {
   return response;
 }
 
-async function handleExportResponse(text: string): Promise<void> {
+async function handleExportResponse(text: string): Promise<boolean> {
+  if (text === '') {
+    return false;
+  }
+
   if (useMockClipboard) {
     const clipboardResponse = await browser.runtime.sendMessage({
       topic: 'copy-to-clipboard',
@@ -114,9 +119,11 @@ async function handleExportResponse(text: string): Promise<void> {
     if (!clipboardResponse?.ok) {
       throw new Error(clipboardResponse?.error || 'Mock clipboard copy failed');
     }
-  } else {
-    await navigator.clipboard.writeText(text);
+    return clipboardResponse.copied ?? true;
   }
+
+  await navigator.clipboard.writeText(text);
+  return true;
 }
 
 async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
@@ -133,14 +140,14 @@ async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
 async function performExport(message: RuntimeMessage): Promise<void> {
   try {
     const response = await sendMessage(message);
-    if (response.text) {
-      await handleExportResponse(response.text);
+    const didCopy = await handleExportResponse(response.text ?? '');
+    if (didCopy) {
+      await sendBadgeSafe('success');
+      if (!keepOpen) {
+        window.close();
+      }
     }
-    await sendBadgeSafe('success');
     hideFlash();
-    if (!keepOpen) {
-      window.close();
-    }
   } catch (error) {
     // @ts-expect-error - browser.runtime.lastError is not in types
     browser.runtime.lastError = error;
