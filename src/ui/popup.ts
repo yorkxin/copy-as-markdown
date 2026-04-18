@@ -11,6 +11,9 @@ interface MessageResponse {
   error?: string;
 }
 
+type FlashKind = 'error' | 'warning';
+type ExportOutcome = 'copied' | 'empty';
+
 const URL_PARAMS = new URLSearchParams(window.location.search);
 let windowId = -1;
 let tabId = -1;
@@ -32,11 +35,14 @@ const flashText = document.getElementById('flash-text');
 function hideFlash(): void {
   if (!flash) return;
   flash.classList.add('is-hidden');
+  flash.classList.remove('is-danger', 'is-warning');
   if (flashText) flashText.textContent = '';
 }
 
-function showFlash(message: string): void {
+function showFlash(kind: FlashKind, message: string): void {
   if (!flash) return;
+  flash.classList.remove('is-danger', 'is-warning');
+  flash.classList.add(kind === 'error' ? 'is-danger' : 'is-warning');
   flash.classList.remove('is-hidden');
   if (flashText) flashText.textContent = message;
 }
@@ -106,9 +112,9 @@ async function sendMessage(message: RuntimeMessage): Promise<MessageResponse> {
   return response;
 }
 
-async function handleExportResponse(text: string): Promise<boolean> {
+async function handleExportResponse(text: string): Promise<ExportOutcome> {
   if (text === '') {
-    return false;
+    return 'empty';
   }
 
   if (useMockClipboard) {
@@ -119,11 +125,11 @@ async function handleExportResponse(text: string): Promise<boolean> {
     if (!clipboardResponse?.ok) {
       throw new Error(clipboardResponse?.error || 'Mock clipboard copy failed');
     }
-    return clipboardResponse.copied ?? true;
+    return clipboardResponse.copied === false ? 'empty' : 'copied';
   }
 
   await navigator.clipboard.writeText(text);
-  return true;
+  return 'copied';
 }
 
 async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
@@ -140,14 +146,17 @@ async function sendBadgeSafe(type: 'success' | 'fail'): Promise<void> {
 async function performExport(message: RuntimeMessage): Promise<void> {
   try {
     const response = await sendMessage(message);
-    const didCopy = await handleExportResponse(response.text ?? '');
-    if (didCopy) {
+    const outcome = await handleExportResponse(response.text ?? '');
+    if (outcome === 'copied') {
       await sendBadgeSafe('success');
+      hideFlash();
       if (!keepOpen) {
         window.close();
       }
+      return;
     }
-    hideFlash();
+
+    showFlash('warning', 'Nothing to copy. This format rendered empty text.');
   } catch (error) {
     // @ts-expect-error - browser.runtime.lastError is not in types
     browser.runtime.lastError = error;
@@ -155,7 +164,7 @@ async function performExport(message: RuntimeMessage): Promise<void> {
     if (isTabsPermissionError(error)) {
       return;
     }
-    showFlash('Failed to copy to clipboard. Please try again.');
+    showFlash('error', 'Failed to copy to clipboard. Please try again.');
   }
 }
 
@@ -383,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
       hideFlash();
     } catch (error) {
       console.error('Failed to initialize popup', error);
-      showFlash('Failed to load tabs or settings. Please reopen the popup.');
+      showFlash('error', 'Failed to load tabs or settings. Please reopen the popup.');
     }
   })();
 
