@@ -38,6 +38,9 @@ function mockBrowser(tabs: browser.tabs.Tab[]) {
     if (message.topic === 'check-mock-clipboard') {
       return { ok: true, text: 'false' };
     }
+    if (message.topic === 'consume-pending-popup-feedback') {
+      return { ok: true, feedback: null };
+    }
     if (message.topic === 'export-current-tab' || message.topic === 'export-tabs') {
       return { ok: true, text: 'copied text' };
     }
@@ -216,5 +219,36 @@ describe('popup UI', () => {
     expect(flash?.classList.contains('is-danger')).toBe(true);
     expect(flash?.classList.contains('is-warning')).toBe(false);
     expect(closeMock).not.toHaveBeenCalled();
+  });
+
+  it('shows deferred feedback once when the popup opens', async () => {
+    const sendMessageMock = (globalThis as any).browser.runtime.sendMessage;
+    const flash = document.getElementById('flash-message');
+
+    sendMessageMock.mockImplementation(async (message: any) => {
+      if (message.topic === 'check-mock-clipboard') {
+        return { ok: true, text: 'false' };
+      }
+      if (message.topic === 'consume-pending-popup-feedback') {
+        return {
+          ok: true,
+          feedback: 'empty-result',
+        };
+      }
+      if (message.topic === 'badge') {
+        return { ok: true };
+      }
+      return { ok: true, text: 'copied text' };
+    });
+
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+    await (window as any).__popupReady;
+
+    await expect.element(page.getByText('Nothing to copy. The last command produced empty text.')).toBeVisible();
+    expect(flash?.classList.contains('is-warning')).toBe(true);
+    expect(sendMessageMock).toHaveBeenCalledWith({
+      topic: 'consume-pending-popup-feedback',
+      params: {},
+    });
   });
 });

@@ -1,4 +1,4 @@
-import type { RuntimeMessage } from '../contracts/messages.js';
+import type { PendingPopupFeedbackCode, RuntimeMessage } from '../contracts/messages.js';
 import type { ExportFormat, ExportScope, ListType } from '../services/tab-export-service.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 import type { BuiltInStyleSettings } from '../lib/built-in-style-settings.js';
@@ -8,6 +8,7 @@ interface MessageResponse {
   ok: boolean;
   text?: string;
   copied?: boolean;
+  feedback?: PendingPopupFeedbackCode | null;
   error?: string;
 }
 
@@ -45,6 +46,16 @@ function showFlash(kind: FlashKind, message: string): void {
   flash.classList.add(kind === 'error' ? 'is-danger' : 'is-warning');
   flash.classList.remove('is-hidden');
   if (flashText) flashText.textContent = message;
+}
+
+function pendingPopupFeedbackMessage(feedback: PendingPopupFeedbackCode): { kind: FlashKind; message: string } {
+  switch (feedback) {
+    case 'empty-result':
+      return {
+        kind: 'warning',
+        message: 'Nothing to copy. The last command produced empty text.',
+      };
+  }
 }
 
 function setButtonsDisabled(disabled: boolean): void {
@@ -234,6 +245,15 @@ async function checkMockClipboardAvailable(): Promise<boolean> {
   }
 }
 
+async function consumePendingPopupFeedback(): Promise<PendingPopupFeedbackCode | null> {
+  const response = await sendMessage({
+    topic: 'consume-pending-popup-feedback',
+    params: {},
+  } satisfies RuntimeMessage);
+
+  return response.feedback ?? null;
+}
+
 async function getCurrentWindow(): Promise<browser.windows.Window> {
   if (URL_PARAMS.has('window')) {
     const windowIdParam = URL_PARAMS.get('window');
@@ -387,9 +407,15 @@ document.addEventListener('DOMContentLoaded', () => {
       applyBuiltInVisibility(styles);
 
       await loadCustomFormats();
+      const pendingFeedback = await consumePendingPopupFeedback();
       ready = true;
       setButtonsDisabled(false);
-      hideFlash();
+      if (pendingFeedback) {
+        const flashFeedback = pendingPopupFeedbackMessage(pendingFeedback);
+        showFlash(flashFeedback.kind, flashFeedback.message);
+      } else {
+        hideFlash();
+      }
     } catch (error) {
       console.error('Failed to initialize popup', error);
       showFlash('error', 'Failed to load tabs or settings. Please reopen the popup.');
