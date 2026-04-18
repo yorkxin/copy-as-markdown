@@ -16,6 +16,7 @@
     "test:e2e:debug": "npm run compile && node scripts/build-test-extension.js && playwright test --debug",
     "test:e2e:docker": "docker build -t copy-as-markdown-playwright -f docker/playwright-ci/Dockerfile . && docker run --rm -it --ipc=host -p 9323:9323 copy-as-markdown-playwright",
     "test:all": "npm test && npm run test:e2e",
+    "bump-version": "node scripts/bump-version.js",
     "typecheck": "tsc --noEmit",
     "build:ts": "tsc",
     "compile": "npm run build:ts && npm run compile-chrome && npm run compile-firefox-mv2 && npm run compile-firefox-mv3",
