@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createClipboardService } from '../../src/services/clipboard-service.js';
+import { createClipboardService, createMockClipboardService } from '../../src/services/clipboard-service.js';
 import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type {
   ClipboardAPI,
@@ -208,7 +208,7 @@ describe('clipboardService', () => {
         'chrome-extension://id/dist/static/iframe-copy.html',
       );
 
-      await service.copy('');
+      await expect(service.copy('')).resolves.toBe(false);
 
       expect(writeTextMock).not.toHaveBeenCalled();
     });
@@ -237,7 +237,7 @@ describe('clipboardService', () => {
         mutedInfo: { muted: false },
       };
 
-      await service.copy('', tab);
+      await expect(service.copy('', tab)).resolves.toBe(false);
 
       expect(executeScriptMock).not.toHaveBeenCalled();
     });
@@ -268,6 +268,63 @@ describe('clipboardService', () => {
       };
 
       await expect(service.copy('test text', tab)).rejects.toThrow('no result from content script');
+    });
+  });
+
+  describe('mock copy', () => {
+    it('records non-empty copies', async () => {
+      const sessionGetMock = vi.fn(async () => ({ mockClipboardCalls: [] }));
+      const sessionSetMock = vi.fn(async () => undefined);
+
+      (globalThis as any).browser = {
+        storage: {
+          session: {
+            get: sessionGetMock,
+            set: sessionSetMock,
+          },
+          local: {
+            get: vi.fn(),
+            set: vi.fn(),
+          },
+        },
+      };
+
+      const service = createMockClipboardService();
+
+      await expect(service.copy('test text')).resolves.toBe(true);
+
+      expect(sessionSetMock).toHaveBeenCalledExactlyOnceWith({
+        mockClipboardCalls: [
+          expect.objectContaining({
+            text: 'test text',
+          }),
+        ],
+      });
+    });
+
+    it('does not record empty-string copies', async () => {
+      const sessionGetMock = vi.fn(async () => ({ mockClipboardCalls: [] }));
+      const sessionSetMock = vi.fn(async () => undefined);
+
+      (globalThis as any).browser = {
+        storage: {
+          session: {
+            get: sessionGetMock,
+            set: sessionSetMock,
+          },
+          local: {
+            get: vi.fn(),
+            set: vi.fn(),
+          },
+        },
+      };
+
+      const service = createMockClipboardService();
+
+      await expect(service.copy('')).resolves.toBe(false);
+
+      expect(sessionGetMock).not.toHaveBeenCalled();
+      expect(sessionSetMock).not.toHaveBeenCalled();
     });
   });
 });

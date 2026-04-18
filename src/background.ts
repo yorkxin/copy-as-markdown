@@ -125,8 +125,10 @@ if (Flags.periodicallyRefreshMenu()) {
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await contextMenuHandler.handleMenuClick(info, tab);
-    await clipboardService.copy(text, tab);
-    await badgeService.showSuccess();
+    const didCopy = await clipboardService.copy(text, tab);
+    if (didCopy) {
+      await badgeService.showSuccess();
+    }
     return true;
   } catch (error) {
     console.error(error);
@@ -139,8 +141,10 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
     const text = await keyboardCommandHandler.handleCommand(command as KeyboardCommandId, tab);
-    await clipboardService.copy(text, tab);
-    await badgeService.showSuccess();
+    const didCopy = await clipboardService.copy(text, tab);
+    if (didCopy) {
+      await badgeService.showSuccess();
+    }
     return true;
   } catch (e) {
     console.error(e);
@@ -175,8 +179,9 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   // Handle copy-to-clipboard message from popup
   if (runtimeMessage.topic === 'copy-to-clipboard') {
-    clipboardService.copy(runtimeMessage.params.text)
-      .then(() => sendResponse({ ok: true, text: null }))
+    const text = runtimeMessage.params.text;
+    clipboardService.copy(text)
+      .then(didCopy => sendResponse({ ok: true, text: null, copied: didCopy }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
