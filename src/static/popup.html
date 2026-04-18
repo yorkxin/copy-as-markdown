@@ -7,19 +7,30 @@
   <link rel="stylesheet" href="./style.css">
   <style>
   :root {
-    --bulma-body-min-width: 240px;
+    --popup-width: 240px;
+    --popup-min-width: 240px;
   }
 
   /* Keep the dropdown as wide as the popup, even when only short labels remain */
+  html,
   body,
   .dropdown,
   #dropdown-menu,
   .dropdown-content {
-    width: 100%;
-    min-width: var(--bulma-body-min-width);
+    width: var(--popup-width);
+    min-width: var(--popup-min-width);
+    max-width: var(--popup-width);
   }
   .dropdown-content .dropdown-item {
     width: 100%;
+  }
+  #flash-message {
+    white-space: normal;
+    overflow-wrap: break-word;
+    padding-right: 3rem;
+  }
+  #flash-text {
+    display: block;
   }
 
   </style>
