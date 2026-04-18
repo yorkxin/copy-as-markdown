@@ -201,7 +201,7 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         if (feedback) {
           await badgeService.clear();
         }
-        sendResponse({ ok: true, text: null, feedback });
+        sendResponse({ ok: true, feedback });
       })
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
