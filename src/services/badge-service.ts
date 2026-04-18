@@ -3,10 +3,12 @@ type BadgeColor = string | ColorArray;
 
 const COLOR_GREEN = '#738a05';
 const COLOR_RED = '#d11b24';
+const COLOR_YELLOW = '#b7791f';
 const COLOR_TRANSPARENT: ColorArray = [0, 0, 0, 0];
 
 const TEXT_OK = '✓';
 const TEXT_ERROR = '×';
+const TEXT_WARNING = '!';
 const TEXT_EMPTY = '';
 
 const FLASH_DURATION_MS = 3000;
@@ -73,6 +75,17 @@ export function createBadgeService(
       ]);
       // Creating an alarm with the same name replaces any existing alarm
       alarmsAPI.create(ALARM_NAME_CLEAR_BADGE, { when: Date.now() + FLASH_DURATION_MS });
+    },
+
+    /**
+     * Shows a persistent warning badge (! with yellow background).
+     * This state is not auto-cleared and must be cleared explicitly.
+     */
+    async showWarning(): Promise<void> {
+      await Promise.all([
+        badgeAPI.setBadgeText({ text: TEXT_WARNING }),
+        badgeAPI.setBadgeBackgroundColor({ color: COLOR_YELLOW }),
+      ]);
     },
 
     /**

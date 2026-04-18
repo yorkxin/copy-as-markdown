@@ -82,6 +82,7 @@ const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerServices
 async function setPendingPopupFeedback(feedback: PendingPopupFeedbackCode): Promise<void> {
   try {
     await pendingPopupFeedbackService.set(feedback);
+    await badgeService.showWarning();
   } catch (error) {
     console.error('Failed to persist pending popup feedback', error);
   }
@@ -90,6 +91,7 @@ async function setPendingPopupFeedback(feedback: PendingPopupFeedbackCode): Prom
 async function clearPendingPopupFeedback(): Promise<void> {
   try {
     await pendingPopupFeedbackService.clear();
+    await badgeService.clear();
   } catch (error) {
     console.error('Failed to clear pending popup feedback', error);
   }
@@ -112,7 +114,12 @@ async function refreshMarkdownInstance(): Promise<void> {
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === badgeService.getClearAlarmName()) {
-    await badgeService.clear();
+    const pendingPopupFeedback = await pendingPopupFeedbackService.get();
+    if (pendingPopupFeedback) {
+      await badgeService.showWarning();
+    } else {
+      await badgeService.clear();
+    }
   }
 
   if (alarm.name === ALARM_REFRESH_MENU) {
@@ -190,7 +197,12 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (runtimeMessage.topic === 'consume-pending-popup-feedback') {
     pendingPopupFeedbackService.consume()
-      .then(feedback => sendResponse({ ok: true, text: null, feedback }))
+      .then(async (feedback) => {
+        if (feedback) {
+          await badgeService.clear();
+        }
+        sendResponse({ ok: true, text: null, feedback });
+      })
       .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
