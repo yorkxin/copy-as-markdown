@@ -1,4 +1,5 @@
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
+import { cleanUrl } from '../lib/url-cleaner.js';
 
 // Type Definitions
 export type LinkExportFormat = 'link' | 'custom-format';
@@ -56,16 +57,19 @@ export class LinkExportService {
     // Validate options
     validateLinkExportOptions(options);
 
+    // Clean URL to remove tracking parameters
+    const cleanedUrl = cleanUrl(options.url);
+
     // Route to appropriate formatter
     switch (options.format) {
       case 'link':
-        return this.markdown.linkTo(options.title, options.url);
+        return this.markdown.linkTo(options.title, cleanedUrl);
 
       case 'custom-format':
         // We already validated that customFormatSlot exists
         return renderCustomFormatLink(
           options.title,
-          options.url,
+          cleanedUrl,
           options.customFormatSlot!,
           // TODO: implement flexible title formatter.
           // See https://github.com/yorkxin/copy-as-markdown/issues/133
