@@ -41,8 +41,7 @@ on-page-textarea hacks entirely.
 | Chrome clipboard write | Offscreen document (`chrome.offscreen`, reason `CLIPBOARD`). |
 | Firefox clipboard write | Unchanged — background `navigator.clipboard.writeText` via the existing `ALWAYS_USE_NAVIGATOR_COPY_API` flag. |
 | Minimum Chrome version | **109+** (offscreen API). Set `minimum_chrome_version`. No older-Chrome fallback. |
-| Offscreen lifecycle | **Lazy keep-open singleton** — create on first use, reuse thereafter, never proactively close. |
-| Idle-close optimization | **Deferred** to future work. |
+| Offscreen lifecycle | **Create-and-close per copy (serialized)** — create the document on demand, use it for a single write, then close it immediately. Copies are serialized so only one document ever exists at a time. |
 | Old hacks | **Full removal** — delete `content-script.ts`, `iframe-copy.ts`, `iframe-copy.html`, the on-page-textarea path, and the iframe `web_accessible_resources` entry. |
 | Firefox mv3 | Unchanged and keeps working (flag/navigator path already active at init); the **selection** content script is untouched. |
 | Firefox mv2 | **Out of scope, not modified.** Will lose clipboard when `content-script.ts` is deleted; accepted (folder to be deleted separately). |
@@ -51,7 +50,7 @@ on-page-textarea hacks entirely.
 
 - No change to the selection-to-markdown conversion path (`executeScript` of
   `selection-to-markdown.ts` stays for both browsers).
-- No idle-close / teardown of the offscreen document (future optimization).
+- No keep-open / pooled offscreen document — it is created and closed per copy.
 - No fallback clipboard path on Chrome (M109+ is required).
 - No change to Firefox's clipboard mechanism.
 
@@ -97,12 +96,14 @@ ignore it) to minimize churn.
 
 3. **`src/services/offscreen-clipboard-service.ts`** — owns the offscreen lifecycle and
    the round-trip:
-   - `ensureDocument()`: lazy keep-open singleton. Holds an in-memory creation promise to
-     de-dupe concurrent callers; treats `createDocument`'s "Only a single offscreen
-     document may be created" error as "already exists" (so it works on 109+ without
-     depending on `chrome.runtime.getContexts`, which is 116+). Never closes the document.
-   - `copy(text)`: `await ensureDocument()`, send `{ target: 'offscreen-clipboard', text }`
-     via `chrome.runtime.sendMessage`, await the `{ ok, error }` reply, return `ok`.
+   - `copy(text)`: serialized through an in-memory promise chain so only one document
+     exists at a time. Each call creates the document, sends
+     `{ target: 'offscreen-clipboard', text }` via `chrome.runtime.sendMessage`, awaits the
+     `{ ok, error }` reply, and then **closes the document** (in a `finally`, even on write
+     failure). Creation treats `createDocument`'s "Only a single offscreen document may be
+     created" error as "reuse a leftover document" (covers a failed prior close or a doc
+     orphaned by a previous service-worker lifetime) — so it works on 109+ without depending
+     on `chrome.runtime.getContexts`, which is 116+.
 
 ### Data flow (Chrome, one copy)
 
@@ -110,10 +111,11 @@ ignore it) to minimize churn.
 contextMenus.onClicked / commands.onCommand (background SW)
   → convertSelectionToMarkdown(tab)          // unchanged: executeScript selection
   → clipboardService.copy(text, tab)
-      → offscreenClipboardService.copy(text)
-          → ensureDocument()                 // create once, reuse
+      → offscreenClipboardService.copy(text)   // serialized
+          → createDocument()                   // create on demand
           → runtime.sendMessage({ target:'offscreen-clipboard', text })
           → offscreen.js: textarea.value=text; select(); execCommand('copy'); reply { ok }
+          → closeDocument()                    // close immediately (finally)
       ← ok
   → badge update (unchanged)
 ```
@@ -180,23 +182,20 @@ existing Chrome users are not disabled pending review.)
 
 ## Risks / open items
 
-- **Offscreen document persistence (keep-open).** The offscreen document lives for the rest
-  of the browser session (until `closeDocument()` or extension reload), so later copies skip
-  re-creation. It **persists across service-worker restarts**, so `ensureDocument()` must
-  detect an already-existing document after a cold SW start (the "already exists" catch).
-  Note: a common claim that an open offscreen document also keeps the *service worker* awake
-  is community folklore tied to *active* messaging / port connections, not the mere existence
-  of the document, and is **not** guaranteed by the Chrome docs — this design does not depend
-  on it. The accepted cost of keep-open is the offscreen document's own idle memory; the
-  deferred idle-close optimization reclaims it.
-- **Playwright + offscreen.** Verify the extension test harness can exercise an offscreen
-  document; if not, the smoke test stays on the mock-clipboard assertion plus a unit-level
-  guarantee of the offscreen round-trip.
-- **Concurrency.** Two rapid copies must not both call `createDocument` (the in-memory
-  creation promise handles this within one SW lifetime; the "already exists" catch handles
-  a stale document after an SW restart).
-
-## Future work
-
-- Idle-close / teardown of the offscreen document (close after ~30s idle via
-  `chrome.alarms`) to release the offscreen document's memory when idle.
+- **Per-copy creation latency.** Each copy pays `createDocument` (on the order of tens of
+  milliseconds). This is imperceptible for a user-initiated copy and is the accepted cost of
+  not keeping a document open. Empirically the MV3 service worker is terminated on idle
+  regardless of whether an offscreen document is open (an open offscreen document does **not**
+  keep the service worker alive — a common claim to the contrary is folklore tied to active
+  messaging/ports), so a keep-open document would buy little and risk lingering memory; closing
+  per copy keeps the footprint clean and removes the need for any idle-close teardown.
+- **Concurrency.** Two copies must not race `createDocument`/`closeDocument` against Chrome's
+  "only one offscreen document at a time" rule. Copies are serialized through an in-memory
+  promise chain (create → write → close, one at a time); the "already exists" catch on
+  creation additionally tolerates a leftover document (failed prior close, or one orphaned by
+  a previous service-worker lifetime). In practice clipboard copies are user-gesture-driven and
+  effectively never concurrent, but the serialization makes it strictly correct.
+- **Playwright + offscreen.** The extension test harness may not expose an API to introspect
+  the offscreen document; the smoke test verifies the *system clipboard* content instead, which
+  works regardless (confirmed passing). If the offscreen write ever stops functioning headless,
+  fall back to the mock-clipboard assertion plus the unit-level round-trip guarantee.
