@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { ConsoleMessage, Worker } from '@playwright/test';
+import type { Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import {
   getServiceWorker,
@@ -38,15 +38,7 @@ test.describe('Selection As Markdown Clipboard Smoke', () => {
     }
   });
 
-  test('copies markdown through iframe fallback without page message interference', async ({ page }) => {
-    const consoleErrors: string[] = [];
-
-    page.on('console', (message: ConsoleMessage) => {
-      if (message.type() === 'error') {
-        consoleErrors.push(message.text());
-      }
-    });
-
+  test('copies markdown to the system clipboard via the offscreen document', async ({ page }) => {
     await page.goto('http://localhost:5566/selection-noisy.html');
     await page.waitForLoadState('networkidle');
 
@@ -72,6 +64,5 @@ test.describe('Selection As Markdown Clipboard Smoke', () => {
     const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-noisy.md'), 'utf-8');
 
     expect(clipboardText).toEqual(normalizeLineEndings(expectedMarkdown));
-    expect(consoleErrors).toEqual(expect.not.arrayContaining([expect.stringContaining('Message origin not allowed')]));
   });
 });
