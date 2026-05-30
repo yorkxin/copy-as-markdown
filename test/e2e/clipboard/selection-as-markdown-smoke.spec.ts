@@ -42,6 +42,11 @@ test.describe('Selection As Markdown Clipboard Smoke', () => {
     await page.goto('http://localhost:5566/selection-noisy.html');
     await page.waitForLoadState('networkidle');
 
+    // Foreground the tab before selecting so the selection is read from a
+    // focused page (mirrors the real user flow and avoids a focus race that
+    // can leave the selection unreadable under heavy parallel load).
+    await page.bringToFront();
+
     await page.evaluate(() => {
       const range = document.createRange();
       const content = document.querySelector('#content');
@@ -59,7 +64,6 @@ test.describe('Selection As Markdown Clipboard Smoke', () => {
       return chrome.commands.onCommand.dispatch('selection-as-markdown');
     });
 
-    await page.bringToFront();
     const clipboardText = normalizeLineEndings(await waitForSystemClipboard(5000));
     const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-noisy.md'), 'utf-8');
 

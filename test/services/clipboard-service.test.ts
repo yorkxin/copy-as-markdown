@@ -6,7 +6,14 @@ import type { OffscreenClipboardService } from '../../src/services/offscreen-cli
 describe('clipboardService', () => {
   describe('copy', () => {
     const tab: browser.tabs.Tab = {
-      id: 1, index: 0, pinned: false, highlighted: false, windowId: 1, active: true, incognito: false, mutedInfo: { muted: false },
+      id: 1,
+      index: 0,
+      pinned: false,
+      highlighted: false,
+      windowId: 1,
+      active: true,
+      incognito: false,
+      mutedInfo: { muted: false },
     };
 
     function makeOffscreen(ok = true): OffscreenClipboardService & { copy: ReturnType<typeof vi.fn> } {

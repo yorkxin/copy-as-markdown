@@ -23,7 +23,9 @@ describe('offscreenClipboardService', () => {
 
   it('de-dupes concurrent copies into a single createDocument', async () => {
     let resolveCreate: () => void = () => {};
-    const createImpl = () => new Promise<void>((r) => { resolveCreate = r; });
+    const createImpl = () => new Promise<void>((r) => {
+      resolveCreate = r;
+    });
     const { offscreenAPI, runtimeAPI, createDocument } = makeApis({ createImpl });
     const service = createOffscreenClipboardService(offscreenAPI, runtimeAPI);
 
@@ -35,7 +37,9 @@ describe('offscreenClipboardService', () => {
   });
 
   it('treats an already-existing document as success', async () => {
-    const createImpl = async () => { throw new Error('Only a single offscreen document may be created.'); };
+    const createImpl = async () => {
+      throw new Error('Only a single offscreen document may be created.');
+    };
     const { offscreenAPI, runtimeAPI, sendMessage } = makeApis({ createImpl });
     const service = createOffscreenClipboardService(offscreenAPI, runtimeAPI);
 
@@ -53,7 +57,12 @@ describe('offscreenClipboardService', () => {
 
   it('retries creation after a genuine (non-exists) creation failure', async () => {
     let calls = 0;
-    const createImpl = async () => { calls += 1; if (calls === 1) throw new Error('boom'); };
+    const createImpl = async () => {
+      calls += 1;
+      if (calls === 1) {
+        throw new Error('boom');
+      }
+    };
     const { offscreenAPI, runtimeAPI, createDocument } = makeApis({ createImpl });
     const service = createOffscreenClipboardService(offscreenAPI, runtimeAPI);
 
