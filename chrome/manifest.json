@@ -3,7 +3,7 @@
   "version": "3.6.0",
   "version_name": "3.6.0",
   "manifest_version": 3,
-  "minimum_chrome_version": "109",
+  "minimum_chrome_version": "116",
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "activeTab",

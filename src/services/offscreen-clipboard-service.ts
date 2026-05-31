@@ -6,7 +6,7 @@ export const OFFSCREEN_DOCUMENT_URL = 'dist/static/offscreen.html';
 export const OFFSCREEN_TARGET = 'offscreen-clipboard';
 
 type OffscreenAPI = Pick<typeof chrome.offscreen, 'createDocument'>;
-type RuntimeAPI = Pick<typeof chrome.runtime, 'sendMessage'>;
+type RuntimeAPI = Pick<typeof chrome.runtime, 'sendMessage' | 'getContexts'>;
 
 export function createOffscreenClipboardService(
   offscreenAPI: OffscreenAPI = chrome.offscreen,
@@ -16,7 +16,23 @@ export function createOffscreenClipboardService(
   // reset only on a genuine creation failure so the next copy can retry.
   let documentReady: Promise<void> | null = null;
 
+  // Determine whether an offscreen document already exists via the structured
+  // chrome.runtime.getContexts API (Chrome 116+) rather than matching the
+  // English-only, version-specific createDocument error text.
+  async function hasDocument(): Promise<boolean> {
+    const contexts = await runtimeAPI.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType],
+    });
+    return contexts.length > 0;
+  }
+
   async function createOnce(): Promise<void> {
+    // A document may already exist — typically one created by a previous
+    // service-worker lifetime that this fresh worker inherited. Reuse it
+    // rather than creating a second (Chrome allows only one at a time).
+    if (await hasDocument()) {
+      return;
+    }
     try {
       await offscreenAPI.createDocument({
         url: OFFSCREEN_DOCUMENT_URL,
@@ -24,10 +40,10 @@ export function createOffscreenClipboardService(
         justification: 'Write Markdown text to the system clipboard.',
       });
     } catch (error) {
-      // A document already exists (concurrent caller, or a previous service
-      // worker lifetime created it and persisted across the restart).
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes('Only a single offscreen document')) {
+      // If a document appeared between the check and the create (a race),
+      // treat it as success; otherwise surface the real error. This keeps us
+      // off any reliance on the createDocument error message string.
+      if (!(await hasDocument())) {
         throw error;
       }
     }
