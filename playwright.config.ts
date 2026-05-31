@@ -56,7 +56,6 @@ export default defineConfig({
       testDir: './test/e2e/clipboard',
       fullyParallel: false,
       workers: 1,
-      dependencies: ['parallel-tests'],
       use: {
         ...devices['Desktop Chrome'],
         // IMPORTANT: Must use 'chromium' channel for extensions to work

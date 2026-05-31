@@ -1,273 +1,58 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createClipboardService, createMockClipboardService } from '../../src/services/clipboard-service.js';
-import type { ScriptingAPI } from '../../src/services/shared-types.js';
-import type {
-  ClipboardAPI,
-  TabsAPI,
-} from '../../src/services/clipboard-service.js';
-import copy from '../../src/content-script.js';
-
-function createUnusedScriptingAPI(): ScriptingAPI {
-  return {
-    executeScript: vi.fn().mockRejectedValue(new Error('ScriptingAPI.executeScript should not be called in this test')),
-  };
-}
-
-function createUnusedTabsAPI(): TabsAPI {
-  return {
-    query: vi.fn().mockRejectedValue(new Error('TabsAPI.query should not be called in this test')),
-  };
-}
+import type { ClipboardAPI } from '../../src/services/shared-types.js';
+import type { OffscreenClipboardService } from '../../src/services/offscreen-clipboard-service.js';
 
 describe('clipboardService', () => {
   describe('copy', () => {
-    it('should use content script when clipboardAPI is null', async () => {
-      const executeScriptMock = vi.fn(async () => [
-        { result: { ok: true, method: 'navigator_api' } },
-      ]);
+    const tab: browser.tabs.Tab = {
+      id: 1,
+      index: 0,
+      pinned: false,
+      highlighted: false,
+      windowId: 1,
+      active: true,
+      incognito: false,
+      mutedInfo: { muted: false },
+    };
 
-      const mockScriptingAPI: ScriptingAPI = {
-        executeScript: executeScriptMock,
-      };
+    function makeOffscreen(ok = true): OffscreenClipboardService & { copy: ReturnType<typeof vi.fn> } {
+      return { copy: vi.fn(async () => ok) } as any;
+    }
 
-      const service = createClipboardService(
-        mockScriptingAPI,
-        createUnusedTabsAPI(),
-        null,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
+    it('writes via clipboardAPI when provided (Firefox path)', async () => {
+      const writeText = vi.fn<(t: string) => Promise<void>>(async () => {});
+      const clipboardAPI: ClipboardAPI = { writeText };
+      const offscreen = makeOffscreen();
+      const service = createClipboardService(clipboardAPI, offscreen);
 
-      const tab: browser.tabs.Tab = {
-        id: 123,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: true,
-        incognito: false,
-        mutedInfo: { muted: false },
-      };
-
-      await service.copy('test text', tab);
-
-      expect(executeScriptMock).toHaveBeenCalledExactlyOnceWith({
-        target: {
-          tabId: 123,
-        },
-        args: [
-          'test text',
-          'chrome-extension://id/dist/static/iframe-copy.html',
-        ],
-        func: copy,
-      });
+      await expect(service.copy('hello', tab)).resolves.toBe(true);
+      expect(writeText).toHaveBeenCalledExactlyOnceWith('hello');
+      expect(offscreen.copy).not.toHaveBeenCalled();
     });
 
-    it('should use clipboardAPI when provided', async () => {
-      const writeTextMock = vi.fn<(text: string) => Promise<void>>(async () => { });
-      const mockClipboardAPI: ClipboardAPI = {
-        writeText: writeTextMock,
-      };
+    it('delegates to the offscreen service when clipboardAPI is null (Chrome path)', async () => {
+      const offscreen = makeOffscreen();
+      const service = createClipboardService(null, offscreen);
 
-      const service = createClipboardService(
-        createUnusedScriptingAPI(),
-        createUnusedTabsAPI(),
-        mockClipboardAPI,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
-
-      await service.copy('test text');
-
-      expect(writeTextMock).toHaveBeenCalledExactlyOnceWith('test text');
+      await expect(service.copy('hello', tab)).resolves.toBe(true);
+      expect(offscreen.copy).toHaveBeenCalledExactlyOnceWith('hello');
     });
 
-    it('should get current tab when tab is not provided', async () => {
-      const queryMock = vi.fn(async () => [
-        {
-          id: 456,
-          index: 0,
-          pinned: false,
-          highlighted: false,
-          windowId: 1,
-          active: true,
-          incognito: false,
-          mutedInfo: { muted: false },
-        },
-      ]);
-
-      const executeScriptMock = vi.fn(async () => [
-        { result: { ok: true, method: 'navigator_api' } },
-      ]);
-
-      const mockTabsAPI: TabsAPI = {
-        query: queryMock,
-      };
-
-      const mockScriptingAPI: ScriptingAPI = {
-        executeScript: executeScriptMock,
-      };
-
-      const service = createClipboardService(
-        mockScriptingAPI,
-        mockTabsAPI,
-        null,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
-
-      await service.copy('test text');
-
-      expect(queryMock).toHaveBeenCalledExactlyOnceWith({
-        currentWindow: true,
-        active: true,
-      });
-
-      expect(executeScriptMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          target: expect.objectContaining({
-            tabId: 456,
-          }),
-        }),
-      );
-    });
-
-    it('should throw error when tab has no id', async () => {
-      const service = createClipboardService(
-        createUnusedScriptingAPI(),
-        createUnusedTabsAPI(),
-        null,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
-
-      const tab: browser.tabs.Tab = {
-        id: undefined,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: true,
-        incognito: false,
-        mutedInfo: { muted: false },
-      };
-
-      await expect(service.copy('test text', tab)).rejects.toThrow('tab has no id');
-    });
-
-    it('should throw error when content script fails', async () => {
-      const executeScriptMock = vi.fn(async () => [
-        { result: { ok: false, error: 'Permission denied', method: 'navigator_api' } },
-      ]);
-
-      const mockScriptingAPI: ScriptingAPI = {
-        executeScript: executeScriptMock,
-      };
-
-      const service = createClipboardService(
-        mockScriptingAPI,
-        createUnusedTabsAPI(),
-        null,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
-
-      const tab: browser.tabs.Tab = {
-        id: 123,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: true,
-        incognito: false,
-      };
-
-      await expect(service.copy('test text', tab)).rejects.toThrow('content script failed: Permission denied (method = navigator_api)');
-    });
-
-    it('should throw error when current tab query returns no tabs', async () => {
-      const queryMock = vi.fn(async () => []);
-
-      const mockTabsAPI: TabsAPI = {
-        query: queryMock,
-      };
-
-      const service = createClipboardService(
-        createUnusedScriptingAPI(),
-        mockTabsAPI,
-        null,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
-
-      await expect(service.copy('test text')).rejects.toThrow('failed to get current tab');
-    });
-
-    it('does nothing when text is empty string (clipboardAPI path)', async () => {
-      const writeTextMock = vi.fn<(text: string) => Promise<void>>(async () => {});
-      const mockClipboardAPI: ClipboardAPI = { writeText: writeTextMock };
-
-      const service = createClipboardService(
-        createUnusedScriptingAPI(),
-        createUnusedTabsAPI(),
-        mockClipboardAPI,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
+    it('returns false for empty text without touching either mechanism', async () => {
+      const writeText = vi.fn<(t: string) => Promise<void>>(async () => {});
+      const offscreen = makeOffscreen();
+      const service = createClipboardService({ writeText }, offscreen);
 
       await expect(service.copy('')).resolves.toBe(false);
-
-      expect(writeTextMock).not.toHaveBeenCalled();
+      expect(writeText).not.toHaveBeenCalled();
+      expect(offscreen.copy).not.toHaveBeenCalled();
     });
 
-    it('does nothing when text is empty string (content script path)', async () => {
-      const executeScriptMock = vi.fn(async () => [
-        { result: { ok: true, method: 'navigator_api' } },
-      ]);
-      const mockScriptingAPI: ScriptingAPI = { executeScript: executeScriptMock };
+    it('throws when no clipboard mechanism is available', async () => {
+      const service = createClipboardService(null, null);
 
-      const service = createClipboardService(
-        mockScriptingAPI,
-        createUnusedTabsAPI(),
-        null,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
-
-      const tab: browser.tabs.Tab = {
-        id: 123,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: true,
-        incognito: false,
-        mutedInfo: { muted: false },
-      };
-
-      await expect(service.copy('', tab)).resolves.toBe(false);
-
-      expect(executeScriptMock).not.toHaveBeenCalled();
-    });
-
-    it('should throw error when executeScript returns no results', async () => {
-      const executeScriptMock = vi.fn(async () => []);
-
-      const mockScriptingAPI: ScriptingAPI = {
-        executeScript: executeScriptMock,
-      };
-
-      const service = createClipboardService(
-        mockScriptingAPI,
-        createUnusedTabsAPI(),
-        null,
-        'chrome-extension://id/dist/static/iframe-copy.html',
-      );
-
-      const tab: browser.tabs.Tab = {
-        id: 123,
-        index: 0,
-        pinned: false,
-        highlighted: false,
-        windowId: 1,
-        active: true,
-        incognito: false,
-        mutedInfo: { muted: false },
-      };
-
-      await expect(service.copy('test text', tab)).rejects.toThrow('no result from content script');
+      await expect(service.copy('hello')).rejects.toThrow('no clipboard mechanism available');
     });
   });
 

@@ -3,11 +3,14 @@
   "version": "3.6.0",
   "version_name": "3.6.0",
   "manifest_version": 3,
+  "minimum_chrome_version": "109",
   "description": "Copy Link or Image as Markdown code",
   "permissions": [
     "activeTab",
     "alarms",
     "contextMenus",
+    "clipboardWrite",
+    "offscreen",
     "scripting",
     "storage"
   ],
@@ -116,7 +119,6 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "dist/static/iframe-copy.html",
         "dist/vendor/turndown.mjs",
         "dist/vendor/turndown-plugin-gfm.mjs"
       ],

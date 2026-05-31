@@ -1,6 +1,6 @@
-import copy from '../content-script.js';
-import type { ClipboardAPI, ScriptingAPI, TabsAPI } from './shared-types.js';
-import { mustGetCurrentTab } from './browser-utils.js';
+import type { ClipboardAPI } from './shared-types.js';
+import type { OffscreenClipboardService } from './offscreen-clipboard-service.js';
+import { createBrowserOffscreenClipboardService } from './offscreen-clipboard-service.js';
 
 export interface ClipboardMockCall {
   text: string;
@@ -99,52 +99,23 @@ export function createMockClipboardService(): ClipboardService {
 }
 
 export function createClipboardService(
-  scriptingAPI: ScriptingAPI,
-  tabsAPI: TabsAPI,
   clipboardAPI: ClipboardAPI | null,
-  iframeUrl: string,
+  offscreenService: OffscreenClipboardService | null,
 ): ClipboardService {
-  async function copyUsingContentScript(tab: browser.tabs.Tab, text: string): Promise<boolean> {
-    if (!tab.id) {
-      throw new Error('tab has no id');
-    }
-    const results = await scriptingAPI.executeScript({
-      target: {
-        tabId: tab.id,
-      },
-      func: copy,
-      args: [text, iframeUrl],
-    });
-
-    const firstResult = results[0];
-    if (!firstResult) {
-      throw new Error('no result from content script');
-    }
-    const { result } = firstResult;
-    if (result.ok) {
-      return true;
-    }
-    throw new Error(`content script failed: ${result.error} (method = ${result.method})`);
-  }
-
-  async function copy_(text: string, tab?: browser.tabs.Tab): Promise<boolean> {
+  async function copy_(text: string): Promise<boolean> {
     if (text === '') {
       return false;
     }
-
-    // If clipboardAPI is provided, use it directly (for ALWAYS_USE_NAVIGATOR_COPY_API mode)
+    // Firefox: write directly with navigator.clipboard from the background.
     if (clipboardAPI) {
       await clipboardAPI.writeText(text);
       return true;
     }
-
-    // Otherwise use content script approach
-    // If no tab provided, get the current active tab
-    let targetTab = tab;
-    if (!targetTab) {
-      targetTab = await mustGetCurrentTab(tabsAPI);
+    // Chrome: write via the offscreen document.
+    if (offscreenService) {
+      return await offscreenService.copy(text);
     }
-    return await copyUsingContentScript(targetTab, text);
+    throw new Error('no clipboard mechanism available');
   }
 
   return {
@@ -154,19 +125,13 @@ export function createClipboardService(
 
 export function createBrowserClipboardService(
   clipboardAPI: ClipboardAPI | null,
-  iframeUrl: string,
   mockMode = false,
 ): ClipboardService {
   if (mockMode) {
     return createMockClipboardService();
   }
 
-  return createClipboardService(
-    browser.scripting,
-    browser.tabs,
-    clipboardAPI,
-    iframeUrl,
-  );
+  return createClipboardService(clipboardAPI, createBrowserOffscreenClipboardService());
 }
 
 export interface ClipboardServiceController extends ClipboardService {
@@ -192,7 +157,6 @@ export interface ClipboardServiceController extends ClipboardService {
  */
 export function createBrowserClipboardServiceController(
   clipboardAPI: ClipboardAPI | null,
-  iframeUrl: string,
   options?: {
     storageArea?: browser.storage.StorageArea;
     storageKey?: string;
@@ -204,7 +168,7 @@ export function createBrowserClipboardServiceController(
   const defaultMockState = options?.defaultMockState ?? false;
 
   let mockMode = defaultMockState;
-  let activeService = createBrowserClipboardService(clipboardAPI, iframeUrl, mockMode);
+  let activeService = createBrowserClipboardService(clipboardAPI, mockMode);
 
   function syncGlobalMockService(): void {
     if (mockMode) {
@@ -227,7 +191,7 @@ export function createBrowserClipboardServiceController(
   async function setMockMode(enabled: boolean): Promise<void> {
     if (mockMode !== enabled) {
       mockMode = enabled;
-      activeService = createBrowserClipboardService(clipboardAPI, iframeUrl, mockMode);
+      activeService = createBrowserClipboardService(clipboardAPI, mockMode);
       syncGlobalMockService();
     }
 
