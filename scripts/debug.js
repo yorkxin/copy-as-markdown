@@ -42,16 +42,6 @@ switch (browser) {
     spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'chrome')} -t chromium --chromium-binary "${binary}" --args chrome://extensions https://example.com`);
     break;
   }
-  case 'firefox-mv2':
-    console.log('starting firefox-mv2');
-
-    spawnedBrowser = child_process.exec(`npx web-ext run -s ${path.join(root, 'firefox-mv2')} --url about:debugging#/runtime/this-firefox https://example.com`);
-    break;
-  case 'firefox-deved':
-    console.log('starting firefox developer edition');
-
-    spawnedBrowser = child_process.exec(`npx web-ext run -f deved -s ${path.join(root, 'firefox-mv3')} --url about:debugging#/runtime/this-firefox https://example.com`);
-    break;
   case 'firefox-mv3':
     console.log('starting firefox-mv3');
 

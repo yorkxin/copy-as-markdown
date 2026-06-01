@@ -54,10 +54,6 @@ src/               # Shared Source Code
 chrome/            # Chrome / Chromium files
   dist/            # ../src will be copied here
   manifest.json
-firefox-mv2/       # Firefox Manifest V2 files
-  dist/            # ../src will be copied here
-  manifest.json
-  background.html  # Loads ESModule
 firefox-mv3/       # Firefox Manifest V3 files
   dist/            # ../src will be copied here
   manifest.json
@@ -87,7 +83,6 @@ Use the script `scripts/debug.js` that runs an auto-reload process. Usage:
 
 ```sh
 npm debug-chrome
-npm debug-firefox-mv2
 npm debug-firefox-mv3
 ```
 
