@@ -35,13 +35,11 @@ const linkExportService = new LinkExportService(markdownInstance, CustomFormatsS
 
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
 const useNavigatorClipboard = Flags.alwaysUseNavigatorClipboard();
-const iframeCopyUrl = browser.runtime.getURL('dist/static/iframe-copy.html');
 const pendingPopupFeedbackService = createBrowserPendingPopupFeedbackService();
 const EMPTY_RESULT_FEEDBACK: PendingPopupFeedbackCode = 'empty-result';
 
 const clipboardService = createBrowserClipboardServiceController(
   useNavigatorClipboard ? navigator.clipboard : null,
-  iframeCopyUrl,
 );
 
 (globalThis as any).setMockClipboardMode = clipboardService.setMockMode;
