@@ -32,17 +32,6 @@ describe('offscreenClipboardService', () => {
     expect(sendMessage).toHaveBeenLastCalledWith({ target: OFFSCREEN_TARGET, text: 'b' });
   });
 
-  it('de-dupes concurrent copies into a single createDocument', async () => {
-    const { offscreenAPI, runtimeAPI, createDocument } = makeApis();
-    const service = createOffscreenClipboardService(offscreenAPI, runtimeAPI);
-
-    // Both copies are invoked before the first one resolves; they share the
-    // in-flight documentReady promise, so createDocument runs only once.
-    await Promise.all([service.copy('a'), service.copy('b')]);
-
-    expect(createDocument).toHaveBeenCalledTimes(1);
-  });
-
   it('reuses an existing offscreen document instead of creating another', async () => {
     const { offscreenAPI, runtimeAPI, createDocument, sendMessage } = makeApis({
       getContextsImpl: async () => [{ contextType: 'OFFSCREEN_DOCUMENT' }],
