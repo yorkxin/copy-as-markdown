@@ -12,11 +12,9 @@ export function createOffscreenClipboardService(
   offscreenAPI: OffscreenAPI = chrome.offscreen,
   runtimeAPI: RuntimeAPI = chrome.runtime,
 ): OffscreenClipboardService {
-  // Whether this service-worker lifetime has already ensured the offscreen
-  // document exists, so warm copies skip the existence check. It flips to true
-  // only after a successful create/verify, so a failed attempt leaves it false
-  // and the next copy retries.
-  let documentReady = false;
+  // Lazy keep-open singleton. `documentReady` is set once and reused; it is
+  // reset only on a genuine creation failure so the next copy can retry.
+  let documentReady: Promise<void> | null = null;
 
   // Determine whether an offscreen document already exists via the structured
   // chrome.runtime.getContexts API (Chrome 116+) rather than matching the
@@ -52,12 +50,15 @@ export function createOffscreenClipboardService(
   }
 
   async function ensureDocument(): Promise<void> {
-    if (documentReady) {
-      return;
+    if (!documentReady) {
+      documentReady = createOnce();
     }
-    // If createOnce throws, documentReady stays false and the next copy retries.
-    await createOnce();
-    documentReady = true;
+    try {
+      await documentReady;
+    } catch (error) {
+      documentReady = null;
+      throw error;
+    }
   }
 
   async function copy(text: string): Promise<boolean> {
