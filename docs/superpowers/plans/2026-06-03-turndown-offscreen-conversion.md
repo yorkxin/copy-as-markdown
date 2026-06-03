@@ -1526,23 +1526,37 @@ git commit -m "feat: wire offscreen document service and markdown converter by f
 
 These specs validated the full page-side pipeline. Recompose them as `htmlToMarkdown(extractSelectionHtml(onlyIfFocused), options)` so the DOM-dependent conversion stays covered with identical expected output.
 
-- [ ] **Step 1: Update the shared helper in each list/code/trailing spec**
+- [ ] **Step 1: Update the helper in each list/code/trailing spec**
 
-In `test/ui/selection-list-paragraph.spec.ts`, `test/ui/selection-code-block.spec.ts`, and `test/ui/selection-trailing-newlines.spec.ts`, replace the top imports and the local `convertSelectionToMarkdown` helper. New imports:
+In all three files, change the top import from `selectionToMarkdown` to the two new functions:
 
 ```ts
 import { extractSelectionHtml } from '../../src/content-scripts/selection-to-markdown.js';
 import { htmlToMarkdown } from '../../src/lib/html-to-markdown.js';
 ```
 
-New helper body (keep the same selection setup each file already uses; only the conversion line changes — replace the `await selectionToMarkdown(URL, URL, opts, false)` call with):
+Then, in each file's local `convertSelectionToMarkdown` helper, replace the `await selectionToMarkdown(...)` call (it passes the two `/src/vendor/...` URLs, an options object, and `false`) with a compose of extract + convert, keeping every other line of the helper (selection setup and the `finally` cleanup) exactly as-is. The options object differs per file — use the one already present in that file:
 
-```ts
-    const html = extractSelectionHtml(false);
-    return htmlToMarkdown(html, /* the same options object the file already passes */);
-```
+- `selection-list-paragraph.spec.ts` — the call passes inline `{ headingStyle: 'atx', bulletListMarker: '-' }`:
+  ```ts
+      return htmlToMarkdown(extractSelectionHtml(false), {
+        headingStyle: 'atx',
+        bulletListMarker: '-',
+      });
+  ```
+- `selection-trailing-newlines.spec.ts` — same inline options as above:
+  ```ts
+      return htmlToMarkdown(extractSelectionHtml(false), {
+        headingStyle: 'atx',
+        bulletListMarker: '-',
+      });
+  ```
+- `selection-code-block.spec.ts` — the helper merges `{ ...baseTurndownOptions, ...options }` and selects `selectionSelector`. Keep `baseTurndownOptions`, the `options?: Partial<TurndownOptions>` and `selectionSelector` params, and the `range.selectNodeContents(target)` setup; only swap the conversion line:
+  ```ts
+      return htmlToMarkdown(extractSelectionHtml(false), { ...baseTurndownOptions, ...options });
+  ```
 
-Make the helper synchronous if the file declared it `async` only for the old `await import`; `extractSelectionHtml` and `htmlToMarkdown` are synchronous. (If keeping `async` is simpler for diff size, that is acceptable — `await` on a non-promise is harmless.) Remove any `TURNDOWN`/`GFM` URL constants that are now unused.
+`extractSelectionHtml` and `htmlToMarkdown` are synchronous; you may drop `async`/`await` from the helper, but leaving them is harmless. Remove any now-unused `/src/vendor/...` URL string literals or `TURNDOWN`/`GFM` constants.
 
 - [ ] **Step 2: Update `selection-focus-frame.spec.ts`**
 
