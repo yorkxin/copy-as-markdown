@@ -19,8 +19,14 @@ function selectNode(selector: string): void {
 
 describe('selectionToMarkdown focused-frame heuristic', () => {
   it('returns content when onlyIfFocused is true and this document is the focused leaf', async () => {
-    document.body.innerHTML = '<h1 id="h">Hello</h1>';
+    document.body.innerHTML = '<button id="anchor">x</button><h1 id="h">Hello</h1>';
     try {
+      // Focus a real, focusable element so the document is activated and
+      // document.hasFocus() reports true (required in headless Chromium, where an
+      // un-activated document reports false). The active element is a <button> — not a
+      // sub-frame — so this document qualifies as the focused leaf frame. The button is
+      // not part of the selection, so it does not appear in the output.
+      (document.querySelector('#anchor') as HTMLButtonElement).focus();
       selectNode('#h');
       const md = await selectionToMarkdown(TURNDOWN, GFM, OPTS, true);
       expect(md).toBe('# Hello');
