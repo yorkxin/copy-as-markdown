@@ -170,7 +170,9 @@ Expected: PASS — all `test/ui/*.spec.ts` including the new `selection-focus-fr
 
 ```bash
 git add src/content-scripts/selection-to-markdown.ts test/ui/
-git commit -m "feat: add onlyIfFocused guard to selectionToMarkdown content script"
+git commit -m "feat: add onlyIfFocused guard to selectionToMarkdown content script
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -202,7 +204,9 @@ Expected: PASS (no new type errors). This is a type-only change with no behavior
 
 ```bash
 git add src/services/shared-types.ts
-git commit -m "feat: allow frameIds targeting in ScriptingAPI type"
+git commit -m "feat: allow frameIds targeting in ScriptingAPI type
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -464,7 +468,9 @@ Expected: PASS (all tests in the file).
 
 ```bash
 git add src/services/selection-converter-service.ts test/services/selection-converter-service.test.ts
-git commit -m "feat: read selection from a single frame, removing multi-frame join (#258)"
+git commit -m "feat: read selection from a single frame, removing multi-frame join (#258)
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -533,7 +539,9 @@ Expected: PASS (existing `toHaveBeenCalledWith(providedTab)` / `(tab)` assertion
 
 ```bash
 git add src/handlers/context-menu-handler.ts test/handlers/context-menu-handler-service.test.ts
-git commit -m "feat: context menu copies selection from the clicked frame only (#258)"
+git commit -m "feat: context menu copies selection from the clicked frame only (#258)
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -573,7 +581,9 @@ If the keyboard-path e2e is flaky because the headless page does not report focu
 
 ```bash
 git add test/e2e/formatting/selection-as-markdown.spec.ts
-git commit -m "test: exercise precise-frame context menu path in selection e2e (#258)"
+git commit -m "test: exercise precise-frame context menu path in selection e2e (#258)
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
