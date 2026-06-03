@@ -121,7 +121,7 @@ export function createContextMenuHandler(
       if (!tab) {
         throw new Error('tab is required for selection-as-markdown menu item');
       }
-      return services.selectionConverterService.convertSelectionToMarkdown(tab);
+      return services.selectionConverterService.convertSelectionToMarkdown(tab, info.frameId);
     }
 
     // Check if menu item is in the tab list lookup table (Firefox only)
