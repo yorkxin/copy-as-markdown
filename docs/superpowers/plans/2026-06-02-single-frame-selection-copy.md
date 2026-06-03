@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-06-02-single-frame-selection-copy-design.md`
 
+**Co-authored-by:** Claude Opus 4.8 <noreply@anthropic.com>
+
 ---
 
 ## File Structure
