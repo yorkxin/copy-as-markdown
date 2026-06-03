@@ -20,6 +20,8 @@ export async function selectionToMarkdown(
   // the child frame element). Background iframes that auto-select text do not have focus.
   if (onlyIfFocused) {
     const active = document.activeElement;
+    // HTMLFrameElement is the legacy <frame> (framesets); kept for completeness even
+    // though modern pages only use <iframe>.
     const activeIsSubFrame
       = active instanceof HTMLIFrameElement || active instanceof HTMLFrameElement;
     if (!document.hasFocus() || activeIsSubFrame) {

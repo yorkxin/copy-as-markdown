@@ -121,6 +121,9 @@ export function createContextMenuHandler(
       if (!tab) {
         throw new Error('tab is required for selection-as-markdown menu item');
       }
+      // info.frameId is 0 for the main frame and a positive integer for subframes; Chrome
+      // sets it for web-page context-menu clicks. If it were ever undefined, the service
+      // falls back to its all-frames focused-leaf path, which still resolves to one frame.
       return services.selectionConverterService.convertSelectionToMarkdown(tab, info.frameId);
     }
 
