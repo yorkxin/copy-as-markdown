@@ -50,7 +50,7 @@ export interface ScriptingAPI {
    * @param options.args - Arguments to pass to the function
    */
   executeScript: <T extends any[]>(options: {
-    target: { tabId: number; allFrames?: boolean };
+    target: { tabId: number; allFrames?: boolean; frameIds?: number[] };
     func?: (...args: T) => any;
     files?: string[];
     args?: T;
