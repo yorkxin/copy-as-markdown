@@ -115,7 +115,7 @@ test.describe('Selection as Markdown', () => {
       }
     });
 
-    await triggerContextMenu(serviceWorker, 'selection-as-markdown');
+    await triggerContextMenu(serviceWorker, 'selection-as-markdown', { frameId: 0 });
 
     const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
     const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection.md'), 'utf-8');
