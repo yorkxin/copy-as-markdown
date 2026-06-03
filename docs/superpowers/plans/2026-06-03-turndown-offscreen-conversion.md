@@ -1678,10 +1678,12 @@ Expected: all tests pass across both `unit` and `browser` projects, including th
 - [ ] **Step 4: Compile both targets**
 
 Run: `npm run compile`
-Expected: success. Then confirm the shims and vendor modules landed and Turndown is NOT statically reachable from the service worker:
+Expected: success. Then confirm the shims and vendor modules landed:
 
-Run: `ls chrome/dist/shims chrome/dist/lib/html-to-markdown.js chrome/dist/vendor/turndown.mjs && grep -rl "turndown" chrome/dist/background.js || echo "background.js has no static turndown reference (expected)"`
-Expected: the shim/lib/vendor files exist; `background.js` contains no static `turndown` import (the grep prints the "expected" message).
+Run: `ls chrome/dist/shims chrome/dist/lib/html-to-markdown.js chrome/dist/vendor/turndown.mjs`
+Expected: all of the shim, lib, and vendor files exist.
+
+> NOTE: There is intentionally **no automated build-time check** that Turndown stays out of the Chrome service-worker static import graph. The project uses `tsc` with no bundler, so the shipped output is a graph of ES module files; a simple `grep` of `background.js` cannot see *transitive* static imports and would give false confidence. The service-worker-safety invariant is instead protected by the inline warning comments in `src/lib/html-to-markdown.ts` and at the dynamic-`import()` call site in `src/services/markdown-converter.ts` (Tasks 3 and 9). A future build-time guard is captured as a parked idea (esbuild compile-time exclusion) on a separate branch; it is out of scope here.
 
 - [ ] **Step 5: e2e (Chrome)**
 
@@ -1707,5 +1709,5 @@ git commit -m "test: verification fixups for offscreen markdown conversion" \
 - **Mid-refactor red builds are expected and called out** at the end of Task 4 (and resolved by Tasks 10/12/13). Do not paper over them by re-adding `selectionToMarkdown`.
 - **Behavior preservation checklist** (verify against Task 10 + Task 13): single-frame result (no joining), focus heuristic in-page, trailing-newline trim, `frameId === undefined` semantics.
 - **Type consistency:** `MarkdownConverter.convert(html, options)`, `OffscreenDocumentService.sendMessage(message)`, `extractSelectionHtml(onlyIfFocused)`, `htmlToMarkdown(html, options)`, contracts `OFFSCREEN_CLIPBOARD_TARGET` / `OFFSCREEN_MARKDOWN_TARGET` are used identically across every task.
-- **Service-worker safety:** only `html-to-markdown.ts` and the two shims statically import Turndown; `markdown-converter.ts` imports `html-to-markdown` only via dynamic `import()`. Task 15 Step 4 verifies this empirically.
+- **Service-worker safety:** only `html-to-markdown.ts` and the two shims statically import Turndown; `markdown-converter.ts` imports `html-to-markdown` only via dynamic `import()`. This invariant is protected by the inline warning comments in `html-to-markdown.ts` (Task 3) and at the `import()` call site in `markdown-converter.ts` (Task 9) — there is no automated build check (see the note in Task 15 Step 4 for why a `grep` would be misleading under `tsc`-without-bundler).
 ```
