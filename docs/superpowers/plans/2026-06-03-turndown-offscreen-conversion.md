@@ -89,7 +89,8 @@ Expected: no errors.
 
 ```bash
 git add src/config/flags.ts firefox-mv3/hacks.js
-git commit -m "feat: add CONVERT_MARKDOWN_IN_BACKGROUND flag"
+git commit -m "feat: add CONVERT_MARKDOWN_IN_BACKGROUND flag" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -153,7 +154,8 @@ Expected: no errors. (No code imports the shims yet; this verifies the type re-e
 
 ```bash
 git add src/shims/turndown.js src/shims/turndown.d.ts src/shims/turndown-plugin-gfm.js src/shims/turndown-plugin-gfm.d.ts
-git commit -m "feat: add Turndown + GFM vendor shims"
+git commit -m "feat: add Turndown + GFM vendor shims" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -270,7 +272,8 @@ Expected: no errors.
 
 ```bash
 git add src/lib/html-to-markdown.ts test/lib/html-to-markdown.spec.ts
-git commit -m "feat: extract htmlToMarkdown into a DOM-context module"
+git commit -m "feat: extract htmlToMarkdown into a DOM-context module" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -455,7 +458,8 @@ Expected: PASS (all 5).
 
 ```bash
 git add src/content-scripts/selection-to-markdown.ts test/ui/selection-extract.spec.ts
-git commit -m "feat: split selection extraction from markdown conversion"
+git commit -m "feat: split selection extraction from markdown conversion" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 > NOTE: `npm run typecheck` will now FAIL because `selection-converter-service.ts` and the existing `test/ui/selection-*.spec.ts` files still reference the removed `selectionToMarkdown`. Those are fixed in Tasks 9 and 10. This is expected mid-refactor; do not "fix" it by re-adding the old export.
@@ -513,7 +517,8 @@ Expected: still failing only on the Task-4 `selectionToMarkdown` references; no 
 
 ```bash
 git add src/contracts/offscreen-messages.ts
-git commit -m "feat: add offscreen message contracts"
+git commit -m "feat: add offscreen message contracts" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -706,7 +711,8 @@ Expected: PASS (all 5).
 
 ```bash
 git add src/services/offscreen-document-service.ts test/services/offscreen-document-service.test.ts
-git commit -m "feat: add reason-agnostic offscreen document service"
+git commit -m "feat: add reason-agnostic offscreen document service" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -819,7 +825,8 @@ Expected: still PASS — `clipboard-service.ts` is unchanged and `createBrowserO
 
 ```bash
 git add src/services/offscreen-clipboard-service.ts test/services/offscreen-clipboard-service.test.ts
-git commit -m "refactor: offscreen clipboard service delegates to document service"
+git commit -m "refactor: offscreen clipboard service delegates to document service" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -925,7 +932,8 @@ Expected: PASS.
 
 ```bash
 git add src/services/clipboard-service.ts test/services/clipboard-service.test.ts
-git commit -m "refactor: inject shared offscreen document service into clipboard controller"
+git commit -m "refactor: inject shared offscreen document service into clipboard controller" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1066,7 +1074,8 @@ Expected: PASS.
 
 ```bash
 git add src/services/markdown-converter.ts test/services/markdown-converter.test.ts test/ui/markdown-converter-event-page.spec.ts
-git commit -m "feat: add MarkdownConverter (offscreen + event-page)"
+git commit -m "feat: add MarkdownConverter (offscreen + event-page)" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1294,7 +1303,8 @@ Expected: PASS (all 6).
 
 ```bash
 git add src/services/selection-converter-service.ts test/services/selection-converter-service.test.ts
-git commit -m "refactor: selection-converter extracts HTML and injects MarkdownConverter"
+git commit -m "refactor: selection-converter extracts HTML and injects MarkdownConverter" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1429,7 +1439,8 @@ Expected: PASS (the 3 existing clipboard tests).
 
 ```bash
 git add src/offscreen.ts test/ui/offscreen-convert.spec.ts
-git commit -m "feat: offscreen document converts HTML to Markdown"
+git commit -m "feat: offscreen document converts HTML to Markdown" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1511,7 +1522,8 @@ Expected: no errors. (All `selectionToMarkdown` / old-signature references are n
 
 ```bash
 git add src/background.ts
-git commit -m "feat: wire offscreen document service and markdown converter by flag"
+git commit -m "feat: wire offscreen document service and markdown converter by flag" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1580,7 +1592,8 @@ Expected: PASS — same expected strings as before the refactor.
 
 ```bash
 git add test/ui/selection-list-paragraph.spec.ts test/ui/selection-code-block.spec.ts test/ui/selection-trailing-newlines.spec.ts test/ui/selection-focus-frame.spec.ts
-git commit -m "test: recompose selection browser specs onto extract + htmlToMarkdown"
+git commit -m "test: recompose selection browser specs onto extract + htmlToMarkdown" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1618,7 +1631,8 @@ Expected: the `"offscreen"` permission line is still there (only `web_accessible
 
 ```bash
 git add chrome/manifest.json firefox-mv3/manifest.json
-git commit -m "chore: drop Turndown from web_accessible_resources"
+git commit -m "chore: drop Turndown from web_accessible_resources" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
@@ -1663,7 +1677,8 @@ Per `superpowers:verification-before-completion`, load the unpacked `chrome/` bu
 
 ```bash
 git add -A
-git commit -m "test: verification fixups for offscreen markdown conversion"
+git commit -m "test: verification fixups for offscreen markdown conversion" \
+  -m "Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 ```
 
 ---
