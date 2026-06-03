@@ -51,6 +51,7 @@ async function convertSelectionToMarkdown(
       '/src/vendor/turndown.mjs',
       '/src/vendor/turndown-plugin-gfm.mjs',
       { ...baseTurndownOptions, ...options },
+      false,
     );
   } finally {
     selection?.removeAllRanges();

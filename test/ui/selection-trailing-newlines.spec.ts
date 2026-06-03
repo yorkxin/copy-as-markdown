@@ -15,6 +15,7 @@ async function convertSelectionToMarkdown(options: {
         headingStyle: 'atx',
         bulletListMarker: '-',
       },
+      false,
     );
   } finally {
     window.getSelection()?.removeAllRanges();

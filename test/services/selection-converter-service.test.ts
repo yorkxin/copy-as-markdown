@@ -58,23 +58,17 @@ describe('selectionConverterService', () => {
           'dist/vendor/turndown.mjs',
           'dist/vendor/turndown-plugin-gfm.mjs',
           turndownOptions,
+          true,
         ],
       }));
     });
 
-    it('should join results from multiple frames with double newlines', async () => {
-      const executeScriptMock = vi.fn(async (options: any) => {
-        if (options.files) {
-          // Load turndown script
-          return [];
-        }
-        // Execute conversion - return multiple frame results
-        return [
-          { result: 'Frame 1 content' },
-          { result: 'Frame 2 content' },
-          { result: 'Frame 3 content' },
-        ];
-      });
+    it('returns only the single non-empty frame result without joining', async () => {
+      const executeScriptMock = vi.fn(async () => [
+        { result: '' },
+        { result: 'Focused frame content' },
+        { result: '' },
+      ]);
 
       const mockScriptingAPI: ScriptingAPI = {
         executeScript: executeScriptMock,
@@ -104,10 +98,101 @@ describe('selectionConverterService', () => {
 
       const result = await service.convertSelectionToMarkdown(tab);
 
-      expect(result).toBe('Frame 1 content\n\nFrame 2 content\n\nFrame 3 content');
+      expect(result).toBe('Focused frame content');
     });
 
-    it('should ignore empty frame results when joining', async () => {
+    it('targets the given frame and disables the focus filter when a frameId is provided', async () => {
+      const executeScriptMock = vi.fn(async () => [{ result: 'Frame 7 markdown' }]);
+
+      const mockScriptingAPI: ScriptingAPI = {
+        executeScript: executeScriptMock,
+      };
+
+      const mockTurndownOptionsProvider: TurndownOptionsProvider = {
+        getTurndownOptions: () => ({ headingStyle: 'atx' }),
+      };
+
+      const service = createSelectionConverterService(
+        mockScriptingAPI,
+        mockTurndownOptionsProvider,
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
+      );
+
+      const tab: browser.tabs.Tab = {
+        id: 555,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 1,
+        active: true,
+        incognito: false,
+        mutedInfo: { muted: false },
+      };
+
+      const result = await service.convertSelectionToMarkdown(tab, 7);
+
+      expect(result).toBe('Frame 7 markdown');
+      expect(executeScriptMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        target: {
+          tabId: 555,
+          frameIds: [7],
+        },
+        args: [
+          'dist/vendor/turndown.mjs',
+          'dist/vendor/turndown-plugin-gfm.mjs',
+          { headingStyle: 'atx' },
+          false,
+        ],
+      }));
+    });
+
+    it('treats frameId 0 (main frame) as an explicit frame, not "no frame"', async () => {
+      const executeScriptMock = vi.fn(async () => [{ result: 'Main frame markdown' }]);
+
+      const mockScriptingAPI: ScriptingAPI = {
+        executeScript: executeScriptMock,
+      };
+
+      const mockTurndownOptionsProvider: TurndownOptionsProvider = {
+        getTurndownOptions: () => ({ headingStyle: 'atx' }),
+      };
+
+      const service = createSelectionConverterService(
+        mockScriptingAPI,
+        mockTurndownOptionsProvider,
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
+      );
+
+      const tab: browser.tabs.Tab = {
+        id: 556,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 1,
+        active: true,
+        incognito: false,
+        mutedInfo: { muted: false },
+      };
+
+      await service.convertSelectionToMarkdown(tab, 0);
+
+      expect(executeScriptMock).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        target: {
+          tabId: 556,
+          frameIds: [0],
+        },
+        args: [
+          'dist/vendor/turndown.mjs',
+          'dist/vendor/turndown-plugin-gfm.mjs',
+          { headingStyle: 'atx' },
+          false,
+        ],
+      }));
+    });
+
+    it('returns the single non-empty result and ignores empty frames', async () => {
       const executeScriptMock = vi.fn(async () => [
         { result: '# Astro A20 X' },
         { result: '' },
@@ -143,6 +228,43 @@ describe('selectionConverterService', () => {
       const result = await service.convertSelectionToMarkdown(tab);
 
       expect(result).toBe('# Astro A20 X');
+    });
+
+    it('returns empty string when no frame has a selection', async () => {
+      const executeScriptMock = vi.fn(async () => [
+        { result: '' },
+        { result: '' },
+      ]);
+
+      const mockScriptingAPI: ScriptingAPI = {
+        executeScript: executeScriptMock,
+      };
+
+      const mockTurndownOptionsProvider: TurndownOptionsProvider = {
+        getTurndownOptions: () => ({ headingStyle: 'atx' }),
+      };
+
+      const service = createSelectionConverterService(
+        mockScriptingAPI,
+        mockTurndownOptionsProvider,
+        'dist/vendor/turndown.mjs',
+        'dist/vendor/turndown-plugin-gfm.mjs',
+      );
+
+      const tab: browser.tabs.Tab = {
+        id: 458,
+        index: 0,
+        pinned: false,
+        highlighted: false,
+        windowId: 1,
+        active: true,
+        incognito: false,
+        mutedInfo: { muted: false },
+      };
+
+      const result = await service.convertSelectionToMarkdown(tab);
+
+      expect(result).toBe('');
     });
 
     it('should throw error when tab has no id', async () => {
@@ -224,6 +346,7 @@ describe('selectionConverterService', () => {
             bulletListMarker: '*',
             customOption: 'value',
           },
+          true,
         ],
       }));
     });

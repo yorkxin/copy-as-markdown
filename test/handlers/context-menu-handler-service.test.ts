@@ -53,7 +53,7 @@ describe('contextMenuHandler', () => {
     });
   });
 
-  it('exports selection as markdown', async () => {
+  it('exports selection as markdown for the clicked frame', async () => {
     const convertMock = vi.fn(async () => 'md');
     const handler = createContextMenuHandler(
       createServices({ selectionConverterService: { convertSelectionToMarkdown: convertMock } }),
@@ -62,9 +62,12 @@ describe('contextMenuHandler', () => {
     );
 
     const tab = createMockTab();
-    const result = await handler.handleMenuClick({ menuItemId: 'selection-as-markdown' } as any, tab);
+    const result = await handler.handleMenuClick(
+      { menuItemId: 'selection-as-markdown', frameId: 3 } as any,
+      tab,
+    );
     expect(result).toBe('md');
-    expect(convertMock).toHaveBeenCalledWith(tab);
+    expect(convertMock).toHaveBeenCalledWith(tab, 3);
   });
 
   it('exports highlighted tabs list', async () => {

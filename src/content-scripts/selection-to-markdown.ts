@@ -11,7 +11,24 @@ export async function selectionToMarkdown(
   turndownJsURL: string,
   gfmJsURL: string,
   turndownOptions: TurndownOptions,
-): Promise<Promise<string>> {
+  onlyIfFocused: boolean,
+): Promise<string> {
+  // When triggered without a precise frame (keyboard shortcut), this function runs in
+  // every frame. Only the frame the user is actually in should contribute text. A frame
+  // is the focused leaf when the document has focus AND its active element is not a nested
+  // frame (ancestors of the focused frame report hasFocus() too, but their activeElement is
+  // the child frame element). Background iframes that auto-select text do not have focus.
+  if (onlyIfFocused) {
+    const active = document.activeElement;
+    // HTMLFrameElement is the legacy <frame> (framesets); kept for completeness even
+    // though modern pages only use <iframe>.
+    const activeIsSubFrame
+      = active instanceof HTMLIFrameElement || active instanceof HTMLFrameElement;
+    if (!document.hasFocus() || activeIsSubFrame) {
+      return '';
+    }
+  }
+
   // Load ESM in content script.
   // See https://stackoverflow.com/a/53033388
   const turndownModule = await import(turndownJsURL);
