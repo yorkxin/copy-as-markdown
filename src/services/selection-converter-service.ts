@@ -11,9 +11,12 @@ export interface SelectionConverterService {
    * Convert the current selection in a tab to Markdown.
    *
    * @param tab - The browser tab containing the selection
-   * @returns The selection converted to Markdown, with multiple frames joined by double newlines
+   * @param frameId - The frame the user interacted with (from contextMenus.OnClickData).
+   *   When provided, only that frame is read. When omitted (keyboard shortcut), the
+   *   converter runs in all frames and keeps only the focused leaf frame's result.
+   * @returns The selection converted to Markdown for the single target frame
    */
-  convertSelectionToMarkdown: (tab: browser.tabs.Tab) => Promise<string>;
+  convertSelectionToMarkdown: (tab: browser.tabs.Tab, frameId?: number) => Promise<string>;
 }
 
 export function createSelectionConverterService(
@@ -22,30 +25,40 @@ export function createSelectionConverterService(
   turndownJsURL: string,
   gfmPluginURL: string,
 ): SelectionConverterService {
-  async function convertSelectionToMarkdown(tab: browser.tabs.Tab): Promise<string> {
+  async function convertSelectionToMarkdown(
+    tab: browser.tabs.Tab,
+    frameId?: number,
+  ): Promise<string> {
     if (!tab.id) {
       throw new Error('tab has no id');
     }
 
-    // Execute the conversion function in all frames
+    // Context menu gives a precise frameId (0 is the main frame). The keyboard shortcut
+    // gives no frame, so we inject into all frames and let each frame self-filter via the
+    // onlyIfFocused flag. NOTE: branch on `=== undefined`, not falsiness — frameId 0 is valid.
+    const onlyIfFocused = frameId === undefined;
+    const target = onlyIfFocused
+      ? { tabId: tab.id, allFrames: true }
+      : { tabId: tab.id, frameIds: [frameId] };
+
     // turndown.js must be loaded in the content because it parses the HTML using DOM API.
     const results = await scriptingAPI.executeScript({
-      target: { tabId: tab.id, allFrames: true },
+      target,
       func: selectionToMarkdown,
       args: [
         turndownJsURL,
         gfmPluginURL,
         turndownOptionsProvider.getTurndownOptions(),
+        onlyIfFocused,
       ],
     });
 
-    // Only one frame should contain the active selection in normal cases.
-    // Some pages also include blank iframes, which would otherwise contribute
-    // extra separators and show up as trailing blank lines in the final output.
-    return results
+    // Exactly one frame should contribute text: either the explicitly targeted frame, or
+    // (keyboard path) the single focused leaf frame. Return that one result; no joining.
+    const content = results
       .map(frame => frame.result as string)
-      .filter(result => result !== '')
-      .join('\n\n');
+      .find(result => result !== undefined && result !== '');
+    return content ?? '';
   }
 
   return {
