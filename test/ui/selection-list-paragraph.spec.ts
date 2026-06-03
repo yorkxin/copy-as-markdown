@@ -16,6 +16,7 @@ async function convertSelectionToMarkdown(html: string): Promise<string> {
         headingStyle: 'atx',
         bulletListMarker: '-',
       },
+      false,
     );
   } finally {
     selection?.removeAllRanges();
