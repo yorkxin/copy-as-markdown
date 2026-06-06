@@ -1,6 +1,7 @@
 import type { Options as TurndownOptions } from 'turndown';
 import type { ScriptingAPI } from './shared-types.js';
-import { selectionToMarkdown } from '../content-scripts/selection-to-markdown.js';
+import type { MarkdownConverter } from './markdown-converter.js';
+import { extractSelectionHtml } from '../content-scripts/selection-to-markdown.js';
 
 export interface TurndownOptionsProvider {
   getTurndownOptions: () => TurndownOptions;
@@ -12,8 +13,8 @@ export interface SelectionConverterService {
    *
    * @param tab - The browser tab containing the selection
    * @param frameId - The frame the user interacted with (from contextMenus.OnClickData).
-   *   When provided, only that frame is read. When omitted (keyboard shortcut), the
-   *   converter runs in all frames and keeps only the focused leaf frame's result.
+   *   When provided, only that frame is read. When omitted (keyboard shortcut), HTML is
+   *   extracted from all frames and only the focused leaf frame contributes.
    * @returns The selection converted to Markdown for the single target frame
    */
   convertSelectionToMarkdown: (tab: browser.tabs.Tab, frameId?: number) => Promise<string>;
@@ -22,8 +23,7 @@ export interface SelectionConverterService {
 export function createSelectionConverterService(
   scriptingAPI: ScriptingAPI,
   turndownOptionsProvider: TurndownOptionsProvider,
-  turndownJsURL: string,
-  gfmPluginURL: string,
+  converter: MarkdownConverter,
 ): SelectionConverterService {
   async function convertSelectionToMarkdown(
     tab: browser.tabs.Tab,
@@ -41,24 +41,25 @@ export function createSelectionConverterService(
       ? { tabId: tab.id, allFrames: true }
       : { tabId: tab.id, frameIds: [frameId] };
 
-    // turndown.js must be loaded in the content because it parses the HTML using DOM API.
+    // Selection extraction must run in the page (it depends on the live Selection and
+    // base URL). Conversion runs out-of-page via the injected converter.
     const results = await scriptingAPI.executeScript({
       target,
-      func: selectionToMarkdown,
-      args: [
-        turndownJsURL,
-        gfmPluginURL,
-        turndownOptionsProvider.getTurndownOptions(),
-        onlyIfFocused,
-      ],
+      func: extractSelectionHtml,
+      args: [onlyIfFocused],
     });
 
-    // Exactly one frame should contribute text: either the explicitly targeted frame, or
-    // (keyboard path) the single focused leaf frame. Return that one result; no joining.
-    const content = results
+    // Exactly one frame should contribute HTML: either the explicitly targeted frame, or
+    // (keyboard path) the single focused leaf frame. Find that one and convert only it.
+    const html = results
       .map(frame => frame.result as string)
       .find(result => result !== undefined && result !== '');
-    return content ?? '';
+
+    if (!html) {
+      return '';
+    }
+
+    return await converter.convert(html, turndownOptionsProvider.getTurndownOptions());
   }
 
   return {
@@ -68,13 +69,11 @@ export function createSelectionConverterService(
 
 export function createBrowserSelectionConverterService(
   turndownOptionsProvider: TurndownOptionsProvider,
-  turndownJsURL: string,
-  gfmPluginURL: string,
+  converter: MarkdownConverter,
 ): SelectionConverterService {
   return createSelectionConverterService(
     browser.scripting,
     turndownOptionsProvider,
-    turndownJsURL,
-    gfmPluginURL,
+    converter,
   );
 }
