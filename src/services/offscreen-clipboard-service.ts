@@ -1,5 +1,4 @@
 import type { OffscreenDocumentService } from './offscreen-document-service.js';
-import { createBrowserOffscreenDocumentService } from './offscreen-document-service.js';
 import type { OffscreenClipboardResponse } from '../contracts/offscreen-messages.js';
 import { OFFSCREEN_CLIPBOARD_TARGET } from '../contracts/offscreen-messages.js';
 
@@ -22,12 +21,4 @@ export function createOffscreenClipboardService(
   }
 
   return { copy };
-}
-
-export function createBrowserOffscreenClipboardService(): OffscreenClipboardService | null {
-  const documentService = createBrowserOffscreenDocumentService();
-  if (!documentService) {
-    return null;
-  }
-  return createOffscreenClipboardService(documentService);
 }
