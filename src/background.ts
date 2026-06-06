@@ -12,8 +12,8 @@ import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
 import { createBrowserOffscreenDocumentService } from './services/offscreen-document-service.js';
 import {
-  createOffscreenMarkdownConverter,
   createEventPageMarkdownConverter,
+  createOffscreenMarkdownConverter,
 } from './services/markdown-converter.js';
 import type { MarkdownConverter } from './services/markdown-converter.js';
 import { createBrowserPendingPopupFeedbackService } from './services/pending-popup-feedback-service.js';

@@ -5,7 +5,7 @@
 // anything in background.ts's static import graph. The Firefox path loads it via a
 // dynamic import() in markdown-converter.ts (createEventPageMarkdownConverter) for
 // exactly this reason; keep it that way.
-import type { Options as TurndownOptions, Rule } from 'turndown';
+import type { Rule, Options as TurndownOptions } from 'turndown';
 import TurndownService from '../shims/turndown.js';
 import { tables } from '../shims/turndown-plugin-gfm.js';
 

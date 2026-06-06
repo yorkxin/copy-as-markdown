@@ -8,8 +8,14 @@ import { extractSelectionHtml } from '../../src/content-scripts/selection-to-mar
 
 function makeTab(id: number | undefined): browser.tabs.Tab {
   return {
-    id, index: 0, pinned: false, highlighted: false, windowId: 1,
-    active: true, incognito: false, mutedInfo: { muted: false },
+    id,
+    index: 0,
+    pinned: false,
+    highlighted: false,
+    windowId: 1,
+    active: true,
+    incognito: false,
+    mutedInfo: { muted: false },
   } as browser.tabs.Tab;
 }
 

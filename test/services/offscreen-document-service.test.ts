@@ -64,7 +64,12 @@ describe('offscreenDocumentService', () => {
   it('rethrows a genuine create failure and retries on the next send', async () => {
     let attempts = 0;
     const { offscreenAPI, runtimeAPI, createDocument } = makeApis({
-      createImpl: async () => { attempts++; if (attempts === 1) throw new Error('boom'); },
+      createImpl: async () => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw new Error('boom');
+        }
+      },
       getContextsImpl: async () => [],
     });
     const service = createOffscreenDocumentService(offscreenAPI, runtimeAPI);
