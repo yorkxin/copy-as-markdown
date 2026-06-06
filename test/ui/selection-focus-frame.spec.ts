@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { selectionToMarkdown } from '../../src/content-scripts/selection-to-markdown.js';
+import { extractSelectionHtml } from '../../src/content-scripts/selection-to-markdown.js';
+import { htmlToMarkdown } from '../../src/lib/html-to-markdown.js';
 
-const TURNDOWN = '/src/vendor/turndown.mjs';
-const GFM = '/src/vendor/turndown-plugin-gfm.mjs';
 const OPTS = { headingStyle: 'atx' as const, bulletListMarker: '-' as const };
 
 function selectNode(selector: string): void {
@@ -28,7 +27,7 @@ describe('selectionToMarkdown focused-frame heuristic', () => {
       // not part of the selection, so it does not appear in the output.
       (document.querySelector('#anchor') as HTMLButtonElement).focus();
       selectNode('#h');
-      const md = await selectionToMarkdown(TURNDOWN, GFM, OPTS, true);
+      const md = htmlToMarkdown(extractSelectionHtml(true), OPTS);
       expect(md).toBe('# Hello');
     } finally {
       window.getSelection()?.removeAllRanges();
@@ -41,7 +40,7 @@ describe('selectionToMarkdown focused-frame heuristic', () => {
     try {
       selectNode('#h');
       (document.querySelector('#f') as HTMLIFrameElement).focus();
-      const md = await selectionToMarkdown(TURNDOWN, GFM, OPTS, true);
+      const md = htmlToMarkdown(extractSelectionHtml(true), OPTS);
       expect(md).toBe('');
     } finally {
       window.getSelection()?.removeAllRanges();
@@ -54,7 +53,7 @@ describe('selectionToMarkdown focused-frame heuristic', () => {
     try {
       selectNode('#h');
       (document.querySelector('#f') as HTMLIFrameElement).focus();
-      const md = await selectionToMarkdown(TURNDOWN, GFM, OPTS, false);
+      const md = htmlToMarkdown(extractSelectionHtml(false), OPTS);
       expect(md).toBe('# Hello');
     } finally {
       window.getSelection()?.removeAllRanges();

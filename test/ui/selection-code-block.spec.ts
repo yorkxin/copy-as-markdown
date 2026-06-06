@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { selectionToMarkdown } from '../../src/content-scripts/selection-to-markdown.js';
+import { extractSelectionHtml } from '../../src/content-scripts/selection-to-markdown.js';
+import { htmlToMarkdown } from '../../src/lib/html-to-markdown.js';
 import type { Options as TurndownOptions } from 'turndown';
 
 const baseTurndownOptions: TurndownOptions = {
@@ -47,12 +48,7 @@ async function convertSelectionToMarkdown(
   selection?.removeAllRanges();
   selection?.addRange(range);
   try {
-    return await selectionToMarkdown(
-      '/src/vendor/turndown.mjs',
-      '/src/vendor/turndown-plugin-gfm.mjs',
-      { ...baseTurndownOptions, ...options },
-      false,
-    );
+    return htmlToMarkdown(extractSelectionHtml(false), { ...baseTurndownOptions, ...options });
   } finally {
     selection?.removeAllRanges();
     document.body.innerHTML = '';

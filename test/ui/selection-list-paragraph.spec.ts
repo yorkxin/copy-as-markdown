@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { selectionToMarkdown } from '../../src/content-scripts/selection-to-markdown.js';
+import { extractSelectionHtml } from '../../src/content-scripts/selection-to-markdown.js';
+import { htmlToMarkdown } from '../../src/lib/html-to-markdown.js';
 
 async function convertSelectionToMarkdown(html: string): Promise<string> {
   document.body.innerHTML = html;
@@ -9,15 +10,10 @@ async function convertSelectionToMarkdown(html: string): Promise<string> {
   selection?.removeAllRanges();
   selection?.addRange(range);
   try {
-    return await selectionToMarkdown(
-      '/src/vendor/turndown.mjs',
-      '/src/vendor/turndown-plugin-gfm.mjs',
-      {
-        headingStyle: 'atx',
-        bulletListMarker: '-',
-      },
-      false,
-    );
+    return htmlToMarkdown(extractSelectionHtml(false), {
+      headingStyle: 'atx',
+      bulletListMarker: '-',
+    });
   } finally {
     selection?.removeAllRanges();
     document.body.innerHTML = '';
