@@ -1,18 +1,12 @@
-import type { Rule, Options as TurndownOptions } from 'turndown';
-import type { tables } from '@truto/turndown-plugin-gfm';
-
 /**
  * This function executes in the content script context.
  * It must be self-contained - no external function calls.
  *
- * NOTE: This function should be executed in content script.
+ * NOTE: This function should be executed in a content script. It extracts the
+ * current selection as an HTML fragment; the HTML→Markdown conversion happens
+ * elsewhere (offscreen document on Chrome / Event Page on Firefox).
  */
-export async function selectionToMarkdown(
-  turndownJsURL: string,
-  gfmJsURL: string,
-  turndownOptions: TurndownOptions,
-  onlyIfFocused: boolean,
-): Promise<string> {
+export function extractSelectionHtml(onlyIfFocused: boolean): string {
   // When triggered without a precise frame (keyboard shortcut), this function runs in
   // every frame. Only the frame the user is actually in should contribute text. A frame
   // is the focused leaf when the document has focus AND its active element is not a nested
@@ -29,44 +23,12 @@ export async function selectionToMarkdown(
     }
   }
 
-  // Load ESM in content script.
-  // See https://stackoverflow.com/a/53033388
-  const turndownModule = await import(turndownJsURL);
-  const TurndownService = turndownModule.default;
-  const gfmPluginModule = await import(gfmJsURL);
-  const gfmTablePlugin = gfmPluginModule.tables as typeof tables;
-  // Turndown wraps <p> with blank lines, and inside <li> that becomes an indented
-  // blank line between bullet items (e.g. "- item\n    \n- item"), which breaks
-  // tight-list formatting for common selections like <li><p>...</p></li>.
-  // This rule flattens only single-paragraph list items and leaves multi-paragraph
-  // or nested-list items on Turndown's default loose-list behavior.
-  const singleParagraphInListItemRule: Rule = {
-    filter(node) {
-      const parent = node.parentElement;
-      return (
-        node.nodeName === 'P'
-        && parent?.nodeName === 'LI'
-        && parent.childElementCount === 1
-      );
-    },
-    replacement(content) {
-      return content;
-    },
-  };
-
-  const turndownService = new TurndownService(turndownOptions)
-    .remove('script')
-    .remove('style');
-  turndownService.use(gfmTablePlugin);
-  turndownService.addRule(
-    'singleParagraphInListItem',
-    singleParagraphInListItemRule,
-  );
   const sel = getSelection();
-  const container = document.createElement('div');
   if (!sel) {
     return '';
   }
+
+  const container = document.createElement('div');
   for (let i = 0, len = sel.rangeCount; i < len; i += 1) {
     container.appendChild(sel.getRangeAt(i).cloneContents());
   }
@@ -112,6 +74,6 @@ export async function selectionToMarkdown(
     normalizedCode.textContent = codeText;
     pre.replaceChildren(normalizedCode);
   });
-  const html = container.innerHTML;
-  return turndownService.turndown(html).replace(/\n+$/, '');
+
+  return container.innerHTML;
 }
