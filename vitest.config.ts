@@ -14,7 +14,7 @@ export default defineConfig({
       {
         test: {
           name: 'browser',
-          include: ['test/ui/**/*.spec.ts'],
+          include: ['test/ui/**/*.spec.ts', 'test/lib/**/*.spec.ts'],
           testTimeout: 1000,
           browser: {
             enabled: true,
