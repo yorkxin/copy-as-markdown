@@ -1,1 +1,2 @@
 globalThis.ALWAYS_USE_NAVIGATOR_COPY_API = true;
+globalThis.CONVERT_MARKDOWN_IN_BACKGROUND = true;
