@@ -115,16 +115,5 @@
   "options_ui": {
     "page": "./dist/static/options.html",
     "open_in_tab": true
-  },
-  "web_accessible_resources": [
-    {
-      "resources": [
-        "dist/vendor/turndown.mjs",
-        "dist/vendor/turndown-plugin-gfm.mjs"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ]
+  }
 }
