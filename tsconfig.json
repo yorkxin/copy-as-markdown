@@ -24,7 +24,6 @@
     "sourceMap": false,
     "removeComments": false,
     "noEmit": false,
-    "outDir": "./dist",
 
     /* Interop Constraints */
     "isolatedModules": true,
