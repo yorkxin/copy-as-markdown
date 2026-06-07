@@ -24,8 +24,6 @@ import type { KeyboardCommandId } from './contracts/commands.js';
 import type { PendingPopupFeedbackCode, RuntimeMessage } from './contracts/messages.js';
 import { Flags } from './config/flags.js';
 
-const ALARM_REFRESH_MENU = 'refreshMenu';
-
 // Initialize markdown and bookmarks
 const markdownInstance = new Markdown();
 let selectionCodeBlockStyle: CodeBlockStyle = 'fenced';
@@ -137,11 +135,6 @@ browser.alarms.onAlarm.addListener(async (alarm) => {
       await badgeService.clear();
     }
   }
-
-  if (alarm.name === ALARM_REFRESH_MENU) {
-    await browser.contextMenus.removeAll();
-    await contextMenuService.createAll();
-  }
 });
 
 browser.runtime.onStartup.addListener(async () => {
@@ -158,13 +151,6 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
     await contextMenuService.createAll();
   }
 });
-
-if (Flags.periodicallyRefreshMenu()) {
-  // Hack for Firefox, in which Context Menu disappears after some time.
-  // See https://discourse.mozilla.org/t/strange-mv3-behaviour-browser-runtime-oninstalled-event-and-menus-create/111208/7
-  console.info('Hack PERIDOCIALLY_REFRESH_MENU is enabled');
-  browser.alarms.create('refreshMenu', { periodInMinutes: 0.5 });
-}
 
 // NOTE: All listeners must be registered at top level scope.
 
