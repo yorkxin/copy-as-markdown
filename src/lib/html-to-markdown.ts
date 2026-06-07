@@ -1,10 +1,11 @@
 // ⚠️ SERVICE-WORKER SAFETY: this module statically imports Turndown, which touches
-// the DOM at module load. It must therefore only be loaded in a DOM-bearing context
-// (the offscreen document on Chrome, the Event Page on Firefox) — NEVER in the Chrome
-// MV3 service worker. Do not statically import this module from background.ts or from
-// anything in background.ts's static import graph. The Firefox path loads it via a
-// dynamic import() in markdown-converter.ts (createEventPageMarkdownConverter) for
-// exactly this reason; keep it that way.
+// the DOM at module load, so it must only run in a DOM-bearing context (the Chrome
+// offscreen document or the Firefox Event Page) — never the Chrome MV3 service worker.
+// Exclusion from the Chrome service-worker bundle is now enforced at COMPILE TIME:
+// background.ts selects the converter via `BUILD_TARGET`, so on Chrome the Firefox
+// branch (the only path that imports this module) is dead-code-eliminated and
+// tree-shaken away. The invariant is verified by scripts/assert-no-turndown.js and
+// test/build/no-turndown-in-chrome-background.test.ts.
 import type { Rule, Options as TurndownOptions } from 'turndown';
 import TurndownService from '../shims/turndown.js';
 import { tables } from '../shims/turndown-plugin-gfm.js';
