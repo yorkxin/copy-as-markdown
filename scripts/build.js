@@ -64,14 +64,14 @@ const buildOptions = {
   entryPoints: entryPointsFor(target),
   bundle: true,
   format: 'esm',
-  splitting: false,            // MV3 service worker: one file per entry, no chunks
+  splitting: false, // MV3 service worker: one file per entry, no chunks
   treeShaking: true,
   outdir,
-  outbase: srcDir,             // preserve entry directory layout under dist/
-  sourcemap: 'linked',         // emit .js.map + sourceMappingURL (DevTools breakpoints)
-  sourcesContent: true,        // embed original TS in the map
-  minify: false,               // never minify (readable source, simple maps)
-  legalComments: 'eof',        // preserve bundled libs' /*! and @license banners
+  outbase: srcDir, // preserve entry directory layout under dist/
+  sourcemap: 'linked', // emit .js.map + sourceMappingURL (DevTools breakpoints)
+  sourcesContent: true, // embed original TS in the map
+  minify: false, // never minify (readable source, simple maps)
+  legalComments: 'eof', // preserve bundled libs' /*! and @license banners
   define: { BUILD_TARGET: JSON.stringify(target) },
   target: target === 'chrome' ? ['chrome116'] : ['firefox139'],
   logLevel: 'info',
@@ -93,8 +93,25 @@ if (watch) {
   await ctx.watch();
   copyAssets(target);
   restoreKeep();
-  fs.watch(path.join(srcDir, 'static'), { recursive: true }, () => copyAssets(target));
-  fs.watch(path.join(srcDir, 'vendor'), { recursive: true }, () => copyAssets(target));
+
+  const onAssetChange = () => {
+    try {
+      copyAssets(target);
+      restoreKeep();
+    } catch (err) {
+      console.error('[build] asset re-copy failed:', err);
+    }
+  };
+  const watchAssets = (dir) => {
+    try {
+      fs.watch(dir, { recursive: true }, onAssetChange);
+    } catch (err) {
+      console.warn(`[build] could not watch ${dir} for asset changes (${err.code ?? err.message}); `
+        + 'static/vendor live-recopy disabled — JS rebuilds still work.');
+    }
+  };
+  watchAssets(path.join(srcDir, 'static'));
+  watchAssets(path.join(srcDir, 'vendor'));
   console.log(`[build] watching ${target} ...`);
 } else {
   await esbuild.build(buildOptions);
