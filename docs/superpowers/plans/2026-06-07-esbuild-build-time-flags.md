@@ -108,6 +108,11 @@ const srcDir = path.join(root, 'src');
 const outdir = path.join(root, target, 'dist');
 
 // Entry points loaded by the manifest (background, offscreen) and by src/static/*.html.
+// NOTE: src/ui/permissions-ui.ts is NOT an entry — it's a helper imported by
+// options.ts and options-permissions.ts, so esbuild bundles it into those entries.
+// NOTE: the `options-ui.js` <script> refs in about/single-link/custom-format-help.html
+// are a pre-existing DEAD reference (no source file; the old tsc build never produced
+// it either). Not built here; fixing those HTML refs is out of scope.
 const sharedEntries = [
   'src/background.ts',
   'src/ui/popup.ts',
@@ -117,7 +122,6 @@ const sharedEntries = [
   'src/ui/custom-format.ts',
   'src/ui/check-custom-formats.ts',
   'src/ui/built-in-style-options.ts',
-  'src/ui/options-ui.ts',
 ];
 
 function entryPointsFor(t) {
@@ -167,17 +171,27 @@ const buildOptions = {
 
 // esbuild does NOT clean the outdir; remove stale files first for deterministic output.
 fs.rmSync(outdir, { recursive: true, force: true });
+fs.mkdirSync(outdir, { recursive: true });
+
+// chrome/dist/* and firefox-mv3/dist/* are gitignored EXCEPT a tracked empty `.keep`
+// placeholder. The rmSync above deletes it; recreate it so the build leaves a clean
+// git status.
+function restoreKeep() {
+  fs.writeFileSync(path.join(outdir, '.keep'), '');
+}
 
 if (watch) {
   const ctx = await esbuild.context(buildOptions);
   await ctx.watch();
   copyAssets(target);
+  restoreKeep();
   fs.watch(path.join(srcDir, 'static'), { recursive: true }, () => copyAssets(target));
   fs.watch(path.join(srcDir, 'vendor'), { recursive: true }, () => copyAssets(target));
   console.log(`[build] watching ${target} ...`);
 } else {
   await esbuild.build(buildOptions);
   copyAssets(target);
+  restoreKeep();
   console.log(`[build] built ${target}`);
 }
 ```
@@ -214,7 +228,7 @@ ls firefox-mv3/dist/background.js firefox-mv3/dist/ui/popup.js \
 test ! -e firefox-mv3/dist/offscreen.js && echo "OK: firefox has no offscreen.js"
 test ! -e firefox-mv3/dist/static/offscreen.html && echo "OK: firefox has no offscreen.html"
 ```
-Expected: all `chrome/dist/...` and `firefox-mv3/dist/...` listed files exist; both "OK:" lines print. (Source maps `*.js.map` exist next to each entry.)
+Expected: all `chrome/dist/...` and `firefox-mv3/dist/...` listed files exist; both "OK:" lines print. (Source maps `*.js.map` exist next to each entry.) `chrome/dist/ui/` should contain exactly: `popup.js`, `options.js`, `options-permissions.js`, `permissions.js`, `custom-format.js`, `check-custom-formats.js`, `built-in-style-options.js` (7 entries, each with a `.js.map`). There is NO `options-ui.js` (dead HTML ref, no source) and NO standalone `permissions-ui.js` (helper, bundled into options/options-permissions).
 
 - [ ] **Step 4: Confirm load parity in a real browser (manual)**
 

@@ -133,11 +133,15 @@ paths working unchanged. Two consequences:
 - `src/background.ts`
 - HTML-page scripts: `src/ui/popup.ts`, `src/ui/options.ts`, `src/ui/options-permissions.ts`,
   `src/ui/permissions.ts`, `src/ui/custom-format.ts`, `src/ui/check-custom-formats.ts`,
-  `src/ui/built-in-style-options.ts`, `src/ui/options-ui.ts`
+  `src/ui/built-in-style-options.ts` (7 UI entries)
 
   (Enumerated from the `<script type="module" src="../ui/*.js">` references across
-  `src/static/*.html`. The exact list is reconciled against those HTML refs during implementation
-  — the entry list must match every UI script the static HTML loads.)
+  `src/static/*.html`. Reconciled against actual files during implementation:
+  `src/ui/permissions-ui.ts` is a **helper** imported by `options.ts`/`options-permissions.ts`,
+  not an entry — esbuild bundles it in. The `options-ui.js` refs in
+  `about.html`/`single-link.html`/`custom-format-help.html` are a **pre-existing dead reference**
+  (no source file; old `tsc` builds never produced it either) — not built here, fixing those HTML
+  refs is out of scope.)
 
 **Chrome only:**
 - `src/offscreen.ts` (Firefox has no offscreen API)
