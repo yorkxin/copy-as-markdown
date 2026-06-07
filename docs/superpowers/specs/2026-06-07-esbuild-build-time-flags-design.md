@@ -90,6 +90,7 @@ await esbuild.build({
   sourcemap: 'linked',         // emit .js.map + sourceMappingURL comment (see §5)
   sourcesContent: true,        // embed original TS in the map (DevTools shows real source)
   minify: false,               // never minify (see §6)
+  legalComments: 'eof',        // preserve bundled libs' license banners (see §6.1)
   define: { BUILD_TARGET: JSON.stringify(target) },
   target: ['chrome116', 'firefox139'], // match manifest minimums (illustrative; tune in impl)
   logLevel: 'info',
@@ -235,6 +236,32 @@ fine with users reading the TS source in DevTools. Keeping `minify: false` also 
 bundle readable and the source maps simpler/accurate. Minified release zips can be a separate
 opt-in later if ever wanted; not part of this work.
 
+### 6.1 Third-party license handling
+
+Bundling inlines third-party libs into entry files, which can silently strip the attribution that
+today's standalone `dist/vendor/*` files carry. The bundled libs are MIT (turndown,
+turndown-plugin-gfm, mustache, bulma) and **MPL-2.0** (browser-polyfill); MIT requires the
+copyright + license notice to travel with copies, MPL adds notice/source obligations. Two
+safeguards:
+
+- **`legalComments: 'eof'`** in the esbuild config (§1 Step B). esbuild collects every `/*!` and
+  `@license` banner from bundled sources and moves it to the end of each output file, so marked
+  notices are preserved rather than dropped. (`mustache.mjs` carries a `/*!` banner;
+  `turndown.mjs` / `turndown-plugin-gfm.mjs` currently have no marker — see the note below.)
+- **`src/static/about.html` remains the authoritative notice surface.** It already embeds full
+  license texts (MPL-2.0 for browser-polyfill, MIT for the others) and ships in every build, which
+  is what actually discharges the "include the notice" requirement regardless of bundling. The
+  migration **verifies `about.html` lists all five bundled libs** (turndown, turndown-plugin-gfm,
+  mustache, bulma, browser-polyfill) with their license text, and adds any that are missing.
+
+What does **not** change: `browser-polyfill.js` (MPL) and `bulma.css` stay standalone copied files
+(§1 Step C), so their headers survive untouched. This subsection is hygiene to prevent a *quiet
+regression* of attribution that exists today — it does not change the extension's compliance
+posture, which already rests on `about.html`.
+
+> Out of scope (offered as belt-and-suspenders, deferred): vendoring each dep's `LICENSE` file via
+> `scripts/postinstall.js`. Not required given `about.html`; can be a follow-up if desired.
+
 ### 7. package.json scripts & debug/watch
 
 - `compile-chrome` → `node scripts/build.js chrome`
@@ -276,6 +303,8 @@ Per the design note's sketch, port and validate incrementally:
 5. Add the §4 absence check (build script + vitest test); confirm Turndown is gone from
    `chrome/dist/background.js`. Apply the alias fallback only if the check shows a leak.
 6. Swap debug/watch to esbuild native watch; remove `nodemon`.
+6a. Set `legalComments: 'eof'` (§6.1) and verify `about.html` lists all five bundled libs with
+    their license text; add any missing entries.
 7. Re-validate: `typecheck`, `lint`, `npm test` (unit + browser), `npm run test:e2e` (Chrome).
    Re-run the flaky parallel-clipboard e2e in isolation if it trips.
 8. Write the PR note (§8).
@@ -290,6 +319,8 @@ Per the design note's sketch, port and validate incrementally:
   deleted; mock-clipboard runtime mode documented as intentionally kept.
 - `markdown-converter.ts` no longer needs the lazy dynamic import (BUILD_TARGET branch handles it).
 - Source maps work: breakpoints in original `src/*.ts` via DevTools, in SW and page contexts.
+- Third-party license attribution preserved: `legalComments: 'eof'` set, and `about.html` covers
+  all five bundled libs (§6.1).
 - A short PR note describing the new build and how to add a new entry point.
 
 ## Risks / open items (resolved during impl)
