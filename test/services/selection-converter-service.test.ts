@@ -4,7 +4,7 @@ import type { ScriptingAPI } from '../../src/services/shared-types.js';
 import type { TurndownOptionsProvider } from '../../src/services/selection-converter-service.js';
 import type { MarkdownConverter } from '../../src/services/markdown-converter.js';
 import type { Options as TurndownOptions } from 'turndown';
-import { extractSelectionHtml } from '../../src/content-scripts/selection-to-markdown.js';
+import { extractSelectionHtml } from '../../src/content-scripts/extract-selection-html.js';
 
 function makeTab(id: number | undefined): browser.tabs.Tab {
   return {

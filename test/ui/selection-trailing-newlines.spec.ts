@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractSelectionHtml } from '../../src/content-scripts/selection-to-markdown.js';
+import { extractSelectionHtml } from '../../src/content-scripts/extract-selection-html.js';
 import { htmlToMarkdown } from '../../src/lib/html-to-markdown.js';
 
 async function convertSelectionToMarkdown(options: {

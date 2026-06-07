@@ -1,7 +1,7 @@
 import type { Options as TurndownOptions } from 'turndown';
 import type { ScriptingAPI } from './shared-types.js';
 import type { MarkdownConverter } from './markdown-converter.js';
-import { extractSelectionHtml } from '../content-scripts/selection-to-markdown.js';
+import { extractSelectionHtml } from '../content-scripts/extract-selection-html.js';
 
 export interface TurndownOptionsProvider {
   getTurndownOptions: () => TurndownOptions;

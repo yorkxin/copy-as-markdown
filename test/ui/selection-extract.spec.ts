@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractSelectionHtml } from '../../src/content-scripts/selection-to-markdown.js';
+import { extractSelectionHtml } from '../../src/content-scripts/extract-selection-html.js';
 
 function selectNodeContents(selector: string): void {
   const node = document.querySelector(selector)!;
