@@ -573,8 +573,25 @@ git commit -m "build: remove hacks.js and flags.ts (BUILD_TARGET replaces them)"
 
 ## Task 7: Switch debug/watch to esbuild
 
+> **Harden the build.js watch path here (deferred from Task 2 code review).** Task 7 is the first
+> caller of `node scripts/build.js <target> --watch`, so before/with the debug.js rewrite, make the
+> watch path in `scripts/build.js` robust:
+> 1. Wrap the `fs.watch` asset-recopy callbacks so a thrown `copyAssets` error (transient FS noise
+>    from editor atomic-saves, etc.) is caught and logged instead of crashing the watcher — e.g.
+>    `const onAssetChange = () => { try { copyAssets(target); } catch (err) { console.error('[build] asset copy failed:', err); } };`
+>    and pass `onAssetChange` to both `fs.watch` calls.
+> 2. `fs.watch(..., { recursive: true })` is unreliable on Linux on some Node 20.x/filesystem
+>    combos. Guard it: wrap the two recursive `fs.watch` registrations in try/catch and, on
+>    `ERR_FEATURE_UNAVAILABLE_ON_PLATFORM`, log a clear warning that asset auto-recopy is disabled
+>    (JS rebuilds via esbuild still work; only static/vendor live-copy is affected). Do not let this
+>    crash `--watch`.
+>
+> Keep these changes minimal and within the existing watch branch; re-verify `node scripts/build.js
+> chrome --watch` starts cleanly on this machine.
+
 **Files:**
 - Modify: `scripts/debug.js`
+- Modify: `scripts/build.js` (harden watch path per the note above)
 - Delete: `scripts/compile.js`
 - Modify: `package.json` (remove `nodemon`/`@types/nodemon`)
 
