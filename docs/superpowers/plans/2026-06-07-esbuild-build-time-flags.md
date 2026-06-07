@@ -910,6 +910,19 @@ Expected: clean working tree; all work committed. The branch is ready for `super
 ## Self-Review notes
 
 - **Spec coverage:** build pipeline (T2), per-target entries + offscreen trim (T2), `BUILD_TARGET` + ambient decl (T1/T5), DCE Turndown removal (T3→T5), absence check build-step + vitest (T4/T5), source maps (T2/T7), no-minify (T2), license handling §6.1 (T2 `legalComments` + T9), script changes §7 (T2/T5/T8), hacks.js/flags removal (T6), PR note §8 (T10), full re-validation (T11). All spec sections map to a task.
-- **TDD arc:** the Turndown-absence test is genuinely RED at T4 (Turndown inlined after the T3 hoist) and GREEN at T5 (BUILD_TARGET DCE), so the test is proven to detect a real leak.
-- **Fallback (spec §3):** if T5 Step 3 does NOT go green (esbuild keeps Turndown due to perceived side effects), apply the alias-stub fallback — add `alias: { '../lib/html-to-markdown': '../lib/html-to-markdown.stub.ts' }` for the Chrome build in `scripts/build.js` plus a no-op stub exporting `htmlToMarkdown` — then re-run T5 Step 3. Only needed if pure DCE/tree-shaking leaks.
+- **TDD arc:** the Turndown-absence test is genuinely RED at T4 (Turndown inlined after the T3 hoist) and GREEN once the converter uses a dynamic import + the T5 BUILD_TARGET branch, so the test is proven to detect a real leak.
+- **⚠️ Implementation correction (T3/T5 — applied during execution):** the plan's premise that
+  hoisting `html-to-markdown` to a STATIC import (T3) and relying on pure tree-shaking (T5) would
+  exclude Turndown is **wrong**. Exclusion is **per-entry, not per-target**: `src/offscreen.ts` (the
+  Chrome conversion path) statically imports `html-to-markdown`, so Turndown MUST stay in
+  `chrome/dist/offscreen.js` — ruling out the alias-stub fallback (it would strip offscreen too).
+  With a static import in `markdown-converter.ts`, esbuild pulls Turndown's side-effecting vendor
+  module into `background.ts`'s static graph regardless of tree-shaking (verified: `TurndownService`
+  present in `chrome/dist/background.js`). **Resolution:** the dynamic `import()` in
+  `createEventPageMarkdownConverter` is RETAINED (it keeps `html-to-markdown` out of `background`'s
+  static graph; `BUILD_TARGET` DCE then drops the Firefox converter on Chrome). Net verified state:
+  `chrome/dist/background.js` → 0 `TurndownService`, `chrome/dist/offscreen.js` → present. The
+  dynamic import is now ENFORCED by §4's assertion + test, not hand-maintained. See spec §3
+  "Implementation finding" for the full rationale. (T3's static-import commit + comment was
+  superseded by the corrected T5 commit, which restored the dynamic import.)
 ```

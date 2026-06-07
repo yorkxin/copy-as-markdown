@@ -172,22 +172,33 @@ listed as entries; they're reached only from `background.ts`, where the `BUILD_T
     ? createEventPageMarkdownConverter()
     : createOffscreenMarkdownConverter(offscreenDocumentService!);
   ```
-  On Chrome, `define`→constant-fold→DCE removes the `firefox-mv3` branch; tree-shaking then drops
-  `createEventPageMarkdownConverter`, its `html-to-markdown` import, and Turndown. (DCE chain:
-  `define` substitutes `BUILD_TARGET`; the literal comparison folds to a constant; the dead branch
-  is eliminated; the now-orphaned imports are tree-shaken.)
+  On Chrome, `define`→constant-fold→DCE removes the `firefox-mv3` branch, so the call to
+  `createEventPageMarkdownConverter` disappears and esbuild tree-shakes that function away.
 
-- **`markdown-converter.ts`:** `createEventPageMarkdownConverter` switches from the lazy
-  `import('../lib/html-to-markdown.js')` to a **normal static** `import { htmlToMarkdown } from
-  '../lib/html-to-markdown.js'`. The lazy-import crutch and its ⚠️ "KEEP THIS DYNAMIC" comments
-  are **removed**; a short comment replaces them, pointing at the §4 absence check as the now-
-  authoritative guarantee. The ⚠️ header in `html-to-markdown.ts` is updated to reference the
-  compile-time exclusion + check rather than the dynamic-import discipline.
+- **`markdown-converter.ts` keeps the DYNAMIC `import('../lib/html-to-markdown.js')`** inside
+  `createEventPageMarkdownConverter` (it is NOT hoisted to a static import).
 
-  > Fallback (only if needed): if esbuild tree-shaking does not fully drop Turndown from the
-  > Chrome bundle (e.g. a vendored module is treated as having load-time side effects), add an
-  > esbuild `alias` mapping `./lib/html-to-markdown` to a no-op stub in the Chrome build. The §4
-  > check decides whether this fallback is required — the primary mechanism is pure DCE/tree-shake.
+  > **Implementation finding (corrects the original plan).** The original plan proposed hoisting to
+  > a static import and relying on pure tree-shaking, with a Chrome `alias`→stub as the fallback.
+  > Both are wrong here, because exclusion is **per-entry, not per-target**:
+  > - `src/offscreen.ts` (the **Chrome** conversion path) statically imports `html-to-markdown`, so
+  >   Turndown legitimately MUST be present in `chrome/dist/offscreen.js`. A target-global `alias`
+  >   or stub would wrongly strip it from the offscreen entry too.
+  > - With a **static** import in `markdown-converter.ts`, esbuild pulls Turndown's side-effecting
+  >   vendor module into `background.ts`'s static graph for its module-load side effects, so it
+  >   lands in `chrome/dist/background.js` **even though** `createEventPageMarkdownConverter` is
+  >   tree-shaken (verified empirically — `TurndownService` present).
+  >
+  > The mechanism that actually works is the **dynamic `import()`**: it keeps `html-to-markdown`
+  > out of `background.ts`'s *static* graph (so Turndown isn't pulled in for side effects), while
+  > `offscreen.ts`'s static import keeps Turndown in `offscreen.js`. On Chrome, `BUILD_TARGET` DCE
+  > additionally drops the Firefox converter (and its dynamic import) entirely. Verified:
+  > `chrome/dist/background.js` → 0 `TurndownService`; `chrome/dist/offscreen.js` → present.
+  >
+  > The dynamic import is therefore RETAINED (acceptance criterion explicitly allowed keeping it
+  > "if justified"). The difference from #259 is that the invariant is now **enforced** by §4's
+  > assertion + test, not hand-maintained. The ⚠️ comments in `markdown-converter.ts` and
+  > `html-to-markdown.ts` are updated to explain the per-entry rationale and point at §4.
 
 - **Delete:** `src/config/flags.ts`, `firefox-mv3/hacks.js`, and the `"hacks.js"` entry from
   `firefox-mv3/manifest.json`'s `background.scripts`. (Note: `PERIDOCIALLY_REFRESH_MENU` was
@@ -324,10 +335,11 @@ Per the design note's sketch, port and validate incrementally:
    background scripts load without error, conversion + clipboard paths still work, and the expected
    `dist/` files are present. (A raw diff is not meaningful given inlining.)
 3. Migrate remaining entries (offscreen, UI pages); wire per-target entry lists + asset copy.
-4. Convert the converter selection (and the two target flags) to `BUILD_TARGET`; remove the lazy
-   import; delete `flags.ts` + `hacks.js` + the manifest `hacks.js` reference.
+4. Convert the converter selection (and the two target flags) to `BUILD_TARGET`; **keep** the
+   dynamic `import()` in `createEventPageMarkdownConverter` (per-entry exclusion — see §3); delete
+   `flags.ts` + `hacks.js` + the manifest `hacks.js` reference.
 5. Add the §4 absence check (build script + vitest test); confirm Turndown is gone from
-   `chrome/dist/background.js`. Apply the alias fallback only if the check shows a leak.
+   `chrome/dist/background.js` while still present in `chrome/dist/offscreen.js`.
 6. Swap debug/watch to esbuild native watch; remove `nodemon`.
 6a. Set `legalComments: 'eof'` (§6.1) and verify `about.html` lists all five bundled libs with
     their license text; add any missing entries.
@@ -346,7 +358,9 @@ Per the design note's sketch, port and validate incrementally:
 - `typecheck`, `lint`, `npm test`, and Chrome e2e all green.
 - `hacks.js` target-globals and the corresponding `Flags` accessors removed; `src/config/flags.ts`
   deleted; mock-clipboard runtime mode documented as intentionally kept.
-- `markdown-converter.ts` no longer needs the lazy dynamic import (BUILD_TARGET branch handles it).
+- `markdown-converter.ts` RETAINS the dynamic `import()` as the per-entry exclusion mechanism
+  (Chrome's offscreen entry still needs Turndown), now enforced by the §4 check rather than
+  hand-maintained — see §3's implementation finding.
 - Source maps work: breakpoints in original `src/*.ts` via DevTools, in SW and page contexts.
 - Third-party license attribution preserved: `legalComments: 'eof'` set, and `about.html` covers
   all five bundled libs (§6.1).
