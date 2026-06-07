@@ -20,10 +20,7 @@
     "esModuleInterop": true,
 
     /* Emit */
-    "declaration": false,
-    "sourceMap": false,
-    "removeComments": false,
-    "noEmit": false,
+    "noEmit": true,
 
     /* Interop Constraints */
     "isolatedModules": true,
