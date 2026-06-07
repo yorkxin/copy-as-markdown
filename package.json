@@ -52,6 +52,7 @@
     "@vitest/browser": "^3.2.4",
     "@vitest/ui": "^3.2.4",
     "bulma": "^1.0.0",
+    "esbuild": "^0.28.0",
     "eslint": "^9.37.0",
     "eslint-config-prettier": "^10.1.8",
     "http-server": "^14.1.1",
