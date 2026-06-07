@@ -264,16 +264,38 @@ posture, which already rests on `about.html`.
 
 ### 7. package.json scripts & debug/watch
 
+**CI dependency (must keep working):** `.github/workflows/nodejs.yml` calls `lint`, `test:unit`,
+`test:browser`, `build-chrome`, `build-firefox-mv3`, and `test:e2e`. These stay; only their
+underlying implementation changes.
+
+**Migration-driven changes:**
 - `compile-chrome` → `node scripts/build.js chrome`
 - `compile-firefox-mv3` → `node scripts/build.js firefox-mv3`
-- `compile` → runs both (no separate `build:ts` step; emit is owned by esbuild)
+- `compile` → `npm run compile-chrome && npm run compile-firefox-mv3` (drop the `build:ts &&`
+  prefix; emit is owned by esbuild)
 - `build:ts` (the old `tsc` emit script) → **removed**. `typecheck` (`tsc --noEmit`) stays.
-- `test:e2e` / `build-chrome` / `build-firefox-mv3` continue to call `compile`/`compile-chrome`/
-  `compile-firefox-mv3`; only the underlying implementation changes.
+- `scripts/compile.js` (file) → **deleted**, replaced by `scripts/build.js`.
+- Top-level `./dist/` no longer exists (esbuild writes straight to `<target>/dist`). Consequences:
+  - tsconfig `outDir: "./dist"` is vestigial under `--noEmit` → removed (or left harmless; remove
+    for clarity).
+  - `clean` → drop the dead `./dist/*` segment. `build.js` self-cleans `<target>/dist` per build
+    (§1 Step A), so `clean` is now mainly for `build/` and the e2e test dirs.
 - **Debug/watch:** replace the nodemon-watch-`compile.js` loop in `scripts/debug.js` with
   esbuild's native `context().watch()` (e.g. `node scripts/build.js <target> --watch`), keeping
   the existing `web-ext run` spawn + crash handling. The `nodemon` devDependency is removed.
   Asset copy (Step C) is re-run on rebuild (or watched) so static/vendor changes propagate.
+
+**Approved script cleanups (beyond the migration):**
+- **Consolidate the e2e variants.** Add `test:e2e:build` = `npm run compile && node
+  scripts/build-test-extension.js`, and rewrite `test:e2e`, `test:e2e:headed`, `test:e2e:ui`,
+  `test:e2e:debug` to `npm run test:e2e:build && playwright test [flag]`. Removes the repeated
+  build prefix; all four variants stay. (CI calls `test:e2e`, so its behavior is unchanged.)
+- **Remove `test:all`** (`npm test && npm run test:e2e`) — unused convenience wrapper.
+
+**Intentionally kept:** `test`, `test:watch`, `test:ui`, `test:unit`, `test:browser`,
+`debug-chrome`, `debug-edge`, `debug-firefox-mv3`, `debug-firefox-deved`, `test:e2e:docker`,
+`bump-version`, `convert-images`, `postinstall` (still vendors libs into `src/vendor`), `clean`,
+`lint`, `lint:fix`, `typecheck`.
 
 ### 8. PR note / docs
 
@@ -305,6 +327,9 @@ Per the design note's sketch, port and validate incrementally:
 6. Swap debug/watch to esbuild native watch; remove `nodemon`.
 6a. Set `legalComments: 'eof'` (§6.1) and verify `about.html` lists all five bundled libs with
     their license text; add any missing entries.
+6b. Finalize `package.json` scripts per §7: delete `build:ts`, `scripts/compile.js`, `test:all`;
+    simplify `compile`; remove the dead `./dist/*` from `clean` and the vestigial tsconfig
+    `outDir`; add `test:e2e:build` and route the four `test:e2e*` variants through it.
 7. Re-validate: `typecheck`, `lint`, `npm test` (unit + browser), `npm run test:e2e` (Chrome).
    Re-run the flaky parallel-clipboard e2e in isolation if it trips.
 8. Write the PR note (§8).
