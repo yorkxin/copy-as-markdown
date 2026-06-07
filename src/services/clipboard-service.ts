@@ -1,6 +1,7 @@
 import type { ClipboardAPI } from './shared-types.js';
 import type { OffscreenClipboardService } from './offscreen-clipboard-service.js';
-import { createBrowserOffscreenClipboardService } from './offscreen-clipboard-service.js';
+import { createOffscreenClipboardService } from './offscreen-clipboard-service.js';
+import type { OffscreenDocumentService } from './offscreen-document-service.js';
 
 export interface ClipboardMockCall {
   text: string;
@@ -125,13 +126,17 @@ export function createClipboardService(
 
 export function createBrowserClipboardService(
   clipboardAPI: ClipboardAPI | null,
+  offscreenDocumentService: OffscreenDocumentService | null,
   mockMode = false,
 ): ClipboardService {
   if (mockMode) {
     return createMockClipboardService();
   }
 
-  return createClipboardService(clipboardAPI, createBrowserOffscreenClipboardService());
+  const offscreenService: OffscreenClipboardService | null = offscreenDocumentService
+    ? createOffscreenClipboardService(offscreenDocumentService)
+    : null;
+  return createClipboardService(clipboardAPI, offscreenService);
 }
 
 export interface ClipboardServiceController extends ClipboardService {
@@ -157,6 +162,7 @@ export interface ClipboardServiceController extends ClipboardService {
  */
 export function createBrowserClipboardServiceController(
   clipboardAPI: ClipboardAPI | null,
+  offscreenDocumentService: OffscreenDocumentService | null,
   options?: {
     storageArea?: browser.storage.StorageArea;
     storageKey?: string;
@@ -168,7 +174,7 @@ export function createBrowserClipboardServiceController(
   const defaultMockState = options?.defaultMockState ?? false;
 
   let mockMode = defaultMockState;
-  let activeService = createBrowserClipboardService(clipboardAPI, mockMode);
+  let activeService = createBrowserClipboardService(clipboardAPI, offscreenDocumentService, mockMode);
 
   function syncGlobalMockService(): void {
     if (mockMode) {
@@ -191,7 +197,7 @@ export function createBrowserClipboardServiceController(
   async function setMockMode(enabled: boolean): Promise<void> {
     if (mockMode !== enabled) {
       mockMode = enabled;
-      activeService = createBrowserClipboardService(clipboardAPI, mockMode);
+      activeService = createBrowserClipboardService(clipboardAPI, offscreenDocumentService, mockMode);
       syncGlobalMockService();
     }
 

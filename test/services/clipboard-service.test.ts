@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createClipboardService, createMockClipboardService } from '../../src/services/clipboard-service.js';
+import { createBrowserClipboardService, createClipboardService, createMockClipboardService } from '../../src/services/clipboard-service.js';
 import type { ClipboardAPI } from '../../src/services/shared-types.js';
 import type { OffscreenClipboardService } from '../../src/services/offscreen-clipboard-service.js';
 
@@ -53,6 +53,17 @@ describe('clipboardService', () => {
       const service = createClipboardService(null, null);
 
       await expect(service.copy('hello')).rejects.toThrow('no clipboard mechanism available');
+    });
+  });
+
+  describe('createBrowserClipboardService', () => {
+    it('writes via the injected offscreen document service when there is no clipboard API', async () => {
+      const sendMessage = vi.fn(async () => ({ ok: true }));
+      const docService = { sendMessage } as any;
+      const service = createBrowserClipboardService(null, docService, false);
+
+      await expect(service.copy('hi')).resolves.toBe(true);
+      expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({ text: 'hi' }));
     });
   });
 

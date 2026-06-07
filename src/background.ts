@@ -10,6 +10,12 @@ import { createBrowserTabExportService } from './services/tab-export-service.js'
 import { createBrowserClipboardServiceController } from './services/clipboard-service.js';
 import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
+import { createBrowserOffscreenDocumentService } from './services/offscreen-document-service.js';
+import {
+  createEventPageMarkdownConverter,
+  createOffscreenMarkdownConverter,
+} from './services/markdown-converter.js';
+import type { MarkdownConverter } from './services/markdown-converter.js';
 import { createBrowserPendingPopupFeedbackService } from './services/pending-popup-feedback-service.js';
 import { createKeyboardBrowserCommandHandler } from './handlers/keyboard-command-handler.js';
 import { createBrowserContextMenuHandler } from './handlers/context-menu-handler.js';
@@ -35,17 +41,30 @@ const linkExportService = new LinkExportService(markdownInstance, CustomFormatsS
 
 // Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
 const useNavigatorClipboard = Flags.alwaysUseNavigatorClipboard();
+const convertMarkdownInBackground = Flags.convertMarkdownInBackground();
 const pendingPopupFeedbackService = createBrowserPendingPopupFeedbackService();
 const EMPTY_RESULT_FEEDBACK: PendingPopupFeedbackCode = 'empty-result';
 
+// Chrome shares ONE offscreen document between clipboard writes and Markdown
+// conversion. Firefox has no offscreen API (it uses navigator.clipboard and the
+// Event Page), so this is null there.
+const offscreenDocumentService = convertMarkdownInBackground
+  ? null
+  : createBrowserOffscreenDocumentService();
+
 const clipboardService = createBrowserClipboardServiceController(
   useNavigatorClipboard ? navigator.clipboard : null,
+  offscreenDocumentService,
 );
 
 (globalThis as any).setMockClipboardMode = clipboardService.setMockMode;
 
 clipboardService.initializeMockState()
   .catch(error => console.error('Mock clipboard init error', error));
+
+const markdownConverter: MarkdownConverter = convertMarkdownInBackground
+  ? createEventPageMarkdownConverter()
+  : createOffscreenMarkdownConverter(offscreenDocumentService!);
 
 const selectionConverterService = createBrowserSelectionConverterService(
   {
@@ -55,8 +74,7 @@ const selectionConverterService = createBrowserSelectionConverterService(
       codeBlockStyle: selectionCodeBlockStyle,
     }),
   },
-  chrome.runtime.getURL('dist/vendor/turndown.mjs'),
-  chrome.runtime.getURL('dist/vendor/turndown-plugin-gfm.mjs'),
+  markdownConverter,
 );
 
 const handlerServices = {

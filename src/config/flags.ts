@@ -8,4 +8,5 @@ function getBooleanFlag(name: string): boolean {
 export const Flags = {
   alwaysUseNavigatorClipboard: () => getBooleanFlag('ALWAYS_USE_NAVIGATOR_COPY_API'),
   periodicallyRefreshMenu: () => getBooleanFlag('PERIDOCIALLY_REFRESH_MENU'),
+  convertMarkdownInBackground: () => getBooleanFlag('CONVERT_MARKDOWN_IN_BACKGROUND'),
 };

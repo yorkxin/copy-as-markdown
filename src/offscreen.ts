@@ -1,14 +1,15 @@
-const OFFSCREEN_TARGET = 'offscreen-clipboard';
-
-interface OffscreenCopyMessage {
-  target?: string;
-  text?: string;
-}
-
-export interface OffscreenCopyResponse {
-  ok: boolean;
-  error?: string;
-}
+import { htmlToMarkdown } from './lib/html-to-markdown.js';
+import {
+  OFFSCREEN_CLIPBOARD_TARGET,
+  OFFSCREEN_MARKDOWN_TARGET,
+} from './contracts/offscreen-messages.js';
+import type {
+  OffscreenClipboardMessage,
+  OffscreenClipboardResponse,
+  OffscreenMarkdownMessage,
+  OffscreenMarkdownResponse,
+  OffscreenMessage,
+} from './contracts/offscreen-messages.js';
 
 /**
  * Write text to the clipboard from inside the offscreen (extension-origin)
@@ -16,7 +17,7 @@ export interface OffscreenCopyResponse {
  * (navigator.clipboard.writeText would reject), but execCommand in an
  * extension-origin document holding the clipboardWrite permission is allowed.
  */
-export function copyTextToClipboard(text: string): OffscreenCopyResponse {
+export function copyTextToClipboard(text: string): OffscreenClipboardResponse {
   const textarea = document.getElementById('clipboard') as HTMLTextAreaElement | null;
   if (!textarea) {
     return { ok: false, error: 'missing #clipboard textarea' };
@@ -33,14 +34,30 @@ export function copyTextToClipboard(text: string): OffscreenCopyResponse {
   }
 }
 
+/** Convert selection HTML to Markdown inside the offscreen document's DOM. */
+export function convertHtmlMessage(message: OffscreenMarkdownMessage): OffscreenMarkdownResponse {
+  try {
+    return { ok: true, markdown: htmlToMarkdown(message.html, message.options) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? `${error.name} ${error.message}` : String(error) };
+  }
+}
+
 // Registered only in the extension runtime; guarded so unit tests (no `chrome`)
-// can import this module to test copyTextToClipboard in isolation.
+// can import this module and test the handlers in isolation.
 if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
-  chrome.runtime.onMessage.addListener((message: OffscreenCopyMessage, _sender, sendResponse) => {
-    if (!message || message.target !== OFFSCREEN_TARGET) {
+  chrome.runtime.onMessage.addListener((message: OffscreenMessage, _sender, sendResponse) => {
+    if (!message || typeof (message as { target?: unknown }).target !== 'string') {
       return undefined;
     }
-    sendResponse(copyTextToClipboard(message.text ?? ''));
+    if (message.target === OFFSCREEN_CLIPBOARD_TARGET) {
+      sendResponse(copyTextToClipboard((message as OffscreenClipboardMessage).text ?? ''));
+      return undefined;
+    }
+    if (message.target === OFFSCREEN_MARKDOWN_TARGET) {
+      sendResponse(convertHtmlMessage(message as OffscreenMarkdownMessage));
+      return undefined;
+    }
     return undefined;
   });
 }
