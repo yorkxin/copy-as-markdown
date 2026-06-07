@@ -20,7 +20,7 @@
     "typecheck": "tsc --noEmit",
     "build:ts": "tsc",
     "compile": "npm run compile-chrome && npm run compile-firefox-mv3",
-    "compile-chrome": "node scripts/build.js chrome",
+    "compile-chrome": "node scripts/build.js chrome && node scripts/assert-no-turndown.js",
     "compile-firefox-mv3": "node scripts/build.js firefox-mv3",
     "build-chrome": "npm run compile-chrome && zip -r build/chrome.zip chrome/ -x \"*.DS_Store\" -x \".keep\"",
     "build-firefox-mv3": "npm run compile-firefox-mv3 && npx web-ext build -s firefox-mv3/ -a build/firefox-mv3/",

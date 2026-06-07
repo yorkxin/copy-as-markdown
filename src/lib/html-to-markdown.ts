@@ -1,11 +1,19 @@
 // ⚠️ SERVICE-WORKER SAFETY: this module statically imports Turndown, which touches
-// the DOM at module load, so it must only run in a DOM-bearing context (the Chrome
-// offscreen document or the Firefox Event Page) — never the Chrome MV3 service worker.
-// Exclusion from the Chrome service-worker bundle is now enforced at COMPILE TIME:
-// background.ts selects the converter via `BUILD_TARGET`, so on Chrome the Firefox
-// branch (the only path that imports this module) is dead-code-eliminated and
-// tree-shaken away. The invariant is verified by scripts/assert-no-turndown.js and
-// test/build/no-turndown-in-chrome-background.test.ts.
+// the DOM at module load, so it must only run in a DOM-bearing context — the Chrome
+// offscreen document (src/offscreen.ts) or the Firefox Event Page — never the Chrome
+// MV3 service worker (src/background.ts).
+//
+// Two callers reach this module, and only one is allowed into the Chrome service
+// worker's bundle:
+//   - src/offscreen.ts imports it STATICALLY. That is correct: the Chrome offscreen
+//     document is the Chrome conversion path, so Turndown belongs in offscreen.js.
+//   - src/services/markdown-converter.ts (createEventPageMarkdownConverter) imports it
+//     via a DYNAMIC import() only, so it stays OUT of background.ts's static graph.
+//     On Chrome that converter is dead-code-eliminated via BUILD_TARGET and tree-shaken.
+//
+// Net: Turndown must be ABSENT from chrome/dist/background.js but PRESENT in
+// chrome/dist/offscreen.js. That per-entry invariant is enforced by
+// scripts/assert-no-turndown.js and test/build/no-turndown-in-chrome-background.test.ts.
 import type { Rule, Options as TurndownOptions } from 'turndown';
 import TurndownService from '../shims/turndown.js';
 import { tables } from '../shims/turndown-plugin-gfm.js';
