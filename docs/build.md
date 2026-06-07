@@ -4,10 +4,12 @@ The extension is built with **esbuild**, once per target (`chrome` and `firefox-
 
 ## Commands
 
-- `npm run compile` — build both `chrome/` and `firefox-mv3/`.
-- `npm run compile-chrome` — build Chrome, then assert Turndown is absent from the
+- `npm run build` — build both `chrome/` and `firefox-mv3/`.
+- `npm run build-chrome` — build Chrome, then assert Turndown is absent from the
   service-worker bundle (`scripts/assert-no-turndown.js`).
-- `npm run compile-firefox-mv3` — build Firefox.
+- `npm run build-firefox-mv3` — build Firefox.
+- `npm run package` / `package-chrome` / `package-firefox-mv3` — build, then zip / `web-ext build`
+  the store-uploadable artifact into `build/`.
 - `npm run debug-chrome` / `debug-firefox-mv3` — esbuild `--watch` + `web-ext run`.
 - `npm run typecheck` — `tsc --noEmit` (type-checking only; esbuild owns emit).
 - `npm run lint` — eslint.
@@ -56,7 +58,7 @@ The mechanism:
 
 This invariant is **enforced** (not hand-maintained):
 
-- `scripts/assert-no-turndown.js` fails `compile-chrome` if `chrome/dist/background.js` contains
+- `scripts/assert-no-turndown.js` fails `build-chrome` if `chrome/dist/background.js` contains
   `TurndownService`.
 - `test/build/no-turndown-in-chrome-background.test.ts` checks the same under `npm test`.
 

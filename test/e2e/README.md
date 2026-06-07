@@ -45,7 +45,7 @@ Everything in `test/e2e` is split by concern, but only the clipboard smoke tests
 
 ## Test Extension Builds
 
-`npm run test:e2e` first runs `npm run compile && node scripts/build-test-extension.js`, which produces:
+`npm run test:e2e` first runs `npm run build && node scripts/build-test-extension.js`, which produces:
 
 - `chrome-test/`: Base Chrome build with `tabs`/`tabGroups` moved to required permissions and host permissions for `http://localhost:5566/*`.
 - `chrome-optional-test/`: Keeps those permissions optional so `test/e2e/permissions` can validate request flows.

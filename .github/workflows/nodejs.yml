@@ -33,8 +33,8 @@ jobs:
       - run: npm ci
       - run: npm run test:unit
       - run: npm install -g web-ext # build tool
-      - run: npm run build-chrome
-      - run: npm run build-firefox-mv3
+      - run: npm run package-chrome
+      - run: npm run package-firefox-mv3
 
   playwright:
     runs-on: ubuntu-latest
