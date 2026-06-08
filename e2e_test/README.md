@@ -28,7 +28,7 @@ From the repository root:
 
 ```shell
 # Build the extension bundles and test variants (Chrome + Firefox MV3)
-npm run compile-chrome
+npm run build-chrome
 node scripts/build-test-extension.js
 
 # Run the Selenium suite (Chrome + Firefox)

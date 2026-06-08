@@ -29,26 +29,36 @@ export function createOffscreenMarkdownConverter(
 }
 
 /**
- * Firefox: convert directly in the Event Page (which has a DOM). The Turndown-
- * bearing module is imported LAZILY so it never enters the Chrome service-worker
- * static import graph when this file is statically imported by background.ts.
+ * Firefox: convert directly in the Event Page (which has a DOM).
  *
- * ⚠️ DO NOT convert the dynamic `import()` below into a top-level static import.
- * See the warning at the call site.
+ * The Turndown-bearing module (`html-to-markdown`) is imported via a DYNAMIC
+ * `import()` so it never enters the STATIC import graph of this module. That
+ * matters because background.ts statically imports this module (for
+ * `createOffscreenMarkdownConverter`), and the Chrome MV3 service worker — which
+ * has no DOM — must not bundle Turndown. A static import here would pull Turndown
+ * into chrome/dist/background.js for its module-load side effects even though
+ * Chrome never calls this function.
+ *
+ * Why a dynamic import and not a BUILD_TARGET stub/alias: on Chrome, Turndown is
+ * still required by the OTHER entry, src/offscreen.ts (the Chrome conversion path),
+ * so it cannot be globally excluded from the Chrome build — only from the
+ * background entry. The dynamic import is what gives that per-entry exclusion.
+ *
+ * On Chrome, background.ts selects the converter via `BUILD_TARGET`, so the call
+ * to this function is dead-code-eliminated and the function (with its dynamic
+ * import) is tree-shaken away. The resulting absence of Turndown from
+ * chrome/dist/background.js is ENFORCED by scripts/assert-no-turndown.js and
+ * test/build/no-turndown-in-chrome-background.test.ts (it is no longer a
+ * hand-maintained invariant).
  */
 export function createEventPageMarkdownConverter(): MarkdownConverter {
   let htmlToMarkdownPromise: Promise<typeof import('../lib/html-to-markdown.js')> | null = null;
 
   async function convert(html: string, options: TurndownOptions): Promise<string> {
     if (!htmlToMarkdownPromise) {
-      // ⚠️ SERVICE-WORKER SAFETY — KEEP THIS A DYNAMIC import(). DO NOT HOIST TO A
-      // STATIC `import ... from '../lib/html-to-markdown.js'` AT THE TOP OF THIS FILE.
-      // html-to-markdown.ts statically imports Turndown, which touches the DOM at
-      // module load. background.ts statically imports THIS module, so a static import
-      // here would pull Turndown into the Chrome MV3 service worker (which has no DOM)
-      // and break the background script at load time. The dynamic import keeps
-      // html-to-markdown.ts out of the service worker's static graph; it only ever
-      // runs on Firefox's Event Page (which has a DOM).
+      // KEEP THIS A DYNAMIC import() — see the function doc above. Hoisting it to a
+      // static top-level import re-introduces Turndown into chrome/dist/background.js
+      // and the no-turndown assertion/test will fail.
       htmlToMarkdownPromise = import('../lib/html-to-markdown.js');
     }
     const { htmlToMarkdown } = await htmlToMarkdownPromise;

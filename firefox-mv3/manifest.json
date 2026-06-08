@@ -30,7 +30,6 @@
   },
   "background": {
     "scripts": [
-      "hacks.js",
       "./dist/background.js"
     ],
     "type": "module"

@@ -22,7 +22,6 @@ import { createBrowserContextMenuHandler } from './handlers/context-menu-handler
 import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-handler.js';
 import type { KeyboardCommandId } from './contracts/commands.js';
 import type { PendingPopupFeedbackCode, RuntimeMessage } from './contracts/messages.js';
-import { Flags } from './config/flags.js';
 
 // Initialize markdown and bookmarks
 const markdownInstance = new Markdown();
@@ -37,21 +36,17 @@ const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage,
 const tabExportService = createBrowserTabExportService(markdownInstance, CustomFormatsStorage);
 const linkExportService = new LinkExportService(markdownInstance, CustomFormatsStorage);
 
-// Check if ALWAYS_USE_NAVIGATOR_COPY_API flag is set
-const useNavigatorClipboard = Flags.alwaysUseNavigatorClipboard();
-const convertMarkdownInBackground = Flags.convertMarkdownInBackground();
 const pendingPopupFeedbackService = createBrowserPendingPopupFeedbackService();
 const EMPTY_RESULT_FEEDBACK: PendingPopupFeedbackCode = 'empty-result';
 
 // Chrome shares ONE offscreen document between clipboard writes and Markdown
-// conversion. Firefox has no offscreen API (it uses navigator.clipboard and the
-// Event Page), so this is null there.
-const offscreenDocumentService = convertMarkdownInBackground
+// conversion. Firefox has no offscreen API (navigator.clipboard + Event Page).
+const offscreenDocumentService = BUILD_TARGET === 'firefox-mv3'
   ? null
   : createBrowserOffscreenDocumentService();
 
 const clipboardService = createBrowserClipboardServiceController(
-  useNavigatorClipboard ? navigator.clipboard : null,
+  BUILD_TARGET === 'firefox-mv3' ? navigator.clipboard : null,
   offscreenDocumentService,
 );
 
@@ -60,7 +55,7 @@ const clipboardService = createBrowserClipboardServiceController(
 clipboardService.initializeMockState()
   .catch(error => console.error('Mock clipboard init error', error));
 
-const markdownConverter: MarkdownConverter = convertMarkdownInBackground
+const markdownConverter: MarkdownConverter = BUILD_TARGET === 'firefox-mv3'
   ? createEventPageMarkdownConverter()
   : createOffscreenMarkdownConverter(offscreenDocumentService!);
 

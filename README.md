@@ -101,7 +101,7 @@ Firefox checks the signature when installing XPI, which cannot be disabled in th
 Please use **Firefox Developer Edition, Nightly, or unbranded Beta** versions to sideload an unsigned XPI.
 See *[Testing persistent and restart features (Extension Workshop)](https://extensionworkshop.com/documentation/develop/testing-persistent-and-restart-features/)* for more details.
 
-1. `npm run build-firefox-mv3`. The XPI will be saved in `./build/firefox-mv3` folder.
+1. `npm run package-firefox-mv3`. The XPI will be saved in `./build/firefox-mv3` folder.
 2. In Firefox Developr Edition, go to `about:flags`, set `xpinstall.signatures.required` to `false`. Restart the browser
 3. Go to `about:addons`, drag and drop th XPI file into this page to install.
 4. Restart the browser to verify behaviors on restart.
