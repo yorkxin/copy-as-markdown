@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the runtime API-availability branch in the clipboard service with two peer backends selected at the composition root by `BUILD_TARGET`, mirroring the `MarkdownConverter` pattern, with no behavior change.
+**Goal:** Replace the runtime API-availability branch in the clipboard service with two peer backends selected at the composition root by `BUILD_TARGET`, mirroring the `MarkdownConverter` pattern, with no user-visible behavior change.
 
-**Architecture:** `ClipboardService` becomes a pure interface with two peer factories — `createNavigatorClipboardService` (Firefox) and `createOffscreenClipboardService` (Chrome, already exists). `src/background.ts` picks one by `BUILD_TARGET` and injects it into a slimmed `createBrowserClipboardServiceController`, which owns only the runtime mock toggle, persistence, and the single empty-text rule. The mock recorder methods move to a segregated `MockClipboardService` type.
+**Architecture:** `ClipboardService` becomes a pure write-or-throw interface (`copy → Promise<void>`) with two peer factories — `createNavigatorClipboardService` (Firefox) and `createOffscreenClipboardService` (Chrome). `src/background.ts` picks one by `BUILD_TARGET` and injects it into a slimmed `createBrowserClipboardServiceController`, which is the SOLE producer of the `boolean` no-op signal (empty text → `false`) and owns the runtime mock toggle, persistence, and the E2E globals. The mock recorder methods move to a segregated `MockClipboardService` type.
 
 **Tech Stack:** TypeScript, esbuild (`BUILD_TARGET` define + DCE), Vitest (unit + browser projects), Playwright (Chrome e2e), `webextension-polyfill` (`browser.*`).
 
@@ -16,91 +16,29 @@
 
 | File | Responsibility | Change |
 |------|----------------|--------|
-| `src/services/clipboard-service.ts` | `ClipboardService` interface, `MockClipboardService` interface + factory, navigator backend factory, controller | Modify (add navigator backend, segregate mock type, slim controller, remove two old factories) |
-| `src/services/offscreen-clipboard-service.ts` | Chrome offscreen backend | Modify (return `ClipboardService`, drop standalone interface) |
+| `src/services/clipboard-service.ts` | `ClipboardService` (write-or-throw) + `MockClipboardService` types, navigator backend, mock factory, controller | Rewrite |
+| `src/services/offscreen-clipboard-service.ts` | Chrome offscreen backend | Modify (return `Promise<void>`, drop standalone interface) |
 | `src/background.ts` | Composition root — select + inject backend | Modify (`BUILD_TARGET` selection, inject one real service) |
 | `test/services/clipboard-service.test.ts` | Unit tests for backends + controller + mock | Rewrite |
-| `test/services/offscreen-clipboard-service.test.ts` | Unit tests for offscreen backend | **Unchanged** (only imports the factory; stays green) |
-| `test/e2e/helpers.ts` | E2E mock hooks | **Unchanged** (accesses `ClipboardMockCall` type + untyped `__mockClipboardService` global) |
+| `test/services/offscreen-clipboard-service.test.ts` | Unit tests for offscreen backend | Modify (success assertions `toBe(true)` → `toBeUndefined()`) |
+| `test/e2e/helpers.ts` | E2E mock hooks | **Unchanged** (imports `ClipboardMockCall` type; accesses the untyped `__mockClipboardService` global) |
 
-**Key constraint:** the controller signature change ripples through typecheck, so the cut-over (Task 2) is a single atomic commit. Task 1 is purely additive.
-
----
-
-## Task 1: Add the navigator (Firefox) backend
-
-**Files:**
-- Modify: `src/services/clipboard-service.ts`
-- Test: `test/services/clipboard-service.test.ts`
-
-This task is additive — the old `createClipboardService` / `createBrowserClipboardService` stay in place, so everything else remains green.
-
-- [ ] **Step 1: Write the failing test**
-
-Append this `describe` block to `test/services/clipboard-service.test.ts` (keep the existing imports/tests for now). Add `createNavigatorClipboardService` to the existing import from `../../src/services/clipboard-service.js`:
-
-```ts
-describe('createNavigatorClipboardService', () => {
-  it('writes via clipboardAPI and resolves true', async () => {
-    const writeText = vi.fn<(t: string) => Promise<void>>(async () => {});
-    const service = createNavigatorClipboardService({ writeText });
-
-    await expect(service.copy('hello')).resolves.toBe(true);
-    expect(writeText).toHaveBeenCalledExactlyOnceWith('hello');
-  });
-});
-```
-
-- [ ] **Step 2: Run the test to verify it fails**
-
-Run: `npm run test:unit -- clipboard-service`
-Expected: FAIL — `createNavigatorClipboardService is not a function` (or an import/type error).
-
-- [ ] **Step 3: Add the navigator backend factory**
-
-In `src/services/clipboard-service.ts`, add this exported function (place it just above `export function createMockClipboardService`). `ClipboardAPI` is already imported at the top of the file:
-
-```ts
-/**
- * Firefox backend: write directly with navigator.clipboard from the background.
- * A pure peer implementation — no runtime API-availability checks, no empty-text
- * rule (that policy lives in the controller).
- */
-export function createNavigatorClipboardService(clipboardAPI: ClipboardAPI): ClipboardService {
-  return {
-    copy: async (text: string): Promise<boolean> => {
-      await clipboardAPI.writeText(text);
-      return true;
-    },
-  };
-}
-```
-
-- [ ] **Step 4: Run the test to verify it passes**
-
-Run: `npm run test:unit -- clipboard-service`
-Expected: PASS (the new test plus all pre-existing tests).
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/services/clipboard-service.ts test/services/clipboard-service.test.ts
-git commit -m "feat: add createNavigatorClipboardService peer backend"
-```
+**Why one atomic task:** the interface return-type change (`boolean → void`) plus the mock-type segregation ripple through typecheck simultaneously — a `Promise<void>` backend cannot satisfy the old `Promise<boolean>` interface, and removing the base interface's optional recorder methods cannot be separated from introducing `MockClipboardService`. So Task 1 lands as a single commit. Task 2 is verification.
 
 ---
 
-## Task 2: Cut over to injected backend + slim controller (atomic)
+## Task 1: Inject the BUILD_TARGET-chosen backend; slim the controller
 
 **Files:**
+- Rewrite: `src/services/clipboard-service.ts`
 - Modify: `src/services/offscreen-clipboard-service.ts`
-- Modify: `src/services/clipboard-service.ts`
 - Modify: `src/background.ts`
-- Test: `test/services/clipboard-service.test.ts` (rewrite)
+- Rewrite: `test/services/clipboard-service.test.ts`
+- Modify: `test/services/offscreen-clipboard-service.test.ts`
 
-This is one commit because the controller signature change breaks typecheck until every caller is updated. Write the new tests first, then make them pass.
+Write the tests first, watch them fail, then implement.
 
-- [ ] **Step 1: Rewrite the unit test file to the target shape**
+- [ ] **Step 1: Rewrite the clipboard unit test file**
 
 Replace the **entire** contents of `test/services/clipboard-service.test.ts` with:
 
@@ -125,7 +63,7 @@ const tab: browser.tabs.Tab = {
 };
 
 function makeRealService(): ClipboardService & { copy: ReturnType<typeof vi.fn> } {
-  return { copy: vi.fn(async () => true) } as any;
+  return { copy: vi.fn(async () => {}) } as any;
 }
 
 function makeStorageArea(initial: Record<string, unknown> = {}) {
@@ -153,11 +91,11 @@ function installBrowserStorage() {
 }
 
 describe('createNavigatorClipboardService', () => {
-  it('writes via clipboardAPI and resolves true', async () => {
+  it('writes via clipboardAPI and resolves void', async () => {
     const writeText = vi.fn<(t: string) => Promise<void>>(async () => {});
     const service = createNavigatorClipboardService({ writeText });
 
-    await expect(service.copy('hello')).resolves.toBe(true);
+    await expect(service.copy('hello')).resolves.toBeUndefined();
     expect(writeText).toHaveBeenCalledExactlyOnceWith('hello');
   });
 });
@@ -173,7 +111,7 @@ describe('createBrowserClipboardServiceController', () => {
     expect(real.copy).not.toHaveBeenCalled();
   });
 
-  it('delegates non-empty copies to the injected real backend', async () => {
+  it('returns true and delegates non-empty copies to the injected real backend', async () => {
     const real = makeRealService();
     const controller = createBrowserClipboardServiceController(real, {
       storageArea: makeStorageArea(),
@@ -194,7 +132,7 @@ describe('createBrowserClipboardServiceController', () => {
     expect(controller.isMockMode()).toBe(true);
     expect((globalThis as any).__mockClipboardService).toBeDefined();
 
-    await controller.copy('mocked', tab);
+    await expect(controller.copy('mocked', tab)).resolves.toBe(true);
     expect(real.copy).not.toHaveBeenCalled();
     expect(sessionSet).toHaveBeenCalled();
 
@@ -212,7 +150,7 @@ describe('createMockClipboardService', () => {
     const sessionSet = installBrowserStorage();
     const service = createMockClipboardService();
 
-    await expect(service.copy('test text')).resolves.toBe(true);
+    await expect(service.copy('test text')).resolves.toBeUndefined();
     expect(sessionSet).toHaveBeenCalledExactlyOnceWith({
       mockClipboardCalls: [expect.objectContaining({ text: 'test text' })],
     });
@@ -220,12 +158,26 @@ describe('createMockClipboardService', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [ ] **Step 2: Update the offscreen backend test assertions**
 
-Run: `npm run test:unit -- clipboard-service`
-Expected: FAIL — `createBrowserClipboardServiceController` still expects the old `(clipboardAPI, offscreenDocumentService, options)` signature, so `makeRealService()` is rejected (type error) and/or the mock-toggle test fails.
+In `test/services/offscreen-clipboard-service.test.ts`, the success case currently asserts a `true` resolution. Change only that assertion (the two throw-case tests stay as-is). Replace:
 
-- [ ] **Step 3: Align the offscreen backend to the interface**
+```ts
+    await expect(clipboard.copy('hello')).resolves.toBe(true);
+```
+
+with:
+
+```ts
+    await expect(clipboard.copy('hello')).resolves.toBeUndefined();
+```
+
+- [ ] **Step 3: Run the tests to verify they fail**
+
+Run: `npm run test:unit -- clipboard-service offscreen-clipboard-service`
+Expected: FAIL — `createNavigatorClipboardService` is not exported / the controller still expects the old `(clipboardAPI, offscreenDocumentService, options)` signature, and the offscreen `copy` still resolves `true`.
+
+- [ ] **Step 4: Rewrite the offscreen backend to return void**
 
 Replace the **entire** contents of `src/services/offscreen-clipboard-service.ts` with:
 
@@ -237,12 +189,13 @@ import { OFFSCREEN_CLIPBOARD_TARGET } from '../contracts/offscreen-messages.js';
 
 /**
  * Chrome backend: write via the shared offscreen document. A peer implementation
- * of ClipboardService (it ignores the optional `tab` argument).
+ * of ClipboardService — it ignores the optional `tab` argument and resolves on a
+ * successful write, otherwise throws.
  */
 export function createOffscreenClipboardService(
   documentService: OffscreenDocumentService,
 ): ClipboardService {
-  async function copy(text: string): Promise<boolean> {
+  async function copy(text: string): Promise<void> {
     const response = await documentService.sendMessage<OffscreenClipboardResponse | undefined>({
       target: OFFSCREEN_CLIPBOARD_TARGET,
       text,
@@ -250,16 +203,15 @@ export function createOffscreenClipboardService(
     if (!response?.ok) {
       throw new Error(`offscreen clipboard write failed: ${response?.error ?? 'no response'}`);
     }
-    return true;
   }
 
   return { copy };
 }
 ```
 
-(The standalone `OffscreenClipboardService` interface is removed; `copy(text)` remains assignable to `ClipboardService.copy(text, tab?)`.)
+(The standalone `OffscreenClipboardService` interface is removed.)
 
-- [ ] **Step 4: Rewrite the clipboard service core**
+- [ ] **Step 5: Rewrite the clipboard service core**
 
 Replace the **entire** contents of `src/services/clipboard-service.ts` with:
 
@@ -274,16 +226,15 @@ export interface ClipboardMockCall {
 
 export interface ClipboardService {
   /**
-   * Copy text to clipboard.
-   * If tab is not provided, will attempt to get the current active tab.
-   * @returns `true` if the clipboard was updated, `false` for a no-op.
+   * Write text to the clipboard, or throw. A backend never reports a soft failure —
+   * it either succeeds or raises. The empty-text no-op is the controller's policy.
    */
-  copy: (text: string, tab?: browser.tabs.Tab) => Promise<boolean>;
+  copy: (text: string, tab?: browser.tabs.Tab) => Promise<void>;
 }
 
 /**
  * The mock backend additionally exposes recorder methods used by E2E tests.
- * Segregated from the base interface so real backends don't carry these optionals.
+ * Segregated from the base interface so real backends don't carry these members.
  */
 export interface MockClipboardService extends ClipboardService {
   getCalls: () => Promise<ClipboardMockCall[]>;
@@ -293,14 +244,12 @@ export interface MockClipboardService extends ClipboardService {
 
 /**
  * Firefox backend: write directly with navigator.clipboard from the background.
- * A pure peer implementation — no runtime API-availability checks, no empty-text
- * rule (that policy lives in the controller).
+ * A pure peer implementation — no runtime API-availability checks, no empty-text rule.
  */
 export function createNavigatorClipboardService(clipboardAPI: ClipboardAPI): ClipboardService {
   return {
-    copy: async (text: string): Promise<boolean> => {
+    copy: async (text: string): Promise<void> => {
       await clipboardAPI.writeText(text);
-      return true;
     },
   };
 }
@@ -327,25 +276,23 @@ export function createMockClipboardService(): MockClipboardService {
     }
   }
 
-  async function saveCallsToStorage(calls: ClipboardMockCall[]): Promise<boolean> {
+  async function saveCallsToStorage(calls: ClipboardMockCall[]): Promise<void> {
     try {
       if (browser.storage?.session) {
         await browser.storage.session.set({ [STORAGE_KEY]: calls });
       } else {
         await browser.storage.local.set({ [STORAGE_KEY]: calls });
       }
-      return true;
     } catch (error) {
       console.error('Failed to save mock clipboard calls:', error);
-      return false;
     }
   }
 
   return {
-    copy: async (text: string, tab?: browser.tabs.Tab): Promise<boolean> => {
+    copy: async (text: string, tab?: browser.tabs.Tab): Promise<void> => {
       const calls = await getCallsFromStorage();
       calls.push({ text, tab, timestamp: Date.now() });
-      return await saveCallsToStorage(calls);
+      await saveCallsToStorage(calls);
     },
     getCalls: async () => {
       return await getCallsFromStorage();
@@ -360,7 +307,14 @@ export function createMockClipboardService(): MockClipboardService {
   };
 }
 
-export interface ClipboardServiceController extends ClipboardService {
+export interface ClipboardServiceController {
+  /**
+   * Copy text to the clipboard.
+   * @returns `true` if a write was delegated to the active backend, `false` for an
+   * empty-text no-op.
+   */
+  copy: (text: string, tab?: browser.tabs.Tab) => Promise<boolean>;
+
   /**
    * Toggle mock clipboard mode and persist the preference.
    */
@@ -382,7 +336,8 @@ export interface ClipboardServiceController extends ClipboardService {
  *
  * Axis A (which real backend) is decided at the composition root by BUILD_TARGET
  * and injected here. This controller owns ONLY Axis B (mock vs real), persistence
- * of that preference, the E2E globals, and the single empty-text rule.
+ * of that preference, the E2E globals, and the single empty-text rule. It is also
+ * the sole producer of the boolean no-op signal.
  */
 export function createBrowserClipboardServiceController(
   realService: ClipboardService,
@@ -460,7 +415,8 @@ export function createBrowserClipboardServiceController(
       if (text === '') {
         return false;
       }
-      return await activeService().copy(text, tab);
+      await activeService().copy(text, tab);
+      return true;
     },
     setMockMode,
     initializeMockState,
@@ -469,11 +425,11 @@ export function createBrowserClipboardServiceController(
 }
 ```
 
-Note what changed versus the old file: `createClipboardService` and `createBrowserClipboardService` are gone; the `OffscreenClipboardService`/`OffscreenDocumentService` imports are gone; the base interface no longer carries the optional recorder methods; the empty-text rule now lives once, in the controller's `copy`.
+What changed versus the old file: `createClipboardService` and `createBrowserClipboardService` are gone; the `OffscreenClipboardService` / `OffscreenDocumentService` imports are gone; the base interface returns `Promise<void>` (no recorder optionals); `MockClipboardService` carries the recorder methods; `ClipboardServiceController` is a standalone interface whose `copy` returns `Promise<boolean>`; the empty-text rule and the boolean live once, in the controller.
 
-- [ ] **Step 5: Wire the composition root**
+- [ ] **Step 6: Wire the composition root**
 
-In `src/background.ts`, update the clipboard import line (currently line 10):
+In `src/background.ts`, replace the clipboard import line (currently line 10):
 
 ```ts
 import {
@@ -494,46 +450,47 @@ const realClipboard: ClipboardService = BUILD_TARGET === 'firefox-mv3'
 const clipboardService = createBrowserClipboardServiceController(realClipboard);
 ```
 
-Leave the `offscreenDocumentService` declaration (lines 44-46), the `setMockClipboardMode` global assignment, the `initializeMockState()` call, and every `clipboardService.copy(...)` call site unchanged.
+Leave the `offscreenDocumentService` declaration (lines 44-46), the `setMockClipboardMode` global assignment, the `initializeMockState()` call, and every `clipboardService.copy(...)` call site unchanged. (The `didCopy` consumers at lines ~155/174/228 still receive the boolean from the controller.)
 
-- [ ] **Step 6: Typecheck**
+- [ ] **Step 7: Typecheck**
 
 Run: `npm run typecheck`
-Expected: PASS (no references to the removed `createClipboardService` / `createBrowserClipboardService` / `OffscreenClipboardService` remain).
+Expected: PASS. No references to the removed `createClipboardService` / `createBrowserClipboardService` / `OffscreenClipboardService` remain; `createNavigatorClipboardService` returning `Promise<void>` satisfies `ClipboardService`.
 
-- [ ] **Step 7: Run the unit + browser test projects**
+- [ ] **Step 8: Run the unit + browser suites**
 
 Run: `npm run test:unit -- clipboard-service offscreen-clipboard-service`
-Expected: PASS — new controller/backend/mock tests pass; `offscreen-clipboard-service.test.ts` still green unchanged.
+Expected: PASS (new controller/backend/mock tests + the updated offscreen assertion).
 
-Then run the full unit + browser suites:
+Then the full suites:
 
 Run: `npm test`
 Expected: PASS.
 
-- [ ] **Step 8: Lint**
+- [ ] **Step 9: Lint**
 
 Run: `npm run lint`
 Expected: PASS (no unused imports left behind).
 
-- [ ] **Step 9: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add src/services/clipboard-service.ts src/services/offscreen-clipboard-service.ts src/background.ts test/services/clipboard-service.test.ts
+git add src/services/clipboard-service.ts src/services/offscreen-clipboard-service.ts src/background.ts test/services/clipboard-service.test.ts test/services/offscreen-clipboard-service.test.ts
 git commit -m "refactor: inject BUILD_TARGET-chosen clipboard backend; slim controller
 
 Remove the runtime if/else/throw backend selection (createClipboardService,
 createBrowserClipboardService). background.ts picks the real backend by
-BUILD_TARGET and injects it. Controller owns only the mock toggle, persistence,
-and the single empty-text rule. Mock recorder methods segregated onto
-MockClipboardService."
+BUILD_TARGET and injects it. ClipboardService backends are now pure write-or-throw
+(copy -> Promise<void>); the controller is the sole producer of the boolean no-op
+signal (empty text -> false) and owns the mock toggle, persistence, and globals.
+Mock recorder methods segregated onto MockClipboardService."
 ```
 
 ---
 
-## Task 3: Verify end-to-end and write the PR note
+## Task 2: Verify end-to-end and write the PR note
 
-**Files:** none (verification + docs)
+**Files:** Create `docs/superpowers/plans/2026-06-08-clipboard-service-backend-injection-pr-note.md`
 
 - [ ] **Step 1: Build both targets**
 
@@ -545,32 +502,34 @@ Expected: PASS — `build-chrome` (includes `assert-no-turndown.js`) and `build-
 Run: `grep -c "writeText" chrome/dist/background.js; grep -c "OFFSCREEN_CLIPBOARD_TARGET\|chrome.offscreen\|createDocument" firefox-mv3/dist/background.js`
 
 Expected:
-- The Chrome background bundle should NOT contain the navigator `clipboard.writeText` write path from `createNavigatorClipboardService` (that branch is DCE'd; `BUILD_TARGET === 'firefox-mv3'` is `false` in the Chrome build). Confirm by inspecting matches — there must be no `createNavigatorClipboardService` body / `clipboardAPI.writeText` call.
-- The Firefox background bundle should NOT contain the offscreen clipboard send path (`OFFSCREEN_CLIPBOARD_TARGET`) or `chrome.offscreen` document creation for clipboard.
+- The Chrome background bundle must NOT contain the navigator `clipboard.writeText` write path from `createNavigatorClipboardService` (that branch is DCE'd because `BUILD_TARGET === 'firefox-mv3'` is `false` in the Chrome build). Inspect any matches to confirm none is the navigator backend body.
+- The Firefox background bundle must NOT contain the offscreen clipboard send path (`OFFSCREEN_CLIPBOARD_TARGET`) or offscreen-document creation for clipboard.
 
 If either path leaks, stop and investigate the `BUILD_TARGET` branch in `src/background.ts` before proceeding.
 
 - [ ] **Step 3: Run the Chrome e2e suite**
 
 Run: `npm run test:e2e`
-Expected: PASS. The mock-clipboard path (`__mockClipboardService`, `setMockClipboardMode`, `set-mock-clipboard` / `check-mock-clipboard`) and the real offscreen write path both exercise unchanged.
+Expected: PASS. The mock path (`__mockClipboardService`, `setMockClipboardMode`, `set-mock-clipboard` / `check-mock-clipboard`) and the real offscreen write path both exercise unchanged.
 Note: the parallel-clipboard e2e test is known-flaky — if it trips, re-run it in isolation before treating it as a real failure.
 
 - [ ] **Step 4: Write a short PR note**
 
-Create `docs/superpowers/plans/2026-06-08-clipboard-service-backend-injection-pr-note.md` summarizing the new shape:
+Create `docs/superpowers/plans/2026-06-08-clipboard-service-backend-injection-pr-note.md`:
 
 ```markdown
 # PR note: inject the chosen clipboard backend
 
 ## What changed
-- `ClipboardService` is now a pure interface with two peer backends:
+- `ClipboardService` is now a pure write-or-throw interface (`copy → Promise<void>`)
+  with two peer backends:
   - `createNavigatorClipboardService(clipboardAPI)` (Firefox)
   - `createOffscreenClipboardService(documentService)` (Chrome)
 - `src/background.ts` selects the backend by `BUILD_TARGET` and injects it — the
   runtime `if (clipboardAPI) … else if (offscreenService) … else throw` is gone.
 - `createBrowserClipboardServiceController(realService)` owns only the runtime mock
-  toggle, persistence, the E2E globals, and the single empty-text rule.
+  toggle, persistence, the E2E globals, and the single empty-text rule. It is the
+  sole producer of the `boolean` no-op signal (empty text → `false`).
 - Removed `createClipboardService` and `createBrowserClipboardService`.
 - Mock recorder methods (`getCalls`/`reset`/`getLastCall`) moved off the base
   interface onto `MockClipboardService`.
@@ -578,10 +537,14 @@ Create `docs/superpowers/plans/2026-06-08-clipboard-service-backend-injection-pr
 ## Why
 Brings the clipboard service in line with `MarkdownConverter`: an interface whose
 concrete implementation is chosen at the composition root, with no runtime
-API-availability checks. Per-target bundles now carry only their own backend.
+API-availability checks. Per-target bundles now carry only their own backend. The
+boolean return is now honest — it lives only where it is meaningful (the controller's
+empty-text no-op), which also drops a latent quirk where a mock storage-save failure
+surfaced as a misleading "empty result".
 
 ## Behavior
-Identical. E2E mock hooks unchanged. typecheck / lint / unit+browser / Chrome e2e green.
+No user-visible change. The empty-result UX (badge vs. feedback) is preserved. E2E
+mock hooks unchanged. typecheck / lint / unit+browser / Chrome e2e green.
 ```
 
 - [ ] **Step 5: Commit**
@@ -595,7 +558,8 @@ git commit -m "docs: PR note for clipboard backend injection"
 
 ## Self-Review notes (for the implementer)
 
-- **Spec coverage:** navigator backend (Task 1 + Task 2 Step 4); offscreen returns `ClipboardService` (Task 2 Step 3); controller injection + empty-text centralization + `MockClipboardService` split (Task 2 Step 4); `BUILD_TARGET` root selection (Task 2 Step 5); removed `createClipboardService`/`createBrowserClipboardService` (Task 2 Step 4); tests (Task 2 Step 1); per-target DCE verification (Task 3 Step 2); E2E hooks preserved (Task 2 Step 4 keeps `__mockClipboardService`/`setMockClipboardMode`; Task 3 Step 3 verifies).
-- **Type consistency:** factory names are stable across tasks — `createNavigatorClipboardService`, `createOffscreenClipboardService`, `createMockClipboardService`, `createBrowserClipboardServiceController`; interfaces `ClipboardService`, `MockClipboardService`, `ClipboardServiceController`, `ClipboardMockCall`. `ClipboardMockCall` stays exported (imported by `test/e2e/helpers.ts`).
-- **No new infra:** no build-assertion script is added (Task 3 Step 2 is a one-time manual grep), per the design decision.
+- **Spec coverage:** navigator backend (Task 1 Step 5); offscreen returns `Promise<void>` (Task 1 Step 4); controller injection + empty-text centralization + sole boolean producer + `MockClipboardService` split (Task 1 Step 5); `BUILD_TARGET` root selection (Task 1 Step 6); removed `createClipboardService`/`createBrowserClipboardService` (Task 1 Step 5); tests incl. updated offscreen assertion (Task 1 Steps 1-2); per-target DCE verification (Task 2 Step 2); E2E hooks preserved (Task 1 Step 5 keeps `__mockClipboardService`/`setMockClipboardMode`; Task 2 Step 3 verifies).
+- **Type consistency:** factory names stable — `createNavigatorClipboardService`, `createOffscreenClipboardService`, `createMockClipboardService`, `createBrowserClipboardServiceController`. Interfaces: `ClipboardService` (`copy → Promise<void>`), `MockClipboardService`, `ClipboardServiceController` (`copy → Promise<boolean>`, standalone — does NOT extend `ClipboardService`), `ClipboardMockCall` (stays exported; imported by `test/e2e/helpers.ts`).
+- **Return-type discipline:** every backend (`navigator`, `offscreen`, `mock`) resolves `void`; only `ClipboardServiceController.copy` resolves `boolean`. Tests assert `toBeUndefined()` on backends, `toBe(true)`/`toBe(false)` only on the controller.
+- **No new infra:** no build-assertion script added (Task 2 Step 2 is a one-time manual grep), per the design decision.
 ```

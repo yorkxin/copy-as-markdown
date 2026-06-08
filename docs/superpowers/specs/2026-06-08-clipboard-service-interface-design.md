@@ -45,7 +45,9 @@ in the controller (it swaps mock⇄real live and persists the preference).
 
 ```ts
 export interface ClipboardService {
-  copy: (text: string, tab?: browser.tabs.Tab) => Promise<boolean>;
+  // Write the text to the clipboard, or throw. A backend never reports a
+  // "soft failure" — it either succeeds or raises.
+  copy: (text: string, tab?: browser.tabs.Tab) => Promise<void>;
 }
 
 // Mock-only recorder methods segregated off the base interface:
@@ -56,12 +58,20 @@ export interface MockClipboardService extends ClipboardService {
 }
 ```
 
+**Why `Promise<void>` on the backend, not `Promise<boolean>`:** both real backends
+only ever resolve "wrote it" or throw — neither can honestly return `false`. The only
+meaningful `false` is the empty-text no-op, which is the controller's policy. So the
+boolean lives exactly once, on the **controller** (`ClipboardServiceController.copy:
+Promise<boolean>`), and backends are pure write-or-throw. This also removes a latent
+quirk where the mock returned `false` on a storage-save failure (which background would
+have surfaced as a misleading "empty result").
+
 ### Backends (peers, no runtime checks, no empty-text rule)
 
 - **New** `createNavigatorClipboardService(clipboardAPI: ClipboardAPI): ClipboardService`
   — the extracted Firefox branch:
   ```ts
-  return { copy: async (text) => { await clipboardAPI.writeText(text); return true; } };
+  return { copy: async (text) => { await clipboardAPI.writeText(text); } };
   ```
 - `createOffscreenClipboardService(documentService)` returns `ClipboardService`. The
   standalone `OffscreenClipboardService` interface is **removed**; its `copy(text)`
@@ -71,8 +81,10 @@ export interface MockClipboardService extends ClipboardService {
 ### Mock
 
 - `createMockClipboardService(): MockClipboardService` — **drops** its own
-  `if (text === '') return false` guard (now centralized in the controller). Keeps the
-  storage-backed recorder behavior and the `getCalls`/`reset`/`getLastCall` methods.
+  `if (text === '') return false` guard (now centralized in the controller) and its
+  `boolean` return (`copy` is now `Promise<void>`, matching the interface; it still logs
+  on a storage error). Keeps the storage-backed recorder behavior and the
+  `getCalls`/`reset`/`getLastCall` methods.
 
 ### Controller (owns Axis B + the empty-text rule)
 
@@ -89,11 +101,22 @@ export function createBrowserClipboardServiceController(
     mockMode ? (mockService ??= createMockClipboardService()) : realService;
   // ... persistence + __mockClipboardService global, unchanged ...
   return {
-    copy: (text, tab) => text === '' ? Promise.resolve(false) : active().copy(text, tab),
+    // The controller is the SOLE producer of the boolean: false = empty no-op,
+    // true = a write was delegated (the backend either wrote or threw).
+    copy: async (text, tab) => {
+      if (text === '') return false;
+      await active().copy(text, tab);
+      return true;
+    },
     setMockMode, initializeMockState, isMockMode,
   };
 }
 ```
+
+`ClipboardServiceController` no longer `extends ClipboardService` — its `copy` returns
+`Promise<boolean>` (the empty-text signal background consumes), whereas the backend
+`ClipboardService.copy` returns `Promise<void>`. It is declared as a standalone
+interface with `copy`, `setMockMode`, `initializeMockState`, `isMockMode`.
 
 - **Empty-text rule lives here, once.** It short-circuits before delegating to the
   active service, covering both mock and real paths (background routes all copies
@@ -130,18 +153,21 @@ Replace the combined `createClipboardService` / `createBrowserClipboardService` 
 with:
 
 - **`createNavigatorClipboardService`** — `copy('hello')` calls `clipboardAPI.writeText`
-  once and resolves `true`.
-- **`createOffscreenClipboardService`** — `copy('hi')` delegates to the injected document
-  service (`sendMessage` with the text) and resolves `true`.
-- **Controller** —
+  once and resolves (returns `void`/`undefined`).
+- **`createOffscreenClipboardService`** — covered by the existing
+  `test/services/offscreen-clipboard-service.test.ts`, which must be **updated**: its
+  `copy(...)` success assertions change from `resolves.toBe(true)` to
+  `resolves.toBeUndefined()` (the throw-on-failure assertions are unchanged).
+- **Controller** (the only place the boolean is asserted) —
   - empty text resolves `false` **without** touching the injected real backend;
-  - non-empty delegates to the real backend;
+  - non-empty resolves `true` and delegates to the real backend;
   - `setMockMode(true)` routes subsequent copies to a mock and exposes
     `__mockClipboardService`; `setMockMode(false)` restores the real backend and clears
     the global;
   - persistence / `initializeMockState` restore behavior (keep existing coverage).
-- **Mock** — records non-empty copies. The previous "does not record empty-string copies"
-  test is **removed** (the guard moved); empty-text is now asserted at the controller level.
+- **Mock** — records non-empty copies (asserts on the storage write, not a boolean
+  return). The previous "does not record empty-string copies" test is **removed** (the
+  guard moved); empty-text is now asserted at the controller level.
 
 ## Verification
 
@@ -162,10 +188,12 @@ unchanged.
 ## Scope / non-goals
 
 - **In scope:** `clipboard-service.ts`, `offscreen-clipboard-service.ts` (return type
-  alignment), `background.ts` wiring, clipboard tests.
+  alignment to `Promise<void>`), `background.ts` wiring, and the clipboard unit tests
+  (`clipboard-service.test.ts` rewrite + `offscreen-clipboard-service.test.ts` assertion
+  update).
 - **Out of scope:** the Markdown converter, `offscreen-document-service` internals, the
-  build system (esbuild is done), any feature/behavior change, and any new build-assertion
-  infrastructure.
+  build system (esbuild is done), any user-visible behavior change (the empty-result UX is
+  preserved), and any new build-assertion infrastructure.
 
 ## Approach (rejected alternatives)
 
