@@ -10,11 +10,11 @@ function makeDocService(sendImpl?: (m: unknown) => Promise<unknown>) {
 }
 
 describe('offscreenClipboardService', () => {
-  it('sends a clipboard-target message and resolves true on ok', async () => {
+  it('sends a clipboard-target message and resolves on ok', async () => {
     const { service, sendMessage } = makeDocService();
     const clipboard = createOffscreenClipboardService(service);
 
-    await expect(clipboard.copy('hello')).resolves.toBe(true);
+    await expect(clipboard.copy('hello')).resolves.toBeUndefined();
     expect(sendMessage).toHaveBeenCalledWith({ target: OFFSCREEN_CLIPBOARD_TARGET, text: 'hello' });
   });
 
