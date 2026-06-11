@@ -15,8 +15,8 @@
 // chrome/dist/offscreen.js. That per-entry invariant is enforced by
 // scripts/assert-no-turndown.js and test/build/no-turndown-in-chrome-background.test.ts.
 import type { Rule, Options as TurndownOptions } from 'turndown';
-import TurndownService from '../shims/turndown.js';
-import { tables } from '../shims/turndown-plugin-gfm.js';
+import { tables } from '@truto/turndown-plugin-gfm';
+import TurndownService from 'turndown';
 
 // Turndown wraps <p> with blank lines, and inside <li> that becomes an indented
 // blank line between bullet items (e.g. "- item\n    \n- item"), which breaks
