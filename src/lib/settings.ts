@@ -1,4 +1,4 @@
-import '../vendor/browser-polyfill.js';
+import 'webextension-polyfill';
 import { TabGroupIndentationStyle, UnorderedListStyle } from './markdown.js';
 
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
