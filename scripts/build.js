@@ -63,6 +63,7 @@ function copyAssets(t) {
 const buildOptions = {
   entryPoints: entryPointsFor(target),
   bundle: true,
+  platform: 'browser', // honor turndown's `browser` field: real-DOM build, domino stubbed out
   format: 'esm',
   splitting: false, // MV3 service worker: one file per entry, no chunks
   treeShaking: true,
