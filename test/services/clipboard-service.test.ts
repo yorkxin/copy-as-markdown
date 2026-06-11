@@ -42,6 +42,15 @@ describe('createNavigatorClipboardService', () => {
     await expect(service.copy('hello')).resolves.toBeUndefined();
     expect(writeText).toHaveBeenCalledExactlyOnceWith('hello');
   });
+
+  it('rejects when clipboardAPI.writeText rejects', async () => {
+    const writeText = vi.fn<(t: string) => Promise<void>>(async () => {
+      throw new Error('denied');
+    });
+    const service = createNavigatorClipboardService({ writeText });
+
+    await expect(service.copy('hello')).rejects.toThrow('denied');
+  });
 });
 
 describe('createBrowserClipboardServiceController', () => {
@@ -89,6 +98,21 @@ describe('createBrowserClipboardServiceController', () => {
   });
 });
 
+function installStatefulBrowserStorage() {
+  let store: unknown[] = [];
+  (globalThis as any).browser = {
+    storage: {
+      session: {
+        get: vi.fn(async () => ({ mockClipboardCalls: store })),
+        set: vi.fn(async (obj: { mockClipboardCalls: unknown[] }) => {
+          store = obj.mockClipboardCalls;
+        }),
+      },
+      local: { get: vi.fn(), set: vi.fn() },
+    },
+  };
+}
+
 describe('createMockClipboardService', () => {
   it('records non-empty copies', async () => {
     const sessionSet = installBrowserStorage();
@@ -98,5 +122,21 @@ describe('createMockClipboardService', () => {
     expect(sessionSet).toHaveBeenCalledExactlyOnceWith({
       mockClipboardCalls: [expect.objectContaining({ text: 'test text' })],
     });
+  });
+
+  it('exposes recorded calls via getCalls / getLastCall and clears them via reset', async () => {
+    installStatefulBrowserStorage();
+    const service = createMockClipboardService();
+
+    await service.copy('first');
+    await service.copy('second');
+
+    expect((await service.getCalls()).map(c => c.text)).toEqual(['first', 'second']);
+    expect((await service.getLastCall())?.text).toBe('second');
+
+    await service.reset();
+
+    expect(await service.getCalls()).toEqual([]);
+    expect(await service.getLastCall()).toBeUndefined();
   });
 });
