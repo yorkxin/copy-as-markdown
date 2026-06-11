@@ -1,55 +1,55 @@
 import type { ClipboardAPI } from './shared-types.js';
-import type { OffscreenClipboardService } from './offscreen-clipboard-service.js';
-import { createOffscreenClipboardService } from './offscreen-clipboard-service.js';
-import type { OffscreenDocumentService } from './offscreen-document-service.js';
 
 export interface ClipboardMockCall {
   text: string;
-  tab?: browser.tabs.Tab;
   timestamp: number;
 }
 
 export interface ClipboardService {
   /**
-   * Copy text to clipboard.
-   * If tab is not provided, will attempt to get the current active tab.
-   * @returns `true` if the clipboard was updated, `false` for a no-op.
+   * Write text to the clipboard, or throw. A backend never reports a soft failure —
+   * it either succeeds or raises. The empty-text no-op is the controller's policy.
    */
-  copy: (text: string, tab?: browser.tabs.Tab) => Promise<boolean>;
-
-  /**
-   * Get all recorded clipboard copy calls (only available in mock mode)
-   */
-  getCalls?: () => Promise<ClipboardMockCall[]>;
-
-  /**
-   * Reset the mock (clear all recorded calls) (only available in mock mode)
-   */
-  reset?: () => Promise<void>;
-
-  /**
-   * Get the most recent call (only available in mock mode)
-   */
-  getLastCall?: () => Promise<ClipboardMockCall | undefined>;
+  copy: (text: string) => Promise<void>;
 }
 
 /**
- * Create a mock clipboard service for testing
- * Records all copy calls instead of writing to clipboard
- * Uses chrome.storage.session to persist data across service worker restarts
+ * The mock backend additionally exposes recorder methods used by E2E tests.
+ * Segregated from the base interface so real backends don't carry these members.
  */
-export function createMockClipboardService(): ClipboardService {
+export interface MockClipboardService extends ClipboardService {
+  getCalls: () => Promise<ClipboardMockCall[]>;
+  reset: () => Promise<void>;
+  getLastCall: () => Promise<ClipboardMockCall | undefined>;
+}
+
+/**
+ * Firefox backend: write directly with navigator.clipboard from the background.
+ * A pure peer implementation — no runtime API-availability checks, no empty-text rule.
+ */
+export function createNavigatorClipboardService(clipboardAPI: ClipboardAPI): ClipboardService {
+  return {
+    copy: async (text: string): Promise<void> => {
+      await clipboardAPI.writeText(text);
+    },
+  };
+}
+
+/**
+ * Create a mock clipboard service for testing.
+ * Records all copy calls instead of writing to clipboard.
+ * Uses chrome.storage.session to persist data across service worker restarts.
+ * The empty-text rule is enforced by the controller, not here.
+ */
+export function createMockClipboardService(): MockClipboardService {
   const STORAGE_KEY = 'mockClipboardCalls';
 
-  // Helper to get calls from storage
   async function getCallsFromStorage(): Promise<ClipboardMockCall[]> {
     try {
-      // Try session storage first (MV3, cleared when browser closes)
       if (browser.storage?.session) {
         const result = await browser.storage.session.get(STORAGE_KEY);
         return result[STORAGE_KEY] || [];
       }
-      // Fallback to local storage
       const result = await browser.storage.local.get(STORAGE_KEY);
       return result[STORAGE_KEY] || [];
     } catch {
@@ -57,34 +57,23 @@ export function createMockClipboardService(): ClipboardService {
     }
   }
 
-  // Helper to save calls to storage
-  async function saveCallsToStorage(calls: ClipboardMockCall[]): Promise<boolean> {
+  async function saveCallsToStorage(calls: ClipboardMockCall[]): Promise<void> {
     try {
       if (browser.storage?.session) {
         await browser.storage.session.set({ [STORAGE_KEY]: calls });
       } else {
         await browser.storage.local.set({ [STORAGE_KEY]: calls });
       }
-      return true;
     } catch (error) {
       console.error('Failed to save mock clipboard calls:', error);
-      return false;
     }
   }
 
   return {
-    copy: async (text: string, tab?: browser.tabs.Tab): Promise<boolean> => {
-      if (text === '') {
-        return false;
-      }
-
+    copy: async (text: string): Promise<void> => {
       const calls = await getCallsFromStorage();
-      calls.push({
-        text,
-        tab,
-        timestamp: Date.now(),
-      });
-      return await saveCallsToStorage(calls);
+      calls.push({ text, timestamp: Date.now() });
+      await saveCallsToStorage(calls);
     },
     getCalls: async () => {
       return await getCallsFromStorage();
@@ -99,47 +88,14 @@ export function createMockClipboardService(): ClipboardService {
   };
 }
 
-export function createClipboardService(
-  clipboardAPI: ClipboardAPI | null,
-  offscreenService: OffscreenClipboardService | null,
-): ClipboardService {
-  async function copy_(text: string): Promise<boolean> {
-    if (text === '') {
-      return false;
-    }
-    // Firefox: write directly with navigator.clipboard from the background.
-    if (clipboardAPI) {
-      await clipboardAPI.writeText(text);
-      return true;
-    }
-    // Chrome: write via the offscreen document.
-    if (offscreenService) {
-      return await offscreenService.copy(text);
-    }
-    throw new Error('no clipboard mechanism available');
-  }
+export interface ClipboardServiceController {
+  /**
+   * Copy text to the clipboard.
+   * @returns `true` if a write was delegated to the active backend, `false` for an
+   * empty-text no-op.
+   */
+  copy: (text: string) => Promise<boolean>;
 
-  return {
-    copy: copy_,
-  };
-}
-
-export function createBrowserClipboardService(
-  clipboardAPI: ClipboardAPI | null,
-  offscreenDocumentService: OffscreenDocumentService | null,
-  mockMode = false,
-): ClipboardService {
-  if (mockMode) {
-    return createMockClipboardService();
-  }
-
-  const offscreenService: OffscreenClipboardService | null = offscreenDocumentService
-    ? createOffscreenClipboardService(offscreenDocumentService)
-    : null;
-  return createClipboardService(clipboardAPI, offscreenService);
-}
-
-export interface ClipboardServiceController extends ClipboardService {
   /**
    * Toggle mock clipboard mode and persist the preference.
    */
@@ -157,12 +113,15 @@ export interface ClipboardServiceController extends ClipboardService {
 }
 
 /**
- * Create a clipboard service that can toggle between real and mock implementations.
- * Handles persistence of the mock state and exposes it via globals for E2E tests.
+ * Wrap an already-chosen real clipboard backend with the runtime mock toggle.
+ *
+ * Axis A (which real backend) is decided at the composition root by BUILD_TARGET
+ * and injected here. This controller owns ONLY Axis B (mock vs real), persistence
+ * of that preference, the E2E globals, and the single empty-text rule. It is also
+ * the sole producer of the boolean no-op signal.
  */
 export function createBrowserClipboardServiceController(
-  clipboardAPI: ClipboardAPI | null,
-  offscreenDocumentService: OffscreenDocumentService | null,
+  realService: ClipboardService,
   options?: {
     storageArea?: browser.storage.StorageArea;
     storageKey?: string;
@@ -174,11 +133,18 @@ export function createBrowserClipboardServiceController(
   const defaultMockState = options?.defaultMockState ?? false;
 
   let mockMode = defaultMockState;
-  let activeService = createBrowserClipboardService(clipboardAPI, offscreenDocumentService, mockMode);
+  let mockService: MockClipboardService | null = null;
+
+  function activeService(): ClipboardService {
+    if (mockMode) {
+      return (mockService ??= createMockClipboardService());
+    }
+    return realService;
+  }
 
   function syncGlobalMockService(): void {
     if (mockMode) {
-      (globalThis as any).__mockClipboardService = activeService;
+      (globalThis as any).__mockClipboardService = (mockService ??= createMockClipboardService());
     } else if ((globalThis as any).__mockClipboardService) {
       delete (globalThis as any).__mockClipboardService;
     }
@@ -197,7 +163,6 @@ export function createBrowserClipboardServiceController(
   async function setMockMode(enabled: boolean): Promise<void> {
     if (mockMode !== enabled) {
       mockMode = enabled;
-      activeService = createBrowserClipboardService(clipboardAPI, offscreenDocumentService, mockMode);
       syncGlobalMockService();
     }
 
@@ -227,8 +192,12 @@ export function createBrowserClipboardServiceController(
   }
 
   return {
-    copy: async (text: string, tab?: browser.tabs.Tab): Promise<boolean> => {
-      return await activeService.copy(text, tab);
+    copy: async (text: string): Promise<boolean> => {
+      if (text === '') {
+        return false;
+      }
+      await activeService().copy(text);
+      return true;
     },
     setMockMode,
     initializeMockState,

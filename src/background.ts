@@ -7,7 +7,12 @@ import CustomFormatsStorage from './storage/custom-formats-storage.js';
 import { createBrowserBadgeService } from './services/badge-service.js';
 import { createBrowserContextMenuService } from './services/context-menu-service.js';
 import { createBrowserTabExportService } from './services/tab-export-service.js';
-import { createBrowserClipboardServiceController } from './services/clipboard-service.js';
+import {
+  createBrowserClipboardServiceController,
+  createNavigatorClipboardService,
+} from './services/clipboard-service.js';
+import type { ClipboardService } from './services/clipboard-service.js';
+import { createOffscreenClipboardService } from './services/offscreen-clipboard-service.js';
 import { LinkExportService } from './services/link-export-service.js';
 import { createBrowserSelectionConverterService } from './services/selection-converter-service.js';
 import { createBrowserOffscreenDocumentService } from './services/offscreen-document-service.js';
@@ -45,10 +50,11 @@ const offscreenDocumentService = BUILD_TARGET === 'firefox-mv3'
   ? null
   : createBrowserOffscreenDocumentService();
 
-const clipboardService = createBrowserClipboardServiceController(
-  BUILD_TARGET === 'firefox-mv3' ? navigator.clipboard : null,
-  offscreenDocumentService,
-);
+const realClipboard: ClipboardService = BUILD_TARGET === 'firefox-mv3'
+  ? createNavigatorClipboardService(navigator.clipboard)
+  : createOffscreenClipboardService(offscreenDocumentService!);
+
+const clipboardService = createBrowserClipboardServiceController(realClipboard);
 
 (globalThis as any).setMockClipboardMode = clipboardService.setMockMode;
 
@@ -152,7 +158,7 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await contextMenuHandler.handleMenuClick(info, tab);
-    const didCopy = await clipboardService.copy(text, tab);
+    const didCopy = await clipboardService.copy(text);
     if (didCopy) {
       await clearPendingPopupFeedback();
       await badgeService.showSuccess();
@@ -171,7 +177,7 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
 browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
     const text = await keyboardCommandHandler.handleCommand(command as KeyboardCommandId, tab);
-    const didCopy = await clipboardService.copy(text, tab);
+    const didCopy = await clipboardService.copy(text);
     if (didCopy) {
       await clearPendingPopupFeedback();
       await badgeService.showSuccess();
