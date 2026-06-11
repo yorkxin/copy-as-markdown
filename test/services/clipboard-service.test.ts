@@ -1,126 +1,142 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createBrowserClipboardService, createClipboardService, createMockClipboardService } from '../../src/services/clipboard-service.js';
-import type { ClipboardAPI } from '../../src/services/shared-types.js';
-import type { OffscreenClipboardService } from '../../src/services/offscreen-clipboard-service.js';
+import {
+  createBrowserClipboardServiceController,
+  createMockClipboardService,
+  createNavigatorClipboardService,
+} from '../../src/services/clipboard-service.js';
+import type { ClipboardService } from '../../src/services/clipboard-service.js';
 
-describe('clipboardService', () => {
-  describe('copy', () => {
-    const tab: browser.tabs.Tab = {
-      id: 1,
-      index: 0,
-      pinned: false,
-      highlighted: false,
-      windowId: 1,
-      active: true,
-      incognito: false,
-      mutedInfo: { muted: false },
-    };
+function makeRealService(): ClipboardService & { copy: ReturnType<typeof vi.fn> } {
+  return { copy: vi.fn(async () => {}) } as any;
+}
 
-    function makeOffscreen(ok = true): OffscreenClipboardService & { copy: ReturnType<typeof vi.fn> } {
-      return { copy: vi.fn(async () => ok) } as any;
-    }
+function makeStorageArea(initial: Record<string, unknown> = {}) {
+  const data: Record<string, unknown> = { ...initial };
+  return {
+    get: vi.fn(async (key: string) => ({ [key]: data[key] })),
+    set: vi.fn(async (obj: Record<string, unknown>) => {
+      Object.assign(data, obj);
+    }),
+  } as any;
+}
 
-    it('writes via clipboardAPI when provided (Firefox path)', async () => {
-      const writeText = vi.fn<(t: string) => Promise<void>>(async () => {});
-      const clipboardAPI: ClipboardAPI = { writeText };
-      const offscreen = makeOffscreen();
-      const service = createClipboardService(clipboardAPI, offscreen);
+function installBrowserStorage() {
+  const sessionSet = vi.fn(async () => undefined);
+  (globalThis as any).browser = {
+    storage: {
+      session: {
+        get: vi.fn(async () => ({ mockClipboardCalls: [] })),
+        set: sessionSet,
+      },
+      local: { get: vi.fn(), set: vi.fn() },
+    },
+  };
+  return sessionSet;
+}
 
-      await expect(service.copy('hello', tab)).resolves.toBe(true);
-      expect(writeText).toHaveBeenCalledExactlyOnceWith('hello');
-      expect(offscreen.copy).not.toHaveBeenCalled();
+describe('createNavigatorClipboardService', () => {
+  it('writes via clipboardAPI and resolves void', async () => {
+    const writeText = vi.fn<(t: string) => Promise<void>>(async () => {});
+    const service = createNavigatorClipboardService({ writeText });
+
+    await expect(service.copy('hello')).resolves.toBeUndefined();
+    expect(writeText).toHaveBeenCalledExactlyOnceWith('hello');
+  });
+
+  it('rejects when clipboardAPI.writeText rejects', async () => {
+    const writeText = vi.fn<(t: string) => Promise<void>>(async () => {
+      throw new Error('denied');
+    });
+    const service = createNavigatorClipboardService({ writeText });
+
+    await expect(service.copy('hello')).rejects.toThrow('denied');
+  });
+});
+
+describe('createBrowserClipboardServiceController', () => {
+  it('returns false for empty text without touching the real backend', async () => {
+    const real = makeRealService();
+    const controller = createBrowserClipboardServiceController(real, {
+      storageArea: makeStorageArea(),
     });
 
-    it('delegates to the offscreen service when clipboardAPI is null (Chrome path)', async () => {
-      const offscreen = makeOffscreen();
-      const service = createClipboardService(null, offscreen);
+    await expect(controller.copy('')).resolves.toBe(false);
+    expect(real.copy).not.toHaveBeenCalled();
+  });
 
-      await expect(service.copy('hello', tab)).resolves.toBe(true);
-      expect(offscreen.copy).toHaveBeenCalledExactlyOnceWith('hello');
+  it('returns true and delegates non-empty copies to the injected real backend', async () => {
+    const real = makeRealService();
+    const controller = createBrowserClipboardServiceController(real, {
+      storageArea: makeStorageArea(),
     });
 
-    it('returns false for empty text without touching either mechanism', async () => {
-      const writeText = vi.fn<(t: string) => Promise<void>>(async () => {});
-      const offscreen = makeOffscreen();
-      const service = createClipboardService({ writeText }, offscreen);
+    await expect(controller.copy('hi')).resolves.toBe(true);
+    expect(real.copy).toHaveBeenCalledExactlyOnceWith('hi');
+  });
 
-      await expect(service.copy('')).resolves.toBe(false);
-      expect(writeText).not.toHaveBeenCalled();
-      expect(offscreen.copy).not.toHaveBeenCalled();
+  it('routes copies to the mock in mock mode and toggles the global hook', async () => {
+    const sessionSet = installBrowserStorage();
+    const real = makeRealService();
+    const controller = createBrowserClipboardServiceController(real, {
+      storageArea: makeStorageArea(),
     });
 
-    it('throws when no clipboard mechanism is available', async () => {
-      const service = createClipboardService(null, null);
+    await controller.setMockMode(true);
+    expect(controller.isMockMode()).toBe(true);
+    expect((globalThis as any).__mockClipboardService).toBeDefined();
 
-      await expect(service.copy('hello')).rejects.toThrow('no clipboard mechanism available');
+    await expect(controller.copy('mocked')).resolves.toBe(true);
+    expect(real.copy).not.toHaveBeenCalled();
+    expect(sessionSet).toHaveBeenCalled();
+
+    await controller.setMockMode(false);
+    expect(controller.isMockMode()).toBe(false);
+    expect((globalThis as any).__mockClipboardService).toBeUndefined();
+
+    await controller.copy('real');
+    expect(real.copy).toHaveBeenCalledExactlyOnceWith('real');
+  });
+});
+
+function installStatefulBrowserStorage() {
+  let store: unknown[] = [];
+  (globalThis as any).browser = {
+    storage: {
+      session: {
+        get: vi.fn(async () => ({ mockClipboardCalls: store })),
+        set: vi.fn(async (obj: { mockClipboardCalls: unknown[] }) => {
+          store = obj.mockClipboardCalls;
+        }),
+      },
+      local: { get: vi.fn(), set: vi.fn() },
+    },
+  };
+}
+
+describe('createMockClipboardService', () => {
+  it('records non-empty copies', async () => {
+    const sessionSet = installBrowserStorage();
+    const service = createMockClipboardService();
+
+    await expect(service.copy('test text')).resolves.toBeUndefined();
+    expect(sessionSet).toHaveBeenCalledExactlyOnceWith({
+      mockClipboardCalls: [expect.objectContaining({ text: 'test text' })],
     });
   });
 
-  describe('createBrowserClipboardService', () => {
-    it('writes via the injected offscreen document service when there is no clipboard API', async () => {
-      const sendMessage = vi.fn(async () => ({ ok: true }));
-      const docService = { sendMessage } as any;
-      const service = createBrowserClipboardService(null, docService, false);
+  it('exposes recorded calls via getCalls / getLastCall and clears them via reset', async () => {
+    installStatefulBrowserStorage();
+    const service = createMockClipboardService();
 
-      await expect(service.copy('hi')).resolves.toBe(true);
-      expect(sendMessage).toHaveBeenCalledWith(expect.objectContaining({ text: 'hi' }));
-    });
-  });
+    await service.copy('first');
+    await service.copy('second');
 
-  describe('mock copy', () => {
-    it('records non-empty copies', async () => {
-      const sessionGetMock = vi.fn(async () => ({ mockClipboardCalls: [] }));
-      const sessionSetMock = vi.fn(async () => undefined);
+    expect((await service.getCalls()).map(c => c.text)).toEqual(['first', 'second']);
+    expect((await service.getLastCall())?.text).toBe('second');
 
-      (globalThis as any).browser = {
-        storage: {
-          session: {
-            get: sessionGetMock,
-            set: sessionSetMock,
-          },
-          local: {
-            get: vi.fn(),
-            set: vi.fn(),
-          },
-        },
-      };
+    await service.reset();
 
-      const service = createMockClipboardService();
-
-      await expect(service.copy('test text')).resolves.toBe(true);
-
-      expect(sessionSetMock).toHaveBeenCalledExactlyOnceWith({
-        mockClipboardCalls: [
-          expect.objectContaining({
-            text: 'test text',
-          }),
-        ],
-      });
-    });
-
-    it('does not record empty-string copies', async () => {
-      const sessionGetMock = vi.fn(async () => ({ mockClipboardCalls: [] }));
-      const sessionSetMock = vi.fn(async () => undefined);
-
-      (globalThis as any).browser = {
-        storage: {
-          session: {
-            get: sessionGetMock,
-            set: sessionSetMock,
-          },
-          local: {
-            get: vi.fn(),
-            set: vi.fn(),
-          },
-        },
-      };
-
-      const service = createMockClipboardService();
-
-      await expect(service.copy('')).resolves.toBe(false);
-
-      expect(sessionGetMock).not.toHaveBeenCalled();
-      expect(sessionSetMock).not.toHaveBeenCalled();
-    });
+    expect(await service.getCalls()).toEqual([]);
+    expect(await service.getLastCall()).toBeUndefined();
   });
 });
