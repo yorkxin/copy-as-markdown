@@ -27,9 +27,11 @@ The extension is built with **esbuild**, once per target (`chrome` and `firefox-
    (`outbase:'src'`). Non-entry modules are inlined, not emitted separately, so `dist/` has far
    fewer files than the entry count's worth of imports — shared modules are duplicated into each
    entry bundle (the cost of `splitting:false`, which MV3 service workers require).
-3. Copies assets that HTML/manifest reference verbatim: `src/static/**`,
-   `src/vendor/browser-polyfill.js`, `src/vendor/bulma.css`. The vendored `turndown`, `gfm`, and
-   `mustache` `.mjs` files are **bundled** (not copied) into the entries that import them.
+3. Copies assets that HTML/manifest reference verbatim into `<target>/dist/vendor/`: `src/static/**`,
+   plus `browser-polyfill.js` and `bulma.css` copied straight from `node_modules`
+   (`webextension-polyfill/dist/` and `bulma/css/`). `turndown`, `@truto/turndown-plugin-gfm`, and
+   `mustache` are **bundled** (not copied) by esbuild from `node_modules` into the entries that
+   import them — there is no `src/vendor` snapshot and no `postinstall` copy step.
 
 The entry points are listed in `entryPointsFor()` in `scripts/build.js`: `background` + the seven
 UI page scripts for both targets, plus `offscreen` for Chrome only (Firefox has no offscreen API).
