@@ -1,5 +1,13 @@
-import 'webextension-polyfill';
+import browserPolyfill from 'webextension-polyfill';
 import { TabGroupIndentationStyle, UnorderedListStyle } from './markdown.js';
+
+// The polyfill assigns `globalThis.browser` itself only when it runs as a classic
+// script (how the UI pages load it via <script src="../vendor/browser-polyfill.js">).
+// Bundled by esbuild it is a CommonJS module — the UMD branch that sets the global
+// never runs — so assign it explicitly. `??=` keeps the page-loaded instance when
+// one already exists (and Firefox's native `browser`), matching the old vendored
+// side-effect import.
+(globalThis as any).browser ??= browserPolyfill;
 
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
 // [sic.] The following keys have spaces at the end since they were introduced (typo). Do not modify.
