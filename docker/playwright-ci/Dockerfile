@@ -6,7 +6,6 @@ RUN apt update && apt install -y xsel
 
 # Install dependencies first for better caching
 COPY package.json package-lock.json* ./
-COPY scripts/postinstall.js ./scripts/
 RUN mkdir -p src/vendor/ dist/
 RUN npm ci
 
