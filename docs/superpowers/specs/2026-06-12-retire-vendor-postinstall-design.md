@@ -132,3 +132,29 @@ present in `chrome/dist/offscreen.js`).
 `src/vendor/` and `scripts/postinstall.js` gone; all gates above green; no `domino` in any bundle;
 offscreen + event-page Markdown conversion verified working; a short PR note documenting the new
 dependency wiring.
+
+---
+
+## PR note: new dependency wiring
+
+- **turndown, @truto/turndown-plugin-gfm, mustache** are now imported by package name and bundled by
+  esbuild from `node_modules` (previously vendored into `src/vendor/` via `postinstall` and
+  re-exported through `src/shims/`).
+- esbuild **`platform:'browser'`** (set explicitly in `scripts/build.js`) selects turndown's browser
+  build (real DOM) and stubs out `domino` — verified absent from every bundle.
+- **browser-polyfill.js** and **bulma.css** are copied into `<target>/dist/vendor/` straight from
+  `node_modules` at build time; `src/lib/settings.ts` now imports `'webextension-polyfill'`.
+- Deleted: `scripts/postinstall.js` + the `postinstall` npm hook, all of `src/vendor/`, all of
+  `src/shims/`. No ambient `.d.ts` was needed — `@truto/turndown-plugin-gfm` now ships its own types.
+- Invariant preserved: Turndown absent from `chrome/dist/background.js`, present in
+  `chrome/dist/offscreen.js` (`assert-no-turndown.js` + the build test still pass).
+
+### Incidental test-infra fix (pre-existing, called out separately)
+
+While verifying `npm run test:e2e`, found and fixed a **pre-existing** bug in `playwright.config.ts`
+(reproduces on `master`, unrelated to this refactor): the `parallel-tests` project used
+`testIgnore: './test/e2e/clipboard'`, a bare glob with no `**`, so it matched no nested files and the
+real-clipboard smoke specs ran under `fullyParallel`, clobbering each other on the single system
+clipboard (nondeterministic failures). Changed to `testIgnore: /clipboard\//`; the real-clipboard
+specs now run only in the sequential `clipboard-smoke` project. Full e2e is green at `retries=0`
+across repeated runs. Landed as its own commit for independent review.
