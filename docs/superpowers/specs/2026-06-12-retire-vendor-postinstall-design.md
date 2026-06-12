@@ -143,11 +143,23 @@ dependency wiring.
 - esbuild **`platform:'browser'`** (set explicitly in `scripts/build.js`) selects turndown's browser
   build (real DOM) and stubs out `domino` — verified absent from every bundle.
 - **browser-polyfill.js** and **bulma.css** are copied into `<target>/dist/vendor/` straight from
-  `node_modules` at build time; `src/lib/settings.ts` now imports `'webextension-polyfill'`.
+  `node_modules` at build time; `src/lib/settings.ts` now imports `'webextension-polyfill'` **and
+  assigns `globalThis.browser ??= polyfill` explicitly**. This is required: the old vendored copy
+  fell under the repo's `"type": "module"`, so esbuild inlined the UMD bare and its fallback branch
+  set the global at runtime; the npm package has no `"type"` field, so esbuild wraps it as
+  CommonJS, the UMD takes its CJS branch, and the global is never assigned. Without the explicit
+  assignment, the service worker's top-level `browser.*` listeners throw
+  `ReferenceError: browser is not defined` and the SW dies on startup
+  (caught by Docker e2e; fixed in its own commit with an ambient `.d.ts` for the untyped package).
 - Deleted: `scripts/postinstall.js` + the `postinstall` npm hook, all of `src/vendor/`, all of
-  `src/shims/`. No ambient `.d.ts` was needed — `@truto/turndown-plugin-gfm` now ships its own types.
+  `src/shims/`. No ambient `.d.ts` was needed for the gfm plugin — `@truto/turndown-plugin-gfm`
+  now ships its own types.
 - Invariant preserved: Turndown absent from `chrome/dist/background.js`, present in
   `chrome/dist/offscreen.js` (`assert-no-turndown.js` + the build test still pass).
+- Docker e2e parity with master verified: branch 125 passed / 12 failed vs master baseline
+  (+ Playwright image bump) 127 passed / 14 failed — the failures are the same pre-existing
+  `tab-exporting` timing flakiness in the slow container (absorbed by `retries: 2` on CI), with
+  zero service-worker startup errors on either side.
 
 ### Incidental test-infra fix (pre-existing, called out separately)
 
