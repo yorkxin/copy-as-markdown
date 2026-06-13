@@ -1,3 +1,4 @@
+import './ensure-browser-global.js'; // MUST be first — defines `browser` for the service worker.
 import Settings from './lib/settings.js';
 import type { CodeBlockStyle } from './lib/settings.js';
 import Markdown from './lib/markdown.js';
