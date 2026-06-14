@@ -42,7 +42,7 @@ export default defineConfig({
       name: 'parallel-tests',
       // All non-smoke tests can run together
       testDir: './test/e2e',
-      testIgnore: './test/e2e/clipboard',
+      testIgnore: /clipboard\//,
       fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],

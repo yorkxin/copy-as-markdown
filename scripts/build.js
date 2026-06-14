@@ -43,7 +43,8 @@ function entryPointsFor(t) {
 //  - all of src/static (HTML, style.css, images)
 //  - browser-polyfill.js (loaded as a classic <script> in every page)
 //  - bulma.css (loaded via <link>)
-// turndown/gfm/mustache .mjs are NOT copied — esbuild bundles them into entries.
+// The two physical assets are copied straight from node_modules (no src/vendor
+// snapshot). turndown/gfm/mustache are bundled by esbuild from node_modules too.
 function copyAssets(t) {
   fs.cpSync(path.join(srcDir, 'static'), path.join(outdir, 'static'), {
     recursive: true,
@@ -55,14 +56,22 @@ function copyAssets(t) {
   });
   const vendorDest = path.join(outdir, 'vendor');
   fs.mkdirSync(vendorDest, { recursive: true });
-  for (const file of ['browser-polyfill.js', 'bulma.css']) {
-    fs.copyFileSync(path.join(srcDir, 'vendor', file), path.join(vendorDest, file));
+  // Physical assets referenced verbatim by HTML (classic <script> / <link>), copied
+  // straight from node_modules — no src/vendor snapshot, no postinstall step.
+  const nodeModules = path.join(root, 'node_modules');
+  const assets = [
+    { src: path.join(nodeModules, 'webextension-polyfill', 'dist', 'browser-polyfill.js'), dest: 'browser-polyfill.js' },
+    { src: path.join(nodeModules, 'bulma', 'css', 'bulma.css'), dest: 'bulma.css' },
+  ];
+  for (const { src, dest } of assets) {
+    fs.copyFileSync(src, path.join(vendorDest, dest));
   }
 }
 
 const buildOptions = {
   entryPoints: entryPointsFor(target),
   bundle: true,
+  platform: 'browser', // honor turndown's `browser` field: real-DOM build, domino stubbed out
   format: 'esm',
   splitting: false, // MV3 service worker: one file per entry, no chunks
   treeShaking: true,
@@ -111,7 +120,6 @@ if (watch) {
     }
   };
   watchAssets(path.join(srcDir, 'static'));
-  watchAssets(path.join(srcDir, 'vendor'));
   console.log(`[build] watching ${target} ...`);
 } else {
   await esbuild.build(buildOptions);

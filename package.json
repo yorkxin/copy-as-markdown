@@ -32,7 +32,6 @@
     "lint:fix": "eslint . --fix",
     "clean": "rm -rf ./build/* ./{firefox-mv3,chrome}/dist/* ./{firefox-test,chrome-test,chrome-optional-test}/*",
     "convert-images": "./scripts/convert-images.sh",
-    "postinstall": "node scripts/postinstall.js",
     "test:unit": "vitest --project unit",
     "test:browser": "vitest --project browser"
   },
