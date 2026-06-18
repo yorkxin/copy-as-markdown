@@ -1,5 +1,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 // `?raw` gives the verbatim file content (no Vite/CJS transform) — the exact file we ship.
+// Importing the shipped package file directly by path is intentional here: the test must
+// exercise the unmodified polyfill, not a re-bundled copy.
+// eslint-disable-next-line antfu/no-import-dist, antfu/no-import-node-modules-by-path
 import polyfillSource from '../../node_modules/webextension-polyfill/dist/browser-polyfill.js?raw';
 
 afterEach(() => {

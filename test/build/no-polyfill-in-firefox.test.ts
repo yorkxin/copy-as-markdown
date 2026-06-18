@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
@@ -15,20 +15,30 @@ const POLYFILL_MARKER = /wrapAPIs/;
 const EXTERNAL_IMPORT = '/vendor/browser-polyfill.js';
 
 const UI_ENTRIES = [
-  'popup', 'options', 'options-permissions', 'permissions',
-  'custom-format', 'check-custom-formats', 'built-in-style-options',
+  'popup',
+  'options',
+  'options-permissions',
+  'permissions',
+  'custom-format',
+  'check-custom-formats',
+  'built-in-style-options',
 ];
 
 function htmlFiles(staticDir: string): string[] {
-  return readdirSync(staticDir).filter((n) => n.endsWith('.html')).map((n) => path.join(staticDir, n));
+  return readdirSync(staticDir).filter(n => n.endsWith('.html')).map(n => path.join(staticDir, n));
 }
 function jsFiles(distDir: string): string[] {
   // background.js + ui/*.js (+ offscreen.js on chrome); recurse one level.
   const out: string[] = [];
   for (const name of readdirSync(distDir)) {
     const p = path.join(distDir, name);
-    if (name.endsWith('.js')) out.push(p);
-    else if (name === 'ui') for (const u of readdirSync(p)) if (u.endsWith('.js')) out.push(path.join(p, u));
+    if (name.endsWith('.js')) {
+      out.push(p);
+    } else if (name === 'ui') {
+      for (const u of readdirSync(p)) {
+        if (u.endsWith('.js')) out.push(path.join(p, u));
+      }
+    }
   }
   return out;
 }
