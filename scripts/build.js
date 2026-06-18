@@ -59,10 +59,17 @@ function copyAssets(t) {
   // Physical assets referenced verbatim by HTML (classic <script> / <link>), copied
   // straight from node_modules — no src/vendor snapshot, no postinstall step.
   const nodeModules = path.join(root, 'node_modules');
+  // bulma ships to both targets; webextension-polyfill ships to Chrome only (Firefox
+  // implements browser.* natively). Analogous to the offscreen.html exclusion above.
   const assets = [
-    { src: path.join(nodeModules, 'webextension-polyfill', 'dist', 'browser-polyfill.js'), dest: 'browser-polyfill.js' },
     { src: path.join(nodeModules, 'bulma', 'css', 'bulma.css'), dest: 'bulma.css' },
   ];
+  if (t === 'chrome') {
+    assets.unshift({
+      src: path.join(nodeModules, 'webextension-polyfill', 'dist', 'browser-polyfill.js'),
+      dest: 'browser-polyfill.js',
+    });
+  }
   for (const { src, dest } of assets) {
     fs.copyFileSync(src, path.join(vendorDest, dest));
   }
