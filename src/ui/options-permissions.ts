@@ -1,3 +1,4 @@
+import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
 import Settings from '../lib/settings.js';
 import type { PermissionStatus } from './permissions-ui.js';
 import { hideUiIfPermissionsNotGranted, loadPermissions, PermissionStatusValue } from './permissions-ui.js';

@@ -1,3 +1,4 @@
+import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
 import type { TabGroupIndentationStyle, UnorderedListStyle } from '../lib/markdown.js';
 import Settings from '../lib/settings.js';
 import type { CodeBlockStyle } from '../lib/settings.js';
