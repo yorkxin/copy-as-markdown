@@ -41,7 +41,8 @@ function entryPointsFor(t) {
 
 // Copy assets that are referenced verbatim by HTML/manifest (NOT bundled):
 //  - all of src/static (HTML, style.css, images)
-//  - browser-polyfill.js (loaded as a classic <script> in every page)
+//  - browser-polyfill.js (Chrome only — the verbatim file loaded via the external
+//    `/vendor/browser-polyfill.js` import in ensure-browser-global.ts)
 //  - bulma.css (loaded via <link>)
 // The two physical assets are copied straight from node_modules (no src/vendor
 // snapshot). turndown/gfm/mustache are bundled by esbuild from node_modules too.
@@ -56,8 +57,9 @@ function copyAssets(t) {
   });
   const vendorDest = path.join(outdir, 'vendor');
   fs.mkdirSync(vendorDest, { recursive: true });
-  // Physical assets referenced verbatim by HTML (classic <script> / <link>), copied
-  // straight from node_modules — no src/vendor snapshot, no postinstall step.
+  // Physical assets referenced verbatim (bulma via an HTML <link>; the polyfill via the
+  // external ESM import in ensure-browser-global.ts), copied straight from node_modules —
+  // no src/vendor snapshot, no postinstall step.
   const nodeModules = path.join(root, 'node_modules');
   // bulma ships to both targets; webextension-polyfill ships to Chrome only (Firefox
   // implements browser.* natively). Analogous to the offscreen.html exclusion above.
@@ -75,6 +77,23 @@ function copyAssets(t) {
   }
 }
 
+// webextension-polyfill ships to Chrome only, as ONE shared file referenced by a
+// verbatim external import (`import '/vendor/browser-polyfill.js'`) from
+// ensure-browser-global.ts. Chrome: keep it external so esbuild emits it as-is (the
+// browser loads/caches the single file). Firefox: redirect to an empty module so
+// nothing is imported and no bundle 404s. The leading-slash specifier resolves to the
+// extension root at runtime, identically from entries at any directory depth.
+const polyfillResolverPlugin = {
+  name: 'polyfill-resolver',
+  setup(build) {
+    build.onResolve({ filter: /^\/vendor\/browser-polyfill\.js$/ }, () => (
+      target === 'chrome'
+        ? { path: '/vendor/browser-polyfill.js', external: true }
+        : { path: path.join(srcDir, 'shims', 'empty.js') }
+    ));
+  },
+};
+
 const buildOptions = {
   entryPoints: entryPointsFor(target),
   bundle: true,
@@ -89,6 +108,7 @@ const buildOptions = {
   minify: false, // never minify (readable source, simple maps)
   legalComments: 'eof', // preserve bundled libs' /*! and @license banners
   define: { BUILD_TARGET: JSON.stringify(target) },
+  plugins: [polyfillResolverPlugin],
   target: target === 'chrome' ? ['chrome116'] : ['firefox139'],
   logLevel: 'info',
 };
