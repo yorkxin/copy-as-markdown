@@ -42,7 +42,7 @@ function entryPointsFor(t) {
 // Copy assets that are referenced verbatim by HTML/manifest (NOT bundled):
 //  - all of src/static (HTML, style.css, images)
 //  - browser-polyfill.js (Chrome only — the verbatim file loaded via the external
-//    `/vendor/browser-polyfill.js` import in ensure-browser-global.ts)
+//    `/dist/vendor/browser-polyfill.js` import in ensure-browser-global.ts)
 //  - bulma.css (loaded via <link>)
 // The two physical assets are copied straight from node_modules (no src/vendor
 // snapshot). turndown/gfm/mustache are bundled by esbuild from node_modules too.
@@ -78,17 +78,18 @@ function copyAssets(t) {
 }
 
 // webextension-polyfill ships to Chrome only, as ONE shared file referenced by a
-// verbatim external import (`import '/vendor/browser-polyfill.js'`) from
+// verbatim external import (`import '/dist/vendor/browser-polyfill.js'`) from
 // ensure-browser-global.ts. Chrome: keep it external so esbuild emits it as-is (the
 // browser loads/caches the single file). Firefox: redirect to an empty module so
-// nothing is imported and no bundle 404s. The leading-slash specifier resolves to the
-// extension root at runtime, identically from entries at any directory depth.
+// nothing is imported and no bundle 404s. The specifier is extension-root-absolute and
+// includes the `dist/` segment because the built files live under `<root>/dist/` (the
+// extension root holds manifest.json); it resolves identically from entries at any depth.
 const polyfillResolverPlugin = {
   name: 'polyfill-resolver',
   setup(build) {
-    build.onResolve({ filter: /^\/vendor\/browser-polyfill\.js$/ }, () => (
+    build.onResolve({ filter: /^\/dist\/vendor\/browser-polyfill\.js$/ }, () => (
       target === 'chrome'
-        ? { path: '/vendor/browser-polyfill.js', external: true }
+        ? { path: '/dist/vendor/browser-polyfill.js', external: true }
         : { path: path.join(srcDir, 'shims', 'empty.js') }
     ));
   },

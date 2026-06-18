@@ -12,7 +12,7 @@ const chromeDist = path.join(root, 'chrome', 'dist');
 // `wrapAPIs` is internal to webextension-polyfill — present iff polyfill code is in a file.
 const POLYFILL_MARKER = /wrapAPIs/;
 // The external side-effect import emitted into each Chrome entry bundle.
-const EXTERNAL_IMPORT = '/vendor/browser-polyfill.js';
+const EXTERNAL_IMPORT = '/dist/vendor/browser-polyfill.js';
 
 const UI_ENTRIES = [
   'popup',
