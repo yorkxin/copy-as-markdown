@@ -117,13 +117,15 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
         readyState: (globalThis as any).registration?.active?.state,
         hasChrome: typeof chrome !== 'undefined',
         hasChromeCommands: typeof chrome?.commands !== 'undefined',
+        // Set last in background.ts, after every top-level addListener call.
+        listenersReady: (globalThis as any).__listenersReady === true,
         location: (globalThis as any).location.href,
       };
     });
 
-    // If chrome.commands is available, we're ready
-    if (workerState.hasChromeCommands) {
-      // Service worker ready with Chrome APIs
+    // Ready only once our listeners are registered — not merely when the
+    // chrome.* API object exists. Closes the dispatch-before-listener race.
+    if (workerState.listenersReady) {
       break;
     }
 
@@ -142,7 +144,7 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
   }
 
   if (!extensionWorker) {
-    throw new Error(`Service worker Chrome APIs not ready after ${timeout}ms`);
+    throw new Error(`Service worker listeners not ready (__listenersReady) after ${timeout}ms`);
   }
 
   await setMockClipboardMode(extensionWorker, true);
