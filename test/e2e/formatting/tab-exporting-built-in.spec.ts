@@ -328,11 +328,29 @@ test.describe('Tabs Exporting with built-in formats', () => {
             if (tabsAreHighlighted) {
               await chrome.tabs.update(tab1.id!, { highlighted: true });
               await chrome.tabs.update(tab3.id!, { highlighted: true });
+
+              // chrome.tabs.update({ highlighted }) resolves before the highlight is
+              // necessarily visible to chrome.tabs.query({ highlighted }). The export
+              // queries highlighted tabs, so on a slow/loaded browser (Docker) it can
+              // race ahead and capture only the always-highlighted active tab. Poll the
+              // same query the export uses until both tabs are reflected before continuing.
+              const deadline = Date.now() + 5000;
+              for (;;) {
+                const highlighted = await chrome.tabs.query({ highlighted: true, currentWindow: true });
+                const ids = new Set(highlighted.map(t => t.id));
+                if (ids.has(tab1.id!) && ids.has(tab3.id!)) {
+                  break;
+                }
+                if (Date.now() > deadline) {
+                  throw new Error(`highlighted tabs did not settle: got [${[...ids].join(', ')}], want ${tab1.id}, ${tab3.id}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 20));
+              }
             }
           }, { tabsAreGrouped, tabsAreHighlighted });
         });
 
-        test('works with keyboard command', async ({ page }) => {
+        test('works with keyboard command', async () => {
           await serviceWorker.evaluate(async (commandName) => {
             const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
             if (!tabs[0]) {
@@ -342,18 +360,20 @@ test.describe('Tabs Exporting with built-in formats', () => {
             chrome.commands.onCommand.dispatch(commandName, tabs[0]);
           }, commandName);
 
-          // Wait for mock clipboard
-          await page.bringToFront();
+          // Do NOT page.bringToFront() here: activating a tab collapses the multi-tab
+          // highlight selection to just the active tab, which races the async export
+          // handler and makes it capture only 1 tab (Docker-flaky). The mock clipboard
+          // needs no page focus; waitForMockClipboard polls for the result.
           const mockCall = await waitForMockClipboard(serviceWorker, 5000);
 
           // Verify output contains all tabs in numbered format
           expect(mockCall.text).toEqual(expected);
         });
 
-        test('works with context menu', async ({ page }) => {
+        test('works with context menu', async () => {
           await triggerContextMenu(serviceWorker, commandName);
 
-          await page.bringToFront();
+          // No bringToFront — see "works with keyboard command" above.
           const mockCall = await waitForMockClipboard(serviceWorker, 5000);
           expect(mockCall.text).toEqual(expected);
         });
