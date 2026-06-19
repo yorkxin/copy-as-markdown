@@ -111,6 +111,23 @@ With `CI=true`, Playwright retries failures (`retries: 2`) and writes machine-re
 the result from **`test-results/results.json`**, not from scrolling stdout. The HTML report lands in
 `playwright-report/`.
 
+#### Reading a failed run
+
+The container exits as soon as the suite finishes (it does **not** stay up serving the report). All
+artifacts are bind-mounted to the host, so you read them locally after the run:
+
+```sh
+npx playwright show-report   # opens playwright-report/ on a local server + trace viewer
+```
+
+This is the same HTML report you'd get inside the container, but served by your **host** Playwright
+against the mounted `playwright-report/` directory — useful for digging into a failure visually.
+
+On failure the config captures a screenshot (`only-on-failure`), a video (`retain-on-failure`), and
+a trace (`on-first-retry`); these land under `test-results/<test-name>/` and are linked from the HTML
+report. For a quick, scriptable summary of what failed, parse `test-results/results.json` directly
+(e.g. `jq '.suites[].specs[] | select(.ok==false)' test-results/results.json`).
+
 For an interactive shell that shares your working tree (faster iteration, manual reruns inside the
 container):
 
