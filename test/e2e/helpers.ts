@@ -29,6 +29,16 @@ export async function getMockClipboardCalls(serviceWorker: Worker): Promise<Clip
  */
 export async function resetMockClipboard(serviceWorker: Worker): Promise<void> {
   await serviceWorker.evaluate(async () => {
+    // MV3 can evict and restart the service worker between when it was acquired
+    // (mock mode enabled, __mockClipboardService created in memory) and this call.
+    // A restarted worker starts with mockMode=false and no mock service — it's only
+    // restored asynchronously by initializeMockState. Re-enable mock mode here, which
+    // synchronously (re)creates the service AND ensures the upcoming export writes to
+    // the mock rather than the real clipboard. reset() wants a fresh mock anyway.
+    const setMock = (globalThis as any).setMockClipboardMode;
+    if (typeof setMock === 'function') {
+      await setMock(true);
+    }
     const mock = (globalThis as any).__mockClipboardService;
     if (!mock) {
       throw new Error('Mock clipboard service not found in service worker');
