@@ -12,7 +12,15 @@ RUN npm ci
 # Copy the rest of the source
 COPY . .
 
-# Listen HTML reporter on 0.0.0.0 so that the port can be forwarded
+# Run exactly like the GitHub Actions job: CI=true turns on retries, forbids
+# stray test.only, disables fixture-server reuse, and (with the reporter config in
+# playwright.config.ts) selects the non-blocking list+json+html reporters so the
+# container exits with a real code instead of hanging on the HTML report server.
+ENV CI=true
+
+# Bind the HTML report server to 0.0.0.0 in case someone forwards a port to view it
+# interactively; the default CI run generates the report with open:'never' and does
+# not serve it, so the container still exits on its own.
 ENV PLAYWRIGHT_HTML_HOST=0.0.0.0
 
 # Default command mirrors the GitHub Actions job (headless via Xvfb)

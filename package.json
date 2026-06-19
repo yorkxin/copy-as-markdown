@@ -15,7 +15,7 @@
     "test:e2e:headed": "npm run test:e2e:build && playwright test --headed",
     "test:e2e:ui": "npm run test:e2e:build && playwright test --ui",
     "test:e2e:debug": "npm run test:e2e:build && playwright test --debug",
-    "test:e2e:docker": "docker build -t copy-as-markdown-playwright -f docker/playwright-ci/Dockerfile . && docker run --rm -it --ipc=host -p 9323:9323 copy-as-markdown-playwright",
+    "test:e2e:docker": "docker build -t copy-as-markdown-playwright -f docker/playwright-ci/Dockerfile . && docker run --rm --ipc=host -e CI=true -v \"$PWD/test-results:/workspace/test-results\" -v \"$PWD/playwright-report:/workspace/playwright-report\" copy-as-markdown-playwright",
     "bump-version": "node scripts/bump-version.js",
     "typecheck": "tsc",
     "build": "npm run build-chrome && npm run build-firefox-mv3",
