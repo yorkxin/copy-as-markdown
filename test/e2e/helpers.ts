@@ -302,14 +302,28 @@ export async function resetSystemClipboard(): Promise<void> {
   console.warn(`System clipboard did not reset within ${timeout}ms`);
 }
 
-export async function waitForSystemClipboard(timeout = 3000): Promise<string> {
+export async function waitForSystemClipboard(
+  expected: string,
+  timeout = 3000,
+  normalize: (value: string) => string = value => value,
+): Promise<string> {
   const startTime = Date.now();
+  const want = normalize(expected);
+  let lastSeen = '';
 
   while (Date.now() - startTime < timeout) {
     try {
       const value = await readSystemClipboard();
       if (value && value !== CLIPBOARD_SEPARATOR) {
-        return value;
+        lastSeen = value;
+        // Wait for THIS test's write specifically. The real system clipboard is
+        // shared across the serial smoke specs, and the offscreen write path is
+        // slow, so a prior test's write can land after this test reset the
+        // clipboard. Returning the first non-sentinel value would capture that
+        // stale contamination instead of the write we're actually waiting for.
+        if (normalize(value) === want) {
+          return value;
+        }
       }
     } catch (error) {
       console.warn('Failed to read system clipboard:', error);
@@ -317,7 +331,9 @@ export async function waitForSystemClipboard(timeout = 3000): Promise<string> {
     await wait(100);
   }
 
-  throw new Error(`System clipboard was empty after ${timeout}ms`);
+  // Timed out: return the last non-sentinel value seen (or '') so the caller's
+  // expect() produces a meaningful diff rather than an opaque timeout error.
+  return lastSeen;
 }
 
 export async function setMockClipboardMode(serviceWorker: Worker, enabled: boolean): Promise<void> {

@@ -47,7 +47,7 @@ test.describe('Clipboard Smoke Tests', () => {
     });
 
     await page.bringToFront();
-    const clipboardText = await waitForSystemClipboard(5000);
+    const clipboardText = await waitForSystemClipboard(EXPECTED_LINK, 5000);
     expect(clipboardText).toEqual(EXPECTED_LINK);
   });
 
@@ -64,7 +64,7 @@ test.describe('Clipboard Smoke Tests', () => {
     });
 
     await page.bringToFront();
-    const clipboardText = await waitForSystemClipboard(5000);
+    const clipboardText = await waitForSystemClipboard(EXPECTED_LINK, 5000);
     expect(clipboardText).toEqual(EXPECTED_LINK);
   });
 
@@ -92,7 +92,7 @@ test.describe('Clipboard Smoke Tests', () => {
     await expect(button).toBeVisible();
     await button.click();
 
-    const clipboardText = await waitForSystemClipboard(5000);
+    const clipboardText = await waitForSystemClipboard(EXPECTED_LINK, 5000);
     expect(clipboardText).toEqual(EXPECTED_LINK);
 
     await popupWindow.close();
