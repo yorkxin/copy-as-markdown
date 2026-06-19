@@ -33,6 +33,7 @@ test/
   e2e/             # Playwright e2e tests
   ui/, lib/        # vitest browser tests (real Chromium)
   **/*.test.ts     # vitest unit tests (node)
+e2e_test/          # Python (pytest) e2e tests for Firefox — currently broken
 docker/playwright-ci/  # Dockerized e2e harness (CI parity)
 ```
 
@@ -135,6 +136,13 @@ xvfb-run -a npm run test:e2e
 `npm run test:e2e` first runs `npm run test:e2e:build` (`npm run build` +
 `node scripts/build-test-extension.js`), which produces the test extension as a copy of the
 production build with manifest permissions rewritten for testing.
+
+### Firefox e2e tests (Python / pytest) — currently broken
+
+[e2e_test/](e2e_test/) holds a separate pytest-based e2e suite that drives **Firefox** (the
+Playwright suite above covers Chrome). It is **currently broken and not maintained** — pending a
+fix when time allows. See [e2e_test/README.md](e2e_test/README.md). Don't rely on it for
+verifying changes yet; use the Playwright suite for e2e coverage in the meantime.
 
 ## Debugging the extension
 
