@@ -1,3 +1,4 @@
+import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
 import type { BuiltInStyleKey } from '../lib/built-in-style-settings.js';
 import BuiltInStyleSettings from '../lib/built-in-style-settings.js';
 

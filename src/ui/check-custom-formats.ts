@@ -1,3 +1,4 @@
+import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 import type { Context } from '../lib/custom-format.js';
 

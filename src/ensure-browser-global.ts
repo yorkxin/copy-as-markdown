@@ -1,20 +1,25 @@
-// Define the `browser.*` global for the Chrome service worker.
+// Install the `browser.*` global for old Chrome (< 148).
 //
-// Why this exists: the MV3 service worker (background.ts) is a bare ES module with
-// no HTML, so unlike the UI pages — which load <script src="vendor/browser-polyfill.js">
-// before their module — it has no classic script to install `browser`. The polyfill's
-// own global assignment only runs when it is evaluated as a script/ESM; esbuild
-// resolves the npm package as CommonJS (its package.json has no "type": "module"),
-// wraps it in a CJS shim, and the UMD then takes its `exports`-defined branch and
-// never touches the global. So we assign it explicitly here.
+// This is a side-effect import of the *verbatim* polyfill file shipped at
+// `dist/vendor/browser-polyfill.js` (Chrome only). Loaded as its own ES module, the
+// polyfill's UMD wrapper takes its global-assignment branch (ESM scope has no
+// CommonJS `exports`) and self-installs `globalThis.browser`. On modern Chrome the
+// polyfill is a no-op (it returns the existing native `browser`). On Firefox the build
+// redirects this import to an empty module (see scripts/build.js), so the polyfill is
+// never loaded — Firefox uses its native `browser`.
 //
-// `??=` makes this a no-op when `browser` already exists: Firefox's native API, and
-// Chrome 148+ which ships `browser.*` natively. Delete this module (and its import in
-// background.ts, the HTML <script> tags, and the build.js asset copy) once
+// The specifier is extension-root-absolute. The extension root is the directory holding
+// manifest.json; all built files live under `dist/` (e.g. the SW is at
+// `chrome-extension://<id>/dist/background.js`), so the polyfill is at
+// `/dist/vendor/browser-polyfill.js`. A root-absolute path resolves identically from
+// entries at any depth (`dist/background.js` vs `dist/ui/*.js`); esbuild does not
+// rewrite external import paths, so a depth-independent specifier is required.
+//
+// esbuild keeps this import external for Chrome (one shared, cached file — never
+// inlined into each bundle).
+//
+// Every entry that uses `browser` imports this module FIRST so the global exists
+// before any module in the graph evaluates — the service worker (background.ts) and
+// each UI entry. Delete this file, the asset copy, and those imports once
 // minimum_chrome_version >= 148.
-//
-// MUST be background.ts's first import so `browser` is defined before any module in
-// its graph evaluates.
-import browserPolyfill from 'webextension-polyfill';
-
-(globalThis as any).browser ??= browserPolyfill;
+import '/dist/vendor/browser-polyfill.js';

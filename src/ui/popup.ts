@@ -1,3 +1,4 @@
+import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
 import type { PendingPopupFeedbackCode, RuntimeMessage } from '../contracts/messages.js';
 import type { ExportFormat, ExportScope, ListType } from '../services/tab-export-service.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';

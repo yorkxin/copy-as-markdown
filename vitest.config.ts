@@ -1,9 +1,23 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+const emptyShim = fileURLToPath(new URL('./src/shims/empty.js', import.meta.url));
+
+// Tests resolve `src/**` through Vite, which does NOT run the esbuild onResolve plugin
+// from scripts/build.js. Redirect the polyfill's extension-root-absolute external import
+// (`import '/dist/vendor/browser-polyfill.js'` in ensure-browser-global.ts) to the empty
+// shim, mirroring the Firefox production build, so test bundling doesn't fail to resolve
+// it. Browser tests provide their own `browser` mock, so the polyfill is not needed here.
+// Set per-project because root-level `resolve` does not propagate into `test.projects`.
+const polyfillAlias = [
+  { find: /^\/dist\/vendor\/browser-polyfill\.js$/, replacement: emptyShim },
+];
 
 export default defineConfig({
   test: {
     projects: [
       {
+        resolve: { alias: polyfillAlias },
         test: {
           name: 'unit',
           include: ['test/**/*.test.ts'],
@@ -12,6 +26,7 @@ export default defineConfig({
         },
       },
       {
+        resolve: { alias: polyfillAlias },
         test: {
           name: 'browser',
           include: ['test/ui/**/*.spec.ts', 'test/lib/**/*.spec.ts'],
