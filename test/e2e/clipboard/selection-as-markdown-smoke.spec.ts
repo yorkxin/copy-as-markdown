@@ -73,8 +73,10 @@ test.describe('Selection As Markdown Clipboard Smoke', () => {
         } as browser.contextMenus.OnClickData, tab);
       });
 
-      const clipboardText = normalizeLineEndings(await waitForSystemClipboard(5000));
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-noisy.md'), 'utf-8');
+      const clipboardText = normalizeLineEndings(
+        await waitForSystemClipboard(expectedMarkdown, 5000, normalizeLineEndings),
+      );
 
       expect(clipboardText).toEqual(normalizeLineEndings(expectedMarkdown));
     });
@@ -85,8 +87,10 @@ test.describe('Selection As Markdown Clipboard Smoke', () => {
         return chrome.commands.onCommand.dispatch('selection-as-markdown');
       });
 
-      const clipboardText = normalizeLineEndings(await waitForSystemClipboard(5000));
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-noisy.md'), 'utf-8');
+      const clipboardText = normalizeLineEndings(
+        await waitForSystemClipboard(expectedMarkdown, 5000, normalizeLineEndings),
+      );
 
       expect(clipboardText).toEqual(normalizeLineEndings(expectedMarkdown));
     });

@@ -18,8 +18,15 @@ export default defineConfig({
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
 
-  // Reporter to use
-  reporter: 'html',
+  // Reporter to use.
+  // CI/Docker (CI=true): non-blocking reporters so the process always exits with a
+  // real code — `list` streams progress to stdout, `json` writes a machine-readable
+  // per-spec result an unattended agent can parse, and `html` with `open: 'never'`
+  // generates the report WITHOUT serving it (the blocking serve is what made the
+  // Docker container hang forever). Local dev keeps the auto-opening HTML report.
+  reporter: process.env.CI
+    ? [['list'], ['json', { outputFile: 'test-results/results.json' }], ['html', { open: 'never' }]]
+    : 'html',
 
   // Shared settings for all the projects below
   use: {

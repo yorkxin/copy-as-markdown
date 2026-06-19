@@ -29,6 +29,16 @@ export async function getMockClipboardCalls(serviceWorker: Worker): Promise<Clip
  */
 export async function resetMockClipboard(serviceWorker: Worker): Promise<void> {
   await serviceWorker.evaluate(async () => {
+    // MV3 can evict and restart the service worker between when it was acquired
+    // (mock mode enabled, __mockClipboardService created in memory) and this call.
+    // A restarted worker starts with mockMode=false and no mock service — it's only
+    // restored asynchronously by initializeMockState. Re-enable mock mode here, which
+    // synchronously (re)creates the service AND ensures the upcoming export writes to
+    // the mock rather than the real clipboard. reset() wants a fresh mock anyway.
+    const setMock = (globalThis as any).setMockClipboardMode;
+    if (typeof setMock === 'function') {
+      await setMock(true);
+    }
     const mock = (globalThis as any).__mockClipboardService;
     if (!mock) {
       throw new Error('Mock clipboard service not found in service worker');
@@ -117,13 +127,15 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
         readyState: (globalThis as any).registration?.active?.state,
         hasChrome: typeof chrome !== 'undefined',
         hasChromeCommands: typeof chrome?.commands !== 'undefined',
+        // Set last in background.ts, after every top-level addListener call.
+        listenersReady: (globalThis as any).__listenersReady === true,
         location: (globalThis as any).location.href,
       };
     });
 
-    // If chrome.commands is available, we're ready
-    if (workerState.hasChromeCommands) {
-      // Service worker ready with Chrome APIs
+    // Ready only once our listeners are registered — not merely when the
+    // chrome.* API object exists. Closes the dispatch-before-listener race.
+    if (workerState.listenersReady) {
       break;
     }
 
@@ -142,7 +154,7 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
   }
 
   if (!extensionWorker) {
-    throw new Error(`Service worker Chrome APIs not ready after ${timeout}ms`);
+    throw new Error(`Service worker listeners not ready (__listenersReady) after ${timeout}ms`);
   }
 
   await setMockClipboardMode(extensionWorker, true);
@@ -290,14 +302,28 @@ export async function resetSystemClipboard(): Promise<void> {
   console.warn(`System clipboard did not reset within ${timeout}ms`);
 }
 
-export async function waitForSystemClipboard(timeout = 3000): Promise<string> {
+export async function waitForSystemClipboard(
+  expected: string,
+  timeout = 3000,
+  normalize: (value: string) => string = value => value,
+): Promise<string> {
   const startTime = Date.now();
+  const want = normalize(expected);
+  let lastSeen = '';
 
   while (Date.now() - startTime < timeout) {
     try {
       const value = await readSystemClipboard();
       if (value && value !== CLIPBOARD_SEPARATOR) {
-        return value;
+        lastSeen = value;
+        // Wait for THIS test's write specifically. The real system clipboard is
+        // shared across the serial smoke specs, and the offscreen write path is
+        // slow, so a prior test's write can land after this test reset the
+        // clipboard. Returning the first non-sentinel value would capture that
+        // stale contamination instead of the write we're actually waiting for.
+        if (normalize(value) === want) {
+          return value;
+        }
       }
     } catch (error) {
       console.warn('Failed to read system clipboard:', error);
@@ -305,7 +331,9 @@ export async function waitForSystemClipboard(timeout = 3000): Promise<string> {
     await wait(100);
   }
 
-  throw new Error(`System clipboard was empty after ${timeout}ms`);
+  // Timed out: return the last non-sentinel value seen (or '') so the caller's
+  // expect() produces a meaningful diff rather than an opaque timeout error.
+  return lastSeen;
 }
 
 export async function setMockClipboardMode(serviceWorker: Worker, enabled: boolean): Promise<void> {
