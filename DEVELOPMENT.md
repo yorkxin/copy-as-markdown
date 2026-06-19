@@ -116,14 +116,16 @@ the result from **`test-results/results.json`**, not from scrolling stdout. The 
 The container exits as soon as the suite finishes (it does **not** stay up serving the report). All
 artifacts are bind-mounted to the host, so you read them locally after the run.
 
-**Coding agents: read `test-results/results.json` directly.** It is the authoritative,
-machine-readable result — parse it instead of scrolling stdout or opening the HTML report. Example:
+`test-results/results.json` is the authoritative, machine-readable result. It is the recommended
+source for an automated/scripted check — parse it instead of scrolling stdout or opening the HTML
+report. Example:
 
 ```sh
 jq '.suites[].specs[] | select(.ok==false)' test-results/results.json   # which specs failed
 ```
 
-**Humans: open the HTML report** for a visual view of a failure (with the trace viewer):
+The HTML report gives a visual view of a failure, with the trace viewer — handy when investigating a
+failure by hand:
 
 ```sh
 npx playwright show-report   # serves playwright-report/ from your host Playwright
