@@ -107,6 +107,13 @@ This runs [docker/playwright-ci/docker-e2e.sh](docker/playwright-ci/docker-e2e.s
 3. Prunes only the dangling image this project's previous build orphaned (scoped by a Dockerfile
    `LABEL`), so other projects' images are never touched.
 
+**CI parity.** This harness and the GitHub Actions `playwright` job share one entrypoint —
+[docker/playwright-ci/run-playwright.sh](docker/playwright-ci/run-playwright.sh) — so the Xvfb
+invocation (screen geometry, RANDR extension) is identical locally and in CI. Both also run on the
+same Node: CI installs it from [`.node-version`](.node-version) via `setup-node`, and the Docker
+image inherits the matching Node from the Playwright base image. Keep these aligned when bumping
+either the base image or `.node-version`.
+
 With `CI=true`, Playwright retries failures (`retries: 2`) and writes machine-readable output. Read
 the result from **`test-results/results.json`**, not from scrolling stdout. The HTML report lands in
 `playwright-report/`.

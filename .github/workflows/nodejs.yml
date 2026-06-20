@@ -48,6 +48,9 @@ jobs:
         run: |
           apt-get update && apt-get install -y xsel
       - name: Use Node.js
+        # Resolves .node-version (Node 24), matching the Node 24 shipped by the
+        # playwright container image above and the Docker e2e harness — keeps the
+        # e2e runtime identical across CI and local docker runs.
         uses: actions/setup-node@v5
         with:
           node-version-file: ".node-version"
@@ -56,7 +59,10 @@ jobs:
       - name: Run Vitest UI tests in browser
         run: npm run test:browser
       - name: Run Playwright tests
-        run: xvfb-run -a npm run test:e2e
+        # Shared with the Docker harness so the xvfb invocation (screen geometry,
+        # RANDR) stays identical across CI and local docker runs. See
+        # docker/playwright-ci/run-playwright.sh and DEVELOPMENT.md (E2E tests).
+        run: bash docker/playwright-ci/run-playwright.sh
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
