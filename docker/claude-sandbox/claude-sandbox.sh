@@ -33,6 +33,17 @@ docker volume create "$NODE_MODULES_VOLUME" >/dev/null
 
 echo "[sandbox] home volume: $HOME_VOLUME   node_modules volume: $NODE_MODULES_VOLUME"
 
+# Match the in-container user to the host user so the bind-mounted working tree stays writable.
+# On native Linux, bind mounts pass through real uid/gid with NO mapping, so this is REQUIRED;
+# on macOS Docker Desktop ownership is auto-mapped and passing these is a harmless no-op.
+host_uid="$(id -u)"
+host_gid="$(id -g)"
+
+# SELinux hosts (RHEL/Fedora/Rocky) deny container access to bind mounts unless the mount is
+# relabeled with `:z`. Only add it when SELinux is actually present (no-op/absent elsewhere).
+workspace_mount="$ROOT:/workspace"
+[ -d /sys/fs/selinux ] && workspace_mount="$workspace_mount:z"
+
 # Allocate an interactive TTY only when we actually have one (so a piped/non-interactive
 # `claude-sandbox.sh some-command` still works instead of erroring "input device is not a TTY").
 # The `[@]+...` guard keeps the empty-array expansion safe under `set -u` on bash 3.2 (macOS).
@@ -42,7 +53,8 @@ tty_flags=()
 docker run --rm ${tty_flags[@]+"${tty_flags[@]}"} \
   --cap-add=NET_ADMIN --cap-add=NET_RAW \
   --shm-size=1g \
-  -v "$ROOT":/workspace \
+  -e SANDBOX_UID="$host_uid" -e SANDBOX_GID="$host_gid" \
+  -v "$workspace_mount" \
   -v "$NODE_MODULES_VOLUME":/workspace/node_modules \
   -v "$HOME_VOLUME":/home/pwuser/.claude \
   "$IMAGE" "$@"

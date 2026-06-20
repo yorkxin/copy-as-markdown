@@ -222,6 +222,22 @@ bind-mounted `test-results/` and `playwright-report/` as usual; the known clipbo
 flake is re-run in isolation with
 `CI=true xvfb-run -a npx playwright test --project=clipboard-smoke --retries=0`.
 
+### Running on a Linux host (e.g. over SSH)
+
+The sandbox is cross-platform — a headless Linux box is a good place to run long unattended plan
+executions. The launcher already passes your host uid/gid into the container (so the
+bind-mounted tree stays writable on native Linux, where bind mounts are not uid-mapped) and adds
+the SELinux `:z` relabel automatically when SELinux is present. A few host requirements:
+
+- **Use rootful Docker.** The egress firewall needs `NET_ADMIN` + iptables/ipset in the
+  container's network namespace; rootless Docker restricts this and the allowlist won't apply.
+- **Kernel modules:** the host needs `ip_tables`/`ip_set` (standard on mainstream distros).
+- **Survive SSH drops:** run the launcher inside `tmux` or `screen`.
+- **Fully unattended runs:** use Claude's headless/print mode instead of the interactive TUI, e.g.
+  `docker/claude-sandbox/claude-sandbox.sh claude -p 'Execute the plan at docs/superpowers/plans/<file>.md' --dangerously-skip-permissions`.
+
+The same `claude-sandbox.sh` command works unchanged on both macOS and Linux.
+
 ## Debugging the extension
 
 Auto-reload via esbuild `--watch` + `web-ext run`:
