@@ -1,8 +1,7 @@
-import { execSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
@@ -43,12 +42,8 @@ function jsFiles(distDir: string): string[] {
   return out;
 }
 
+// Both extension targets are built once by test/build/global-setup.ts before the suite runs.
 describe('webextension-polyfill ships to chrome only', () => {
-  beforeAll(() => {
-    execSync('node scripts/build.js firefox-mv3', { cwd: root, stdio: 'inherit' });
-    execSync('node scripts/build.js chrome', { cwd: root, stdio: 'inherit' });
-  }, 180_000);
-
   // --- Firefox: fully absent ---
   it('does not ship browser-polyfill.js to firefox vendor', () => {
     expect(existsSync(path.join(firefoxDist, 'vendor', 'browser-polyfill.js'))).toBe(false);

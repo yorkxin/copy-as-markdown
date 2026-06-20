@@ -16,6 +16,11 @@ const polyfillAlias = [
 
 export default defineConfig({
   test: {
+    // Build both extension targets once before the suite. The build tests under test/build/
+    // read chrome/dist and firefox-mv3/dist; scripts/build.js destructively cleans each dist,
+    // so per-test rebuilds in parallel workers raced and corrupted each other's output. See
+    // test/build/global-setup.ts.
+    globalSetup: ['./test/build/global-setup.ts'],
     projects: [
       {
         resolve: { alias: polyfillAlias },
