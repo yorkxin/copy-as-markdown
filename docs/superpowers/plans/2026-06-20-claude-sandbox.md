@@ -143,6 +143,13 @@ Replace the entire contents of `docker/claude-sandbox/init-firewall.sh` with:
 # --cap-add=NET_ADMIN). Allows: DNS, loopback, established connections, and a fixed set of
 # hosts (Anthropic API + auth, npm registry, GitHub). Everything else is dropped.
 #
+# PROVENANCE: derived from Anthropic's reference Claude Code devcontainer firewall:
+#   https://github.com/anthropics/claude-code/blob/main/.devcontainer/init-firewall.sh
+#   (derived 2026-06-20). This is a vendored copy — Anthropic does not distribute it as a
+#   package. To check for upstream improvements, diff this file against that URL periodically.
+#   Local deltas from upstream: simplified to IPv4-only ipset (no `aggregate` dependency) and a
+#   fixed hostname allowlist instead of reading domains from a config file.
+#
 # Resolution (dig/curl) runs BEFORE the default policy flips to DROP, so it relies on the
 # post-flush default-ACCEPT state. Order matters — do not move the policy lines up.
 set -euo pipefail
