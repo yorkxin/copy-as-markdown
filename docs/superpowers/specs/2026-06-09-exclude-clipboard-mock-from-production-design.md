@@ -38,8 +38,12 @@ declare const BUILD_PROFILE: 'production' | 'e2e';
 - **esbuild** (`scripts/build.js`): `define: { BUILD_PROFILE: JSON.stringify(profile) }`,
   where `profile` defaults to `'production'` and is `'e2e'` for the test build.
 - **tsc**: the ambient `declare const` above (mirrors `build-target.d.ts`).
-- **vitest** (`vitest.config.ts`): root-level `define: { BUILD_PROFILE: JSON.stringify('e2e') }`,
-  so BOTH test projects (unit + browser) compile with the mock available.
+- **vitest** (`vitest.config.ts`): `define: { BUILD_PROFILE: JSON.stringify('e2e') }` set
+  **per-project** on BOTH the `unit` and `browser` projects, so each compiles with the mock
+  available. (Per-project rather than root-level: the config already notes root-level
+  `resolve` does not propagate into `test.projects` — which is why `resolve.alias` is
+  duplicated per project — so the define is placed alongside it on each project to be sure
+  `BUILD_PROFILE` is defined at test runtime rather than left `undefined`.)
 
 `BUILD_TARGET` stays exactly `'chrome' | 'firefox-mv3'` — none of its branch sites change.
 
@@ -168,14 +172,18 @@ copy-then-recompile.
 A standing guard that the mock never re-enters production (mirrors
 `scripts/assert-no-turndown.js`):
 
-- **`scripts/assert-no-clipboard-mock.js`** — scan the production output JS
-  (`chrome/dist/**/*.js` and `firefox-mv3/dist/**/*.js`) for mock sentinels and fail the
-  build if any is found. Sentinels (survive because the build never minifies):
-  `mockClipboardCalls` (the storage key), `__mockClipboardService` (the E2E global), and
-  `createMockClipboardService` (the factory name). It checks ONLY the production dirs — the
-  `*-test` dirs legitimately contain the mock.
-- **Wire it into `package.json`**: run it in `build-chrome` and `build-firefox-mv3` after the
-  build (alongside the existing `assert-no-turndown` in `build-chrome`).
+- **`scripts/assert-no-clipboard-mock.js <target>`** — takes a target argument
+  (`chrome` | `firefox-mv3`) and scans only that target's production output JS
+  (`<target>/dist/**/*.js`) for mock sentinels, failing the build if any is found.
+  Sentinels (survive because the build never minifies): `mockClipboardCalls` (the storage
+  key), `__mockClipboardService` (the E2E global), and `createMockClipboardService` (the
+  factory name). It checks ONLY the production dirs — the `*-test` dirs legitimately contain
+  the mock. (Parameterizing by target — rather than one script scanning both dirs — mirrors
+  `assert-no-turndown.js`'s chrome-scoped shape and avoids the `build-chrome` step scanning a
+  stale or absent `firefox-mv3/dist`, since `build-chrome` runs before `build-firefox-mv3`.)
+- **Wire it into `package.json`**: `build-chrome` runs `assert-no-clipboard-mock.js chrome`
+  (alongside the existing `assert-no-turndown`); `build-firefox-mv3` runs
+  `assert-no-clipboard-mock.js firefox-mv3`.
 - **`test/build/no-clipboard-mock-in-production.test.ts`** — a build test mirroring
   `test/build/no-turndown-in-chrome-background.test.ts`, asserting the production bundles
   carry no mock sentinel.
