@@ -19,6 +19,7 @@ export default defineConfig({
     projects: [
       {
         resolve: { alias: polyfillAlias },
+        define: { BUILD_PROFILE: JSON.stringify('e2e') },
         test: {
           name: 'unit',
           include: ['test/**/*.test.ts'],
@@ -28,6 +29,7 @@ export default defineConfig({
       },
       {
         resolve: { alias: polyfillAlias },
+        define: { BUILD_PROFILE: JSON.stringify('e2e') },
         test: {
           name: 'browser',
           include: ['test/ui/**/*.spec.ts', 'test/lib/**/*.spec.ts'],

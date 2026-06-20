@@ -108,7 +108,7 @@ const buildOptions = {
   sourcesContent: true, // embed original TS in the map
   minify: false, // never minify (readable source, simple maps)
   legalComments: 'eof', // preserve bundled libs' /*! and @license banners
-  define: { BUILD_TARGET: JSON.stringify(target) },
+  define: { BUILD_TARGET: JSON.stringify(target), BUILD_PROFILE: JSON.stringify('production') },
   plugins: [polyfillResolverPlugin],
   target: target === 'chrome' ? ['chrome116'] : ['firefox139'],
   logLevel: 'info',
