@@ -392,7 +392,13 @@ docker volume create "$NODE_MODULES_VOLUME" >/dev/null
 
 echo "[sandbox] home volume: $HOME_VOLUME   node_modules volume: $NODE_MODULES_VOLUME"
 
-docker run --rm -it \
+# Allocate an interactive TTY only when we actually have one (so a piped/non-interactive
+# `claude-sandbox.sh some-command` still works instead of erroring "input device is not a TTY").
+# The `[@]+...` guard keeps the empty-array expansion safe under `set -u` on bash 3.2 (macOS).
+tty_flags=()
+[ -t 0 ] && [ -t 1 ] && tty_flags=(-it)
+
+docker run --rm ${tty_flags[@]+"${tty_flags[@]}"} \
   --cap-add=NET_ADMIN --cap-add=NET_RAW \
   --shm-size=1g \
   -v "$ROOT":/workspace \

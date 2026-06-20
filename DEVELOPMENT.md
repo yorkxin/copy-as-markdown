@@ -175,6 +175,53 @@ Playwright suite above covers Chrome). It is **currently broken and not maintain
 fix when time allows. See [e2e_test/README.md](e2e_test/README.md). Don't rely on it for
 verifying changes yet; use the Playwright suite for e2e coverage in the meantime.
 
+## Claude Code sandbox (isolated `--dangerously-skip-permissions`)
+
+[docker/claude-sandbox/](docker/claude-sandbox/) provides an isolated container for running a
+Claude Code session with `claude --dangerously-skip-permissions` (full permissions, no prompts)
+without risking the host. It is built **from the same Playwright base image as the e2e harness**,
+so the *same* container runs the full gate **and** the e2e suite — no nested Docker.
+
+> The container protects your **host**, not the repo's git history: the working tree is
+> bind-mounted read-write (including `.git`). Your `~/.ssh`, `~/.aws`, `~/.npmrc`, and macOS
+> Keychain are **not** mounted.
+
+### Launch
+
+```sh
+docker/claude-sandbox/claude-sandbox.sh                 # build (first run) + drop into a shell
+docker/claude-sandbox/claude-sandbox.sh claude --dangerously-skip-permissions   # or launch Claude directly
+```
+
+First launch installs Linux-native `node_modules` into a named volume (the host's macOS
+`node_modules` is never used inside the container) and applies a default-deny network firewall
+that allows only the Anthropic API + auth, the npm registry, and GitHub.
+
+### Auth (log in once)
+
+A persisted login lives in a named volume. The default volume `claude-sandbox-home` is shared
+across sessions: **log in once** (run `claude` and complete the OAuth flow), and every later
+session — including separate dev tasks — reuses the token, which auto-refreshes. Set
+`CLAUDE_SANDBOX_HOME=<name>` to use an isolated home volume for a parallel/per-task sandbox (that
+volume needs its own one-time login). `ANTHROPIC_API_KEY` works as an alternative if you prefer
+not to log in interactively.
+
+### Running the gate and e2e inside the sandbox
+
+```sh
+npm run typecheck && npm run lint && npm test && npm run build   # gate
+CI=true bash docker/playwright-ci/run-playwright.sh              # e2e under Xvfb (CI parity)
+```
+
+The e2e path reuses the existing harness script — there is no separate npm script. `CI=true` is
+required so Playwright uses the non-blocking reporters (and writes `test-results/results.json`)
+instead of the auto-serving `html` report that would hang; the e2e Docker image sets this via
+`ENV`, but this general-purpose sandbox image does not. The container has its own Xvfb display and
+clipboard, so the clipboard-smoke project never touches your host clipboard. Results land in the
+bind-mounted `test-results/` and `playwright-report/` as usual; the known clipboard/tab-exporting
+flake is re-run in isolation with
+`CI=true xvfb-run -a npx playwright test --project=clipboard-smoke --retries=0`.
+
 ## Debugging the extension
 
 Auto-reload via esbuild `--watch` + `web-ext run`:
