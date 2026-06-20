@@ -106,7 +106,8 @@ const buildOptions = {
   outbase: srcDir, // preserve entry directory layout under dist/
   sourcemap: 'linked', // emit .js.map + sourceMappingURL (DevTools breakpoints)
   sourcesContent: true, // embed original TS in the map
-  minify: false, // never minify (readable source, simple maps)
+  minify: false, // no identifier/whitespace minification — keep output readable
+  minifySyntax: true, // DCE: eliminate dead branches from BUILD_PROFILE/BUILD_TARGET defines
   legalComments: 'eof', // preserve bundled libs' /*! and @license banners
   define: { BUILD_TARGET: JSON.stringify(target), BUILD_PROFILE: JSON.stringify('production') },
   plugins: [polyfillResolverPlugin],

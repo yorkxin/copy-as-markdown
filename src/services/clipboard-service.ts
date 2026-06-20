@@ -136,17 +136,19 @@ export function createBrowserClipboardServiceController(
   let mockService: MockClipboardService | null = null;
 
   function activeService(): ClipboardService {
-    if (mockMode) {
+    if (BUILD_PROFILE === 'e2e' && mockMode) {
       return (mockService ??= createMockClipboardService());
     }
     return realService;
   }
 
   function syncGlobalMockService(): void {
-    if (mockMode) {
-      (globalThis as any).__mockClipboardService = (mockService ??= createMockClipboardService());
-    } else if ((globalThis as any).__mockClipboardService) {
-      delete (globalThis as any).__mockClipboardService;
+    if (BUILD_PROFILE === 'e2e') {
+      if (mockMode) {
+        (globalThis as any).__mockClipboardService = (mockService ??= createMockClipboardService());
+      } else if ((globalThis as any).__mockClipboardService) {
+        delete (globalThis as any).__mockClipboardService;
+      }
     }
   }
 
@@ -161,6 +163,7 @@ export function createBrowserClipboardServiceController(
   }
 
   async function setMockMode(enabled: boolean): Promise<void> {
+    if (BUILD_PROFILE !== 'e2e') return;
     if (mockMode !== enabled) {
       mockMode = enabled;
       syncGlobalMockService();
@@ -170,6 +173,7 @@ export function createBrowserClipboardServiceController(
   }
 
   async function initializeMockState(): Promise<void> {
+    if (BUILD_PROFILE !== 'e2e') return;
     try {
       const stored = await storageArea.get(storageKey);
       const storedValue = stored[storageKey];
@@ -201,6 +205,6 @@ export function createBrowserClipboardServiceController(
     },
     setMockMode,
     initializeMockState,
-    isMockMode: () => mockMode,
+    isMockMode: () => (BUILD_PROFILE === 'e2e' ? mockMode : false),
   };
 }
