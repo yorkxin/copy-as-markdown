@@ -1,4 +1,4 @@
-import { page } from '@vitest/browser/context';
+import { page } from 'vitest/browser';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { UI } from '../../src/ui/custom-format.js';
 import CustomFormat from '../../src/lib/custom-format.js';

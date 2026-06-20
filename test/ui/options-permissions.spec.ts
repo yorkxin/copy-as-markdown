@@ -1,4 +1,4 @@
-import { page } from '@vitest/browser/context';
+import { page } from 'vitest/browser';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 const settingsMock = {

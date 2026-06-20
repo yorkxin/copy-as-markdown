@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
 
 const emptyShim = fileURLToPath(new URL('./src/shims/empty.js', import.meta.url));
@@ -34,7 +35,7 @@ export default defineConfig({
           browser: {
             enabled: true,
             headless: true,
-            provider: 'playwright',
+            provider: playwright(),
             // https://vitest.dev/guide/browser/playwright
             instances: [
               { browser: 'chromium' },

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { page } from '@vitest/browser/context';
+import { page } from 'vitest/browser';
 
 const builtInSettingsMock = {
   getAll: vi.fn(),
