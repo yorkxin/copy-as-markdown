@@ -6,7 +6,7 @@
 
 **Architecture:** A new `docker/claude-sandbox/` image built **FROM the same Playwright base** as the e2e harness, so the container *is* the e2e environment (no nested Docker). An entrypoint applies an iptables/ipset firewall as root, installs Linux-native `node_modules` into a named volume, then drops to non-root `pwuser` to run the requested command. A host helper script wires up caps, mounts, and named volumes (working tree rw; `node_modules` and `~/.claude` as volumes; nothing else from `$HOME`).
 
-**Tech Stack:** Docker, bash, iptables/ipset, gosu, the Playwright `noble` base image (Node 24), `@anthropic-ai/claude-code`.
+**Tech Stack:** Docker, bash, iptables/ipset, `setpriv` (util-linux, privilege drop), the Playwright `noble` base image (Node 24), `@anthropic-ai/claude-code`.
 
 **Note on TDD:** This is declarative infra (Dockerfile + shell), so there are no unit tests to fail-first. Each task instead ends with **verification commands and their expected output** — run them and confirm before committing. Treat a failing verification exactly like a failing test: stop and fix before moving on.
 
@@ -15,7 +15,8 @@
 **Known facts (verified against the base image):**
 - Base image `mcr.microsoft.com/playwright:v1.57.0-noble` ships Node v24, `git`, `curl`.
 - Non-root user is **`pwuser`, uid/gid 1001**, home `/home/pwuser`.
-- Missing tools to install: `iptables`, `ipset`, `gosu`, `jq`, `dnsutils` (for `dig`), `gh`, `xsel`.
+- Missing tools to install: `iptables`, `ipset`, `jq`, `dnsutils` (for `dig`), `gh`, `xsel`.
+  (`setpriv`, used for the privilege drop, is already present via util-linux — no install.)
 - Playwright browsers live at `/ms-playwright` (preset via `PLAYWRIGHT_BROWSERS_PATH`); no browser download needed.
 
 ---
@@ -26,7 +27,7 @@
 |------|----------------|
 | `docker/claude-sandbox/Dockerfile` | Build the sandbox image FROM the Playwright base; add firewall/clipboard/CLI tooling + Claude Code. |
 | `docker/claude-sandbox/init-firewall.sh` | Default-deny iptables/ipset egress allowlist (Anthropic + npm + GitHub + DNS). |
-| `docker/claude-sandbox/entrypoint.sh` | (root) apply firewall → ensure volume ownership → `npm ci` into volume if lockfile changed → `exec gosu pwuser`. |
+| `docker/claude-sandbox/entrypoint.sh` | (root) apply firewall → ensure volume ownership → `npm ci` into volume if lockfile changed → `exec setpriv` to drop to pwuser. |
 | `docker/claude-sandbox/claude-sandbox.sh` | Host helper: build image, create volumes, `docker run` with caps/mounts. |
 | `DEVELOPMENT.md` | New section documenting how to launch the sandbox and run the gate + e2e. |
 
@@ -56,11 +57,12 @@ LABEL com.copy-as-markdown.image=claude-sandbox
 # Tooling:
 #   xsel              - clipboard for the e2e clipboard-smoke project (matches the e2e image)
 #   iptables, ipset   - default-deny egress firewall applied at container start
-#   gosu              - drop from root (needed for iptables) to non-root pwuser
 #   jq, dnsutils      - firewall script: parse GitHub IP ranges, resolve allowlisted hostnames
 #   ca-certificates   - TLS roots for curl/gh/npm
+# The entrypoint drops from root to pwuser with `setpriv`, which ships in util-linux in the base
+# image — so it is intentionally NOT in this install list (no added dependency).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      xsel iptables ipset gosu jq dnsutils ca-certificates curl gnupg \
+      xsel iptables ipset jq dnsutils ca-certificates curl gnupg \
   && rm -rf /var/lib/apt/lists/*
 
 # GitHub CLI (gh) from the official apt repo.
@@ -115,7 +117,7 @@ Expected: build completes successfully (`naming to ... copy-as-markdown-claude-s
 Run:
 ```bash
 docker run --rm copy-as-markdown-claude-sandbox bash -lc \
-  'id pwuser; claude --version; for t in iptables ipset gosu jq dig gh xsel; do command -v $t >/dev/null && echo "have $t" || echo "MISSING $t"; done'
+  'id pwuser; claude --version; for t in iptables ipset setpriv jq dig gh xsel; do command -v $t >/dev/null && echo "have $t" || echo "MISSING $t"; done'
 ```
 Expected: `uid=1001(pwuser)`, a Claude Code version string, and `have …` for every tool (no `MISSING`).
 
@@ -257,9 +259,18 @@ Replace the entire contents of `docker/claude-sandbox/entrypoint.sh` with:
 # Entrypoint runs as root (required for iptables). It applies the firewall, prepares the
 # mounted volumes, installs Linux-native node_modules on first run / lockfile change, then drops
 # to the non-root pwuser to run the requested command (default: bash).
+#
+# Privilege drop uses `setpriv` (from util-linux, already in the Playwright base image — zero
+# added dependency). Like gosu, it does a clean exec-based drop, so signals and exit codes pass
+# straight through to the child. `--init-groups` initializes pwuser's supplementary groups. The
+# numeric uid/gid 1001 is pwuser in this base image (kept literal for portability).
+#
+# setpriv changes ONLY process credentials, not the environment — so we must set HOME/USER for
+# the dropped child via `env`. Without it HOME stays /root: npm hits EACCES on /root/.npm, and
+# Claude Code would look for ~/.claude in /root instead of the mounted /home/pwuser volume.
 set -euo pipefail
 
-SANDBOX_USER=pwuser
+SANDBOX_USER=pwuser   # used below only for chown/mkdir of the mounted volumes
 
 # 1. Apply the egress firewall. Requires --cap-add=NET_ADMIN; warn (don't fail) if unavailable
 #    so the container is still usable for a no-network inspection.
@@ -283,15 +294,18 @@ if [ -f /workspace/package-lock.json ]; then
   stamp=/workspace/node_modules/.lock-hash
   if [ ! -f "$stamp" ] || [ "$(cat "$stamp" 2>/dev/null)" != "$lock_hash" ]; then
     echo "[sandbox] installing dependencies (npm ci)..."
-    gosu "$SANDBOX_USER" bash -lc 'cd /workspace && npm ci'
-    echo "$lock_hash" | gosu "$SANDBOX_USER" tee "$stamp" >/dev/null
+    setpriv --reuid=1001 --regid=1001 --init-groups \
+      env "HOME=/home/$SANDBOX_USER" "USER=$SANDBOX_USER" bash -lc 'cd /workspace && npm ci'
+    echo "$lock_hash" | setpriv --reuid=1001 --regid=1001 --init-groups \
+      env "HOME=/home/$SANDBOX_USER" "USER=$SANDBOX_USER" tee "$stamp" >/dev/null
   else
     echo "[sandbox] dependencies up to date"
   fi
 fi
 
 # 4. Drop privileges and run the requested command.
-exec gosu "$SANDBOX_USER" "$@"
+exec setpriv --reuid=1001 --regid=1001 --init-groups \
+  env "HOME=/home/$SANDBOX_USER" "USER=$SANDBOX_USER" "$@"
 ```
 
 - [ ] **Step 2: Rebuild the image**
@@ -310,9 +324,9 @@ docker run --rm --cap-add=NET_ADMIN --cap-add=NET_RAW --shm-size=1g \
   -v "$(pwd)":/workspace \
   -v claude-sandbox-test-nm:/workspace/node_modules \
   copy-as-markdown-claude-sandbox \
-  bash -lc 'whoami; node -e "require(\"esbuild\"); console.log(\"esbuild loads on linux OK\")"'
+  bash -lc 'whoami; echo "HOME=$HOME"; node -e "require(\"esbuild\"); console.log(\"esbuild loads on linux OK\")"'
 ```
-Expected: `[sandbox] firewall applied`, an `npm ci` run, then `pwuser` and `esbuild loads on linux OK` (proving Linux-native deps in the volume, not the host's darwin binaries).
+Expected: `[sandbox] firewall applied`, an `npm ci` run that **succeeds** (not an EACCES on `/root/.npm`), then `pwuser`, `HOME=/home/pwuser`, and `esbuild loads on linux OK` (proving the privilege drop sets HOME correctly and the Linux-native deps are in the volume, not the host's darwin binaries).
 
 - [ ] **Step 4: Verify second run skips reinstall**
 
