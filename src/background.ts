@@ -57,10 +57,12 @@ const realClipboard: ClipboardService = BUILD_TARGET === 'firefox-mv3'
 
 const clipboardService = createBrowserClipboardServiceController(realClipboard);
 
-(globalThis as any).setMockClipboardMode = clipboardService.setMockMode;
+if (BUILD_PROFILE === 'e2e') {
+  (globalThis as any).setMockClipboardMode = clipboardService.setMockMode;
 
-clipboardService.initializeMockState()
-  .catch(error => console.error('Mock clipboard init error', error));
+  clipboardService.initializeMockState()
+    .catch(error => console.error('Mock clipboard init error', error));
+}
 
 const markdownConverter: MarkdownConverter = BUILD_TARGET === 'firefox-mv3'
   ? createEventPageMarkdownConverter()
@@ -198,7 +200,7 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const runtimeMessage = message as RuntimeMessage;
   // Handle check-mock-clipboard message from popup
-  if (runtimeMessage.topic === 'check-mock-clipboard') {
+  if (BUILD_PROFILE === 'e2e' && runtimeMessage.topic === 'check-mock-clipboard') {
     sendResponse({ ok: true, text: clipboardService.isMockMode() ? 'true' : 'false' });
     return true;
   }
@@ -243,7 +245,7 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  if (runtimeMessage.topic === 'set-mock-clipboard') {
+  if (BUILD_PROFILE === 'e2e' && runtimeMessage.topic === 'set-mock-clipboard') {
     clipboardService.setMockMode(runtimeMessage.params?.enabled === true)
       .then(() => sendResponse({ ok: true, text: null }))
       .catch(error => sendResponse({ ok: false, error: error.message }));
