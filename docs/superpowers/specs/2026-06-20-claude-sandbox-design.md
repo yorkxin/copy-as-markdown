@@ -12,7 +12,7 @@ with no permission prompts and no nested Docker:
 
 ```sh
 npm run typecheck && npm run lint && npm test && npm run build   # gate
-bash docker/playwright-ci/run-playwright.sh                      # e2e, in-place under Xvfb
+CI=true bash docker/playwright-ci/run-playwright.sh              # e2e, in-place under Xvfb
 ```
 
 `--dangerously-skip-permissions` removes all guardrails, so it must only ever run inside this
@@ -152,7 +152,10 @@ Because the working tree is bind-mounted at `/workspace`, this script is present
 `/workspace/docker/playwright-ci/run-playwright.sh`. It is the same script the e2e Docker image
 runs as its ENTRYPOINT (`xvfb-run -a --server-args="-screen 0 1280x720x24 -ac +extension RANDR"
 npm run test:e2e`), so there is a single source of truth for the Xvfb invocation and the sandbox
-gets full CI parity for free.
+gets full CI parity for free. The command is run with `CI=true` so Playwright selects the
+non-blocking reporters (and writes `test-results/results.json`) rather than the auto-serving `html`
+report that would hang — the e2e Docker image sets this via `ENV`, but the general-purpose sandbox
+image does not.
 
 The known clipboard/tab-exporting flake is re-run in isolation in-container, e.g.
 `playwright test --project=clipboard-smoke --retries=0`.
