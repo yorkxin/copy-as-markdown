@@ -129,7 +129,7 @@ async function handleExportResponse(text: string): Promise<ExportOutcome> {
     return 'empty';
   }
 
-  if (useMockClipboard) {
+  if (BUILD_PROFILE === 'e2e' && useMockClipboard) {
     const clipboardResponse = await browser.runtime.sendMessage({
       topic: 'copy-to-clipboard',
       params: { text },
@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const initPromise = (async () => {
     try {
       setButtonsDisabled(true);
-      useMockClipboard = await checkMockClipboardAvailable();
+      useMockClipboard = BUILD_PROFILE === 'e2e' ? await checkMockClipboardAvailable() : false;
 
       const crWindow = await getCurrentWindow();
       if (crWindow.id !== undefined) {

@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Build a test-specific Chrome extension with modified permissions and mock clipboard
+ * Build the e2e test extensions (chrome-test, chrome-optional-test, firefox-test).
  *
- * This script:
- * 1. Copies the chrome/ directory to chrome-test/
- * 2. Modifies manifest.json to move 'tabs' from optional to required permissions
- * 3. Used only for E2E testing with Playwright
+ * Each variant is compiled DIRECTLY with BUILD_PROFILE='e2e' (so the clipboard mock + E2E
+ * hooks are present) and gets a manifest derived from the tracked source platform manifest
+ * with permissions rewritten for testing. Nothing is copied from the production chrome/ or
+ * firefox-mv3/ output (which is mock-free).
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { buildExtension } from './lib/build-extension.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +20,7 @@ const rootDir = path.join(__dirname, '..');
 
 const builds = [
   {
-    sourceDir: path.join(rootDir, 'chrome'),
+    platform: 'chrome',
     variants: [
       {
         name: 'Chrome default (permissions pre-granted)',
@@ -36,7 +37,7 @@ const builds = [
     ],
   },
   {
-    sourceDir: path.join(rootDir, 'firefox-mv3'),
+    platform: 'firefox-mv3',
     variants: [
       {
         name: 'Firefox default (permissions pre-granted)',
@@ -51,29 +52,34 @@ console.log('Building test extensions...');
 
 for (const buildConfig of builds) {
   for (const variant of buildConfig.variants) {
-    buildTestExtensionVariant(buildConfig.sourceDir, variant);
+    await buildTestExtensionVariant(buildConfig.platform, variant);
   }
 }
 
 /**
- * Build a single test extension variant
- * @param {string} sourceDir
+ * @param {'chrome'|'firefox-mv3'} platform
  * @param {{ name: string; targetDir: string; keepOptionalPermissions: boolean; hostPermissions?: string[] }} config
  */
-function buildTestExtensionVariant(sourceDir, config) {
+async function buildTestExtensionVariant(platform, config) {
   const variantTargetDir = path.join(rootDir, config.targetDir);
   console.log(`\n→ ${config.name}`);
 
-  // Remove existing directory
+  // Clean the whole variant dir, then compile directly into it with the e2e profile.
   if (fs.existsSync(variantTargetDir)) {
     fs.rmSync(variantTargetDir, { recursive: true });
   }
 
-  // Copy chrome directory to variant target
-  console.log(`  Copying ${sourceDir} → ${variantTargetDir}`);
-  fs.cpSync(sourceDir, variantTargetDir, { recursive: true });
+  console.log(`  Compiling ${platform} → ${config.targetDir}/dist (profile: e2e)`);
+  await buildExtension({
+    target: platform,
+    outdir: path.join(variantTargetDir, 'dist'),
+    profile: 'e2e',
+  });
 
-  rewriteManifest(variantTargetDir, {
+  // Derive the variant manifest from the tracked source platform manifest.
+  const sourceManifestPath = path.join(rootDir, platform, 'manifest.json');
+  const targetManifestPath = path.join(variantTargetDir, 'manifest.json');
+  rewriteManifest(sourceManifestPath, targetManifestPath, {
     keepOptionalPermissions: config.keepOptionalPermissions,
     hostPermissions: config.hostPermissions ?? [],
   });
@@ -81,10 +87,9 @@ function buildTestExtensionVariant(sourceDir, config) {
   console.log(`  ✓ Built ${config.targetDir}`);
 }
 
-function rewriteManifest(targetDirPath, options) {
-  console.log('  Modifying manifest.json');
-  const manifestPath = path.join(targetDirPath, 'manifest.json');
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+function rewriteManifest(sourceManifestPath, targetManifestPath, options) {
+  console.log('  Writing manifest.json');
+  const manifest = JSON.parse(fs.readFileSync(sourceManifestPath, 'utf8'));
 
   if (!Array.isArray(manifest.permissions)) {
     manifest.permissions = [];
@@ -137,7 +142,7 @@ function rewriteManifest(targetDirPath, options) {
     }
   }
 
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(targetManifestPath, JSON.stringify(manifest, null, 2));
 
   console.log('    Required:', manifest.permissions.join(', '));
   console.log('    Optional:', manifest.optional_permissions?.join(', ') || 'None');

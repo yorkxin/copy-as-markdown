@@ -19,15 +19,27 @@ export default defineConfig({
     projects: [
       {
         resolve: { alias: polyfillAlias },
+        define: { BUILD_PROFILE: JSON.stringify('e2e') },
         test: {
           name: 'unit',
           include: ['test/**/*.test.ts'],
-          exclude: ['test/ui/**/*.spec.ts'],
+          exclude: ['test/ui/**/*.spec.ts', 'test/build/**/*.test.ts'],
           environment: 'node',
         },
       },
       {
         resolve: { alias: polyfillAlias },
+        define: { BUILD_PROFILE: JSON.stringify('e2e') },
+        test: {
+          name: 'build',
+          include: ['test/build/**/*.test.ts'],
+          environment: 'node',
+          fileParallelism: false, // build tests shell out to scripts/build.js; shared dist dirs cannot be written concurrently
+        },
+      },
+      {
+        resolve: { alias: polyfillAlias },
+        define: { BUILD_PROFILE: JSON.stringify('e2e') },
         test: {
           name: 'browser',
           include: ['test/ui/**/*.spec.ts', 'test/lib/**/*.spec.ts'],
