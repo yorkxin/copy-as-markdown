@@ -24,34 +24,29 @@ class TestTabsExporting:
         """).lstrip()
 
     @pytest.fixture(scope="class", autouse=True)
-    def setup_browser(self, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
-        """Setup browser environment for all tests"""
-        # request.cls.all_keyboard_shortcuts = init_keyboard_shortcuts()
-        request.cls.browser = browser_environment
-        request.cls.fixture_server = fixture_server
-        
-        # Configure keyboard shortcuts using shared helper
-        self.browser.setup_keyboard_shortcuts(self.all_keyboard_shortcuts)
+    @classmethod
+    def setup_browser(cls, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+        cls.browser = browser_environment
+        cls.fixture_server = fixture_server
 
-        self.browser.setup_all_custom_formats()
+        cls.browser.setup_keyboard_shortcuts(cls.all_keyboard_shortcuts)
+        cls.browser.setup_all_custom_formats()
 
-        # Open test helper window
-        self.browser.open_test_helper_window(self.fixture_server.url)
+        cls.browser.open_test_helper_window(cls.fixture_server.url)
+        cls.browser.open_demo_window()
+        cls.browser.open_popup()
 
-        self.browser.open_demo_window()
-        self.browser.open_popup()
-        
-        # Switch to test helper window to set up tabs
-        self.browser.driver.switch_to.window(self.browser._test_helper_window_handle)
+        cls.browser.driver.switch_to.window(cls.browser._test_helper_window_handle)
 
         yield
 
-        self.browser.close_popup()
-        self.browser.close_demo_window()
+        cls.browser.close_popup()
+        cls.browser.close_demo_window()
  
     @pytest.fixture(scope="class")
-    def set_default_format_style(self):
-        self.browser.macro_change_format_style("dash", "spaces")
+    @classmethod
+    def set_default_format_style(cls):
+        cls.browser.macro_change_format_style("dash", "spaces")
         yield
 
     def test_all_tabs_keyboard_shortcut(self, set_default_format_style):
