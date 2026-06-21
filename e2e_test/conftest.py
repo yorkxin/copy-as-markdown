@@ -20,6 +20,7 @@ import shutil
 from typing import List
 
 from e2e_test.keyboard_shortcuts import KeyboardShortcuts
+from e2e_test.helpers import Clipboard
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -211,7 +212,6 @@ class BrowserEnvironment:
         btn = wait.until(EC.element_to_be_clickable((By.ID, manifest_key)))
         # Clear the clipboard so Clipboard.poll() detects the new write rather
         # than returning stale content from a previous test action.
-        from e2e_test.helpers import Clipboard
         Clipboard.clear()
         btn.click()
         self.driver.switch_to.window(original_window)
