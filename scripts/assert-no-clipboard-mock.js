@@ -44,9 +44,9 @@ for (const file of jsFiles(distDir)) {
 }
 
 if (offenders.length > 0) {
-  console.error(`✗ clipboard mock leaked into ${target}/dist:`);
+  console.error(`✗ e2e-only code leaked into ${target}/dist:`);
   for (const o of offenders) console.error(`  - ${o}`);
-  console.error('  The e2e-only clipboard mock must be DCE-stripped from production bundles.');
+  console.error('  e2e-only code (clipboard mock, listeners-ready flag) must be DCE-stripped from production bundles.');
   process.exit(1);
 }
-console.log(`✓ ${target}/dist is free of the clipboard mock`);
+console.log(`✓ ${target}/dist is free of e2e-only code`);
