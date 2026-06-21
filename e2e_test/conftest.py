@@ -12,9 +12,11 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.firefox.service import Service as FirefoxService
 
 from dataclasses import dataclass
 import os
+import shutil
 from typing import List
 
 from e2e_test.keyboard_shortcuts import KeyboardShortcuts
@@ -202,7 +204,16 @@ class BrowserEnvironment:
         assert self._popup_window_handle, "Popup window not opened"
         original_window = self.driver.current_window_handle
         self.switch_to_popup()
-        self.driver.find_element(By.ID, manifest_key).click()
+        # Wait for the popup to finish rendering before looking for the button.
+        # The popup fetches tab data asynchronously, so the buttons may not
+        # exist immediately after the page loads.
+        wait = WebDriverWait(self.driver, 10)
+        btn = wait.until(EC.element_to_be_clickable((By.ID, manifest_key)))
+        # Clear the clipboard so Clipboard.poll() detects the new write rather
+        # than returning stale content from a previous test action.
+        from e2e_test.helpers import Clipboard
+        Clipboard.clear()
+        btn.click()
         self.driver.switch_to.window(original_window)
 
     def select_all(self):
@@ -259,7 +270,16 @@ def browser_environment(request):
         firefox_options = Options()
         firefox_options.profile = profile
 
-        driver = webdriver.Firefox(options=firefox_options)
+        # Explicitly locate geckodriver so Selenium Manager is not invoked.
+        # Selenium Manager does not support linux/aarch64 and will raise
+        # WebDriverException on ARM-based Linux hosts (e.g. OrbStack on Apple
+        # Silicon).  Passing the path via FirefoxService bypasses that look-up.
+        geckodriver_path = shutil.which("geckodriver")
+        if geckodriver_path is None:
+            raise RuntimeError("geckodriver not found on PATH; install it (e.g. apt install firefox-geckodriver)")
+        firefox_service = FirefoxService(executable_path=geckodriver_path)
+
+        driver = webdriver.Firefox(options=firefox_options, service=firefox_service)
         driver.install_addon(FIREFOX_EXTENSION_PATH, temporary=True)
         driver.install_addon(E2E_HELPER_EXTENSION_PATH, temporary=True)
 
@@ -308,7 +328,12 @@ def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefo
         raise RuntimeError("could not find extension ID by looking for a link to manifest.json")
 
     pattern = r"^moz-extension://([A-Za-z0-9\-]+)/.+$"
-    href = manifest_link.get_attribute("href")
+    # Use get_dom_attribute() instead of get_attribute() because the latter
+    # internally calls execute_script(), which is forbidden on privileged
+    # parent-process pages like about:debugging (raises
+    # "UnsupportedOperationError: ExecuteScript … not supported for parent
+    # process browsing contexts").
+    href = manifest_link.get_dom_attribute("href")
     match = re.match(pattern, href)
 
     if not match:
