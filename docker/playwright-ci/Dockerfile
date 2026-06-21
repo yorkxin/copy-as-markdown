@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.57.0-noble
+FROM mcr.microsoft.com/playwright:v1.61.0-noble
 
 # Label so the host wrapper (docker/playwright-ci/docker-e2e.sh) can prune ONLY the
 # images this project's rebuilds orphan, leaving other projects' dangling images alone.
