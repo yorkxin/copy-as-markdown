@@ -168,12 +168,28 @@ xvfb-run -a npm run test:e2e
 `node scripts/build-test-extension.js`), which produces the test extension as a copy of the
 production build with manifest permissions rewritten for testing.
 
-### Firefox e2e tests (Python / pytest) — currently broken
+### Firefox e2e tests (Python / pytest)
 
-[e2e_test/](e2e_test/) holds a separate pytest-based e2e suite that drives **Firefox** (the
-Playwright suite above covers Chrome). It is **currently broken and not maintained** — pending a
-fix when time allows. See [e2e_test/README.md](e2e_test/README.md). Don't rely on it for
-verifying changes yet; use the Playwright suite for e2e coverage in the meantime.
+[e2e_test/](e2e_test/) holds a pytest-based suite that drives **Firefox** via Selenium. It covers the hot-path clipboard copy flows (keyboard shortcuts and popup UI) that the Playwright suite cannot reach because Playwright cannot interact with Firefox extension pages.
+
+**Requirements (Linux):**
+
+```sh
+sudo apt-get install -y firefox xvfb xsel python3-pip
+pip install -r requirements.txt
+```
+
+**Run (Linux):**
+
+```sh
+npm run test:e2e:selenium
+```
+
+This builds the `firefox-test` extension bundle and then runs `pytest e2e_test/ -v` under `xvfb-run`. `xvfb-run` is required — pyautogui sends X11 key events for keyboard-shortcut tests and needs a real (or virtual) display.
+
+**CI:** The `selenium` GitHub Actions job runs this suite natively on `ubuntu-latest` after the `build` job succeeds.
+
+**Docker (coming soon):** A Docker variant (`test:e2e:selenium:docker`) for local Mac parity will be added in a follow-up branch, following the same pattern as `docker/playwright-ci/`.
 
 ## Debugging the extension
 
