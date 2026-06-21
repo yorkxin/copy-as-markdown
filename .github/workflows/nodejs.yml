@@ -83,7 +83,11 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y firefox xvfb xsel python3-pip
+        run: sudo apt-get update && sudo apt-get install -y firefox xvfb xsel
+      - name: Use Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
       - name: Install Python dependencies
         run: pip install -r requirements.txt
       - name: Build test extensions
