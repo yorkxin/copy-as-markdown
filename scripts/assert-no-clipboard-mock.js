@@ -17,9 +17,9 @@ if (!fs.existsSync(distDir)) {
   process.exit(1);
 }
 
-// Strings that exist ONLY in the e2e clipboard mock: the storage key, the E2E global, and
-// the factory name. The build never minifies, so a leaked mock keeps these verbatim.
-const SENTINELS = ['mockClipboardCalls', '__mockClipboardService', 'createMockClipboardService'];
+// Strings that exist ONLY in e2e builds: clipboard mock internals and the listeners-ready flag.
+// The build never minifies identifiers, so leaked e2e code keeps these verbatim.
+const SENTINELS = ['mockClipboardCalls', '__mockClipboardService', 'createMockClipboardService', '__listenersReady'];
 
 // .js ONLY — never .js.map: the sourcemap's `sourcesContent` embeds the full original
 // clipboard-service.ts (including the tree-shaken mock), which is expected and not shipped logic.

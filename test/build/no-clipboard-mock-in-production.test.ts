@@ -9,9 +9,9 @@ const root = path.join(here, '..', '..');
 const chromeDist = path.join(root, 'chrome', 'dist');
 const firefoxDist = path.join(root, 'firefox-mv3', 'dist');
 
-// Strings that appear ONLY in the e2e clipboard mock. The build never minifies, so a leaked
-// mock would keep these verbatim in the production bundle.
-const SENTINELS = ['mockClipboardCalls', '__mockClipboardService', 'createMockClipboardService'];
+// Strings that appear ONLY in e2e builds. The build never minifies identifiers, so leaked
+// e2e code would keep these verbatim in the production bundle.
+const SENTINELS = ['mockClipboardCalls', '__mockClipboardService', 'createMockClipboardService', '__listenersReady'];
 
 // .js ONLY — never .js.map: the sourcemap embeds the full original clipboard-service.ts
 // (including the tree-shaken mock) via sourcesContent, which would false-positive.

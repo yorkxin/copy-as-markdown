@@ -274,9 +274,10 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
 refreshMarkdownInstance()
   .then(() => null /* NOP */);
 
-// All MV3 event listeners above are registered synchronously at top-level scope.
-// Flip this flag last so e2e's getServiceWorker() can gate on "listeners wired"
-// rather than merely "chrome.* API exists" — closing the readiness race where a
-// test dispatched an event before onCommand/onClicked/onMessage were registered.
-// Re-set on every worker restart because the module body re-runs each time.
-(globalThis as any).__listenersReady = true;
+if (BUILD_PROFILE === 'e2e') {
+  // Flip this flag last so e2e's getServiceWorker() can gate on "listeners wired"
+  // rather than merely "chrome.* API exists" — closing the readiness race where a
+  // test dispatched an event before onCommand/onClicked/onMessage were registered.
+  // Re-set on every worker restart because the module body re-runs each time.
+  (globalThis as any).__listenersReady = true;
+}
