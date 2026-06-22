@@ -1,4 +1,4 @@
-import pyautogui
+import subprocess
 from dataclasses import dataclass
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
@@ -10,9 +10,7 @@ class Shortcut:
     keystroke: str
 
     def press(self):
-        with pyautogui.hold('shift'):
-            with pyautogui.hold('alt'):
-                pyautogui.press(self.keystroke)
+        subprocess.run(['xdotool', 'key', f'alt+shift+{self.keystroke}'], check=True)
 
     def run_action_chain(self, actions: ActionChains):
         return actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(self.keystroke).key_up(Keys.SHIFT).key_up(Keys.ALT)

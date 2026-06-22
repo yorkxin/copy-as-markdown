@@ -11,6 +11,11 @@
 # Any extra arguments are forwarded to `docker run` (after the image name).
 set -uo pipefail
 
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "error: test:e2e:selenium:docker is Linux-only (uses xdotool + AT-SPI)" >&2
+    exit 1
+fi
+
 IMAGE=copy-as-markdown-selenium
 LABEL=com.copy-as-markdown.image=selenium-e2e
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"

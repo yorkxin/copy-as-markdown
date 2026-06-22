@@ -43,22 +43,18 @@ RUN set -eux; \
       | tar xz -C /usr/local/bin/ \
     && chmod +x /usr/local/bin/geckodriver
 
-# --- xvfb, xauth, xsel (virtual display + real clipboard) ------------------
+# --- xvfb, xauth, xsel, xdotool (virtual display + real clipboard + key injection) --
 RUN apt-get update && apt-get install -y --no-install-recommends \
       xvfb \
       xauth \
       xsel \
+      xdotool \
     && rm -rf /var/lib/apt/lists/*
 
-# --- Python 3.14 from deadsnakes PPA (includes -tk variant) -----------------
-# python3.14-tk provides tkinter, required by mouseinfo (a pyautogui dependency).
-# python3.14-dev provides headers needed to build pyautogui's C-extension deps.
+# --- Python 3.14 from deadsnakes PPA ----------------------------------------
 RUN add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update && apt-get install -y --no-install-recommends \
       python3.14 \
-      python3.14-dev \
-      python3.14-tk \
-      build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3.14
 
