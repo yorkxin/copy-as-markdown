@@ -2,4 +2,3 @@ selenium
 pytest
 pyautogui
 pyperclip
-pyshadow

@@ -17,20 +17,21 @@ class TestCurrentTab:
     ])
 
     @pytest.fixture(scope="class", autouse=True)
-    def setup_browser(self, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
-        request.cls.browser = browser_environment
-        request.cls.fixture_server = fixture_server
+    @classmethod
+    def setup_browser(cls, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+        cls.browser = browser_environment
+        cls.fixture_server = fixture_server
 
-        self.browser.setup_keyboard_shortcuts(self.all_keyboard_shortcuts)
-        self.browser.setup_all_custom_formats()
+        cls.browser.setup_keyboard_shortcuts(cls.all_keyboard_shortcuts)
+        cls.browser.setup_all_custom_formats()
 
-        self.browser.open_test_helper_window(self.fixture_server.url)
-        self.browser.open_demo_window()
+        cls.browser.open_test_helper_window(cls.fixture_server.url)
+        cls.browser.open_demo_window()
 
         yield
 
-        if self.browser._demo_window_handle:
-            self.browser.close_demo_window()
+        if cls.browser._demo_window_handle:
+            cls.browser.close_demo_window()
 
     def test_selection_as_markdown(self):
         Clipboard.clear()

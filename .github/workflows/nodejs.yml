@@ -8,6 +8,11 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -69,3 +74,28 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
+
+  selenium:
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: ".node-version"
+          cache: npm
+      - run: npm ci
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y firefox xvfb xsel
+      - name: Use Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+      - name: Build test extensions
+        run: npm run test:e2e:build
+      - name: Run Selenium Firefox e2e tests
+        run: xvfb-run -a --server-args="-screen 0 1280x720x24 -ac +extension RANDR" pytest e2e_test/ -v
