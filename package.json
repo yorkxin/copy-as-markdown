@@ -17,6 +17,7 @@
     "test:e2e:debug": "npm run test:e2e:build && playwright test --debug",
     "test:e2e:docker": "bash docker/playwright-ci/docker-e2e.sh",
     "test:e2e:selenium": "npm run test:e2e:build && xvfb-run -a --server-args=\"-screen 0 1280x720x24 -ac +extension RANDR\" pytest e2e_test/ -v",
+    "test:e2e:selenium:docker": "bash docker/selenium-ci/docker-e2e.sh",
     "bump-version": "node scripts/bump-version.js",
     "typecheck": "tsc",
     "build": "npm run build-chrome && npm run build-firefox-mv3",

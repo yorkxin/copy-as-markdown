@@ -88,7 +88,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y firefox xvfb xsel
+        run: sudo apt-get update && sudo apt-get install -y firefox xvfb xsel xdotool
       - name: Use Python
         uses: actions/setup-python@v6
         with:
