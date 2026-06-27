@@ -22,7 +22,7 @@ class TestContextMenu:
 
     def test_context_menu_copy_link(self):
         Clipboard.clear()
-        original = self.browser.driver.window_handles[0]
+        original = self.browser.driver.current_window_handle
         self.browser.driver.switch_to.new_window('tab')
         tab = self.browser.driver.current_window_handle
         try:
@@ -44,7 +44,7 @@ class TestContextMenu:
 
     def test_context_menu_copy_image(self):
         Clipboard.clear()
-        original = self.browser.driver.window_handles[0]
+        original = self.browser.driver.current_window_handle
         self.browser.driver.switch_to.new_window('tab')
         tab = self.browser.driver.current_window_handle
         try:
@@ -67,7 +67,7 @@ class TestContextMenu:
 
     def test_context_menu_copy_selection(self):
         Clipboard.clear()
-        original = self.browser.driver.window_handles[0]
+        original = self.browser.driver.current_window_handle
         self.browser.driver.switch_to.new_window('tab')
         tab = self.browser.driver.current_window_handle
         try:
@@ -76,9 +76,9 @@ class TestContextMenu:
             body = self.browser.driver.find_element(By.TAG_NAME, "body")
             self.browser.context_menu_click(body, "Copy Selection as Markdown")
             clipboard_text = Clipboard.poll()
-            expected_content = open(
-                os.path.join(os.path.dirname(__file__), "..", "fixtures", "selection.md"),
-            ).read().replace("http://localhost:5566", self.fixture_server.url)
+            selection_md = os.path.join(os.path.dirname(__file__), "..", "fixtures", "selection.md")
+            with open(selection_md) as f:
+                expected_content = f.read().replace("http://localhost:5566", self.fixture_server.url)
             assert clipboard_text == expected_content
         finally:
             self.browser.driver.switch_to.window(tab)
