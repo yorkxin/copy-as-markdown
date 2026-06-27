@@ -90,37 +90,47 @@ class BrowserEnvironment:
         self.driver.close()
         self._popup_window_handle = None
 
-    def set_mock_clipboard_mode(self, enabled: bool):
+    def wait_until_ready(self, timeout: float = 15.0):
+        """Block until the extension's background listeners are registered.
+
+        The smoke suite drives real OS input (keyboard shortcuts, context-menu
+        clicks); if one arrives before background.ts has registered
+        browser.commands.onCommand / contextMenus.onClicked it is silently
+        dropped. background.ts flips globalThis.__listenersReady true at the end of
+        its synchronous module body, after every top-level addListener call, so
+        that flag is the readiness signal.
+
+        Firefox runs the background as an event page (a real DOM document), so
+        from any extension page we can reach the live background object via
+        browser.runtime.getBackgroundPage() and read the flag directly — no
+        message round-trip, no clipboard mock. (Chrome's service worker has no
+        such object; see ChromeBrowserEnvironment.wait_until_ready.)
+
+        The smoke suite asserts against the real system clipboard, which is the
+        clipboard service's default (defaultMockState=false), so nothing here
+        touches the e2e clipboard mock.
+        """
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
         self.driver.get(self.options_page_url())
 
         script = """
-        const enabled = arguments[0];
-        const callback = arguments[arguments.length - 1];
-        const msg = { topic: 'set-mock-clipboard', params: { enabled } };
-        let entrypoint;
-        if (typeof browser !== 'undefined') {
-            entrypoint = browser.runtime;
-        } else {
-            entrypoint = chrome.runtime;
-        }
-
-        try {
-          entrypoint.sendMessage(msg)
-            .then(() => callback(true))
-            .catch((error) => callback(error?.message || false));
-        } catch (error) {
-          callback(error?.message || false);
-        }
+            const cb = arguments[arguments.length - 1];
+            const api = (typeof browser !== 'undefined') ? browser : chrome;
+            api.runtime.getBackgroundPage()
+              .then(bg => cb(!!(bg && bg.__listenersReady === true)))
+              .catch(() => cb(false));
         """
-
-        result = self.driver.execute_async_script(script, enabled)
-        if result is not True:
-            raise RuntimeError(f"Failed to set mock clipboard mode: {result}")
-
-        self.driver.close()
-        self.driver.switch_to.window(original_window)
+        deadline = time.time() + timeout
+        try:
+            while time.time() < deadline:
+                if self.driver.execute_async_script(script) is True:
+                    return
+                time.sleep(0.2)
+            raise TimeoutError("extension background not ready (__listenersReady not set)")
+        finally:
+            self.driver.close()
+            self.driver.switch_to.window(original_window)
 
     def macro_change_format_style(self, ul_style: str, indent_style: str | None = None):
         original_window = self.driver.current_window_handle
@@ -251,8 +261,8 @@ class ChromeBrowserEnvironment:
 
     Only what the smoke paths need: real keystrokes (xdotool, after focusing the
     window — there is no window manager under Xvfb) and native context menus
-    (Selenium right-click + AT-SPI). No popup/helper-extension wiring, so no
-    extension-id discovery is required.
+    (Selenium right-click + AT-SPI), plus a readiness gate that pings the
+    background before tests run. No popup/helper-extension wiring.
     """
 
     def __init__(self, driver):
@@ -277,6 +287,56 @@ class ChromeBrowserEnvironment:
 
     def select_all(self):
         self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.CONTROL + "a")
+
+    def wait_until_ready(self, timeout: float = 15.0):
+        """Block until the extension's background listeners are registered.
+
+        background.ts flips globalThis.__listenersReady true at the end of its
+        synchronous module body, after every top-level addListener call; until
+        then a keyboard shortcut or context-menu click would be silently dropped.
+
+        Chrome runs the background as a service worker, which has no navigable page
+        and cannot be flag-read over CDP (attaching a debugger pauses the worker,
+        so the flag never reads true). The robust signal is a message round-trip:
+        the e2e-only 'e2e-listeners-ready' handler answers with __listenersReady,
+        and reaching that handler at all already proves the module body ran
+        (onMessage is registered in the same pass as onCommand / onClicked). The
+        smoke suite asserts the real system clipboard, the clipboard service's
+        default, so nothing here touches the e2e clipboard mock.
+        """
+        deadline = time.time() + timeout
+
+        # The extension id is the host of its service worker target (found via CDP).
+        extension_id = None
+        while time.time() < deadline and extension_id is None:
+            targets = self.driver.execute_cdp_cmd("Target.getTargets", {}).get("targetInfos", [])
+            for target in targets:
+                url = target.get("url", "")
+                if target.get("type") == "service_worker" and url.startswith("chrome-extension://"):
+                    extension_id = url.split("/")[2]
+                    break
+            if extension_id is None:
+                time.sleep(0.2)
+        if extension_id is None:
+            raise TimeoutError("extension service worker not found via CDP")
+
+        # From an extension page, poll the readiness handler until it reports the
+        # background's listeners are wired.
+        self.driver.get(f"chrome-extension://{extension_id}/dist/static/options.html")
+        ping = """
+            const cb = arguments[arguments.length - 1];
+            chrome.runtime.sendMessage({ topic: 'e2e-listeners-ready', params: {} })
+                .then(r => cb(!!(r && r.listenersReady === true)))
+                .catch(() => cb(false));
+        """
+        while time.time() < deadline:
+            try:
+                if self.driver.execute_async_script(ping) is True:
+                    return
+            except Exception:
+                pass
+            time.sleep(0.2)
+        raise TimeoutError("extension background not ready (__listenersReady not set)")
 
     def context_menu_click(self, element, menu_label: str) -> None:
         """Right-click *element* to open Chrome's native context menu, then invoke
@@ -332,7 +392,10 @@ def _browser_environment(force_accessibility: bool):
             raise ValueError("Helper extension ID not found")
 
         browser_env = BrowserEnvironment(extension_id, helper_extension_id, driver)
-        browser_env.set_mock_clipboard_mode(False)
+        # Gate on background readiness (__listenersReady) before any test fires a
+        # keyboard shortcut or context-menu click. The smoke suite asserts the real
+        # system clipboard, which is the clipboard service's default.
+        browser_env.wait_until_ready()
 
         yield browser_env
     finally:
@@ -379,9 +442,11 @@ def _chrome_browser_environment():
 
         service = ChromeService(executable_path=chromedriver_path)
         driver = webdriver.Chrome(options=options, service=service)
-        # Give the MV3 service worker time to register its context menus.
-        time.sleep(2)
-        yield ChromeBrowserEnvironment(driver)
+        env = ChromeBrowserEnvironment(driver)
+        # Wait for the background listeners to be registered (the __listenersReady
+        # proxy) instead of a blind sleep.
+        env.wait_until_ready()
+        yield env
     finally:
         if driver is not None:
             driver.quit()

@@ -199,6 +199,16 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
 // NOTE: async function will not work here
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const runtimeMessage = message as RuntimeMessage;
+  // e2e readiness probe: reaching this handler already proves the module body
+  // ran (onMessage is registered in the same synchronous pass as onCommand /
+  // onClicked), and __listenersReady is flipped true at the end of that pass, so
+  // it is true here. The Selenium suite polls this for the Chrome service worker,
+  // which cannot be flag-read directly.
+  if (BUILD_PROFILE === 'e2e' && runtimeMessage.topic === 'e2e-listeners-ready') {
+    sendResponse({ ok: true, listenersReady: (globalThis as any).__listenersReady === true });
+    return true;
+  }
+
   // Handle check-mock-clipboard message from popup
   if (BUILD_PROFILE === 'e2e' && runtimeMessage.topic === 'check-mock-clipboard') {
     sendResponse({ ok: true, text: clipboardService.isMockMode() ? 'true' : 'false' });
