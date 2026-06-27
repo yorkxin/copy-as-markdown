@@ -78,43 +78,17 @@ jobs:
   selenium:
     runs-on: ubuntu-latest
     needs: build
-    timeout-minutes: 15
+    # Image build (apt + npm ci + PyGObject compile + geckodriver download) runs
+    # uncached on the ephemeral runner, so allow more than the host-install path.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
-      - name: Use Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version-file: ".node-version"
-          cache: npm
-      - run: npm ci
-      - name: Install system dependencies
-        # at-spi2-core + dbus: accessibility bus for native context-menu tests.
-        # libgirepository/gir1.2-atspi + cairo/pkg-config/gcc: build deps so pip
-        # can compile PyGObject (no prebuilt wheel for this Python). Mirrors the
-        # apt block in docker/selenium-ci/Dockerfile.
-        run: >-
-          sudo apt-get update && sudo apt-get install -y
-          firefox xvfb xsel xdotool
-          at-spi2-core dbus
-          libgirepository-2.0-dev gir1.2-atspi-2.0 libcairo2-dev pkg-config gcc
-      - name: Use Python
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: ".python-version"
-          # Cache pip's wheel/http cache so the compiled PyGObject wheel is
-          # reused across runs instead of recompiling with gcc every time.
-          cache: pip
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
-      - name: Build test extensions
-        run: npm run test:e2e:build
-      - name: Run Selenium Firefox e2e tests
-        # GNOME_ACCESSIBILITY + dbus-run-session enable Firefox's a11y tree and
-        # provide the AT-SPI bus the native context-menu tests need. Mirrors
-        # docker/selenium-ci/run-selenium.sh so CI and local Docker stay aligned.
-        env:
-          GNOME_ACCESSIBILITY: "1"
-        run: >-
-          dbus-run-session --
-          xvfb-run -a --server-args="-screen 0 1280x720x24 -ac +extension RANDR"
-          pytest e2e_test/ -v
+      - name: Run Selenium Firefox e2e tests (Docker)
+        # Runs the same Dockerized harness as `npm run test:e2e:selenium:docker`
+        # locally: the image bakes in deb firefox-esr + geckodriver + AT-SPI/D-Bus,
+        # and its entrypoint wraps the suite in dbus-run-session. This deliberately
+        # avoids ubuntu-latest's snap-packaged Firefox, whose geckodriver can't
+        # launch under the private session bus the AT-SPI context-menu tests need.
+        # The image is rebuilt each run (no layer cache) — see
+        # docs/ideas/ghcr-selenium-image.md for the prebuilt-image optimization.
+        run: bash docker/selenium-ci/docker-e2e.sh
