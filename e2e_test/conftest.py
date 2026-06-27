@@ -11,10 +11,15 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
 
 from dataclasses import dataclass
 import os
 import shutil
+import subprocess
+import tempfile
+import time
 from typing import List
 
 from e2e_test.keyboard_shortcuts import KeyboardShortcuts
@@ -23,6 +28,7 @@ from e2e_test.helpers import Clipboard
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 FIREFOX_EXTENSION_PATH = os.path.join(_ROOT_DIR, "firefox-test")
+CHROME_EXTENSION_PATH = os.path.join(_ROOT_DIR, "chrome-test")
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
 
 
@@ -251,6 +257,52 @@ class BrowserEnvironment:
             raise
 
 
+class ChromeBrowserEnvironment:
+    """Minimal Chrome/Chromium environment for the real-input smoke tests.
+
+    Only what the smoke paths need: real keystrokes (xdotool, after focusing the
+    window — there is no window manager under Xvfb) and native context menus
+    (Selenium right-click + AT-SPI). No popup/helper-extension wiring, so no
+    extension-id discovery is required.
+    """
+
+    def __init__(self, driver):
+        self.driver = driver
+
+    def focus_window(self):
+        # No window manager under Xvfb, so set X input focus on the Chromium
+        # window explicitly before injecting keys with xdotool.
+        subprocess.run(
+            ["xdotool", "search", "--sync", "--onlyvisible", "--class", "chromium",
+             "windowfocus"],
+            check=False,
+        )
+
+    def press_shortcut(self, keystroke: str):
+        self.focus_window()
+        time.sleep(0.3)
+        subprocess.run(
+            ["xdotool", "key", "--clearmodifiers", f"alt+shift+{keystroke}"],
+            check=False,
+        )
+
+    def select_all(self):
+        self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.CONTROL + "a")
+
+    def context_menu_click(self, element, menu_label: str) -> None:
+        """Right-click *element* to open Chrome's native context menu, then invoke
+        the menu item whose accessible name is *menu_label* via AT-SPI."""
+        from selenium.webdriver.common.action_chains import ActionChains
+        from e2e_test.atspi_menu import click_menu_item
+
+        ActionChains(self.driver).context_click(element).perform()
+        try:
+            click_menu_item(menu_label)
+        except Exception:
+            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            raise
+
+
 def _browser_environment(force_accessibility: bool):
     driver = None
     try:
@@ -307,6 +359,45 @@ def browser_environment(request):
 @pytest.fixture(scope="class")
 def accessible_browser_environment(request):
     yield from _browser_environment(force_accessibility=True)
+
+
+def _chrome_browser_environment():
+    driver = None
+    try:
+        chromium_bin = (shutil.which("chromium")
+                        or shutil.which("chromium-browser")
+                        or shutil.which("google-chrome"))
+        chromedriver_path = shutil.which("chromedriver")
+        if chromium_bin is None or chromedriver_path is None:
+            pytest.skip("chromium/chromedriver not found on PATH")
+
+        options = ChromeOptions()
+        options.binary_location = chromium_bin
+        # Load the unpacked MV3 test extension. The second flag re-enables
+        # --load-extension, which recent Chromium disables by default.
+        options.add_argument(f"--load-extension={CHROME_EXTENSION_PATH}")
+        options.add_argument("--disable-features=DisableLoadExtensionCommandLineSwitch")
+        # Expose the browser UI (including native context menus) over AT-SPI.
+        options.add_argument("--force-renderer-accessibility")
+        options.add_argument("--no-sandbox")  # required when running as root in CI
+        options.add_argument("--no-first-run")
+        options.add_argument("--no-default-browser-check")
+        options.add_argument(f"--user-data-dir={tempfile.mkdtemp(prefix='chrome-e2e-')}")
+        # NOT headless: native context menus need a real (Xvfb) window.
+
+        service = ChromeService(executable_path=chromedriver_path)
+        driver = webdriver.Chrome(options=options, service=service)
+        # Give the MV3 service worker time to register its context menus.
+        time.sleep(2)
+        yield ChromeBrowserEnvironment(driver)
+    finally:
+        if driver is not None:
+            driver.quit()
+
+
+@pytest.fixture(scope="class")
+def chrome_browser_environment(request):
+    yield from _chrome_browser_environment()
 
 
 def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefox):

@@ -47,6 +47,14 @@ RUN set -eux; \
       | tar xz -C /usr/local/bin/ \
     && chmod +x /usr/local/bin/geckodriver
 
+# Chromium + matching driver for the Chrome AT-SPI smoke spike. Debian's
+# chromium-driver is version-matched to the chromium package, so no runtime
+# Selenium Manager driver download is needed.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      chromium \
+      chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
 # xvfb: headless display   xauth: required by xvfb-run   xsel: real clipboard
 # xdotool: X11 key injection for extension keyboard shortcuts
 # at-spi2-core + dbus: accessibility bus for native context-menu testing
