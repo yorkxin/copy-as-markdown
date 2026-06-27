@@ -1,3 +1,4 @@
 selenium
 pytest
 pyperclip
+PyGObject

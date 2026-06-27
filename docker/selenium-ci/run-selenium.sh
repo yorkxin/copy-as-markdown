@@ -8,7 +8,9 @@ npm run test:e2e:build
 
 echo "[docker] Starting Selenium Firefox suite via Xvfb..."
 
-xvfb-run -a --server-args="-screen 0 1280x720x24 -ac +extension RANDR" \
+export GNOME_ACCESSIBILITY=1
+
+dbus-run-session -- xvfb-run -a --server-args="-screen 0 1280x720x24 -ac +extension RANDR" \
   python -m pytest e2e_test/ -v
 
 exit_code=$?

@@ -254,9 +254,24 @@ class BrowserEnvironment:
         self.driver.find_element(By.ID, "close-demo").click()
         self._demo_window_handle = None
 
+    def context_menu_click(self, element, menu_label: str) -> None:
+        """Right-click *element* to open Firefox's native context menu, then
+        invoke the menu item whose accessible name is *menu_label* via AT-SPI."""
+        from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.webdriver.common.keys import Keys
+        from e2e_test.atspi_menu import click_menu_item
 
-@pytest.fixture(scope="class")
-def browser_environment(request):
+        ActionChains(self.driver).context_click(element).perform()
+        try:
+            click_menu_item(menu_label)
+        except Exception:
+            # Dismiss the still-open native menu so it cannot bleed into the
+            # next test (the browser is class-scoped and shared across tests).
+            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            raise
+
+
+def _browser_environment(force_accessibility: bool):
     driver = None
     try:
         profile = FirefoxProfile()
@@ -264,6 +279,12 @@ def browser_environment(request):
         profile.set_preference("intl.locale.requested", "en-US")
         profile.set_preference("browser.locale", "en-US")
         profile.set_preference("extensions.webextOptionalPermissionPrompts", False)
+        if force_accessibility:
+            # Enable Firefox's accessibility engine so the native context menu is
+            # exposed via AT-SPI (see e2e_test/atspi_menu.py). Scoped to context-
+            # menu tests only: it slows Firefox enough to flake timing-sensitive
+            # tests, so the default fixture leaves it off.
+            profile.set_preference("accessibility.force_disabled", 0)
 
         firefox_options = Options()
         firefox_options.profile = profile
@@ -296,6 +317,16 @@ def browser_environment(request):
     finally:
         if driver is not None:
             driver.quit()
+
+
+@pytest.fixture(scope="class")
+def browser_environment(request):
+    yield from _browser_environment(force_accessibility=False)
+
+
+@pytest.fixture(scope="class")
+def accessible_browser_environment(request):
+    yield from _browser_environment(force_accessibility=True)
 
 
 def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefox):

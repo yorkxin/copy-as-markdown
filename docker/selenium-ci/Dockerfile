@@ -49,11 +49,20 @@ RUN set -eux; \
 
 # xvfb: headless display   xauth: required by xvfb-run   xsel: real clipboard
 # xdotool: X11 key injection for extension keyboard shortcuts
+# at-spi2-core + dbus: accessibility bus for native context-menu testing
+# GI dev libs + atspi typelib: let pip-built PyGObject bind to Atspi under py3.14
 RUN apt-get update && apt-get install -y --no-install-recommends \
       xvfb \
       xauth \
       xsel \
       xdotool \
+      at-spi2-core \
+      dbus \
+      libgirepository-2.0-dev \
+      gir1.2-atspi-2.0 \
+      libcairo2-dev \
+      pkg-config \
+      gcc \
     && rm -rf /var/lib/apt/lists/*
 
 # Node.js 24 — not in Debian's repos at this version
