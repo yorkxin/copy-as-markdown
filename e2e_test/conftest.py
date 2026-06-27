@@ -222,17 +222,9 @@ class FirefoxBrowserEnvironment:
         self.driver.switch_to.window(self._test_helper_window_handle)
         self.driver.find_element(By.ID, "switch-to-demo").click()
 
-    def set_highlighted_tabs(self):
-        self.driver.switch_to.window(self._test_helper_window_handle)
-        self.driver.find_element(By.ID, "highlight-tabs").click()
-
     def set_grouped_tabs(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
         self.driver.find_element(By.ID, "group-tabs").click()
-
-    def ungroup_tabs(self):
-        self.driver.switch_to.window(self._test_helper_window_handle)
-        self.driver.find_element(By.ID, "ungroup-tabs").click()
 
     def close_demo_window(self):
         self.driver.switch_to.window(self._test_helper_window_handle)

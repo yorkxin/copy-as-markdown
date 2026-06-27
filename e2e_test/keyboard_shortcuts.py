@@ -1,7 +1,5 @@
 import subprocess
 from dataclasses import dataclass
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.action_chains import ActionChains
 
 @dataclass
 class Shortcut:
@@ -12,22 +10,14 @@ class Shortcut:
     def press(self):
         subprocess.run(['xdotool', 'key', f'alt+shift+{self.keystroke}'], check=True)
 
-    def run_action_chain(self, actions: ActionChains):
-        return actions.key_down(Keys.ALT).key_down(Keys.SHIFT).send_keys(self.keystroke).key_up(Keys.SHIFT).key_up(Keys.ALT)
-
 class KeyboardShortcuts:
     def __init__(self):
         self.items: list[Shortcut] = []
-        self.by_label: dict[str, Shortcut] = {}
         self.by_manifest_key: dict[str, Shortcut] = {}
 
     def append(self, item: Shortcut):
         self.items.append(item)
-        self.by_label[item.label] = item
         self.by_manifest_key[item.manifest_key] = item
-
-    def get_by_label(self, label):
-        return self.by_label.get(label)
 
     def get_by_manifest_key(self, manifest_key):
         return self.by_manifest_key.get(manifest_key)
