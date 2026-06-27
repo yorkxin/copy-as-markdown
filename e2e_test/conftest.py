@@ -264,8 +264,7 @@ class BrowserEnvironment:
         click_menu_item(menu_label)
 
 
-@pytest.fixture(scope="class")
-def browser_environment(request):
+def _browser_environment(force_accessibility: bool):
     driver = None
     try:
         profile = FirefoxProfile()
@@ -273,10 +272,12 @@ def browser_environment(request):
         profile.set_preference("intl.locale.requested", "en-US")
         profile.set_preference("browser.locale", "en-US")
         profile.set_preference("extensions.webextOptionalPermissionPrompts", False)
-        # Enable Firefox's accessibility engine so the native context menu is
-        # exposed via AT-SPI (see e2e_test/atspi_menu.py). Without this the menu
-        # tree is never realized and context-menu tests time out.
-        profile.set_preference("accessibility.force_disabled", 0)
+        if force_accessibility:
+            # Enable Firefox's accessibility engine so the native context menu is
+            # exposed via AT-SPI (see e2e_test/atspi_menu.py). Scoped to context-
+            # menu tests only: it slows Firefox enough to flake timing-sensitive
+            # tests, so the default fixture leaves it off.
+            profile.set_preference("accessibility.force_disabled", 0)
 
         firefox_options = Options()
         firefox_options.profile = profile
@@ -309,6 +310,16 @@ def browser_environment(request):
     finally:
         if driver is not None:
             driver.quit()
+
+
+@pytest.fixture(scope="class")
+def browser_environment(request):
+    yield from _browser_environment(force_accessibility=False)
+
+
+@pytest.fixture(scope="class")
+def accessible_browser_environment(request):
+    yield from _browser_environment(force_accessibility=True)
 
 
 def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefox):

@@ -14,8 +14,8 @@ class TestContextMenu:
 
     @pytest.fixture(scope="class", autouse=True)
     @classmethod
-    def setup_browser(cls, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
-        cls.browser = browser_environment
+    def setup_browser(cls, request, accessible_browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+        cls.browser = accessible_browser_environment
         cls.fixture_server = fixture_server
         yield
 
