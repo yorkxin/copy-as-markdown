@@ -134,34 +134,14 @@ class BrowserEnvironment:
         self.driver.switch_to.window(original_window)
 
     def setup_keyboard_shortcuts(self, keyboard_shortcuts: KeyboardShortcuts):
-        self.setup_keyboard_shortcuts_firefox(keyboard_shortcuts)
-
-    def setup_keyboard_shortcuts_firefox(self, keyboard_shortcuts: KeyboardShortcuts):
-        original_window = self.driver.current_window_handle
-        self.driver.switch_to.new_window('tab')
-        self.driver.get(self.options_page_url())
-
-        commands = []
-        for shortcut in keyboard_shortcuts.items:
-            commands.append({
-                "name": shortcut.manifest_key,
-                "shortcut": shortcut.toFirefoxShortcut()
-            })
-
-        script = """
-        var callback = arguments[arguments.length - 1];
-        var commands = arguments[0];
-        Promise.all(commands.map(function(cmd) {
-            return browser.commands.update(cmd);
-        })).then(function(results) {
-            callback(results);
-        });
-        """
-
-        self.driver.execute_async_script(script, commands)
-
-        self.driver.close()
-        self.driver.switch_to.window(original_window)
+        # No-op: the shortcuts the suite triggers are bound at extension load
+        # time via manifest `suggested_key` (injected by
+        # scripts/build-test-extension.js, keys mirroring ALL_SHORTCUTS). Both
+        # Firefox and Chrome honour suggested_key, so the previous runtime
+        # registration via browser.commands.update() (a Firefox-only API) is no
+        # longer needed. Kept as a hook so tests still declare which shortcuts
+        # they use.
+        return
 
     def setup_all_custom_formats(self):
         self.macro_setup_custom_formats([
