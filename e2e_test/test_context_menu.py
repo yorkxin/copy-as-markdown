@@ -100,6 +100,28 @@ class TestContextMenu:
             self.browser.driver.close()
             self.browser.driver.switch_to.window(original)
 
-    @pytest.mark.skip(reason="bookmark menu requires AT-SPI-driven bookmark UI; not yet validated (see plan Task 4)")
+    @pytest.mark.skip(reason="bookmark context menu lives in Firefox chrome (not the DOM); no validated headless trigger yet")
     def test_context_menu_copy_bookmark(self):
-        ...  # intentionally unimplemented; tracks the coverage gap
+        # Unlike the link/image/selection items above, the "Copy Bookmark or
+        # Folder as Markdown" item is registered with contexts: ['bookmark'], so
+        # it only appears when right-clicking a node in Firefox's own bookmark UI
+        # (Bookmarks Toolbar / sidebar / Library) -- browser chrome, not web
+        # content. That makes it hard to drive in this harness:
+        #
+        #   1. Selenium/WebDriver can only reach the DOM, so the
+        #      `context_menu_click` recipe (ActionChains.context_click on a page
+        #      element) has no element to target -- there is no DOM node here.
+        #   2. The interaction would have to go entirely through AT-SPI/xdotool:
+        #      seed a bookmark (fixtures only serve web pages, not bookmark
+        #      state), open the bookmark UI, and locate the node in the a11y tree.
+        #   3. Opening a *context* menu on that node is the sharp edge: AT-SPI's
+        #      do_action(node, 0) performs the primary (activate) action, not a
+        #      right-click, and there is no portable AT-SPI "open context menu"
+        #      action. Falling back to an xdotool right-click at the node's screen
+        #      coordinates reintroduces the coordinate/pixel brittleness the
+        #      AT-SPI approach was chosen to avoid.
+        #
+        # Left as a tracked skip (visible in the run with a reason) rather than a
+        # flaky, unvalidated test. Covering it warrants its own spike to confirm a
+        # reliable headless seed -> open -> right-click path for a bookmark node.
+        ...
