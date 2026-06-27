@@ -368,7 +368,10 @@ def _chrome_browser_environment():
         options.add_argument("--disable-features=DisableLoadExtensionCommandLineSwitch")
         # Expose the browser UI (including native context menus) over AT-SPI.
         options.add_argument("--force-renderer-accessibility")
-        options.add_argument("--no-sandbox")  # required when running as root in CI
+        # Even as the non-root `appuser`, Chromium's namespace sandbox does not
+        # work in this container (no unprivileged user namespaces), so it still
+        # needs --no-sandbox. The container itself is the isolation boundary.
+        options.add_argument("--no-sandbox")
         options.add_argument("--no-first-run")
         options.add_argument("--no-default-browser-check")
         options.add_argument(f"--user-data-dir={tempfile.mkdtemp(prefix='chrome-e2e-')}")

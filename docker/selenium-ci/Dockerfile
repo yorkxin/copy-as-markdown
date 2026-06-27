@@ -91,4 +91,13 @@ COPY . .
 COPY docker/selenium-ci/run-selenium.sh /usr/local/bin/run-selenium.sh
 RUN chmod +x /usr/local/bin/run-selenium.sh
 
+# Drop to a non-root user for the test run (defense in depth). Created after all
+# root-only install steps; /workspace is handed over so the runtime
+# `npm run test:e2e:build` can write the test extensions. (Chromium still needs
+# --no-sandbox even non-root — this container does not permit its namespace
+# sandbox; see e2e_test/conftest.py.)
+RUN useradd --create-home --uid 1000 appuser \
+    && chown -R appuser:appuser /workspace
+USER appuser
+
 ENTRYPOINT ["/usr/local/bin/run-selenium.sh"]
