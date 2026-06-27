@@ -2,7 +2,7 @@ import os
 import pytest
 from typing import Optional
 
-from e2e_test.conftest import BrowserEnvironment, FixtureServer
+from e2e_test.conftest import FirefoxBrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 from e2e_test.keyboard_shortcuts import init_keyboard_shortcuts
 
@@ -15,7 +15,7 @@ SKIP_CUSTOM_FORMAT = "custom-format copy is functional, not smoke; covered by th
 
 
 class TestCurrentTab:
-    browser: Optional[BrowserEnvironment] = None
+    browser: Optional[FirefoxBrowserEnvironment] = None
     fixture_server: Optional[FixtureServer] = None
     all_keyboard_shortcuts = init_keyboard_shortcuts([
         "selection-as-markdown",
@@ -25,7 +25,7 @@ class TestCurrentTab:
 
     @pytest.fixture(scope="class", autouse=True)
     @classmethod
-    def setup_browser(cls, request, browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+    def setup_browser(cls, request, browser_environment: FirefoxBrowserEnvironment, fixture_server: FixtureServer):
         cls.browser = browser_environment
         cls.fixture_server = fixture_server
 

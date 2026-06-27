@@ -45,7 +45,7 @@ class CustomFormatConfig:
         self.show_in_popup = show_in_popup
 
 
-class BrowserEnvironment:
+class FirefoxBrowserEnvironment:
     extension_id: str
     helper_extension_id: str
     driver: webdriver.Firefox
@@ -391,7 +391,7 @@ def _browser_environment(force_accessibility: bool):
         if helper_extension_id is None:
             raise ValueError("Helper extension ID not found")
 
-        browser_env = BrowserEnvironment(extension_id, helper_extension_id, driver)
+        browser_env = FirefoxBrowserEnvironment(extension_id, helper_extension_id, driver)
         # Gate on background readiness (__listenersReady) before any test fires a
         # keyboard shortcut or context-menu click. The smoke suite asserts the real
         # system clipboard, which is the clipboard service's default.
