@@ -88,14 +88,33 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y firefox xvfb xsel xdotool
+        # at-spi2-core + dbus: accessibility bus for native context-menu tests.
+        # libgirepository/gir1.2-atspi + cairo/pkg-config/gcc: build deps so pip
+        # can compile PyGObject (no prebuilt wheel for this Python). Mirrors the
+        # apt block in docker/selenium-ci/Dockerfile.
+        run: >-
+          sudo apt-get update && sudo apt-get install -y
+          firefox xvfb xsel xdotool
+          at-spi2-core dbus
+          libgirepository-2.0-dev gir1.2-atspi-2.0 libcairo2-dev pkg-config gcc
       - name: Use Python
         uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
+          # Cache pip's wheel/http cache so the compiled PyGObject wheel is
+          # reused across runs instead of recompiling with gcc every time.
+          cache: pip
       - name: Install Python dependencies
         run: pip install -r requirements.txt
       - name: Build test extensions
         run: npm run test:e2e:build
       - name: Run Selenium Firefox e2e tests
-        run: xvfb-run -a --server-args="-screen 0 1280x720x24 -ac +extension RANDR" pytest e2e_test/ -v
+        # GNOME_ACCESSIBILITY + dbus-run-session enable Firefox's a11y tree and
+        # provide the AT-SPI bus the native context-menu tests need. Mirrors
+        # docker/selenium-ci/run-selenium.sh so CI and local Docker stay aligned.
+        env:
+          GNOME_ACCESSIBILITY: "1"
+        run: >-
+          dbus-run-session --
+          xvfb-run -a --server-args="-screen 0 1280x720x24 -ac +extension RANDR"
+          pytest e2e_test/ -v
