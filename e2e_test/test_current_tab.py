@@ -22,7 +22,6 @@ class TestCurrentTab:
         cls.browser = browser_environment
         cls.fixture_server = fixture_server
 
-        cls.browser.setup_keyboard_shortcuts(cls.all_keyboard_shortcuts)
         cls.browser.setup_all_custom_formats()
 
         cls.browser.open_test_helper_window(cls.fixture_server.url)

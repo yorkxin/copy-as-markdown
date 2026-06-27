@@ -22,7 +22,6 @@ import tempfile
 import time
 from typing import List
 
-from e2e_test.keyboard_shortcuts import KeyboardShortcuts
 from e2e_test.helpers import Clipboard
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -138,16 +137,6 @@ class BrowserEnvironment:
 
         self.driver.close()
         self.driver.switch_to.window(original_window)
-
-    def setup_keyboard_shortcuts(self, keyboard_shortcuts: KeyboardShortcuts):
-        # No-op: the shortcuts the suite triggers are bound at extension load
-        # time via manifest `suggested_key` (injected by
-        # scripts/build-test-extension.js, keys mirroring ALL_SHORTCUTS). Both
-        # Firefox and Chrome honour suggested_key, so the previous runtime
-        # registration via browser.commands.update() (a Firefox-only API) is no
-        # longer needed. Kept as a hook so tests still declare which shortcuts
-        # they use.
-        return
 
     def setup_all_custom_formats(self):
         self.macro_setup_custom_formats([
