@@ -22,7 +22,13 @@ def _iter_descendants(node):
     except Exception:
         return
     for i in range(count):
-        child = node.get_child_at_index(i)
+        try:
+            child = node.get_child_at_index(i)
+        except Exception:
+            # A node can go stale mid-walk while the menu tree is changing.
+            # Skip the offending child rather than letting the exception escape
+            # the find loop and bypass the retry/TimeoutError handling.
+            continue
         if child is None:
             continue
         yield child
@@ -38,7 +44,7 @@ def _find_firefox_app():
     return None
 
 
-def find_menu_item(name: str, timeout: float = 5.0):
+def find_menu_item(name: str, timeout: float = 5.0) -> "Atspi.Accessible":
     """Poll Firefox's accessibility tree for a menu item with the given name.
 
     Raises ``TimeoutError`` if no matching menu item is found within *timeout*

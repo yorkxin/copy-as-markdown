@@ -254,6 +254,15 @@ class BrowserEnvironment:
         self.driver.find_element(By.ID, "close-demo").click()
         self._demo_window_handle = None
 
+    def context_menu_click(self, element, menu_label: str) -> None:
+        """Right-click *element* to open Firefox's native context menu, then
+        invoke the menu item whose accessible name is *menu_label* via AT-SPI."""
+        from selenium.webdriver.common.action_chains import ActionChains
+        from e2e_test.atspi_menu import click_menu_item
+
+        ActionChains(self.driver).context_click(element).perform()
+        click_menu_item(menu_label)
+
 
 @pytest.fixture(scope="class")
 def browser_environment(request):
@@ -264,6 +273,10 @@ def browser_environment(request):
         profile.set_preference("intl.locale.requested", "en-US")
         profile.set_preference("browser.locale", "en-US")
         profile.set_preference("extensions.webextOptionalPermissionPrompts", False)
+        # Enable Firefox's accessibility engine so the native context menu is
+        # exposed via AT-SPI (see e2e_test/atspi_menu.py). Without this the menu
+        # tree is never realized and context-menu tests time out.
+        profile.set_preference("accessibility.force_disabled", 0)
 
         firefox_options = Options()
         firefox_options.profile = profile
