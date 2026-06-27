@@ -8,8 +8,23 @@ from selenium.webdriver.support import expected_conditions as EC
 from e2e_test.conftest import BrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 
+# These tests drive Firefox's native GTK context menu through the AT-SPI
+# accessibility bus, which only exists when the suite runs via the Docker
+# entrypoint (run-selenium.sh wraps pytest in `dbus-run-session` and exports
+# GNOME_ACCESSIBILITY=1). Running them on the bare `npm run test:e2e:selenium`
+# path (no bus) would just time out, so skip the module unless both signals are
+# present. In Docker both are set, so the tests run normally.
+pytestmark = pytest.mark.skipif(
+    os.environ.get("GNOME_ACCESSIBILITY") != "1"
+    or not os.environ.get("DBUS_SESSION_BUS_ADDRESS"),
+    reason="AT-SPI context-menu tests require dbus-run-session + GNOME_ACCESSIBILITY=1 (Docker entrypoint)",
+)
+
 
 class TestContextMenu:
+    # Each test targets a single-item context (one extension menu item per
+    # right-click target) so the native menu stays flat. See atspi_menu.py for
+    # why submenu nesting would require additional traversal logic.
     browser: Optional[BrowserEnvironment] = None
     fixture_server: Optional[FixtureServer] = None
 

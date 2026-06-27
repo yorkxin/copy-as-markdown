@@ -258,10 +258,17 @@ class BrowserEnvironment:
         """Right-click *element* to open Firefox's native context menu, then
         invoke the menu item whose accessible name is *menu_label* via AT-SPI."""
         from selenium.webdriver.common.action_chains import ActionChains
+        from selenium.webdriver.common.keys import Keys
         from e2e_test.atspi_menu import click_menu_item
 
         ActionChains(self.driver).context_click(element).perform()
-        click_menu_item(menu_label)
+        try:
+            click_menu_item(menu_label)
+        except Exception:
+            # Dismiss the still-open native menu so it cannot bleed into the
+            # next test (the browser is class-scoped and shared across tests).
+            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            raise
 
 
 def _browser_environment(force_accessibility: bool):

@@ -44,6 +44,14 @@ def _find_firefox_app():
     return None
 
 
+# ASSUMPTION: menu items are flat (direct MENU_ITEM nodes). When a WebExtension
+# contributes MORE THAN ONE item to a single context, Firefox groups them under
+# a "Copy as Markdown" submenu, and GTK may not realize the submenu's children
+# until it is opened. This helper does NOT open submenus, so the e2e tests use
+# single-item contexts (one extension item per right-click target) to keep menus
+# flat. If a future config exposes multiple items per context, extend this to
+# locate the submenu node (role MENU) and do_action() to open it before
+# searching for the leaf — see the plan's Spike Results "residual unknown".
 def find_menu_item(name: str, timeout: float = 5.0) -> "Atspi.Accessible":
     """Poll Firefox's accessibility tree for a menu item with the given name.
 
@@ -68,4 +76,5 @@ def click_menu_item(name: str, timeout: float = 5.0) -> None:
     """Find a menu item by accessible name and invoke its primary action."""
     item = find_menu_item(name, timeout=timeout)
     # GI binding: do_action lives on the Atspi.Action interface.
-    Atspi.Action.do_action(item, 0)
+    if not Atspi.Action.do_action(item, 0):
+        raise RuntimeError(f"AT-SPI action failed for menu item: {name!r}")
