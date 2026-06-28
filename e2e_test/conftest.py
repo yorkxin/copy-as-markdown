@@ -11,18 +11,23 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
 
 from dataclasses import dataclass
 import os
 import shutil
+import subprocess
+import tempfile
+import time
 from typing import List
 
-from e2e_test.keyboard_shortcuts import KeyboardShortcuts
 from e2e_test.helpers import Clipboard
 
 _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 FIREFOX_EXTENSION_PATH = os.path.join(_ROOT_DIR, "firefox-test")
+CHROME_EXTENSION_PATH = os.path.join(_ROOT_DIR, "chrome-test")
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
 
 
@@ -40,7 +45,7 @@ class CustomFormatConfig:
         self.show_in_popup = show_in_popup
 
 
-class BrowserEnvironment:
+class FirefoxBrowserEnvironment:
     extension_id: str
     helper_extension_id: str
     driver: webdriver.Firefox
@@ -85,37 +90,47 @@ class BrowserEnvironment:
         self.driver.close()
         self._popup_window_handle = None
 
-    def set_mock_clipboard_mode(self, enabled: bool):
+    def wait_until_ready(self, timeout: float = 15.0):
+        """Block until the extension's background listeners are registered.
+
+        The smoke suite drives real OS input (keyboard shortcuts, context-menu
+        clicks); if one arrives before background.ts has registered
+        browser.commands.onCommand / contextMenus.onClicked it is silently
+        dropped. background.ts flips globalThis.__listenersReady true at the end of
+        its synchronous module body, after every top-level addListener call, so
+        that flag is the readiness signal.
+
+        Firefox runs the background as an event page (a real DOM document), so
+        from any extension page we can reach the live background object via
+        browser.runtime.getBackgroundPage() and read the flag directly — no
+        message round-trip, no clipboard mock. (Chrome's service worker has no
+        such object; see ChromeBrowserEnvironment.wait_until_ready.)
+
+        The smoke suite asserts against the real system clipboard, which is the
+        clipboard service's default (defaultMockState=false), so nothing here
+        touches the e2e clipboard mock.
+        """
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
         self.driver.get(self.options_page_url())
 
         script = """
-        const enabled = arguments[0];
-        const callback = arguments[arguments.length - 1];
-        const msg = { topic: 'set-mock-clipboard', params: { enabled } };
-        let entrypoint;
-        if (typeof browser !== 'undefined') {
-            entrypoint = browser.runtime;
-        } else {
-            entrypoint = chrome.runtime;
-        }
-
-        try {
-          entrypoint.sendMessage(msg)
-            .then(() => callback(true))
-            .catch((error) => callback(error?.message || false));
-        } catch (error) {
-          callback(error?.message || false);
-        }
+            const cb = arguments[arguments.length - 1];
+            const api = (typeof browser !== 'undefined') ? browser : chrome;
+            api.runtime.getBackgroundPage()
+              .then(bg => cb(!!(bg && bg.__listenersReady === true)))
+              .catch(() => cb(false));
         """
-
-        result = self.driver.execute_async_script(script, enabled)
-        if result is not True:
-            raise RuntimeError(f"Failed to set mock clipboard mode: {result}")
-
-        self.driver.close()
-        self.driver.switch_to.window(original_window)
+        deadline = time.time() + timeout
+        try:
+            while time.time() < deadline:
+                if self.driver.execute_async_script(script) is True:
+                    return
+                time.sleep(0.2)
+            raise TimeoutError("extension background not ready (__listenersReady not set)")
+        finally:
+            self.driver.close()
+            self.driver.switch_to.window(original_window)
 
     def macro_change_format_style(self, ul_style: str, indent_style: str | None = None):
         original_window = self.driver.current_window_handle
@@ -129,36 +144,6 @@ class BrowserEnvironment:
             if indent_option.is_enabled() == False:
                 raise ValueError(f"Indentation style {indent_style} cannot be changed")
             indent_option.click()
-
-        self.driver.close()
-        self.driver.switch_to.window(original_window)
-
-    def setup_keyboard_shortcuts(self, keyboard_shortcuts: KeyboardShortcuts):
-        self.setup_keyboard_shortcuts_firefox(keyboard_shortcuts)
-
-    def setup_keyboard_shortcuts_firefox(self, keyboard_shortcuts: KeyboardShortcuts):
-        original_window = self.driver.current_window_handle
-        self.driver.switch_to.new_window('tab')
-        self.driver.get(self.options_page_url())
-
-        commands = []
-        for shortcut in keyboard_shortcuts.items:
-            commands.append({
-                "name": shortcut.manifest_key,
-                "shortcut": shortcut.toFirefoxShortcut()
-            })
-
-        script = """
-        var callback = arguments[arguments.length - 1];
-        var commands = arguments[0];
-        Promise.all(commands.map(function(cmd) {
-            return browser.commands.update(cmd);
-        })).then(function(results) {
-            callback(results);
-        });
-        """
-
-        self.driver.execute_async_script(script, commands)
 
         self.driver.close()
         self.driver.switch_to.window(original_window)
@@ -237,17 +222,9 @@ class BrowserEnvironment:
         self.driver.switch_to.window(self._test_helper_window_handle)
         self.driver.find_element(By.ID, "switch-to-demo").click()
 
-    def set_highlighted_tabs(self):
-        self.driver.switch_to.window(self._test_helper_window_handle)
-        self.driver.find_element(By.ID, "highlight-tabs").click()
-
     def set_grouped_tabs(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
         self.driver.find_element(By.ID, "group-tabs").click()
-
-    def ungroup_tabs(self):
-        self.driver.switch_to.window(self._test_helper_window_handle)
-        self.driver.find_element(By.ID, "ungroup-tabs").click()
 
     def close_demo_window(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
@@ -267,6 +244,102 @@ class BrowserEnvironment:
         except Exception:
             # Dismiss the still-open native menu so it cannot bleed into the
             # next test (the browser is class-scoped and shared across tests).
+            ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
+            raise
+
+
+class ChromeBrowserEnvironment:
+    """Minimal Chrome/Chromium environment for the real-input smoke tests.
+
+    Only what the smoke paths need: real keystrokes (xdotool, after focusing the
+    window — there is no window manager under Xvfb) and native context menus
+    (Selenium right-click + AT-SPI), plus a readiness gate that pings the
+    background before tests run. No popup/helper-extension wiring.
+    """
+
+    def __init__(self, driver):
+        self.driver = driver
+
+    def focus_window(self):
+        # No window manager under Xvfb, so set X input focus on the Chromium
+        # window explicitly before injecting keys with xdotool.
+        subprocess.run(
+            ["xdotool", "search", "--sync", "--onlyvisible", "--class", "chromium",
+             "windowfocus"],
+            check=False,
+        )
+
+    def press_shortcut(self, keystroke: str):
+        self.focus_window()
+        time.sleep(0.3)
+        subprocess.run(
+            ["xdotool", "key", "--clearmodifiers", f"alt+shift+{keystroke}"],
+            check=False,
+        )
+
+    def select_all(self):
+        self.driver.find_element(By.TAG_NAME, "body").send_keys(Keys.CONTROL + "a")
+
+    def wait_until_ready(self, timeout: float = 15.0):
+        """Block until the extension's background listeners are registered.
+
+        background.ts flips globalThis.__listenersReady true at the end of its
+        synchronous module body, after every top-level addListener call; until
+        then a keyboard shortcut or context-menu click would be silently dropped.
+
+        Chrome runs the background as a service worker, which has no navigable page
+        and cannot be flag-read over CDP (attaching a debugger pauses the worker,
+        so the flag never reads true). The robust signal is a message round-trip:
+        the e2e-only 'e2e-listeners-ready' handler answers with __listenersReady,
+        and reaching that handler at all already proves the module body ran
+        (onMessage is registered in the same pass as onCommand / onClicked). The
+        smoke suite asserts the real system clipboard, the clipboard service's
+        default, so nothing here touches the e2e clipboard mock.
+        """
+        deadline = time.time() + timeout
+
+        # The extension id is the host of its service worker target (found via CDP).
+        extension_id = None
+        while time.time() < deadline and extension_id is None:
+            targets = self.driver.execute_cdp_cmd("Target.getTargets", {}).get("targetInfos", [])
+            for target in targets:
+                url = target.get("url", "")
+                if target.get("type") == "service_worker" and url.startswith("chrome-extension://"):
+                    extension_id = url.split("/")[2]
+                    break
+            if extension_id is None:
+                time.sleep(0.2)
+        if extension_id is None:
+            raise TimeoutError("extension service worker not found via CDP")
+
+        # From an extension page, poll the readiness handler until it reports the
+        # background's listeners are wired.
+        self.driver.get(f"chrome-extension://{extension_id}/dist/static/options.html")
+        ping = """
+            const cb = arguments[arguments.length - 1];
+            chrome.runtime.sendMessage({ topic: 'e2e-listeners-ready', params: {} })
+                .then(r => cb(!!(r && r.listenersReady === true)))
+                .catch(() => cb(false));
+        """
+        while time.time() < deadline:
+            try:
+                if self.driver.execute_async_script(ping) is True:
+                    return
+            except Exception:
+                pass
+            time.sleep(0.2)
+        raise TimeoutError("extension background not ready (__listenersReady not set)")
+
+    def context_menu_click(self, element, menu_label: str) -> None:
+        """Right-click *element* to open Chrome's native context menu, then invoke
+        the menu item whose accessible name is *menu_label* via AT-SPI."""
+        from selenium.webdriver.common.action_chains import ActionChains
+        from e2e_test.atspi_menu import click_menu_item
+
+        ActionChains(self.driver).context_click(element).perform()
+        try:
+            click_menu_item(menu_label)
+        except Exception:
             ActionChains(self.driver).send_keys(Keys.ESCAPE).perform()
             raise
 
@@ -310,8 +383,11 @@ def _browser_environment(force_accessibility: bool):
         if helper_extension_id is None:
             raise ValueError("Helper extension ID not found")
 
-        browser_env = BrowserEnvironment(extension_id, helper_extension_id, driver)
-        browser_env.set_mock_clipboard_mode(False)
+        browser_env = FirefoxBrowserEnvironment(extension_id, helper_extension_id, driver)
+        # Gate on background readiness (__listenersReady) before any test fires a
+        # keyboard shortcut or context-menu click. The smoke suite asserts the real
+        # system clipboard, which is the clipboard service's default.
+        browser_env.wait_until_ready()
 
         yield browser_env
     finally:
@@ -327,6 +403,50 @@ def browser_environment(request):
 @pytest.fixture(scope="class")
 def accessible_browser_environment(request):
     yield from _browser_environment(force_accessibility=True)
+
+
+def _chrome_browser_environment():
+    driver = None
+    try:
+        chromium_bin = (shutil.which("chromium")
+                        or shutil.which("chromium-browser")
+                        or shutil.which("google-chrome"))
+        chromedriver_path = shutil.which("chromedriver")
+        if chromium_bin is None or chromedriver_path is None:
+            pytest.skip("chromium/chromedriver not found on PATH")
+
+        options = ChromeOptions()
+        options.binary_location = chromium_bin
+        # Load the unpacked MV3 test extension. The second flag re-enables
+        # --load-extension, which recent Chromium disables by default.
+        options.add_argument(f"--load-extension={CHROME_EXTENSION_PATH}")
+        options.add_argument("--disable-features=DisableLoadExtensionCommandLineSwitch")
+        # Expose the browser UI (including native context menus) over AT-SPI.
+        options.add_argument("--force-renderer-accessibility")
+        # Even as the non-root `appuser`, Chromium's namespace sandbox does not
+        # work in this container (no unprivileged user namespaces), so it still
+        # needs --no-sandbox. The container itself is the isolation boundary.
+        options.add_argument("--no-sandbox")
+        options.add_argument("--no-first-run")
+        options.add_argument("--no-default-browser-check")
+        options.add_argument(f"--user-data-dir={tempfile.mkdtemp(prefix='chrome-e2e-')}")
+        # NOT headless: native context menus need a real (Xvfb) window.
+
+        service = ChromeService(executable_path=chromedriver_path)
+        driver = webdriver.Chrome(options=options, service=service)
+        env = ChromeBrowserEnvironment(driver)
+        # Wait for the background listeners to be registered (the __listenersReady
+        # proxy) instead of a blind sleep.
+        env.wait_until_ready()
+        yield env
+    finally:
+        if driver is not None:
+            driver.quit()
+
+
+@pytest.fixture(scope="class")
+def chrome_browser_environment(request):
+    yield from _chrome_browser_environment()
 
 
 def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefox):

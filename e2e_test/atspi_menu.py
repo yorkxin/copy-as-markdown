@@ -1,4 +1,7 @@
-"""AT-SPI menu helper for walking Firefox's accessibility tree.
+"""AT-SPI menu helper for walking a browser's accessibility tree.
+
+Serves both the Firefox and Chrome/Chromium suites: native context menus are not
+in the DOM, so the menu item is located on the AT-SPI bus by accessible name.
 
 This module is only ever imported inside the Docker image, where the entrypoint
 wraps pytest in ``dbus-run-session`` so a live accessibility bus is present.
@@ -35,33 +38,43 @@ def _iter_descendants(node):
         yield from _iter_descendants(child)
 
 
-def _find_firefox_app():
+_BROWSER_APP_HINTS = ("firefox", "chrom")  # "chrom" matches chrome / chromium
+
+
+def _iter_browser_apps():
+    """Yield the browser application nodes on the AT-SPI desktop.
+
+    Matches both Firefox and Chrome/Chromium so the same walk serves both suites.
+    Only one browser holds an open menu at a time, and items are matched by exact
+    accessible name, so searching every browser app is safe.
+    """
     desktop = Atspi.get_desktop(0)
     for i in range(desktop.get_child_count()):
         app = desktop.get_child_at_index(i)
-        if app is not None and "firefox" in (app.get_name() or "").lower():
-            return app
-    return None
+        if app is None:
+            continue
+        name = (app.get_name() or "").lower()
+        if any(hint in name for hint in _BROWSER_APP_HINTS):
+            yield app
 
 
 # ASSUMPTION: menu items are flat (direct MENU_ITEM nodes). When a WebExtension
-# contributes MORE THAN ONE item to a single context, Firefox groups them under
-# a "Copy as Markdown" submenu, and GTK may not realize the submenu's children
-# until it is opened. This helper does NOT open submenus, so the e2e tests use
-# single-item contexts (one extension item per right-click target) to keep menus
-# flat. If a future config exposes multiple items per context, extend this to
-# locate the submenu node (role MENU) and do_action() to open it before
-# searching for the leaf — see the plan's Spike Results "residual unknown".
+# contributes MORE THAN ONE item to a single context, both Firefox and Chrome
+# group them under a "Copy as Markdown" submenu, whose children may not be
+# realized until it is opened. This helper does NOT open submenus, so the e2e
+# tests use single-item contexts (one extension item per right-click target) to
+# keep menus flat. If a future config exposes multiple items per context, extend
+# this to locate the submenu node (role MENU) and do_action() to open it before
+# searching for the leaf.
 def find_menu_item(name: str, timeout: float = 5.0) -> "Atspi.Accessible":
-    """Poll Firefox's accessibility tree for a menu item with the given name.
+    """Poll the browser's accessibility tree for a menu item with the given name.
 
     Raises ``TimeoutError`` if no matching menu item is found within *timeout*
     seconds.
     """
     deadline = time.time() + timeout
     while time.time() < deadline:
-        app = _find_firefox_app()
-        if app is not None:
+        for app in _iter_browser_apps():
             for node in _iter_descendants(app):
                 try:
                     if node.get_role() == _MENU_ITEM_ROLE and node.get_name() == name:

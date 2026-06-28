@@ -48,6 +48,19 @@ const builds = [
   },
 ];
 
+// Keyboard shortcuts the Selenium e2e suite drives with real Alt+Shift+<key>
+// keystrokes (see e2e_test/keyboard_shortcuts.py ALL_SHORTCUTS). We inject them as
+// manifest `suggested_key` so the browser binds them at load time. Chrome has no
+// runtime commands.update() API, so this is the only way to give Chrome a real,
+// xdotool-triggerable binding; Firefox honours suggested_key too, which lets the
+// Firefox suite skip its commands.update() dance. Keys MUST match ALL_SHORTCUTS.
+const E2E_SUGGESTED_KEYS = {
+  'selection-as-markdown': 'Alt+Shift+0',
+  'current-tab-link': 'Alt+Shift+2',
+  'current-tab-custom-format-1': 'Alt+Shift+3',
+  'all-tabs-link-as-list': 'Alt+Shift+8',
+};
+
 console.log('Building test extensions...');
 
 for (const buildConfig of builds) {
@@ -142,8 +155,27 @@ function rewriteManifest(sourceManifestPath, targetManifestPath, options) {
     }
   }
 
+  injectSuggestedKeys(manifest);
+
   fs.writeFileSync(targetManifestPath, JSON.stringify(manifest, null, 2));
 
   console.log('    Required:', manifest.permissions.join(', '));
   console.log('    Optional:', manifest.optional_permissions?.join(', ') || 'None');
+}
+
+/**
+ * Add `suggested_key` bindings to the commands the Selenium e2e suite triggers,
+ * so the browser registers them at load time (no runtime API needed).
+ * @param {{ commands?: Record<string, { suggested_key?: object }> }} manifest
+ */
+function injectSuggestedKeys(manifest) {
+  if (!manifest.commands) {
+    return;
+  }
+  for (const [name, accelerator] of Object.entries(E2E_SUGGESTED_KEYS)) {
+    if (manifest.commands[name]) {
+      manifest.commands[name].suggested_key = { default: accelerator };
+      console.log(`    - suggested_key ${accelerator} → ${name}`);
+    }
+  }
 }

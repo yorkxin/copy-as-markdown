@@ -47,6 +47,14 @@ RUN set -eux; \
       | tar xz -C /usr/local/bin/ \
     && chmod +x /usr/local/bin/geckodriver
 
+# Chromium + matching driver.
+# Debian's chromium-driver is version-matched to the chromium package, 
+# so no runtime Selenium Manager driver download is needed.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      chromium \
+      chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
 # xvfb: headless display   xauth: required by xvfb-run   xsel: real clipboard
 # xdotool: X11 key injection for extension keyboard shortcuts
 # at-spi2-core + dbus: accessibility bus for native context-menu testing
@@ -82,5 +90,14 @@ COPY . .
 
 COPY docker/selenium-ci/run-selenium.sh /usr/local/bin/run-selenium.sh
 RUN chmod +x /usr/local/bin/run-selenium.sh
+
+# Drop to a non-root user for the test run (defense in depth). Created after all
+# root-only install steps; /workspace is handed over so the runtime
+# `npm run test:e2e:build` can write the test extensions. (Chromium still needs
+# --no-sandbox even non-root — this container does not permit its namespace
+# sandbox; see e2e_test/conftest.py.)
+RUN useradd --create-home --uid 1000 appuser \
+    && chown -R appuser:appuser /workspace
+USER appuser
 
 ENTRYPOINT ["/usr/local/bin/run-selenium.sh"]

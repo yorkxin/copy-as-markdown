@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-from e2e_test.conftest import BrowserEnvironment, FixtureServer
+from e2e_test.conftest import FirefoxBrowserEnvironment, FixtureServer
 from e2e_test.helpers import Clipboard
 
 # These tests drive Firefox's native GTK context menu through the AT-SPI
@@ -25,12 +25,12 @@ class TestContextMenu:
     # Each test targets a single-item context (one extension menu item per
     # right-click target) so the native menu stays flat. See atspi_menu.py for
     # why submenu nesting would require additional traversal logic.
-    browser: Optional[BrowserEnvironment] = None
+    browser: Optional[FirefoxBrowserEnvironment] = None
     fixture_server: Optional[FixtureServer] = None
 
     @pytest.fixture(scope="class", autouse=True)
     @classmethod
-    def setup_browser(cls, request, accessible_browser_environment: BrowserEnvironment, fixture_server: FixtureServer):
+    def setup_browser(cls, request, accessible_browser_environment: FirefoxBrowserEnvironment, fixture_server: FixtureServer):
         cls.browser = accessible_browser_environment
         cls.fixture_server = fixture_server
         yield
