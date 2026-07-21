@@ -42,7 +42,7 @@
     "mustache": "^4.2.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^5.4.1",
+    "@antfu/eslint-config": "^9.1.0",
     "@playwright/test": "^1.61.0",
     "@truto/turndown-plugin-gfm": "^1.0.2",
     "@types/chrome": "^0.1.31",
@@ -54,7 +54,7 @@
     "@vitest/ui": "^4.1.9",
     "bulma": "^1.0.0",
     "esbuild": "^0.28.0",
-    "eslint": "^9.37.0",
+    "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "http-server": "^14.1.1",
     "playwright": "^1.61.0",
