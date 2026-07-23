@@ -49,7 +49,7 @@
     "@types/firefox-webext-browser": "^143.0.0",
     "@types/mustache": "^4.2.6",
     "@types/turndown": "^5.0.5",
-    "@vitest/browser": "^4.1.9",
+    "@vitest/browser": "^4.1.10",
     "@vitest/browser-playwright": "^4.1.9",
     "@vitest/ui": "^4.1.9",
     "bulma": "^1.0.0",
