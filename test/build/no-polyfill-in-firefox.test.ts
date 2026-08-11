@@ -20,8 +20,7 @@ const UI_ENTRIES = [
   'options-permissions',
   'permissions',
   'custom-format',
-  'check-custom-formats',
-  'built-in-style-options',
+  'menu-commands',
 ];
 
 function htmlFiles(staticDir: string): string[] {

@@ -1,45 +1,32 @@
 /**
  * E2E tests for built-in style visibility toggles.
  *
- * These checkboxes live on the single-link and multiple-links option pages
- * and control which built-in commands appear in the popup UI.
+ * These checkboxes live on the Menu Commands options page and control which
+ * built-in commands appear in the popup UI.
  */
 
 import { expect, test } from '../fixtures';
 import type { Page } from '@playwright/test';
 
-async function disableBuiltIns(page: Page, extensionId: string): Promise<void> {
-  const singleLinkUrl = `chrome-extension://${extensionId}/dist/static/single-link.html`;
-  await page.goto(singleLinkUrl);
-  await page.waitForLoadState('networkidle');
-  await page.locator('input[data-built-in-style="singleLink"]').uncheck();
-  await page.waitForTimeout(100);
+const BuiltInStyles = ['singleLink', 'tabLinkList', 'tabTaskList', 'tabTitleList', 'tabUrlList'];
 
-  const multiLinkUrl = `chrome-extension://${extensionId}/dist/static/multiple-links.html`;
-  await page.goto(multiLinkUrl);
+async function setBuiltIns(page: Page, extensionId: string, visible: boolean): Promise<void> {
+  await page.goto(`chrome-extension://${extensionId}/dist/static/menu-commands.html`);
   await page.waitForLoadState('networkidle');
-  await page.locator('input[data-built-in-style="tabLinkList"]').uncheck();
-  await page.locator('input[data-built-in-style="tabTaskList"]').uncheck();
-  await page.locator('input[data-built-in-style="tabTitleList"]').uncheck();
-  await page.locator('input[data-built-in-style="tabUrlList"]').uncheck();
+
+  for (const style of BuiltInStyles) {
+    const checkbox = page.locator(`input[data-built-in-style="${style}"]`);
+    await (visible ? checkbox.check() : checkbox.uncheck());
+  }
   await page.waitForTimeout(200);
 }
 
-async function enableBuiltIns(page: Page, extensionId: string): Promise<void> {
-  const singleLinkUrl = `chrome-extension://${extensionId}/dist/static/single-link.html`;
-  await page.goto(singleLinkUrl);
-  await page.waitForLoadState('networkidle');
-  await page.locator('input[data-built-in-style="singleLink"]').check();
-  await page.waitForTimeout(100);
+async function disableBuiltIns(page: Page, extensionId: string): Promise<void> {
+  await setBuiltIns(page, extensionId, false);
+}
 
-  const multiLinkUrl = `chrome-extension://${extensionId}/dist/static/multiple-links.html`;
-  await page.goto(multiLinkUrl);
-  await page.waitForLoadState('networkidle');
-  await page.locator('input[data-built-in-style="tabLinkList"]').check();
-  await page.locator('input[data-built-in-style="tabTaskList"]').check();
-  await page.locator('input[data-built-in-style="tabTitleList"]').check();
-  await page.locator('input[data-built-in-style="tabUrlList"]').check();
-  await page.waitForTimeout(200);
+async function enableBuiltIns(page: Page, extensionId: string): Promise<void> {
+  await setBuiltIns(page, extensionId, true);
 }
 
 test.describe('Built-in style visibility', () => {

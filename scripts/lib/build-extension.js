@@ -13,8 +13,7 @@ const sharedEntries = [
   'src/ui/options-permissions.ts',
   'src/ui/permissions.ts',
   'src/ui/custom-format.ts',
-  'src/ui/check-custom-formats.ts',
-  'src/ui/built-in-style-options.ts',
+  'src/ui/menu-commands.ts',
 ];
 
 function entryPointsFor(target) {

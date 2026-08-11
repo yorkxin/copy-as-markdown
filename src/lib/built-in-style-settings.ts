@@ -58,4 +58,9 @@ export default {
   async set(key: BuiltInStyleKey, value: boolean): Promise<void> {
     await browser.storage.sync.set({ [StorageKeys[key]]: value });
   },
+
+  /** Drop every stored override so all built-in commands fall back to visible. */
+  async reset(): Promise<void> {
+    await browser.storage.sync.remove(Object.values(StorageKeys));
+  },
 };

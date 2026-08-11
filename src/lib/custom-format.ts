@@ -4,7 +4,13 @@ import type { TabList } from './tabs.js';
 // disable HTML escape
 Mustache.escape = (text: string) => text;
 
-export type Context = 'single-link' | 'multiple-links';
+/** Every context that owns custom formats, in options-navigation order. */
+export const Contexts = ['single-link', 'multiple-links'] as const;
+
+export type Context = typeof Contexts[number];
+
+/** The fixed set of custom format slots each context offers. */
+export const Slots = ['1', '2', '3', '4', '5'] as const;
 
 export interface RenderInputLink {
   title: string;

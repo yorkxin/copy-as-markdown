@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Copy as Markdown - Options</title>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="../vendor/bulma.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container section is-max-desktop">
+  <h1 class="title">Copy as Markdown</h1>
+  <div id="flash-error" data-testid="flash-error" class="notification is-danger is-hidden">
+    <p></p>
+  </div>
+  <div class="columns">
+    <div class="column is-narrow" id="menu">
+      <aside class="menu">
+        <p class="menu-label">General</p>
+        <ul class="menu-list">
+          <li><a href="options.html">Markdown Style</a></li>
+          <li><a href="options-permissions.html">Permissions</a></li>
+          <p class="menu-label">Formats</p>
+          <li>
+            <a href="multiple-links.html">Multiple Links</a>
+            <ul class="menu-list" data-menu-custom-format-context="multiple-links">
+              <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=multiple-links&slot=1">Custom Format 1</a></li>
+              <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=multiple-links&slot=2">Custom Format 2</a></li>
+              <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=multiple-links&slot=3">Custom Format 3</a></li>
+              <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=multiple-links&slot=4">Custom Format 4</a></li>
+              <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=multiple-links&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+          <li>
+            <a href="single-link.html">Single Link</a>
+            <ul class="menu-list" data-menu-custom-format-context="single-link">
+              <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=single-link&slot=1">Custom Format 1</a></li>
+              <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=single-link&slot=2">Custom Format 2</a></li>
+              <li><a data-menu-custom-format-slot="3" href="custom-format.html?context=single-link&slot=3">Custom Format 3</a></li>
+              <li><a data-menu-custom-format-slot="4" href="custom-format.html?context=single-link&slot=4">Custom Format 4</a></li>
+              <li><a data-menu-custom-format-slot="5" href="custom-format.html?context=single-link&slot=5">Custom Format 5</a></li>
+            </ul>
+          </li>
+        </ul>
+        <p class="menu-label">Others</p>
+        <ul class="menu-list">
+          <li><a class="is-active" href="menu-commands.html">Menu Commands</a></li>
+          <li><a href="custom-format-help.html">Help & Examples</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </aside>
+    </div>
+    <div class="column">
+      <div class="box content">
+        <h2 class="title is-3">Menu Commands</h2>
+        <p>Choose what items to show in the popup menu and context menus.</p>
+        <p class="help">Disabling a built-in command hides it from the popup. On Firefox, these choices also apply to context menus.</p>
+
+        <form id="form-menu-commands">
+          <div class="field">
+            <label class="label">Single Link</label>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="builtin-singleLink" data-built-in-style="singleLink" />
+                Built-in: Copy page or link as Markdown
+              </label>
+              <p class="help ml-5">Turns off the default page/link options</p>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-single-link-1" data-custom-format-slot="1" data-custom-format-context="single-link" />
+                <span data-custom-format-label>Copy as Custom Format 1</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-single-link-2" data-custom-format-slot="2" data-custom-format-context="single-link" />
+                <span data-custom-format-label>Copy as Custom Format 2</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-single-link-3" data-custom-format-slot="3" data-custom-format-context="single-link" />
+                <span data-custom-format-label>Copy as Custom Format 3</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-single-link-4" data-custom-format-slot="4" data-custom-format-context="single-link" />
+                <span data-custom-format-label>Copy as Custom Format 4</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-single-link-5" data-custom-format-slot="5" data-custom-format-context="single-link" />
+                <span data-custom-format-label>Copy as Custom Format 5</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Multiple Links</label>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="builtin-tabLinkList" data-built-in-style="tabLinkList" />
+                Built-in: Copy tab links as a list
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="builtin-tabTaskList" data-built-in-style="tabTaskList" />
+                Built-in: Copy tab links as a task list
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="builtin-tabTitleList" data-built-in-style="tabTitleList" />
+                Built-in: Copy tab titles
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="builtin-tabUrlList" data-built-in-style="tabUrlList" />
+                Built-in: Copy tab URLs
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-multiple-links-1" data-custom-format-slot="1" data-custom-format-context="multiple-links" />
+                <span data-custom-format-label>Copy as Custom Format 1</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-multiple-links-2" data-custom-format-slot="2" data-custom-format-context="multiple-links" />
+                <span data-custom-format-label>Copy as Custom Format 2</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-multiple-links-3" data-custom-format-slot="3" data-custom-format-context="multiple-links" />
+                <span data-custom-format-label>Copy as Custom Format 3</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-multiple-links-4" data-custom-format-slot="4" data-custom-format-context="multiple-links" />
+                <span data-custom-format-label>Copy as Custom Format 4</span>
+              </label>
+            </div>
+            <div class="control">
+              <label class="checkbox">
+                <input type="checkbox" data-testid="custom-format-multiple-links-5" data-custom-format-slot="5" data-custom-format-context="multiple-links" />
+                <span data-custom-format-label>Copy as Custom Format 5</span>
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="field is-grouped">
+        <div class="control">
+          <button id="reset" data-testid="reset-menu-visibility" type="button" class="button is-outlined is-danger">Restore Default Menu Visibility</button>
+        </div>
+      </div>
+      <p class="help">Restores the default menu composition: every built-in command visible and every custom format hidden. Custom format names and templates are left untouched.</p>
+    </div>
+  </div>
+</div>
+<script src="../ui/menu-commands.js" type="module"></script>
+</body>
+</html>
