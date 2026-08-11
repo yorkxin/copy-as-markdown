@@ -338,6 +338,42 @@ describe('contextMenuService', () => {
       expect(createMock).toHaveBeenCalledWith(expect.objectContaining({ id: 'highlighted-tabs-url-as-list' }));
     });
 
+    it('should create no built-in tab menus when all are disabled', async () => {
+      const createMock = vi.fn(() => { });
+      const mockMenusAPI: ContextMenusAPI = {
+        create: createMock,
+        remove: vi.fn(async () => { }),
+        removeAll: vi.fn(async () => { }),
+      };
+
+      const mockFormatsProvider: CustomFormatsListProvider = {
+        list: vi.fn(async () => []),
+      };
+
+      const builtIns = makeBuiltInProvider({
+        singleLink: false,
+        tabLinkList: false,
+        tabTaskList: false,
+        tabTitleList: false,
+        tabUrlList: false,
+      });
+      const service = createContextMenuService(mockMenusAPI, mockFormatsProvider, builtIns);
+
+      await service.createAll();
+
+      const createdIds = createMock.mock.calls.map(
+        ([args]: [browser.menus._CreateCreateProperties]) => args.id,
+      );
+      expect(createdIds).not.toContain('all-tabs-link-as-list');
+      expect(createdIds).not.toContain('all-tabs-link-as-task-list');
+      expect(createdIds).not.toContain('all-tabs-title-as-list');
+      expect(createdIds).not.toContain('all-tabs-url-as-list');
+      expect(createdIds).not.toContain('highlighted-tabs-link-as-list');
+      expect(createdIds).not.toContain('highlighted-tabs-link-as-task-list');
+      expect(createdIds).not.toContain('highlighted-tabs-title-as-list');
+      expect(createdIds).not.toContain('highlighted-tabs-url-as-list');
+    });
+
     it('should not include a separator as the first item in "tab" context', async () => {
       const calls: browser.menus._CreateCreateProperties[] = [];
       const createMock = vi.fn((args: browser.menus._CreateCreateProperties) => {

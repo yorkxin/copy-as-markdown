@@ -1,5 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import BuiltInStyleSettings from '../src/lib/built-in-style-settings';
 import MenuVisibilitySettings from '../src/lib/menu-visibility-settings';
+import CustomFormatsStorage from '../src/storage/custom-formats-storage';
 import type { FakeSyncStorage } from './support/fake-sync-storage';
 import { createFakeSyncStorage } from './support/fake-sync-storage';
 
@@ -145,6 +147,55 @@ describe('menu visibility settings', () => {
       await MenuVisibilitySettings.reset();
 
       expect(storage.data['custom_formats.updated_at']).toEqual(expect.any(Number));
+    });
+  });
+
+  describe('context menu refresh', () => {
+    // src/background.ts rebuilds the context menus only when a storage change
+    // names a built-in style key or the custom formats' updated_at key. Every
+    // write this page makes must land on one of those, or the menus go stale.
+    const WatchedKeys = [...BuiltInStyleSettings.keys, CustomFormatsStorage.KeyOfLastUpdate()];
+
+    function recordWrittenKeys(): () => string[] {
+      const written: string[] = [];
+      const { set, remove } = browser.storage.sync;
+
+      vi.spyOn(browser.storage.sync, 'set').mockImplementation(async (items) => {
+        written.push(...Object.keys(items as Record<string, unknown>));
+        await set(items);
+      });
+      vi.spyOn(browser.storage.sync, 'remove').mockImplementation(async (keys) => {
+        written.push(...(Array.isArray(keys) ? keys : [keys]));
+        await remove(keys);
+      });
+
+      return () => written;
+    }
+
+    it('setting a built-in writes a key the refresh watches', async () => {
+      const written = recordWrittenKeys();
+
+      await MenuVisibilitySettings.setBuiltIn('tabTitleList', false);
+
+      expect(written().some(key => WatchedKeys.includes(key))).toBe(true);
+    });
+
+    it('setting a custom format writes a key the refresh watches', async () => {
+      const written = recordWrittenKeys();
+
+      await MenuVisibilitySettings.setCustomFormat('single-link', '1', true);
+
+      expect(written().some(key => WatchedKeys.includes(key))).toBe(true);
+    });
+
+    it('reset writes keys the refresh watches for both kinds', async () => {
+      const written = recordWrittenKeys();
+
+      await MenuVisibilitySettings.reset();
+
+      const keys = written();
+      expect(BuiltInStyleSettings.keys.every(key => keys.includes(key))).toBe(true);
+      expect(keys).toContain(CustomFormatsStorage.KeyOfLastUpdate());
     });
   });
 });

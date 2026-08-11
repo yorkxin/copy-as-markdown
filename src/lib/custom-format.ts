@@ -4,7 +4,7 @@ import type { TabList } from './tabs.js';
 // disable HTML escape
 Mustache.escape = (text: string) => text;
 
-/** Every context that owns custom formats, in options-navigation order. */
+/** Every context that owns custom formats, in Menu Commands form order. */
 export const Contexts = ['single-link', 'multiple-links'] as const;
 
 export type Context = typeof Contexts[number];

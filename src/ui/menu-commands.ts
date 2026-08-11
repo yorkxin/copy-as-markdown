@@ -4,22 +4,7 @@ import type CustomFormat from '../lib/custom-format.js';
 import type { Context } from '../lib/custom-format.js';
 import type { MenuVisibility } from '../lib/menu-visibility-settings.js';
 import MenuVisibilitySettings from '../lib/menu-visibility-settings.js';
-
-function showFlash(message: string): void {
-  const flash = document.getElementById('flash-error');
-  if (!flash) return;
-  flash.classList.remove('is-hidden');
-  const p = flash.querySelector('p');
-  if (p) p.textContent = message;
-}
-
-function hideFlash(): void {
-  const flash = document.getElementById('flash-error');
-  if (!flash) return;
-  flash.classList.add('is-hidden');
-  const p = flash.querySelector('p');
-  if (p) p.textContent = '';
-}
+import { hideFlash, showFlash } from './flash.js';
 
 function builtInCheckboxes(): NodeListOf<HTMLInputElement> {
   return document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-built-in-style]');
@@ -60,15 +45,15 @@ async function loadVisibility(): Promise<void> {
 }
 
 /**
- * Put the checkbox back in sync with what is actually persisted. Re-reading
- * rather than flipping the checkbox back keeps the UI honest even when the
- * failed write raced another change.
+ * Put the page back in sync with what is actually persisted after a write
+ * fails. Re-reading rather than flipping the checkbox back keeps the UI honest
+ * even when the failed write raced another change or applied only in part.
  */
 async function rollback(): Promise<void> {
   try {
     await loadVisibility();
   } catch (error) {
-    console.error('failed to reload menu visibility after a failed save', error);
+    console.error('failed to reload menu visibility after a failed write', error);
   }
 }
 
@@ -115,6 +100,9 @@ function wireReset(): void {
       hideFlash();
     } catch (error) {
       console.error('failed to restore default menu visibility', error);
+      // A reset is two writes, so a failure can leave one of them applied.
+      // Re-read so the page shows the composition that actually persisted.
+      await rollback();
       showFlash('Failed to reset settings. Please try again.');
     }
   });

@@ -185,4 +185,27 @@ describe('menu commands UI', () => {
 
     await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
+
+  it('shows what a half-finished reset actually persisted', async () => {
+    // reset() is two writes; when the second one fails the built-ins are
+    // already cleared, so the page must re-read rather than keep its old view.
+    menuVisibilityMock.getAll.mockResolvedValue({
+      builtIn: { ...AllBuiltInsVisible, tabLinkList: false },
+      customFormats: customFormats({ 'single-link/1': { showInMenus: true } }),
+    });
+
+    await startPage();
+    await expect.element(page.getByTestId('builtin-tabLinkList')).not.toBeChecked();
+
+    menuVisibilityMock.reset.mockRejectedValueOnce(new Error('fail'));
+    menuVisibilityMock.getAll.mockResolvedValue({
+      builtIn: AllBuiltInsVisible,
+      customFormats: customFormats({ 'single-link/1': { showInMenus: true } }),
+    });
+    await page.getByTestId('reset-menu-visibility').click();
+
+    await expect.element(page.getByTestId('flash-error')).toBeVisible();
+    await expect.element(page.getByTestId('builtin-tabLinkList')).toBeChecked();
+    await expect.element(page.getByTestId('custom-format-single-link-1')).toBeChecked();
+  });
 });

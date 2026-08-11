@@ -12,6 +12,7 @@ import MultipleLinksSettings from '../lib/multiple-links-settings.js';
 import type { CodeBlockStyle } from '../lib/selection-settings.js';
 import SelectionSettings from '../lib/selection-settings.js';
 import Settings from '../lib/settings.js';
+import { hideFlash, showFlash } from './flash.js';
 import type { PermissionStatus } from './permissions-ui.js';
 import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
 
@@ -27,22 +28,6 @@ const MarkerOfRadioValue: Record<string, BulletListMarker> = {
 const RadioValueOfMarker = Object.fromEntries(
   Object.entries(MarkerOfRadioValue).map(([radioValue, marker]) => [marker, radioValue]),
 ) as Record<BulletListMarker, string>;
-
-function showFlash(message: string): void {
-  const flash = document.getElementById('flash-error');
-  if (!flash) return;
-  flash.classList.remove('is-hidden');
-  const p = flash.querySelector('p');
-  if (p) p.textContent = message;
-}
-
-function hideFlash(): void {
-  const flash = document.getElementById('flash-error');
-  if (!flash) return;
-  flash.classList.add('is-hidden');
-  const p = flash.querySelector('p');
-  if (p) p.textContent = '';
-}
 
 function disableTabGroupIndentation(permissionStatuses: PermissionStatus): void {
   disableUiIfPermissionsNotGranted(permissionStatuses);
