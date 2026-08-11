@@ -23,6 +23,8 @@ const multipleLinksSettingsMock = {
 
 const readMarkdownSettingsMock = vi.fn();
 const loadMarkdownSettingsMock = vi.fn();
+const setSharedBulletListMarkerMock = vi.fn();
+const resetMarkdownSettingsMock = vi.fn();
 
 const loadPermissionsMock = vi.fn();
 const PermissionStatusValue = {
@@ -48,6 +50,8 @@ vi.mock('../../src/lib/markdown-settings.js', () => ({
   markdownSettingsKeys: [],
   readMarkdownSettings: readMarkdownSettingsMock,
   loadMarkdownSettings: loadMarkdownSettingsMock,
+  setSharedBulletListMarker: setSharedBulletListMarkerMock,
+  resetMarkdownSettings: resetMarkdownSettingsMock,
 }));
 
 // Mock the permissions UI module
@@ -147,31 +151,29 @@ describe('options UI - with permissions granted', () => {
     await expect.element(flash).not.toBeVisible();
   });
 
-  it('writes the bullet list marker to both contexts while they share one control', async () => {
-    selectionSettingsMock.setBulletListMarker.mockClear();
-    selectionSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
-    multipleLinksSettingsMock.setBulletListMarker.mockClear();
-    multipleLinksSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
+  it('writes the bullet list marker for both contexts in one save', async () => {
+    setSharedBulletListMarkerMock.mockClear();
+    setSharedBulletListMarkerMock.mockResolvedValue(undefined);
 
     const plusRadio = page.getByRole('radio', { name: /Plus Signs/ });
     await expect.element(plusRadio).toBeInTheDocument();
 
     await plusRadio.click();
 
-    expect(selectionSettingsMock.setBulletListMarker).toHaveBeenCalledWith('+');
-    expect(multipleLinksSettingsMock.setBulletListMarker).toHaveBeenCalledWith('+');
+    expect(setSharedBulletListMarkerMock).toHaveBeenCalledWith('+');
+    expect(setSharedBulletListMarkerMock).toHaveBeenCalledTimes(1);
   });
 
   it('shows flash on save failure', async () => {
-    selectionSettingsMock.setBulletListMarker.mockClear();
-    selectionSettingsMock.setBulletListMarker.mockRejectedValueOnce(new Error('fail'));
+    setSharedBulletListMarkerMock.mockClear();
+    setSharedBulletListMarkerMock.mockRejectedValueOnce(new Error('fail'));
 
     const dashRadio = page.getByRole('radio', { name: /Dashes/ });
     await expect.element(dashRadio).toBeInTheDocument();
 
     await dashRadio.click();
 
-    expect(selectionSettingsMock.setBulletListMarker).toHaveBeenCalled();
+    expect(setSharedBulletListMarkerMock).toHaveBeenCalled();
 
     const flash = page.getByTestId('flash-error');
     await expect.element(flash).toBeVisible();
@@ -201,17 +203,13 @@ describe('options UI - with permissions granted', () => {
     expect(multipleLinksSettingsMock.setTabGroupIndentation).toHaveBeenCalledWith('spaces');
   });
 
-  it('resets every context the combined page still owns', async () => {
-    settingsMock.reset.mockClear().mockResolvedValue(undefined);
-    selectionSettingsMock.reset.mockClear().mockResolvedValue(undefined);
-    multipleLinksSettingsMock.reset.mockClear().mockResolvedValue(undefined);
+  it('resets every context the combined page still owns, in one removal', async () => {
+    resetMarkdownSettingsMock.mockClear().mockResolvedValue(undefined);
 
     const resetButton = page.getByRole('button', { name: /Restore to Default/ });
     await resetButton.click();
 
-    expect(settingsMock.reset).toHaveBeenCalled();
-    expect(selectionSettingsMock.reset).toHaveBeenCalled();
-    expect(multipleLinksSettingsMock.reset).toHaveBeenCalled();
+    expect(resetMarkdownSettingsMock).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -1,7 +1,5 @@
 import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
-import MultipleLinksSettings from '../lib/multiple-links-settings.js';
-import SelectionSettings from '../lib/selection-settings.js';
-import Settings from '../lib/settings.js';
+import { resetMarkdownSettings } from '../lib/markdown-settings.js';
 import type { PermissionStatus } from './permissions-ui.js';
 import { hideUiIfPermissionsNotGranted, loadPermissions, PermissionStatusValue } from './permissions-ui.js';
 
@@ -91,9 +89,7 @@ const revokeAllButton = document.querySelector('#revoke-all');
 if (revokeAllButton) {
   revokeAllButton.addEventListener('click', async () => {
     // Unchanged behavior from when one Settings object owned every preference.
-    await Settings.reset();
-    await SelectionSettings.reset();
-    await MultipleLinksSettings.reset();
+    await resetMarkdownSettings();
     const toBeRemoved = Array.from(permissionStatuses.entries())
       .filter(([, stat]) => stat !== PermissionStatusValue.Unavailable)
       .map(([perm]) => perm) as browser._manifest.OptionalPermission[];

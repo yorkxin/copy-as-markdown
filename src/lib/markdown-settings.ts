@@ -1,8 +1,9 @@
+import type { BulletListMarker } from './markdown.js';
 import { migrateMarkdownSettings } from './markdown-settings-migration.js';
 import type { MultipleLinksMarkdownSettings } from './multiple-links-settings.js';
-import MultipleLinksSettings from './multiple-links-settings.js';
+import MultipleLinksSettings, { MultipleLinksSettingKeys } from './multiple-links-settings.js';
 import type { SelectionMarkdownSettings } from './selection-settings.js';
-import SelectionSettings from './selection-settings.js';
+import SelectionSettings, { SelectionSettingKeys } from './selection-settings.js';
 import Settings from './settings.js';
 
 export interface MarkdownSettings {
@@ -34,6 +35,33 @@ export async function readMarkdownSettings(): Promise<MarkdownSettings> {
     selection,
     multipleLinks,
   };
+}
+
+/**
+ * Point both contexts at one bullet-list marker, in a single write.
+ *
+ * Transitional: the combined settings page still presents one Unordered List
+ * Character control for Copy Selection and Multiple Links. Two sequential
+ * writes could half-succeed and leave the contexts permanently disagreeing
+ * behind a single radio group, so they move together — exactly as atomically
+ * as they did when one storage key backed the control.
+ */
+export async function setSharedBulletListMarker(marker: BulletListMarker): Promise<void> {
+  await browser.storage.sync.set({
+    [SelectionSettingKeys.bulletListMarker]: marker,
+    [MultipleLinksSettingKeys.bulletListMarker]: marker,
+  });
+}
+
+/**
+ * Restore every Markdown setting the combined page owns, in a single removal.
+ *
+ * Transitional for the same reason as `setSharedBulletListMarker`: one visible
+ * "Restore to Default" button must not be able to reset some contexts and not
+ * others. Per-page resets replace this.
+ */
+export async function resetMarkdownSettings(): Promise<void> {
+  await browser.storage.sync.remove(markdownSettingsKeys);
 }
 
 /**

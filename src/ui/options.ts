@@ -1,7 +1,13 @@
 import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
 import type { BulletListMarker, TabGroupIndentationStyle } from '../lib/markdown.js';
 import type { MarkdownSettings } from '../lib/markdown-settings.js';
-import { loadMarkdownSettings, markdownSettingsKeys, readMarkdownSettings } from '../lib/markdown-settings.js';
+import {
+  loadMarkdownSettings,
+  markdownSettingsKeys,
+  readMarkdownSettings,
+  resetMarkdownSettings,
+  setSharedBulletListMarker,
+} from '../lib/markdown-settings.js';
 import MultipleLinksSettings from '../lib/multiple-links-settings.js';
 import type { CodeBlockStyle } from '../lib/selection-settings.js';
 import SelectionSettings from '../lib/selection-settings.js';
@@ -10,8 +16,8 @@ import type { PermissionStatus } from './permissions-ui.js';
 import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
 
 // This transitional page still presents one Unordered List Character control for
-// both Copy Selection and Multiple Links, so it reads one and writes both. The
-// dedicated per-context pages replace it later.
+// both Copy Selection and Multiple Links, so it reads one and writes both in a
+// single storage write. The dedicated per-context pages replace it later.
 const MarkerOfRadioValue: Record<string, BulletListMarker> = {
   dash: '-',
   asterisk: '*',
@@ -117,8 +123,7 @@ if (formUnorderedList) {
       const target = event.target as HTMLInputElement;
       const marker = MarkerOfRadioValue[target.value];
       if (!marker) return;
-      await SelectionSettings.setBulletListMarker(marker);
-      await MultipleLinksSettings.setBulletListMarker(marker);
+      await setSharedBulletListMarker(marker);
       hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
@@ -145,9 +150,7 @@ const resetButton = document.querySelector('#reset');
 if (resetButton) {
   resetButton.addEventListener('click', async () => {
     try {
-      await Settings.reset();
-      await SelectionSettings.reset();
-      await MultipleLinksSettings.reset();
+      await resetMarkdownSettings();
       await loadSettings();
       hideFlash();
     } catch (error) {
