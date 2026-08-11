@@ -137,6 +137,24 @@ describe('markdown settings', () => {
       expect(storage.data['multipleLinks.markdown.bulletListMarker']).toBe('*');
     });
 
+    it('does not let a legacy value retained by a failed cleanup resurrect', async () => {
+      storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
+      storage.failNextRemove = new Error('storage unavailable');
+      await loadMarkdownSettings();
+      // The failed cleanup left the legacy key in place for a later retry.
+      expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBe('asterisk');
+
+      await resetMarkdownSettings();
+
+      // The next startup must not migrate the old value back over the defaults.
+      expect(await loadMarkdownSettings()).toEqual({
+        alwaysEscapeLinkBrackets: false,
+        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced' },
+        multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
+      });
+      expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBeUndefined();
+    });
+
     it('leaves custom formats alone', async () => {
       storage.data['custom_formats.multiple-links.1.name'] = 'My Format';
       storage.data['custom_formats.multiple-links.1.template'] = '{{title}}';

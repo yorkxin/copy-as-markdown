@@ -1,5 +1,5 @@
 import type { BulletListMarker } from './markdown.js';
-import { migrateMarkdownSettings } from './markdown-settings-migration.js';
+import { LegacyMarkdownSettingKeys, migrateMarkdownSettings } from './markdown-settings-migration.js';
 import type { MultipleLinksMarkdownSettings } from './multiple-links-settings.js';
 import MultipleLinksSettings, { MultipleLinksSettingKeys } from './multiple-links-settings.js';
 import type { SelectionMarkdownSettings } from './selection-settings.js';
@@ -59,9 +59,16 @@ export async function setSharedBulletListMarker(marker: BulletListMarker): Promi
  * Transitional for the same reason as `setSharedBulletListMarker`: one visible
  * "Restore to Default" button must not be able to reset some contexts and not
  * others. Per-page resets replace this.
+ *
+ * Legacy keys go too. A migration whose cleanup failed leaves them behind, and
+ * a reset that spared them would be undone by the next startup re-migrating
+ * the old values over the defaults the user just asked for.
  */
 export async function resetMarkdownSettings(): Promise<void> {
-  await browser.storage.sync.remove(markdownSettingsKeys);
+  await browser.storage.sync.remove([
+    ...markdownSettingsKeys,
+    ...Object.values(LegacyMarkdownSettingKeys),
+  ]);
 }
 
 /**
