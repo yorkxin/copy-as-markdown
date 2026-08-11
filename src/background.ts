@@ -1,6 +1,10 @@
 import './ensure-browser-global.js'; // MUST be first — defines `browser` for the service worker.
 import Settings from './lib/settings.js';
-import type { CodeBlockStyle } from './lib/settings.js';
+import type { CodeBlockStyle } from './lib/selection-settings.js';
+import SelectionSettings from './lib/selection-settings.js';
+import MultipleLinksSettings from './lib/multiple-links-settings.js';
+import { migrateMarkdownSettings } from './lib/markdown-settings-migration.js';
+import type { BulletListMarker } from './lib/markdown.js';
 import Markdown from './lib/markdown.js';
 import { Bookmarks } from './bookmarks.js';
 import BuiltInStyleSettings from './lib/built-in-style-settings.js';
@@ -29,9 +33,11 @@ import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-h
 import type { KeyboardCommandId } from './contracts/commands.js';
 import type { PendingPopupFeedbackCode, RuntimeMessage } from './contracts/messages.js';
 
-// Initialize markdown and bookmarks
+// Initialize markdown and bookmarks. `markdownInstance` renders link and tab
+// exports, so it carries the Multiple Links style; Copy Selection keeps its own.
 const markdownInstance = new Markdown();
-let selectionCodeBlockStyle: CodeBlockStyle = 'fenced';
+let selectionBulletListMarker: BulletListMarker = SelectionSettings.defaultSettings.bulletListMarker;
+let selectionCodeBlockStyle: CodeBlockStyle = SelectionSettings.defaultSettings.codeBlockStyle;
 const bookmarks = new Bookmarks({
   markdown: markdownInstance,
 });
@@ -72,7 +78,7 @@ const selectionConverterService = createBrowserSelectionConverterService(
   {
     getTurndownOptions: () => ({
       headingStyle: 'atx',
-      bulletListMarker: markdownInstance.unorderedListChar,
+      bulletListMarker: selectionBulletListMarker,
       codeBlockStyle: selectionCodeBlockStyle,
     }),
   },
@@ -115,19 +121,32 @@ async function clearPendingPopupFeedback(): Promise<void> {
   }
 }
 
+const settingsKeys = [
+  ...Settings.keys,
+  ...SelectionSettings.keys,
+  ...MultipleLinksSettings.keys,
+];
+
 async function refreshMarkdownInstance(): Promise<void> {
-  let settings;
+  let shared;
+  let selection;
+  let multipleLinks;
   try {
-    settings = await Settings.getAll();
+    [shared, selection, multipleLinks] = await Promise.all([
+      Settings.getAll(),
+      SelectionSettings.getAll(),
+      MultipleLinksSettings.getAll(),
+    ]);
   } catch (error) {
     console.error('error getting settings', error);
     return;
   }
 
-  markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
-  markdownInstance.unorderedListStyle = settings.styleOfUnorderedList;
-  markdownInstance.indentationStyle = settings.styleOfTabGroupIndentation;
-  selectionCodeBlockStyle = settings.styleOfCodeBlock;
+  markdownInstance.alwaysEscapeLinkBracket = shared.alwaysEscapeLinkBrackets;
+  markdownInstance.bulletListMarker = multipleLinks.bulletListMarker;
+  markdownInstance.indentationStyle = multipleLinks.tabGroupIndentation;
+  selectionBulletListMarker = selection.bulletListMarker;
+  selectionCodeBlockStyle = selection.codeBlockStyle;
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
@@ -273,16 +292,24 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 });
 
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  const hasSettingsChanged = Object.entries(changes)
-    .filter(([key]) => Settings.keys.includes(key))
-    .length > 0;
+  const hasSettingsChanged = Object.keys(changes)
+    .some(key => settingsKeys.includes(key));
   if (hasSettingsChanged) {
     await refreshMarkdownInstance();
   }
 });
 
-refreshMarkdownInstance()
-  .then(() => null /* NOP */);
+// Migrate before the first read so an upgrading profile keeps its Markdown
+// style. A failed migration is retried on the next start; reads fall back to
+// the defaults meanwhile.
+migrateMarkdownSettings()
+  .then((result) => {
+    if (result.status === 'write-failed' || result.status === 'removal-failed') {
+      console.error('failed to migrate Markdown settings', result.status, result.error);
+    }
+  })
+  .catch(error => console.error('failed to migrate Markdown settings', error))
+  .then(() => refreshMarkdownInstance());
 
 if (BUILD_PROFILE === 'e2e') {
   // Flip this flag last so e2e's getServiceWorker() can gate on "listeners wired"

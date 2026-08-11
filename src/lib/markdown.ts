@@ -1,9 +1,15 @@
 export type NestedArray = (string | NestedArray)[];
 
-export enum UnorderedListStyle {
-  Dash = 'dash',
-  Asterisk = 'asterisk',
-  Plus = 'plus',
+/**
+ * The literal Markdown token used to start an unordered list item.
+ * Stored verbatim, so what is persisted is what is emitted.
+ */
+export type BulletListMarker = '-' | '*' | '+';
+
+export const BulletListMarkers: BulletListMarker[] = ['-', '*', '+'];
+
+export function isBulletListMarker(value: unknown): value is BulletListMarker {
+  return BulletListMarkers.includes(value as BulletListMarker);
 }
 
 export enum TabGroupIndentationStyle {
@@ -11,9 +17,13 @@ export enum TabGroupIndentationStyle {
   Tab = 'tab',
 }
 
+export function isTabGroupIndentationStyle(value: unknown): value is TabGroupIndentationStyle {
+  return Object.values(TabGroupIndentationStyle).includes(value as TabGroupIndentationStyle);
+}
+
 export default class Markdown {
   alwaysEscapeLinkBracket: boolean;
-  unorderedListStyle: UnorderedListStyle;
+  bulletListMarker: BulletListMarker;
   indentationStyle: TabGroupIndentationStyle;
 
   static DefaultTitle(): string {
@@ -22,11 +32,11 @@ export default class Markdown {
 
   constructor({
     alwaysEscapeLinkBracket = false,
-    unorderedListStyle = UnorderedListStyle.Dash,
+    bulletListMarker = '-' as BulletListMarker,
     indentationStyle = TabGroupIndentationStyle.Spaces,
   } = {}) {
     this.alwaysEscapeLinkBracket = alwaysEscapeLinkBracket;
-    this.unorderedListStyle = unorderedListStyle;
+    this.bulletListMarker = bulletListMarker;
     this.indentationStyle = indentationStyle;
   }
 
@@ -133,7 +143,7 @@ export default class Markdown {
   }
 
   list(items: NestedArray): string {
-    const rendered = this.renderList(items, this.unorderedListChar);
+    const rendered = this.renderList(items, this.bulletListMarker);
     const flattened = rendered.flat(10); // otherwise it only flatters 1 level deep
     return flattened.map(item => `${item}\n`).join('');
   }
@@ -168,18 +178,5 @@ export default class Markdown {
       }
       return `${renderedIndents}${prefix} ${item}`;
     });
-  }
-
-  get unorderedListChar(): '-' | '*' | '+' {
-    switch (this.unorderedListStyle) {
-      case UnorderedListStyle.Asterisk:
-        return '*';
-      case UnorderedListStyle.Dash:
-        return '-';
-      case UnorderedListStyle.Plus:
-        return '+';
-      default:
-        throw new TypeError(`invalid unorderedListStyle: ${this.unorderedListStyle}`);
-    }
   }
 }

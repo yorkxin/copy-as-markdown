@@ -1,0 +1,89 @@
+/**
+ * E2E tests for migrating legacy Markdown preferences into context-owned
+ * storage, asserted through real `chrome.storage.sync` and the settings page.
+ *
+ * The clipboard-facing half of this coverage lives in
+ * `test/e2e/formatting/settings-migration.spec.ts`.
+ */
+
+import type { BrowserContext, Worker } from '@playwright/test';
+import { expect, test } from '../fixtures';
+import { getServiceWorker, wait } from '../helpers';
+
+const LegacyUnorderedListKey = 'styleOfUnorderedList ';
+const LegacyCodeBlockKey = 'styleOfCodeBlock';
+const LegacyTabGroupIndentationKey = 'style.tabgroup.indentation ';
+
+const SelectionBulletKey = 'selection.markdown.bulletListMarker';
+const SelectionCodeBlockKey = 'selection.markdown.codeBlockStyle';
+const MultipleLinksBulletKey = 'multipleLinks.markdown.bulletListMarker';
+const MultipleLinksIndentationKey = 'multipleLinks.markdown.tabGroupIndentation';
+
+async function seedStorage(serviceWorker: Worker, items: Record<string, unknown>): Promise<void> {
+  await serviceWorker.evaluate(async (toSet) => {
+    await chrome.storage.sync.set(toSet);
+  }, items);
+}
+
+async function readStorage(serviceWorker: Worker): Promise<Record<string, unknown>> {
+  return await serviceWorker.evaluate(async () => {
+    return await chrome.storage.sync.get(null);
+  });
+}
+
+function optionsUrlOf(extensionId: string): string {
+  return `chrome-extension://${extensionId}/dist/static/options.html`;
+}
+
+async function openOptionsPage(context: BrowserContext, extensionId: string): Promise<void> {
+  const optionsPage = await context.newPage();
+  await optionsPage.goto(optionsUrlOf(extensionId));
+  await optionsPage.waitForLoadState('networkidle');
+  await wait(500);
+  await optionsPage.close();
+}
+
+test.describe('Markdown settings migration', () => {
+  let serviceWorker: Worker;
+
+  test.beforeEach(async ({ context }) => {
+    serviceWorker = await getServiceWorker(context);
+  });
+
+  test('moves a legacy profile into context-owned keys and drops the legacy ones', async ({ context, extensionId }) => {
+    await seedStorage(serviceWorker, {
+      [LegacyUnorderedListKey]: 'asterisk',
+      [LegacyCodeBlockKey]: 'indented',
+      [LegacyTabGroupIndentationKey]: 'tab',
+    });
+
+    await openOptionsPage(context, extensionId);
+
+    const stored = await readStorage(serviceWorker);
+    expect(stored[SelectionBulletKey]).toBe('*');
+    expect(stored[SelectionCodeBlockKey]).toBe('indented');
+    expect(stored[MultipleLinksBulletKey]).toBe('*');
+    expect(stored[MultipleLinksIndentationKey]).toBe('tab');
+    expect(stored).not.toHaveProperty(LegacyUnorderedListKey);
+    expect(stored).not.toHaveProperty(LegacyCodeBlockKey);
+    expect(stored).not.toHaveProperty(LegacyTabGroupIndentationKey);
+  });
+
+  test('keeps the migrated preferences visible in the settings page after a reload', async ({ context, extensionId }) => {
+    await seedStorage(serviceWorker, {
+      [LegacyUnorderedListKey]: 'plus',
+      [LegacyCodeBlockKey]: 'indented',
+    });
+
+    const optionsPage = await context.newPage();
+    await optionsPage.goto(optionsUrlOf(extensionId));
+    await optionsPage.waitForLoadState('networkidle');
+    await wait(500);
+    await optionsPage.reload();
+    await optionsPage.waitForLoadState('networkidle');
+
+    await expect(optionsPage.locator('input[name="character"][value="plus"]')).toBeChecked();
+    await expect(optionsPage.locator('input[name="code-block-style"][value="indented"]')).toBeChecked();
+    await optionsPage.close();
+  });
+});

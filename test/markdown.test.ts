@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import Markdown, { TabGroupIndentationStyle, UnorderedListStyle } from '../src/lib/markdown';
+import Markdown, { TabGroupIndentationStyle } from '../src/lib/markdown';
 
 describe('markdown', () => {
   it('default properties', () => {
@@ -14,7 +14,7 @@ describe('markdown', () => {
     });
 
     it('can set a character', () => {
-      const markdown = new Markdown({ unorderedListStyle: UnorderedListStyle.Asterisk });
+      const markdown = new Markdown({ bulletListMarker: '*' });
       expect(markdown.list(['a', 'b', 'c'])).toBe('* a\n* b\n* c\n');
     });
 

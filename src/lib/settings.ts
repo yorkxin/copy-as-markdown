@@ -1,35 +1,22 @@
-import { TabGroupIndentationStyle, UnorderedListStyle } from './markdown.js';
-
 const SKLinkTextAlwaysEscapeBrackets = 'linkTextAlwaysEscapeBrackets';
-// [sic.] The following keys have spaces at the end since they were introduced (typo). Do not modify.
-const SKStyleOfUnorderedList = 'styleOfUnorderedList ';
-const SKStyleTabGroupIndentation = 'style.tabgroup.indentation ';
-const SKStyleOfCodeBlock = 'styleOfCodeBlock';
-
-export type CodeBlockStyle = 'fenced' | 'indented';
 
 interface Settings {
   alwaysEscapeLinkBrackets: boolean;
-  styleOfUnorderedList: UnorderedListStyle;
-  styleOfTabGroupIndentation: TabGroupIndentationStyle;
-  styleOfCodeBlock: CodeBlockStyle;
 }
 
 /**
- * Singleton Settings object in the sync storage
+ * Settings that are still shared across output contexts.
+ *
+ * Link-text escaping applies to every generated link, so it keeps its original
+ * unscoped key. The Markdown style preferences that used to live here now
+ * belong to `selection-settings.ts` and `multiple-links-settings.ts`.
  */
 export default {
   SKLinkTextAlwaysEscapeBrackets,
-  SKStyleOfUnorderedList,
-  SKStyleTabGroupIndentation,
-  SKStyleOfCodeBlock,
 
   get defaultSettings(): Record<string, unknown> {
     return {
       [SKLinkTextAlwaysEscapeBrackets]: false,
-      [SKStyleOfUnorderedList]: UnorderedListStyle.Dash,
-      [SKStyleTabGroupIndentation]: TabGroupIndentationStyle.Spaces,
-      [SKStyleOfCodeBlock]: 'fenced',
     };
   },
 
@@ -43,24 +30,6 @@ export default {
     });
   },
 
-  async setStyleTabGroupIndentation(value: TabGroupIndentationStyle): Promise<void> {
-    await browser.storage.sync.set({
-      [SKStyleTabGroupIndentation]: value,
-    });
-  },
-
-  async setStyleOfUnrderedList(value: UnorderedListStyle): Promise<void> {
-    await browser.storage.sync.set({
-      [SKStyleOfUnorderedList]: value,
-    });
-  },
-
-  async setStyleOfCodeBlock(value: CodeBlockStyle): Promise<void> {
-    await browser.storage.sync.set({
-      [SKStyleOfCodeBlock]: value,
-    });
-  },
-
   async reset(): Promise<void> {
     await browser.storage.sync.remove(this.keys);
   },
@@ -70,9 +39,6 @@ export default {
 
     return {
       alwaysEscapeLinkBrackets: all[SKLinkTextAlwaysEscapeBrackets] as boolean,
-      styleOfUnorderedList: all[SKStyleOfUnorderedList] as UnorderedListStyle,
-      styleOfTabGroupIndentation: all[SKStyleTabGroupIndentation] as TabGroupIndentationStyle,
-      styleOfCodeBlock: all[SKStyleOfCodeBlock] as CodeBlockStyle,
     };
   },
 };

@@ -4,12 +4,27 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 const settingsMock = {
   getAll: vi.fn(),
   setLinkTextAlwaysEscapeBrackets: vi.fn(),
-  setStyleOfUnrderedList: vi.fn(),
-  setStyleOfCodeBlock: vi.fn(),
-  setStyleTabGroupIndentation: vi.fn(),
   reset: vi.fn(),
   keys: [],
 };
+
+const selectionSettingsMock = {
+  getAll: vi.fn(),
+  setBulletListMarker: vi.fn(),
+  setCodeBlockStyle: vi.fn(),
+  reset: vi.fn(),
+  keys: [],
+};
+
+const multipleLinksSettingsMock = {
+  getAll: vi.fn(),
+  setBulletListMarker: vi.fn(),
+  setTabGroupIndentation: vi.fn(),
+  reset: vi.fn(),
+  keys: [],
+};
+
+const migrateMarkdownSettingsMock = vi.fn();
 
 const loadPermissionsMock = vi.fn();
 const PermissionStatusValue = {
@@ -18,9 +33,21 @@ const PermissionStatusValue = {
   Unavailable: 'unavailable',
 } as const;
 
-// Mock the settings module
+// Mock the settings modules
 vi.mock('../../src/lib/settings.js', () => ({
   default: settingsMock,
+}));
+
+vi.mock('../../src/lib/selection-settings.js', () => ({
+  default: selectionSettingsMock,
+}));
+
+vi.mock('../../src/lib/multiple-links-settings.js', () => ({
+  default: multipleLinksSettingsMock,
+}));
+
+vi.mock('../../src/lib/markdown-settings-migration.js', () => ({
+  migrateMarkdownSettings: migrateMarkdownSettingsMock,
 }));
 
 // Mock the permissions UI module
@@ -58,11 +85,15 @@ describe('options UI - with permissions granted', () => {
     mockBrowser();
 
     // Set up initial mock responses
-    settingsMock.getAll.mockResolvedValue({
-      alwaysEscapeLinkBrackets: true,
-      styleOfUnorderedList: 'asterisk',
-      styleOfCodeBlock: 'indented',
-      styleOfTabGroupIndentation: 'tab',
+    migrateMarkdownSettingsMock.mockResolvedValue({ status: 'skipped' });
+    settingsMock.getAll.mockResolvedValue({ alwaysEscapeLinkBrackets: true });
+    selectionSettingsMock.getAll.mockResolvedValue({
+      bulletListMarker: '*',
+      codeBlockStyle: 'indented',
+    });
+    multipleLinksSettingsMock.getAll.mockResolvedValue({
+      bulletListMarker: '*',
+      tabGroupIndentation: 'tab',
     });
     loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.Yes]]));
 
@@ -119,31 +150,71 @@ describe('options UI - with permissions granted', () => {
     await expect.element(flash).not.toBeVisible();
   });
 
+  it('writes the bullet list marker to both contexts while they share one control', async () => {
+    selectionSettingsMock.setBulletListMarker.mockClear();
+    selectionSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
+    multipleLinksSettingsMock.setBulletListMarker.mockClear();
+    multipleLinksSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
+
+    const plusRadio = page.getByRole('radio', { name: /Plus Signs/ });
+    await expect.element(plusRadio).toBeInTheDocument();
+
+    await plusRadio.click();
+
+    expect(selectionSettingsMock.setBulletListMarker).toHaveBeenCalledWith('+');
+    expect(multipleLinksSettingsMock.setBulletListMarker).toHaveBeenCalledWith('+');
+  });
+
   it('shows flash on save failure', async () => {
-    settingsMock.setStyleOfUnrderedList.mockClear();
-    settingsMock.setStyleOfUnrderedList.mockRejectedValueOnce(new Error('fail'));
+    selectionSettingsMock.setBulletListMarker.mockClear();
+    selectionSettingsMock.setBulletListMarker.mockRejectedValueOnce(new Error('fail'));
 
     const dashRadio = page.getByRole('radio', { name: /Dashes/ });
     await expect.element(dashRadio).toBeInTheDocument();
 
     await dashRadio.click();
 
-    expect(settingsMock.setStyleOfUnrderedList).toHaveBeenCalled();
+    expect(selectionSettingsMock.setBulletListMarker).toHaveBeenCalled();
 
     const flash = page.getByTestId('flash-error');
     await expect.element(flash).toBeVisible();
   });
 
   it('saves code block style on change', async () => {
-    settingsMock.setStyleOfCodeBlock.mockClear();
-    settingsMock.setStyleOfCodeBlock.mockResolvedValue(undefined);
+    selectionSettingsMock.setCodeBlockStyle.mockClear();
+    selectionSettingsMock.setCodeBlockStyle.mockResolvedValue(undefined);
 
     const fencedRadio = page.getByRole('radio', { name: /Fenced code block/ });
     await expect.element(fencedRadio).toBeInTheDocument();
 
     await fencedRadio.click();
 
-    expect(settingsMock.setStyleOfCodeBlock).toHaveBeenCalledWith('fenced');
+    expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('fenced');
+  });
+
+  it('saves tab group indentation to the Multiple Links context', async () => {
+    multipleLinksSettingsMock.setTabGroupIndentation.mockClear();
+    multipleLinksSettingsMock.setTabGroupIndentation.mockResolvedValue(undefined);
+
+    const spacesRadio = page.getByRole('radio', { name: /^Spaces$/ });
+    await expect.element(spacesRadio).toBeInTheDocument();
+
+    await spacesRadio.click();
+
+    expect(multipleLinksSettingsMock.setTabGroupIndentation).toHaveBeenCalledWith('spaces');
+  });
+
+  it('resets every context the combined page still owns', async () => {
+    settingsMock.reset.mockClear().mockResolvedValue(undefined);
+    selectionSettingsMock.reset.mockClear().mockResolvedValue(undefined);
+    multipleLinksSettingsMock.reset.mockClear().mockResolvedValue(undefined);
+
+    const resetButton = page.getByRole('button', { name: /Restore to Default/ });
+    await resetButton.click();
+
+    expect(settingsMock.reset).toHaveBeenCalled();
+    expect(selectionSettingsMock.reset).toHaveBeenCalled();
+    expect(multipleLinksSettingsMock.reset).toHaveBeenCalled();
   });
 });
 
@@ -154,11 +225,15 @@ describe('options UI - with permissions denied', () => {
     mockBrowser();
 
     // Set up mock responses with permissions denied
-    settingsMock.getAll.mockResolvedValue({
-      alwaysEscapeLinkBrackets: false,
-      styleOfUnorderedList: 'dash',
-      styleOfCodeBlock: 'fenced',
-      styleOfTabGroupIndentation: 'spaces',
+    migrateMarkdownSettingsMock.mockResolvedValue({ status: 'skipped' });
+    settingsMock.getAll.mockResolvedValue({ alwaysEscapeLinkBrackets: false });
+    selectionSettingsMock.getAll.mockResolvedValue({
+      bulletListMarker: '-',
+      codeBlockStyle: 'fenced',
+    });
+    multipleLinksSettingsMock.getAll.mockResolvedValue({
+      bulletListMarker: '-',
+      tabGroupIndentation: 'spaces',
     });
     loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.No]]));
 

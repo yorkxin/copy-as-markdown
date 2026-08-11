@@ -5,10 +5,26 @@ const settingsMock = {
   reset: vi.fn(),
 };
 
+const selectionSettingsMock = {
+  reset: vi.fn(),
+};
+
+const multipleLinksSettingsMock = {
+  reset: vi.fn(),
+};
+
 const loadPermissionsMock = vi.fn();
 
 vi.mock('../../src/lib/settings.js', () => ({
   default: settingsMock,
+}));
+
+vi.mock('../../src/lib/selection-settings.js', () => ({
+  default: selectionSettingsMock,
+}));
+
+vi.mock('../../src/lib/multiple-links-settings.js', () => ({
+  default: multipleLinksSettingsMock,
 }));
 
 vi.mock('../../src/ui/permissions-ui.js', async (importOriginal) => {
@@ -122,6 +138,8 @@ describe('options permissions UI', () => {
     const removeMock = (globalThis as any).browser.permissions.remove;
 
     settingsMock.reset.mockClear();
+    selectionSettingsMock.reset.mockClear();
+    multipleLinksSettingsMock.reset.mockClear();
     removeMock.mockClear();
 
     const revokeAll = page.getByRole('button', { name: /Revoke All/ });
@@ -131,6 +149,8 @@ describe('options permissions UI', () => {
     await flush();
 
     expect(settingsMock.reset).toHaveBeenCalled();
+    expect(selectionSettingsMock.reset).toHaveBeenCalled();
+    expect(multipleLinksSettingsMock.reset).toHaveBeenCalled();
     // Only tabs is granted in the initial setup, bookmarks is unavailable
     // So only tabs and tabGroups are in the revoke call
     expect(removeMock).toHaveBeenCalledWith({ permissions: ['tabs', 'tabGroups'] });
