@@ -1,12 +1,6 @@
 import { page } from 'vitest/browser';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
-const settingsMock = {
-  setLinkTextAlwaysEscapeBrackets: vi.fn(),
-  reset: vi.fn(),
-  keys: [],
-};
-
 const selectionSettingsMock = {
   setBulletListMarker: vi.fn(),
   setCodeBlockStyle: vi.fn(),
@@ -33,11 +27,6 @@ const PermissionStatusValue = {
   Unavailable: 'unavailable',
 } as const;
 
-// Mock the settings modules
-vi.mock('../../src/lib/settings.js', () => ({
-  default: settingsMock,
-}));
-
 vi.mock('../../src/lib/selection-settings.js', () => ({
   default: selectionSettingsMock,
 }));
@@ -47,7 +36,7 @@ vi.mock('../../src/lib/multiple-links-settings.js', () => ({
 }));
 
 vi.mock('../../src/lib/markdown-settings.js', () => ({
-  markdownSettingsKeys: [],
+  contextMarkdownSettingsKeys: [],
   readMarkdownSettings: readMarkdownSettingsMock,
   loadMarkdownSettings: loadMarkdownSettingsMock,
   setSharedBulletListMarker: setSharedBulletListMarkerMock,
@@ -107,9 +96,6 @@ describe('options UI - with permissions granted', () => {
   });
 
   it('loads settings into the form', async () => {
-    const escapeCheckbox = page.getByRole('checkbox', { name: /Always escape brackets/ });
-    await expect.element(escapeCheckbox).toBeChecked();
-
     const asteriskRadio = page.getByRole('radio', { name: /Asterisks/ });
     await expect.element(asteriskRadio).toBeChecked();
 
@@ -134,21 +120,8 @@ describe('options UI - with permissions granted', () => {
     await expect.element(page.getByTestId('requires-permissions-tab-groups')).to.toHaveClass('is-hidden');
   });
 
-  it('saves settings on change', async () => {
-    settingsMock.setLinkTextAlwaysEscapeBrackets.mockClear();
-    settingsMock.setLinkTextAlwaysEscapeBrackets.mockResolvedValue(undefined);
-
-    const escapeCheckbox = page.getByRole('checkbox', { name: /Always escape brackets/ });
-    await expect.element(escapeCheckbox).toBeInTheDocument();
-
-    // Toggle the checkbox
-    await escapeCheckbox.click();
-
-    expect(settingsMock.setLinkTextAlwaysEscapeBrackets).toHaveBeenCalledWith(false);
-
-    // Verify no error flash is shown
-    const flash = page.getByTestId('flash-error');
-    await expect.element(flash).not.toBeVisible();
+  it('no longer presents the link-text escaping control', async () => {
+    expect(document.querySelector('#form-link-text-always-escape-brackets')).toBeNull();
   });
 
   it('writes the bullet list marker for both contexts in one save', async () => {

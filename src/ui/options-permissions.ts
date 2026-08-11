@@ -1,5 +1,4 @@
 import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
-import { resetMarkdownSettings } from '../lib/markdown-settings.js';
 import type { PermissionStatus } from './permissions-ui.js';
 import { hideUiIfPermissionsNotGranted, loadPermissions, PermissionStatusValue } from './permissions-ui.js';
 
@@ -88,8 +87,8 @@ document.querySelectorAll('[data-remove-permission]').forEach((node) => {
 const revokeAllButton = document.querySelector('#revoke-all');
 if (revokeAllButton) {
   revokeAllButton.addEventListener('click', async () => {
-    // Unchanged behavior from when one Settings object owned every preference.
-    await resetMarkdownSettings();
+    // Permissions only. Formatting and menu-visibility settings are owned by
+    // their own pages, and revoking access must not silently reset them.
     const toBeRemoved = Array.from(permissionStatuses.entries())
       .filter(([, stat]) => stat !== PermissionStatusValue.Unavailable)
       .map(([perm]) => perm) as browser._manifest.OptionalPermission[];

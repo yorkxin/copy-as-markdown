@@ -12,11 +12,16 @@ export interface MarkdownSettings {
   multipleLinks: MultipleLinksMarkdownSettings;
 }
 
+/** The keys owned by an output context — everything the Markdown Style page presents. */
+export const contextMarkdownSettingsKeys: string[] = [
+  ...SelectionSettings.keys,
+  ...MultipleLinksSettings.keys,
+];
+
 /** Every storage key whose change should re-read the settings above. */
 export const markdownSettingsKeys: string[] = [
   ...Settings.keys,
-  ...SelectionSettings.keys,
-  ...MultipleLinksSettings.keys,
+  ...contextMarkdownSettingsKeys,
 ];
 
 /**
@@ -54,11 +59,14 @@ export async function setSharedBulletListMarker(marker: BulletListMarker): Promi
 }
 
 /**
- * Restore every Markdown setting the combined page owns, in a single removal.
+ * Restore every Markdown setting the Markdown Style page owns, in a single removal.
  *
  * Transitional for the same reason as `setSharedBulletListMarker`: one visible
  * "Restore to Default" button must not be able to reset some contexts and not
  * others. Per-page resets replace this.
+ *
+ * Link-text escaping is deliberately absent: the Advanced page owns it and
+ * resets it on its own, so neither reset can silently undo the other.
  *
  * Legacy keys go too. A migration whose cleanup failed leaves them behind, and
  * a reset that spared them would be undone by the next startup re-migrating
@@ -66,7 +74,7 @@ export async function setSharedBulletListMarker(marker: BulletListMarker): Promi
  */
 export async function resetMarkdownSettings(): Promise<void> {
   await browser.storage.sync.remove([
-    ...markdownSettingsKeys,
+    ...contextMarkdownSettingsKeys,
     ...Object.values(LegacyMarkdownSettingKeys),
   ]);
 }

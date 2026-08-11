@@ -109,13 +109,12 @@ describe('markdown settings', () => {
     });
   });
 
-  describe('resetMarkdownSettings() — the combined page reset', () => {
+  describe('resetMarkdownSettings() — the Markdown Style page reset', () => {
     it('restores every setting the page owns', async () => {
       storage.data['selection.markdown.bulletListMarker'] = '+';
       storage.data['selection.markdown.codeBlockStyle'] = 'indented';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
       storage.data['multipleLinks.markdown.tabGroupIndentation'] = 'tab';
-      storage.data.linkTextAlwaysEscapeBrackets = true;
 
       await resetMarkdownSettings();
 
@@ -124,6 +123,14 @@ describe('markdown settings', () => {
         selection: { bulletListMarker: '-', codeBlockStyle: 'fenced' },
         multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
       });
+    });
+
+    it('leaves link-text escaping to the Advanced page', async () => {
+      storage.data.linkTextAlwaysEscapeBrackets = true;
+
+      await resetMarkdownSettings();
+
+      expect(storage.data.linkTextAlwaysEscapeBrackets).toBe(true);
     });
 
     it('cannot reset some contexts and not others', async () => {

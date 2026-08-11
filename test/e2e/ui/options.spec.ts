@@ -23,10 +23,6 @@ test.describe('Options Page - UI Tests', () => {
       await tabIndentationRadio.check();
       await page.waitForTimeout(200);
 
-      const escapeBracketsCheckbox = page.locator('input[name="enabled"]');
-      await escapeBracketsCheckbox.check();
-      await page.waitForTimeout(500);
-
       // Reload the page
       await page.reload();
       await page.waitForLoadState('networkidle');
@@ -37,9 +33,6 @@ test.describe('Options Page - UI Tests', () => {
 
       const tabIndentationRadioAfter = page.locator('input[name="indentation"][value="tab"]');
       await expect(tabIndentationRadioAfter).toBeChecked();
-
-      const escapeBracketsCheckboxAfter = page.locator('input[name="enabled"]');
-      await expect(escapeBracketsCheckboxAfter).toBeChecked();
     });
 
     test('should reset all settings to default when reset button is clicked', async ({ page, extensionId }) => {
@@ -57,10 +50,6 @@ test.describe('Options Page - UI Tests', () => {
       await tabIndentationRadio.check();
       await page.waitForTimeout(200);
 
-      const escapeBracketsCheckbox = page.locator('input[name="enabled"]');
-      await escapeBracketsCheckbox.check();
-      await page.waitForTimeout(500);
-
       // Click reset button
       const resetButton = page.locator('#reset');
       await resetButton.click();
@@ -72,9 +61,6 @@ test.describe('Options Page - UI Tests', () => {
 
       const spacesIndentationRadio = page.locator('input[name="indentation"][value="spaces"]');
       await expect(spacesIndentationRadio).toBeChecked();
-
-      const escapeBracketsCheckboxAfter = page.locator('input[name="enabled"]');
-      await expect(escapeBracketsCheckboxAfter).not.toBeChecked();
     });
   });
 });

@@ -9,7 +9,7 @@
 <body>
 <div class="container section is-max-desktop">
   <h1 class="title">Copy as Markdown</h1>
-  <div id="flash-error" class="notification is-danger is-hidden">
+  <div id="flash-error" data-testid="flash-error" class="notification is-danger is-hidden">
     <p></p>
   </div>
   <div class="columns">
@@ -30,7 +30,7 @@
             </ul>
           </li>
           <li>
-            <a class="is-active" href="single-link.html">Single Link</a>
+            <a href="single-link.html">Single Link</a>
             <ul class="menu-list" data-menu-custom-format-context="single-link">
               <li><a data-menu-custom-format-slot="1" href="custom-format.html?context=single-link&slot=1">Custom Format 1</a></li>
               <li><a data-menu-custom-format-slot="2" href="custom-format.html?context=single-link&slot=2">Custom Format 2</a></li>
@@ -43,7 +43,7 @@
         <p class="menu-label">Others</p>
         <ul class="menu-list">
           <li><a href="menu-commands.html">Menu Commands</a></li>
-          <li><a href="advanced.html">Advanced</a></li>
+          <li><a class="is-active" href="advanced.html">Advanced</a></li>
           <li><a href="options-permissions.html">Permissions</a></li>
           <li><a href="custom-format-help.html">Help & Examples</a></li>
           <li><a href="about.html">About</a></li>
@@ -52,15 +52,35 @@
     </div>
     <div class="column">
       <div class="box content">
-        <h2 class="title is-3">Format - Single Link</h2>
-        <p>
-          Single Link has no settings of its own yet. Its custom formats are in the menu on the left,
-          and which commands appear in menus is on the
-          <a href="menu-commands.html">Menu Commands</a> page.
-        </p>
+        <h2 class="title is-3">Advanced</h2>
+
+        <form id="form-link-text-always-escape-brackets" class="field">
+          <label class="label">Escaping</label>
+          <div class="control">
+            <label class="checkbox"><input type="checkbox" name="enabled"/> Always escape brackets in link text (<code>[]</code>
+              becomes <code>\[\]</code>)</label>
+          </div>
+          <p class="help">
+            CommonMark allows balanced brackets <code>[]</code> in link text
+            (e.g. <code>[[JIRA-123] My Project](https://link/)</code>).
+            If your Markdown processor does not support this use case, you can enable this feature
+            so that Copy as Markdown always escape brackets in the link text.
+          </p>
+          <p class="help">
+            This applies to generated-link workflows — Single Link, Multiple Links, and custom formats —
+            and does not affect Copy Selection as Markdown, which escapes according to its own conversion rules.
+          </p>
+        </form>
       </div>
+      <div class="field is-grouped">
+        <div class="control">
+          <button id="reset" data-testid="reset-advanced" type="button" class="button is-outlined is-danger">Restore Advanced Defaults</button>
+        </div>
+      </div>
+      <p class="help">Restores link-text escaping to its default. Formatting, menu-visibility, and permission settings are left untouched.</p>
     </div>
   </div>
 </div>
+<script src="../ui/advanced.js" type="module"></script>
 </body>
 </html>

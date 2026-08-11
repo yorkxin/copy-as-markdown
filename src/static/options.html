@@ -18,7 +18,6 @@
         <p class="menu-label">General</p>
         <ul class="menu-list">
           <li><a class="is-active" href="options.html">Markdown Style</a></li>
-          <li><a href="options-permissions.html">Permissions</a></li>
           <p class="menu-label">Formats</p>
           <li>
             <a href="multiple-links.html">Multiple Links</a>
@@ -44,6 +43,8 @@
         <p class="menu-label">Others</p>
         <ul class="menu-list">
           <li><a href="menu-commands.html">Menu Commands</a></li>
+          <li><a href="advanced.html">Advanced</a></li>
+          <li><a href="options-permissions.html">Permissions</a></li>
           <li><a href="custom-format-help.html">Help & Examples</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
@@ -117,19 +118,10 @@
           </p>
         </form>
 
-        <form id="form-link-text-always-escape-brackets" class="field">
-          <label class="label">Escaping</label>
-          <div class="control">
-            <label class="checkbox"><input type="checkbox" name="enabled"/> Always escape brackets in link text (<code>[]</code>
-              becomes <code>\[\]</code>)</label>
-          </div>
-          <p class="help">
-            CommonMark allows balanced brackets <code>[]</code> in link text
-            (e.g. <code>[[JIRA-123] My Project](https://link/)</code>).
-            If your Markdown processor does not support this use case, you can enable this feature
-            so that Copy as Markdown always escape brackets in the link text.
-          </p>
-        </form>
+        <p>
+          Link-text escaping, which spans every generated-link workflow, is on the
+          <a href="advanced.html">Advanced</a> page.
+        </p>
       </div>
       <div class="field is-grouped">
         <div class="control">

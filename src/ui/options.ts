@@ -2,8 +2,8 @@ import '../ensure-browser-global.js'; // MUST be first — installs `browser` fo
 import type { BulletListMarker, TabGroupIndentationStyle } from '../lib/markdown.js';
 import type { MarkdownSettings } from '../lib/markdown-settings.js';
 import {
+  contextMarkdownSettingsKeys,
   loadMarkdownSettings,
-  markdownSettingsKeys,
   readMarkdownSettings,
   resetMarkdownSettings,
   setSharedBulletListMarker,
@@ -11,7 +11,6 @@ import {
 import MultipleLinksSettings from '../lib/multiple-links-settings.js';
 import type { CodeBlockStyle } from '../lib/selection-settings.js';
 import SelectionSettings from '../lib/selection-settings.js';
-import Settings from '../lib/settings.js';
 import { hideFlash, showFlash } from './flash.js';
 import type { PermissionStatus } from './permissions-ui.js';
 import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
@@ -35,16 +34,11 @@ function disableTabGroupIndentation(permissionStatuses: PermissionStatus): void 
 
 async function loadSettings(read: () => Promise<MarkdownSettings> = readMarkdownSettings): Promise<void> {
   try {
-    const { alwaysEscapeLinkBrackets, selection, multipleLinks } = await read();
-    const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets');
+    const { selection, multipleLinks } = await read();
     const formUnorderedList = document.forms.namedItem('form-style-of-unordered-list');
     const formCodeBlockStyle = document.forms.namedItem('form-style-of-code-block');
     const formTabGroupIndentation = document.forms.namedItem('form-style-of-tab-group-indentation');
 
-    if (formEscapeBrackets) {
-      const checkbox = formEscapeBrackets.elements.namedItem('enabled') as HTMLInputElement | null;
-      if (checkbox) checkbox.checked = alwaysEscapeLinkBrackets;
-    }
     if (formUnorderedList) {
       const character = formUnorderedList.elements.namedItem('character') as RadioNodeList | null;
       if (character) character.value = RadioValueOfMarker[selection.bulletListMarker];
@@ -72,20 +66,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   hideUiIfPermissionsNotGranted(statuses);
   disableTabGroupIndentation(statuses);
 });
-
-const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets');
-if (formEscapeBrackets) {
-  formEscapeBrackets.addEventListener('change', async (event) => {
-    try {
-      const target = event.target as HTMLInputElement;
-      await Settings.setLinkTextAlwaysEscapeBrackets(target.checked);
-      hideFlash();
-    } catch (error) {
-      console.error('failed to save settings:', error);
-      showFlash('Failed to save setting. Please try again.');
-    }
-  });
-}
 
 const formTabGroupIndentation = document.forms.namedItem('form-style-of-tab-group-indentation');
 if (formTabGroupIndentation) {
@@ -146,7 +126,7 @@ if (resetButton) {
 }
 
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  const hasSettingsChanged = Object.keys(changes).some(key => markdownSettingsKeys.includes(key));
+  const hasSettingsChanged = Object.keys(changes).some(key => contextMarkdownSettingsKeys.includes(key));
 
   if (hasSettingsChanged) {
     await loadSettings();
