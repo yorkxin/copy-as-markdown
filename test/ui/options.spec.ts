@@ -2,14 +2,12 @@ import { page } from 'vitest/browser';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 const settingsMock = {
-  getAll: vi.fn(),
   setLinkTextAlwaysEscapeBrackets: vi.fn(),
   reset: vi.fn(),
   keys: [],
 };
 
 const selectionSettingsMock = {
-  getAll: vi.fn(),
   setBulletListMarker: vi.fn(),
   setCodeBlockStyle: vi.fn(),
   reset: vi.fn(),
@@ -17,14 +15,14 @@ const selectionSettingsMock = {
 };
 
 const multipleLinksSettingsMock = {
-  getAll: vi.fn(),
   setBulletListMarker: vi.fn(),
   setTabGroupIndentation: vi.fn(),
   reset: vi.fn(),
   keys: [],
 };
 
-const migrateMarkdownSettingsMock = vi.fn();
+const readMarkdownSettingsMock = vi.fn();
+const loadMarkdownSettingsMock = vi.fn();
 
 const loadPermissionsMock = vi.fn();
 const PermissionStatusValue = {
@@ -46,8 +44,10 @@ vi.mock('../../src/lib/multiple-links-settings.js', () => ({
   default: multipleLinksSettingsMock,
 }));
 
-vi.mock('../../src/lib/markdown-settings-migration.js', () => ({
-  migrateMarkdownSettings: migrateMarkdownSettingsMock,
+vi.mock('../../src/lib/markdown-settings.js', () => ({
+  markdownSettingsKeys: [],
+  readMarkdownSettings: readMarkdownSettingsMock,
+  loadMarkdownSettings: loadMarkdownSettingsMock,
 }));
 
 // Mock the permissions UI module
@@ -85,16 +85,13 @@ describe('options UI - with permissions granted', () => {
     mockBrowser();
 
     // Set up initial mock responses
-    migrateMarkdownSettingsMock.mockResolvedValue({ status: 'skipped' });
-    settingsMock.getAll.mockResolvedValue({ alwaysEscapeLinkBrackets: true });
-    selectionSettingsMock.getAll.mockResolvedValue({
-      bulletListMarker: '*',
-      codeBlockStyle: 'indented',
-    });
-    multipleLinksSettingsMock.getAll.mockResolvedValue({
-      bulletListMarker: '*',
-      tabGroupIndentation: 'tab',
-    });
+    const settings = {
+      alwaysEscapeLinkBrackets: true,
+      selection: { bulletListMarker: '*', codeBlockStyle: 'indented' },
+      multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
+    };
+    readMarkdownSettingsMock.mockResolvedValue(settings);
+    loadMarkdownSettingsMock.mockResolvedValue(settings);
     loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.Yes]]));
 
     // Load the options module - this will register DOM event listeners
@@ -225,16 +222,13 @@ describe('options UI - with permissions denied', () => {
     mockBrowser();
 
     // Set up mock responses with permissions denied
-    migrateMarkdownSettingsMock.mockResolvedValue({ status: 'skipped' });
-    settingsMock.getAll.mockResolvedValue({ alwaysEscapeLinkBrackets: false });
-    selectionSettingsMock.getAll.mockResolvedValue({
-      bulletListMarker: '-',
-      codeBlockStyle: 'fenced',
-    });
-    multipleLinksSettingsMock.getAll.mockResolvedValue({
-      bulletListMarker: '-',
-      tabGroupIndentation: 'spaces',
-    });
+    const settings = {
+      alwaysEscapeLinkBrackets: false,
+      selection: { bulletListMarker: '-', codeBlockStyle: 'fenced' },
+      multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
+    };
+    readMarkdownSettingsMock.mockResolvedValue(settings);
+    loadMarkdownSettingsMock.mockResolvedValue(settings);
     loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.No]]));
 
     // Since module is already loaded, we trigger DOMContentLoaded again

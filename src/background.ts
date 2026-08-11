@@ -1,9 +1,8 @@
 import './ensure-browser-global.js'; // MUST be first — defines `browser` for the service worker.
-import Settings from './lib/settings.js';
 import type { CodeBlockStyle } from './lib/selection-settings.js';
 import SelectionSettings from './lib/selection-settings.js';
-import MultipleLinksSettings from './lib/multiple-links-settings.js';
-import { migrateMarkdownSettings } from './lib/markdown-settings-migration.js';
+import type { MarkdownSettings } from './lib/markdown-settings.js';
+import { loadMarkdownSettings, markdownSettingsKeys, readMarkdownSettings } from './lib/markdown-settings.js';
 import type { BulletListMarker } from './lib/markdown.js';
 import Markdown from './lib/markdown.js';
 import { Bookmarks } from './bookmarks.js';
@@ -121,32 +120,20 @@ async function clearPendingPopupFeedback(): Promise<void> {
   }
 }
 
-const settingsKeys = [
-  ...Settings.keys,
-  ...SelectionSettings.keys,
-  ...MultipleLinksSettings.keys,
-];
+function applyMarkdownSettings(settings: MarkdownSettings): void {
+  markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
+  markdownInstance.bulletListMarker = settings.multipleLinks.bulletListMarker;
+  markdownInstance.indentationStyle = settings.multipleLinks.tabGroupIndentation;
+  selectionBulletListMarker = settings.selection.bulletListMarker;
+  selectionCodeBlockStyle = settings.selection.codeBlockStyle;
+}
 
 async function refreshMarkdownInstance(): Promise<void> {
-  let shared;
-  let selection;
-  let multipleLinks;
   try {
-    [shared, selection, multipleLinks] = await Promise.all([
-      Settings.getAll(),
-      SelectionSettings.getAll(),
-      MultipleLinksSettings.getAll(),
-    ]);
+    applyMarkdownSettings(await readMarkdownSettings());
   } catch (error) {
     console.error('error getting settings', error);
-    return;
   }
-
-  markdownInstance.alwaysEscapeLinkBracket = shared.alwaysEscapeLinkBrackets;
-  markdownInstance.bulletListMarker = multipleLinks.bulletListMarker;
-  markdownInstance.indentationStyle = multipleLinks.tabGroupIndentation;
-  selectionBulletListMarker = selection.bulletListMarker;
-  selectionCodeBlockStyle = selection.codeBlockStyle;
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
@@ -293,23 +280,18 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 browser.storage.sync.onChanged.addListener(async (changes) => {
   const hasSettingsChanged = Object.keys(changes)
-    .some(key => settingsKeys.includes(key));
+    .some(key => markdownSettingsKeys.includes(key));
   if (hasSettingsChanged) {
     await refreshMarkdownInstance();
   }
 });
 
-// Migrate before the first read so an upgrading profile keeps its Markdown
-// style. A failed migration is retried on the next start; reads fall back to
-// the defaults meanwhile.
-migrateMarkdownSettings()
-  .then((result) => {
-    if (result.status === 'write-failed' || result.status === 'removal-failed') {
-      console.error('failed to migrate Markdown settings', result.status, result.error);
-    }
-  })
-  .catch(error => console.error('failed to migrate Markdown settings', error))
-  .then(() => refreshMarkdownInstance());
+// Runs on every worker start: migrates an upgrading profile before the first
+// read, so the user's Markdown style survives without them opening the
+// settings page.
+loadMarkdownSettings()
+  .then(applyMarkdownSettings)
+  .catch(error => console.error('error getting settings', error));
 
 if (BUILD_PROFILE === 'e2e') {
   // Flip this flag last so e2e's getServiceWorker() can gate on "listeners wired"

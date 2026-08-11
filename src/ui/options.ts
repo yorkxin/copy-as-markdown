@@ -1,6 +1,7 @@
 import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
 import type { BulletListMarker, TabGroupIndentationStyle } from '../lib/markdown.js';
-import { migrateMarkdownSettings } from '../lib/markdown-settings-migration.js';
+import type { MarkdownSettings } from '../lib/markdown-settings.js';
+import { loadMarkdownSettings, markdownSettingsKeys, readMarkdownSettings } from '../lib/markdown-settings.js';
 import MultipleLinksSettings from '../lib/multiple-links-settings.js';
 import type { CodeBlockStyle } from '../lib/selection-settings.js';
 import SelectionSettings from '../lib/selection-settings.js';
@@ -20,12 +21,6 @@ const MarkerOfRadioValue: Record<string, BulletListMarker> = {
 const RadioValueOfMarker = Object.fromEntries(
   Object.entries(MarkerOfRadioValue).map(([radioValue, marker]) => [marker, radioValue]),
 ) as Record<BulletListMarker, string>;
-
-const settingsKeys = [
-  ...Settings.keys,
-  ...SelectionSettings.keys,
-  ...MultipleLinksSettings.keys,
-];
 
 function showFlash(message: string): void {
   const flash = document.getElementById('flash-error');
@@ -47,13 +42,9 @@ function disableTabGroupIndentation(permissionStatuses: PermissionStatus): void 
   disableUiIfPermissionsNotGranted(permissionStatuses);
 }
 
-async function loadSettings(): Promise<void> {
+async function loadSettings(read: () => Promise<MarkdownSettings> = readMarkdownSettings): Promise<void> {
   try {
-    const [shared, selection, multipleLinks] = await Promise.all([
-      Settings.getAll(),
-      SelectionSettings.getAll(),
-      MultipleLinksSettings.getAll(),
-    ]);
+    const { alwaysEscapeLinkBrackets, selection, multipleLinks } = await read();
     const formEscapeBrackets = document.forms.namedItem('form-link-text-always-escape-brackets');
     const formUnorderedList = document.forms.namedItem('form-style-of-unordered-list');
     const formCodeBlockStyle = document.forms.namedItem('form-style-of-code-block');
@@ -61,7 +52,7 @@ async function loadSettings(): Promise<void> {
 
     if (formEscapeBrackets) {
       const checkbox = formEscapeBrackets.elements.namedItem('enabled') as HTMLInputElement | null;
-      if (checkbox) checkbox.checked = shared.alwaysEscapeLinkBrackets;
+      if (checkbox) checkbox.checked = alwaysEscapeLinkBrackets;
     }
     if (formUnorderedList) {
       const character = formUnorderedList.elements.namedItem('character') as RadioNodeList | null;
@@ -85,15 +76,7 @@ async function loadSettings(): Promise<void> {
 document.addEventListener('DOMContentLoaded', async () => {
   // Migrate before the first read so an upgrading profile never sees this page
   // fall back to defaults. Idempotent, so racing the background copy is safe.
-  try {
-    const result = await migrateMarkdownSettings();
-    if (result.status === 'write-failed' || result.status === 'removal-failed') {
-      console.error('failed to migrate Markdown settings', result.status, result.error);
-    }
-  } catch (error) {
-    console.error('failed to migrate Markdown settings', error);
-  }
-  await loadSettings();
+  await loadSettings(loadMarkdownSettings);
   const statuses = await loadPermissions();
   hideUiIfPermissionsNotGranted(statuses);
   disableTabGroupIndentation(statuses);
@@ -175,7 +158,7 @@ if (resetButton) {
 }
 
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  const hasSettingsChanged = Object.keys(changes).some(key => settingsKeys.includes(key));
+  const hasSettingsChanged = Object.keys(changes).some(key => markdownSettingsKeys.includes(key));
 
   if (hasSettingsChanged) {
     await loadSettings();
