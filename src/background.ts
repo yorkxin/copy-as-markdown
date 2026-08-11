@@ -128,14 +128,6 @@ function applyMarkdownSettings(settings: MarkdownSettings): void {
   selectionCodeBlockStyle = settings.selection.codeBlockStyle;
 }
 
-async function refreshMarkdownInstance(): Promise<void> {
-  try {
-    applyMarkdownSettings(await readMarkdownSettings());
-  } catch (error) {
-    console.error('error getting settings', error);
-  }
-}
-
 browser.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === badgeService.getClearAlarmName()) {
     const pendingPopupFeedback = await pendingPopupFeedbackService.get();
@@ -278,12 +270,17 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
+// Migration already ran at startup, so a change only needs a re-read.
 browser.storage.sync.onChanged.addListener(async (changes) => {
   const hasSettingsChanged = Object.keys(changes)
     .some(key => markdownSettingsKeys.includes(key));
-  if (hasSettingsChanged) {
-    await refreshMarkdownInstance();
+  if (!hasSettingsChanged) {
+    return;
   }
+
+  await readMarkdownSettings()
+    .then(applyMarkdownSettings)
+    .catch(error => console.error('error getting settings', error));
 });
 
 // Runs on every worker start: migrates an upgrading profile before the first
