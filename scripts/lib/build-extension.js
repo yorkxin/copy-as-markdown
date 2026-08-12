@@ -13,6 +13,7 @@ const sharedEntries = [
   'src/ui/options-permissions.ts',
   'src/ui/permissions.ts',
   'src/ui/custom-format.ts',
+  'src/ui/multiple-links.ts',
   'src/ui/menu-commands.ts',
   'src/ui/advanced.ts',
 ];

@@ -1,20 +1,11 @@
+import { LegacyMarkdownSettingKeys } from './legacy-markdown-settings.js';
 import type { BulletListMarker } from './markdown.js';
 import { isBulletListMarker, isTabGroupIndentationStyle } from './markdown.js';
 import MultipleLinksSettings, { MultipleLinksSettingDefaults, MultipleLinksSettingKeys } from './multiple-links-settings.js';
 import type { CodeBlockStyle } from './selection-settings.js';
 import SelectionSettings, { isCodeBlockStyle, SelectionSettingDefaults, SelectionSettingKeys } from './selection-settings.js';
 
-/**
- * Storage keys written by versions that predate context-owned settings.
- *
- * [sic.] Two of them have a trailing space, introduced by a typo when they were
- * added. They are matched verbatim here; migration is what finally retires them.
- */
-export const LegacyMarkdownSettingKeys = {
-  unorderedList: 'styleOfUnorderedList ',
-  codeBlock: 'styleOfCodeBlock',
-  tabGroupIndentation: 'style.tabgroup.indentation ',
-} as const;
+export { LegacyMarkdownSettingKeys };
 
 const LegacyUnorderedListMarkers: Record<string, BulletListMarker> = {
   dash: '-',

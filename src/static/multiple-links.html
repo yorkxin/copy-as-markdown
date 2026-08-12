@@ -15,10 +15,9 @@
   <div class="columns">
     <div class="column is-narrow" id="menu">
       <aside class="menu">
-        <p class="menu-label">General</p>
+        <p class="menu-label">Formats</p>
         <ul class="menu-list">
-          <li><a href="options.html">Markdown Style</a></li>
-          <p class="menu-label">Formats</p>
+          <li><a href="options.html">Copy Selection</a></li>
           <li>
             <a class="is-active" href="multiple-links.html">Multiple Links</a>
             <ul class="menu-list" data-menu-custom-format-context="multiple-links">
@@ -54,12 +53,69 @@
       <div class="box content">
         <h2 class="title is-3">Formats - Multiple Links</h2>
         <p>
-          Which tab export commands appear in menus is on the
+          These settings apply to the built-in tab export commands only.
+          Which of those commands appear in menus is on the
           <a href="menu-commands.html">Menu Commands</a> page.
         </p>
+
+        <form id='form-multiple-links-bullet-list-marker' class="field">
+          <label class="label">Unordered List Character</label>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="bullet-list-marker" value="-"/>
+              Dashes (<code>-</code>)
+            </label>
+          </div>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="bullet-list-marker" value="*"/>
+              Asterisks (<code>*</code>)
+            </label>
+          </div>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="bullet-list-marker" value="+"/>
+              Plus Signs (<code>+</code>)
+            </label>
+          </div>
+          <p class="help">
+            The character that starts each item of a built-in list export.
+            Task lists keep their fixed <code>- [ ]</code> marker.
+          </p>
+        </form>
+
+        <form id='form-multiple-links-tab-group-indentation' class="field">
+          <label class="label">Tab Group Indentation <span class="tag" data-hide-if-permission-contains="tabGroups" data-testid="requires-permissions-tab-groups">Requires Permission</span></label>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="indentation" value="spaces" data-dependson-permissions="tabGroups"/>
+              Spaces
+            </label>
+          </div>
+          <div class="control">
+            <label class="radio">
+              <input type="radio" name="indentation" value="tab" data-dependson-permissions="tabGroups"/>
+              Tab
+            </label>
+          </div>
+          <p class="help">
+            CommonMark uses spaces to indent nested lists, which are used when exporting tabs along with tab groups.
+            The number of spaces required depends on the leading characters of the parent item.
+            If your Markdown processor prefers <kbd>tab</kbd> (<code>\t</code>) characters for indentation,
+            choose <strong>Tab</strong> so that Copy as Markdown outputs tabs for indentation.
+            Please note that this option does not affect indentations in the output of Copy Selection as Markdown.
+          </p>
+        </form>
       </div>
+      <div class="field is-grouped">
+        <div class="control">
+          <button id="reset" data-testid="reset-multiple-links" type="button" class="button is-outlined is-danger">Restore Multiple Links Defaults</button>
+        </div>
+      </div>
+      <p class="help">Restores this page's settings only. Copy Selection, menu, and other settings are left untouched.</p>
     </div>
   </div>
 </div>
+<script src="../ui/multiple-links.js" type="module"></script>
 </body>
 </html>

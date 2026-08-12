@@ -19,7 +19,6 @@ const __dirname = dirname(__filename);
 
 const LegacyUnorderedListKey = 'styleOfUnorderedList ';
 const LegacyCodeBlockKey = 'styleOfCodeBlock';
-const SelectionBulletKey = 'selection.markdown.bulletListMarker';
 
 const selectionCodeBlockLines = [
   'const greet = (name) => {',
@@ -105,9 +104,13 @@ test.describe('Markdown settings migration - output', () => {
     await seedStorage(serviceWorker, { [LegacyUnorderedListKey]: 'asterisk' });
     await migrateViaOptionsPage(context, extensionId);
 
-    // Diverge the two contexts the way the dedicated pages eventually will.
-    await seedStorage(serviceWorker, { [SelectionBulletKey]: '+' });
+    // Diverge the two contexts through the Copy Selection page itself.
+    const optionsPage = await context.newPage();
+    await optionsPage.goto(`chrome-extension://${extensionId}/dist/static/options.html`);
+    await optionsPage.waitForLoadState('networkidle');
+    await optionsPage.locator('input[name="bullet-list-marker"][value="+"]').check();
     await wait(500);
+    await optionsPage.close();
 
     // Multiple Links keeps the migrated asterisk...
     await page.goto('http://localhost:5566/0.html');

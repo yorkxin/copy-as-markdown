@@ -60,12 +60,13 @@ test.describe('Advanced page', () => {
       await page.goto(url(extensionId, name));
       await page.waitForLoadState('networkidle');
 
-      const general = page.locator('#menu .menu-label', { hasText: 'General' }).locator('+ .menu-list');
+      const formats = page.locator('#menu .menu-label', { hasText: 'Formats' }).locator('+ .menu-list');
       const others = page.locator('#menu .menu-label', { hasText: 'Others' }).locator('+ .menu-list');
 
       await expect(others.locator('a[href="advanced.html"]')).toHaveCount(1);
       await expect(others.locator('a[href="options-permissions.html"]')).toHaveCount(1);
-      await expect(general.locator('a[href="options-permissions.html"]')).toHaveCount(0);
+      await expect(formats.locator('a[href="options-permissions.html"]')).toHaveCount(0);
+      await expect(formats.locator('a[href="advanced.html"]')).toHaveCount(0);
     });
   }
 
@@ -98,7 +99,12 @@ test.describe('Advanced page', () => {
   test('reset restores only link-text escaping', async ({ page, extensionId }) => {
     await page.goto(url(extensionId, 'options.html'));
     await page.waitForLoadState('networkidle');
-    await page.locator('input[name="character"][value="asterisk"]').check();
+    await page.locator('input[name="bullet-list-marker"][value="*"]').check();
+    await page.waitForTimeout(200);
+
+    await page.goto(url(extensionId, 'multiple-links.html'));
+    await page.waitForLoadState('networkidle');
+    await page.locator('input[name="bullet-list-marker"][value="*"]').check();
     await page.waitForTimeout(200);
     await page.locator('input[name="indentation"][value="tab"]').check();
     await page.waitForTimeout(200);
@@ -113,7 +119,7 @@ test.describe('Advanced page', () => {
 
     await expect(page.locator('input[name="enabled"]')).not.toBeChecked();
 
-    // The Markdown Style page's own settings survive untouched.
+    // The format pages' own settings survive untouched.
     expect(await readSync(page, [
       'selection.markdown.bulletListMarker',
       'multipleLinks.markdown.bulletListMarker',
@@ -125,25 +131,27 @@ test.describe('Advanced page', () => {
     });
   });
 
-  test('survives the Markdown Style page reset', async ({ page, extensionId }) => {
-    await page.goto(url(extensionId, 'advanced.html'));
-    await page.waitForLoadState('networkidle');
-    await page.locator('input[name="enabled"]').check();
-    await page.waitForTimeout(500);
+  for (const formatPage of ['options.html', 'multiple-links.html']) {
+    test(`survives the ${formatPage} reset`, async ({ page, extensionId }) => {
+      await page.goto(url(extensionId, 'advanced.html'));
+      await page.waitForLoadState('networkidle');
+      await page.locator('input[name="enabled"]').check();
+      await page.waitForTimeout(500);
 
-    await page.goto(url(extensionId, 'options.html'));
-    await page.waitForLoadState('networkidle');
-    await page.locator('input[name="character"][value="asterisk"]').check();
-    await page.waitForTimeout(200);
-    await page.locator('#reset').click();
-    await page.waitForTimeout(500);
+      await page.goto(url(extensionId, formatPage));
+      await page.waitForLoadState('networkidle');
+      await page.locator('input[name="bullet-list-marker"][value="*"]').check();
+      await page.waitForTimeout(200);
+      await page.locator('#reset').click();
+      await page.waitForTimeout(500);
 
-    await expect(page.locator('input[name="character"][value="dash"]')).toBeChecked();
+      await expect(page.locator('input[name="bullet-list-marker"][value="-"]')).toBeChecked();
 
-    await page.goto(url(extensionId, 'advanced.html'));
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('input[name="enabled"]')).toBeChecked();
-  });
+      await page.goto(url(extensionId, 'advanced.html'));
+      await page.waitForLoadState('networkidle');
+      await expect(page.locator('input[name="enabled"]')).toBeChecked();
+    });
+  }
 
   test('survives revoking every permission', async ({ page, extensionId }) => {
     await page.goto(url(extensionId, 'advanced.html'));
@@ -153,7 +161,7 @@ test.describe('Advanced page', () => {
 
     await page.goto(url(extensionId, 'options.html'));
     await page.waitForLoadState('networkidle');
-    await page.locator('input[name="character"][value="asterisk"]').check();
+    await page.locator('input[name="bullet-list-marker"][value="*"]').check();
     await page.waitForTimeout(200);
 
     await page.goto(url(extensionId, 'menu-commands.html'));

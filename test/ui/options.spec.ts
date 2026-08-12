@@ -1,218 +1,172 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 const selectionSettingsMock = {
+  keys: ['selection.markdown.bulletListMarker', 'selection.markdown.codeBlockStyle'],
+  getAll: vi.fn(),
   setBulletListMarker: vi.fn(),
   setCodeBlockStyle: vi.fn(),
-  reset: vi.fn(),
-  keys: [],
 };
 
-const multipleLinksSettingsMock = {
-  setBulletListMarker: vi.fn(),
-  setTabGroupIndentation: vi.fn(),
-  reset: vi.fn(),
-  keys: [],
-};
+const ensureMarkdownSettingsMigratedMock = vi.fn();
+const resetSelectionSettingsMock = vi.fn();
 
-const readMarkdownSettingsMock = vi.fn();
-const loadMarkdownSettingsMock = vi.fn();
-const setSharedBulletListMarkerMock = vi.fn();
-const resetMarkdownSettingsMock = vi.fn();
-
-const loadPermissionsMock = vi.fn();
-const PermissionStatusValue = {
-  Yes: 'yes',
-  No: 'no',
-  Unavailable: 'unavailable',
-} as const;
-
-vi.mock('../../src/lib/selection-settings.js', () => ({
-  default: selectionSettingsMock,
-}));
-
-vi.mock('../../src/lib/multiple-links-settings.js', () => ({
-  default: multipleLinksSettingsMock,
-}));
-
-vi.mock('../../src/lib/markdown-settings.js', () => ({
-  contextMarkdownSettingsKeys: [],
-  readMarkdownSettings: readMarkdownSettingsMock,
-  loadMarkdownSettings: loadMarkdownSettingsMock,
-  setSharedBulletListMarker: setSharedBulletListMarkerMock,
-  resetMarkdownSettings: resetMarkdownSettingsMock,
-}));
-
-// Mock the permissions UI module
-vi.mock('../../src/ui/permissions-ui.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/ui/permissions-ui.js')>();
+vi.mock('../../src/lib/selection-settings.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/lib/selection-settings.js')>();
   return {
     ...actual,
-    loadPermissions: loadPermissionsMock,
+    default: selectionSettingsMock,
   };
 });
 
-async function loadOptionsHtml(): Promise<void> {
+vi.mock('../../src/lib/markdown-settings.js', () => ({
+  ensureMarkdownSettingsMigrated: ensureMarkdownSettingsMigratedMock,
+  resetSelectionSettings: resetSelectionSettingsMock,
+}));
+
+async function loadPage(): Promise<void> {
   const response = await fetch('/src/static/options.html');
   const html = await response.text();
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
-  document.head.innerHTML = doc.head.innerHTML;
-  document.body.innerHTML = doc.body.innerHTML;
+  document.documentElement.innerHTML = doc.documentElement.innerHTML;
 }
 
-function mockBrowser() {
+function mockBrowser(): void {
   (globalThis as any).browser = {
     storage: { sync: { onChanged: { addListener: vi.fn() } } },
   };
 }
 
-async function flush(): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, 100));
+function flush(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0));
 }
 
-describe('options UI - with permissions granted', () => {
-  beforeAll(async () => {
-    // Set up environment before loading the module
-    await loadOptionsHtml();
+async function startPage(): Promise<void> {
+  await import('../../src/ui/options.js');
+  document.dispatchEvent(new Event('DOMContentLoaded'));
+  await flush();
+}
+
+describe('copy selection options page', () => {
+  beforeEach(async () => {
+    vi.resetModules();
+    vi.clearAllMocks();
     mockBrowser();
-
-    // Set up initial mock responses
-    const settings = {
-      alwaysEscapeLinkBrackets: true,
-      selection: { bulletListMarker: '*', codeBlockStyle: 'indented' },
-      multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
-    };
-    readMarkdownSettingsMock.mockResolvedValue(settings);
-    loadMarkdownSettingsMock.mockResolvedValue(settings);
-    loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.Yes]]));
-
-    // Load the options module - this will register DOM event listeners
-    await import('../../src/ui/options.js');
-
-    // Trigger initialization
-    document.dispatchEvent(new Event('DOMContentLoaded'));
-    await flush();
+    ensureMarkdownSettingsMigratedMock.mockResolvedValue(undefined);
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced' });
+    selectionSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
+    selectionSettingsMock.setCodeBlockStyle.mockResolvedValue(undefined);
+    resetSelectionSettingsMock.mockResolvedValue(undefined);
+    await loadPage();
   });
 
-  it('loads settings into the form', async () => {
-    const asteriskRadio = page.getByRole('radio', { name: /Asterisks/ });
-    await expect.element(asteriskRadio).toBeChecked();
+  it('is the landing page for Copy Selection and owns only its own controls', async () => {
+    await startPage();
 
-    const tabRadio = page.getByRole('radio', { name: /^Tab$/ });
-    await expect.element(tabRadio).toBeChecked();
-
-    const indentedCodeBlockRadio = page.getByRole('radio', { name: /Indented code block/ });
-    await expect.element(indentedCodeBlockRadio).toBeChecked();
-  });
-
-  it('enables tab group indentation when permission is granted', async () => {
-    // Verify that tab group indentation options are enabled when permission is granted
-    const spacesRadio = page.getByRole('radio', { name: /^Spaces$/ });
-    await expect.element(spacesRadio).toBeEnabled();
-
-    const tabRadio = page.getByRole('radio', { name: /^Tab$/ });
-    await expect.element(tabRadio).toBeEnabled();
-  });
-
-  it('hides or shows permission badges based on permissions', async () => {
-    // The tag should be hidden when tabGroups permission is granted (has is-hidden class)
-    await expect.element(page.getByTestId('requires-permissions-tab-groups')).to.toHaveClass('is-hidden');
-  });
-
-  it('no longer presents the link-text escaping control', async () => {
+    await expect.element(page.getByRole('heading', { name: /Copy Selection/ })).toBeVisible();
+    // Tab group indentation belongs to Multiple Links, escaping to Advanced.
+    expect(document.querySelector('#form-multiple-links-tab-group-indentation')).toBeNull();
+    expect(document.querySelector('[name="indentation"]')).toBeNull();
     expect(document.querySelector('#form-link-text-always-escape-brackets')).toBeNull();
   });
 
-  it('writes the bullet list marker for both contexts in one save', async () => {
-    setSharedBulletListMarkerMock.mockClear();
-    setSharedBulletListMarkerMock.mockResolvedValue(undefined);
+  it('lists the pages under Formats and Others', async () => {
+    await startPage();
 
-    const plusRadio = page.getByRole('radio', { name: /Plus Signs/ });
-    await expect.element(plusRadio).toBeInTheDocument();
+    const menu = document.querySelector('#menu')!;
+    const labels = [...menu.querySelectorAll('.menu-label')].map(el => el.textContent?.trim());
+    expect(labels).toEqual(['Formats', 'Others']);
 
-    await plusRadio.click();
-
-    expect(setSharedBulletListMarkerMock).toHaveBeenCalledWith('+');
-    expect(setSharedBulletListMarkerMock).toHaveBeenCalledTimes(1);
+    const links = [...menu.querySelectorAll('a')]
+      .filter(a => !a.dataset.menuCustomFormatSlot)
+      .map(a => a.textContent?.trim());
+    expect(links).toEqual([
+      'Copy Selection',
+      'Multiple Links',
+      'Single Link',
+      'Menu Commands',
+      'Advanced',
+      'Permissions',
+      'Help & Examples',
+      'About',
+    ]);
   });
 
-  it('shows flash on save failure', async () => {
-    setSharedBulletListMarkerMock.mockClear();
-    setSharedBulletListMarkerMock.mockRejectedValueOnce(new Error('fail'));
+  it('migrates a legacy profile before its first read', async () => {
+    const order: string[] = [];
+    ensureMarkdownSettingsMigratedMock.mockImplementation(async () => {
+      order.push('migrate');
+    });
+    selectionSettingsMock.getAll.mockImplementation(async () => {
+      order.push('read');
+      return { bulletListMarker: '*', codeBlockStyle: 'fenced' };
+    });
 
-    const dashRadio = page.getByRole('radio', { name: /Dashes/ });
-    await expect.element(dashRadio).toBeInTheDocument();
+    await startPage();
 
-    await dashRadio.click();
-
-    expect(setSharedBulletListMarkerMock).toHaveBeenCalled();
-
-    const flash = page.getByTestId('flash-error');
-    await expect.element(flash).toBeVisible();
+    expect(order[0]).toBe('migrate');
+    expect(order).toContain('read');
   });
 
-  it('saves code block style on change', async () => {
-    selectionSettingsMock.setCodeBlockStyle.mockClear();
-    selectionSettingsMock.setCodeBlockStyle.mockResolvedValue(undefined);
+  it('loads the persisted settings into the controls', async () => {
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented' });
 
-    const fencedRadio = page.getByRole('radio', { name: /Fenced code block/ });
-    await expect.element(fencedRadio).toBeInTheDocument();
+    await startPage();
 
-    await fencedRadio.click();
-
-    expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('fenced');
+    await expect.element(page.getByRole('radio', { name: /Asterisks/ })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: /Indented code block/ })).toBeChecked();
   });
 
-  it('saves tab group indentation to the Multiple Links context', async () => {
-    multipleLinksSettingsMock.setTabGroupIndentation.mockClear();
-    multipleLinksSettingsMock.setTabGroupIndentation.mockResolvedValue(undefined);
+  it('saves the bullet list marker to the Copy Selection context only', async () => {
+    await startPage();
 
-    const spacesRadio = page.getByRole('radio', { name: /^Spaces$/ });
-    await expect.element(spacesRadio).toBeInTheDocument();
-
-    await spacesRadio.click();
-
-    expect(multipleLinksSettingsMock.setTabGroupIndentation).toHaveBeenCalledWith('spaces');
+    await page.getByRole('radio', { name: /Plus Signs/ }).click();
+    await vi.waitFor(() => expect(selectionSettingsMock.setBulletListMarker).toHaveBeenCalledWith('+'));
+    await expect.element(page.getByTestId('flash-error')).not.toBeVisible();
   });
 
-  it('resets every context the combined page still owns, in one removal', async () => {
-    resetMarkdownSettingsMock.mockClear().mockResolvedValue(undefined);
+  it('saves the code block style', async () => {
+    await startPage();
 
-    const resetButton = page.getByRole('button', { name: /Restore to Default/ });
-    await resetButton.click();
-
-    expect(resetMarkdownSettingsMock).toHaveBeenCalledTimes(1);
+    await page.getByRole('radio', { name: /Indented code block/ }).click();
+    await vi.waitFor(() => expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('indented'));
   });
-});
 
-describe('options UI - with permissions denied', () => {
-  beforeAll(async () => {
-    // Reset DOM and set up a new scenario
-    await loadOptionsHtml();
-    mockBrowser();
+  it('shows the persisted value and flashes when a save fails', async () => {
+    await startPage();
+    selectionSettingsMock.setBulletListMarker.mockRejectedValueOnce(new Error('fail'));
+    // Another page changed it in the meantime: the failed save must show what is
+    // actually persisted, not simply undo the click.
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced' });
 
-    // Set up mock responses with permissions denied
-    const settings = {
-      alwaysEscapeLinkBrackets: false,
-      selection: { bulletListMarker: '-', codeBlockStyle: 'fenced' },
-      multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
-    };
-    readMarkdownSettingsMock.mockResolvedValue(settings);
-    loadMarkdownSettingsMock.mockResolvedValue(settings);
-    loadPermissionsMock.mockResolvedValue(new Map([['tabGroups', PermissionStatusValue.No]]));
-
-    // Since module is already loaded, we trigger DOMContentLoaded again
-    // The module's event listener will fire again
-    document.dispatchEvent(new Event('DOMContentLoaded'));
+    await page.getByRole('radio', { name: /Plus Signs/ }).click();
     await flush();
+
+    await expect.element(page.getByRole('radio', { name: /Asterisks/ })).toBeChecked();
+    await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
 
-  it('disables tab group indentation when permission not granted', async () => {
-    const spacesRadio = page.getByRole('radio', { name: /^Spaces$/ });
-    await expect.element(spacesRadio).toBeDisabled();
+  it('resets only the Copy Selection context', async () => {
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented' });
+    await startPage();
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced' });
 
-    const tabRadio = page.getByRole('radio', { name: /^Tab$/ });
-    await expect.element(tabRadio).toBeDisabled();
+    await page.getByTestId('reset-copy-selection').click();
+    await vi.waitFor(() => expect(resetSelectionSettingsMock).toHaveBeenCalledTimes(1));
+    await expect.element(page.getByRole('radio', { name: /Dashes/ })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: /Fenced code block/ })).toBeChecked();
+  });
+
+  it('flashes and shows the persisted values when a reset fails', async () => {
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced' });
+    await startPage();
+    resetSelectionSettingsMock.mockRejectedValueOnce(new Error('fail'));
+
+    await page.getByTestId('reset-copy-selection').click();
+    await flush();
+
+    await expect.element(page.getByRole('radio', { name: /Asterisks/ })).toBeChecked();
+    await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
 });

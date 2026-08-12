@@ -1,15 +1,16 @@
 import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
-import { isBulletListMarker } from '../lib/markdown.js';
-import { ensureMarkdownSettingsMigrated, resetSelectionSettings } from '../lib/markdown-settings.js';
-import SelectionSettings, { isCodeBlockStyle } from '../lib/selection-settings.js';
+import { isBulletListMarker, isTabGroupIndentationStyle } from '../lib/markdown.js';
+import { ensureMarkdownSettingsMigrated, resetMultipleLinksSettings } from '../lib/markdown-settings.js';
+import MultipleLinksSettings from '../lib/multiple-links-settings.js';
 import { hideFlash, showFlash } from './flash.js';
+import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
 
-// The Copy Selection page. It is also the extension's options landing page, so
-// it owns nothing but its own context: the bullet-list marker used when a
-// selected HTML list is converted, and the code-block style.
+// The Multiple Links page. It owns the marker used by the built-in list
+// exports — task lists keep their fixed `- [ ]` marker — and the indentation
+// used when tabs are exported along with their tab groups.
 
-const BulletListMarkerFormId = 'form-selection-bullet-list-marker';
-const CodeBlockStyleFormId = 'form-selection-code-block-style';
+const BulletListMarkerFormId = 'form-multiple-links-bullet-list-marker';
+const TabGroupIndentationFormId = 'form-multiple-links-tab-group-indentation';
 
 function radioGroup(formId: string, name: string): RadioNodeList | null {
   const form = document.forms.namedItem(formId);
@@ -18,25 +19,25 @@ function radioGroup(formId: string, name: string): RadioNodeList | null {
 }
 
 async function loadSettings(): Promise<void> {
-  const { bulletListMarker, codeBlockStyle } = await SelectionSettings.getAll();
+  const { bulletListMarker, tabGroupIndentation } = await MultipleLinksSettings.getAll();
 
   const markers = radioGroup(BulletListMarkerFormId, 'bullet-list-marker');
   if (markers) markers.value = bulletListMarker;
 
-  const codeBlockStyles = radioGroup(CodeBlockStyleFormId, 'code-block-style');
-  if (codeBlockStyles) codeBlockStyles.value = codeBlockStyle;
+  const indentations = radioGroup(TabGroupIndentationFormId, 'indentation');
+  if (indentations) indentations.value = tabGroupIndentation;
 }
 
 /**
  * Put the controls back in sync with what is actually persisted after a write
- * fails. Re-reading rather than restoring the previous selection keeps the UI
- * honest even when the failed write raced a change made elsewhere.
+ * fails, rather than merely undoing the click — another page may have changed
+ * the same setting in the meantime.
  */
 async function refresh(): Promise<void> {
   try {
     await loadSettings();
   } catch (error) {
-    console.error('failed to reload Copy Selection settings after a failed write', error);
+    console.error('failed to reload Multiple Links settings after a failed write', error);
   }
 }
 
@@ -49,7 +50,7 @@ function wireBulletListMarker(): void {
     if (!(target instanceof HTMLInputElement) || !isBulletListMarker(target.value)) return;
 
     try {
-      await SelectionSettings.setBulletListMarker(target.value);
+      await MultipleLinksSettings.setBulletListMarker(target.value);
       hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
@@ -59,16 +60,16 @@ function wireBulletListMarker(): void {
   });
 }
 
-function wireCodeBlockStyle(): void {
-  const form = document.forms.namedItem(CodeBlockStyleFormId);
+function wireTabGroupIndentation(): void {
+  const form = document.forms.namedItem(TabGroupIndentationFormId);
   if (!form) return;
 
   form.addEventListener('change', async (event) => {
     const target = event.target;
-    if (!(target instanceof HTMLInputElement) || !isCodeBlockStyle(target.value)) return;
+    if (!(target instanceof HTMLInputElement) || !isTabGroupIndentationStyle(target.value)) return;
 
     try {
-      await SelectionSettings.setCodeBlockStyle(target.value);
+      await MultipleLinksSettings.setTabGroupIndentation(target.value);
       hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
@@ -84,9 +85,9 @@ function wireReset(): void {
 
   resetButton.addEventListener('click', async () => {
     try {
-      // Only this context: Multiple Links, menu visibility, Advanced, and every
+      // Only this context: Copy Selection, menu visibility, Advanced, and every
       // custom format are owned by their own pages and must survive this reset.
-      await resetSelectionSettings();
+      await resetMultipleLinksSettings();
       await loadSettings();
       hideFlash();
     } catch (error) {
@@ -99,11 +100,11 @@ function wireReset(): void {
 
 document.addEventListener('DOMContentLoaded', async () => {
   wireBulletListMarker();
-  wireCodeBlockStyle();
+  wireTabGroupIndentation();
   wireReset();
 
-  // Migrate before the first read so an upgrading profile that lands here never
-  // sees its preferences fall back to defaults.
+  // Migrate before the first read: this page may be the first one an upgrading
+  // profile opens.
   await ensureMarkdownSettingsMigrated();
 
   try {
@@ -113,10 +114,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('error getting settings', error);
     showFlash('Failed to load settings. Please try again.');
   }
+
+  const statuses = await loadPermissions();
+  hideUiIfPermissionsNotGranted(statuses);
+  disableUiIfPermissionsNotGranted(statuses);
 });
 
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  const hasSettingsChanged = Object.keys(changes).some(key => SelectionSettings.keys.includes(key));
+  const hasSettingsChanged = Object.keys(changes).some(key => MultipleLinksSettings.keys.includes(key));
   if (hasSettingsChanged) {
     await refresh();
   }

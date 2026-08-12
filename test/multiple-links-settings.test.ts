@@ -65,22 +65,6 @@ describe('multiple links settings', () => {
     });
   });
 
-  describe('reset()', () => {
-    it('restores the defaults and touches nothing else', async () => {
-      storage.data[MultipleLinksSettingKeys.bulletListMarker] = '*';
-      storage.data[MultipleLinksSettingKeys.tabGroupIndentation] = 'tab';
-      storage.data['selection.markdown.bulletListMarker'] = '+';
-
-      await MultipleLinksSettings.reset();
-
-      expect(await MultipleLinksSettings.getAll()).toEqual({
-        bulletListMarker: '-',
-        tabGroupIndentation: TabGroupIndentationStyle.Spaces,
-      });
-      expect(storage.data['selection.markdown.bulletListMarker']).toBe('+');
-    });
-  });
-
   it('owns the documented storage keys', () => {
     expect(MultipleLinksSettings.keys).toEqual([
       'multipleLinks.markdown.bulletListMarker',

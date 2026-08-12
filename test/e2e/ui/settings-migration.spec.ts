@@ -82,8 +82,40 @@ test.describe('Markdown settings migration', () => {
     await optionsPage.reload();
     await optionsPage.waitForLoadState('networkidle');
 
-    await expect(optionsPage.locator('input[name="character"][value="plus"]')).toBeChecked();
+    await expect(optionsPage.locator('input[name="bullet-list-marker"][value="+"]')).toBeChecked();
     await expect(optionsPage.locator('input[name="code-block-style"][value="indented"]')).toBeChecked();
     await optionsPage.close();
+  });
+
+  test('starts both format pages on the migrated marker, then lets them diverge', async ({ context, extensionId }) => {
+    await seedStorage(serviceWorker, { [LegacyUnorderedListKey]: 'asterisk' });
+
+    const copySelectionPage = await context.newPage();
+    await copySelectionPage.goto(optionsUrlOf(extensionId));
+    await copySelectionPage.waitForLoadState('networkidle');
+    await wait(500);
+    await expect(copySelectionPage.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
+
+    const multipleLinksPage = await context.newPage();
+    await multipleLinksPage.goto(`chrome-extension://${extensionId}/dist/static/multiple-links.html`);
+    await multipleLinksPage.waitForLoadState('networkidle');
+    await wait(500);
+    // Both contexts inherited the one legacy choice, so nothing changed on upgrade.
+    await expect(multipleLinksPage.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
+
+    // Changing one context leaves the other where the migration put it.
+    await copySelectionPage.locator('input[name="bullet-list-marker"][value="+"]').check();
+    await wait(500);
+
+    await multipleLinksPage.reload();
+    await multipleLinksPage.waitForLoadState('networkidle');
+    await expect(multipleLinksPage.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
+
+    const stored = await readStorage(serviceWorker);
+    expect(stored[SelectionBulletKey]).toBe('+');
+    expect(stored[MultipleLinksBulletKey]).toBe('*');
+
+    await copySelectionPage.close();
+    await multipleLinksPage.close();
   });
 });

@@ -31,6 +31,10 @@ export const SelectionSettingDefaults: SelectionMarkdownSettings = {
  * context's allowlist and falls back on its own default when invalid. An
  * invalid stored value is never rewritten during a read — it may belong to a
  * newer version of the extension.
+ *
+ * Resetting this context lives in `markdown-settings.ts`: retiring the legacy
+ * keys it migrates from needs a view of both contexts, which this module does
+ * not have.
  */
 export default {
   keys: Object.values(SelectionSettingKeys) as string[],
@@ -57,9 +61,5 @@ export default {
 
   async setCodeBlockStyle(value: CodeBlockStyle): Promise<void> {
     await browser.storage.sync.set({ [SelectionSettingKeys.codeBlockStyle]: value });
-  },
-
-  async reset(): Promise<void> {
-    await browser.storage.sync.remove(this.keys);
   },
 };

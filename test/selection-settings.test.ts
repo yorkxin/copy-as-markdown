@@ -64,22 +64,6 @@ describe('selection settings', () => {
     });
   });
 
-  describe('reset()', () => {
-    it('restores the defaults and touches nothing else', async () => {
-      storage.data[SelectionSettingKeys.bulletListMarker] = '*';
-      storage.data[SelectionSettingKeys.codeBlockStyle] = 'indented';
-      storage.data['multipleLinks.markdown.bulletListMarker'] = '+';
-
-      await SelectionSettings.reset();
-
-      expect(await SelectionSettings.getAll()).toEqual({
-        bulletListMarker: '-',
-        codeBlockStyle: 'fenced',
-      });
-      expect(storage.data['multipleLinks.markdown.bulletListMarker']).toBe('+');
-    });
-  });
-
   it('owns the documented storage keys', () => {
     expect(SelectionSettings.keys).toEqual([
       'selection.markdown.bulletListMarker',

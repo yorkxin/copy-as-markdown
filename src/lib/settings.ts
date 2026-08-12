@@ -30,6 +30,12 @@ export default {
     });
   },
 
+  /**
+   * Restore the default by removing the key.
+   *
+   * Unlike the context-owned resets, this preference has no legacy key of its
+   * own to clear alongside it — it was never renamed.
+   */
   async reset(): Promise<void> {
     await browser.storage.sync.remove(this.keys);
   },

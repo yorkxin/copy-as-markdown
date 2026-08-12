@@ -22,6 +22,9 @@ export const MultipleLinksSettingDefaults: MultipleLinksMarkdownSettings = {
  * Only the built-in list marker lives here; task lists keep their fixed
  * `- [ ]` marker. Persisted values are validated per setting and an invalid
  * stored value is never rewritten during a read.
+ *
+ * Resetting this context lives in `markdown-settings.ts`, for the reason given
+ * on the Copy Selection settings module.
  */
 export default {
   keys: Object.values(MultipleLinksSettingKeys) as string[],
@@ -48,9 +51,5 @@ export default {
 
   async setTabGroupIndentation(value: TabGroupIndentationStyle): Promise<void> {
     await browser.storage.sync.set({ [MultipleLinksSettingKeys.tabGroupIndentation]: value });
-  },
-
-  async reset(): Promise<void> {
-    await browser.storage.sync.remove(this.keys);
   },
 };

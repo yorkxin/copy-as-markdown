@@ -203,7 +203,7 @@ test.describe('Selection as Markdown', () => {
       await optionsPage.goto(optionsUrl);
       await optionsPage.waitForLoadState('networkidle');
 
-      const asteriskRadio = optionsPage.locator('input[name="character"][value="asterisk"]');
+      const asteriskRadio = optionsPage.locator('input[name="bullet-list-marker"][value="*"]');
       await asteriskRadio.check();
       await optionsPage.waitForTimeout(500);
       await optionsPage.close();
@@ -244,7 +244,7 @@ test.describe('Selection as Markdown', () => {
       await optionsPage.goto(optionsUrl);
       await optionsPage.waitForLoadState('networkidle');
 
-      const plusRadio = optionsPage.locator('input[name="character"][value="plus"]');
+      const plusRadio = optionsPage.locator('input[name="bullet-list-marker"][value="+"]');
       await plusRadio.check();
       await optionsPage.waitForTimeout(500);
       await optionsPage.close();

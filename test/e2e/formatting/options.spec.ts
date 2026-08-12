@@ -27,8 +27,8 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.goto('http://localhost:5566/1.html');
       await page2.waitForLoadState('networkidle');
 
-      // Reset settings to default via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      // Reset settings to default via the Multiple Links options page
+      const optionsUrl = `chrome-extension://${extensionId}/dist/static/multiple-links.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
@@ -60,12 +60,12 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.goto('http://localhost:5566/1.html');
       await page2.waitForLoadState('networkidle');
 
-      // Change setting to asterisk via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      // Change setting to asterisk via the Multiple Links options page
+      const optionsUrl = `chrome-extension://${extensionId}/dist/static/multiple-links.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
-      const asteriskRadio = page.locator('input[name="character"][value="asterisk"]');
+      const asteriskRadio = page.locator('input[name="bullet-list-marker"][value="*"]');
       await asteriskRadio.check();
       await page.waitForTimeout(500);
 
@@ -92,12 +92,12 @@ test.describe('Options Page - Clipboard Tests', () => {
       await page2.goto('http://localhost:5566/1.html');
       await page2.waitForLoadState('networkidle');
 
-      // Change setting to plus via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      // Change setting to plus via the Multiple Links options page
+      const optionsUrl = `chrome-extension://${extensionId}/dist/static/multiple-links.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
-      const plusRadio = page.locator('input[name="character"][value="plus"]');
+      const plusRadio = page.locator('input[name="bullet-list-marker"][value="+"]');
       await plusRadio.check();
       await page.waitForTimeout(500);
 
@@ -155,8 +155,8 @@ test.describe('Options Page - Clipboard Tests', () => {
         return;
       }
 
-      // Reset settings to default via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      // Reset settings to default via the Multiple Links options page
+      const optionsUrl = `chrome-extension://${extensionId}/dist/static/multiple-links.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 
@@ -218,8 +218,8 @@ test.describe('Options Page - Clipboard Tests', () => {
         return;
       }
 
-      // Change setting to tab indentation via options page
-      const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
+      // Change setting to tab indentation via the Multiple Links options page
+      const optionsUrl = `chrome-extension://${extensionId}/dist/static/multiple-links.html`;
       await page.goto(optionsUrl);
       await page.waitForLoadState('networkidle');
 

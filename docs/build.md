@@ -34,7 +34,7 @@ The extension is built with **esbuild**, once per target (`chrome` and `firefox-
    import them — there is no `src/vendor` snapshot and no `postinstall` copy step.
 
 The entry points are listed in `entryPointsFor()` in `scripts/lib/build-extension.js`: `background`
-+ the seven UI page scripts for both targets, plus `offscreen` for Chrome only (Firefox has no
++ the eight UI page scripts for both targets, plus `offscreen` for Chrome only (Firefox has no
 offscreen API).
 
 ## Compile-time target flag (`BUILD_TARGET`)
