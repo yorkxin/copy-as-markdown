@@ -63,6 +63,9 @@ class FirefoxBrowserEnvironment:
     def options_page_url(self):
         return f"{self._extension_base_url}/dist/static/options.html"
 
+    def multiple_links_page_url(self):
+        return f"{self._extension_base_url}/dist/static/multiple-links.html"
+
     def custom_format_page_url(self, context: str, slot: int):
         return f"{self._extension_base_url}/dist/static/custom-format.html?context={context}&slot={slot}"
 
@@ -132,12 +135,20 @@ class FirefoxBrowserEnvironment:
             self.driver.close()
             self.driver.switch_to.window(original_window)
 
-    def macro_change_format_style(self, ul_style: str, indent_style: str | None = None):
+    def macro_change_multiple_links_format_style(self, bullet_list_marker: str, indent_style: str | None = None):
+        """Set the built-in tab-export formatting on the Multiple Links options page.
+
+        Both settings are owned by that page; the marker is stored as the literal
+        Markdown token, so pass `-`, `*`, or `+`. Copy Selection has its own
+        marker on its own page and is unaffected.
+        """
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')
-        self.driver.get(self.options_page_url())
+        self.driver.get(self.multiple_links_page_url())
 
-        self.driver.find_element(By.CSS_SELECTOR, f"[name=character][value='{ul_style}']").click()
+        self.driver.find_element(
+            By.CSS_SELECTOR, f"[name=bullet-list-marker][value='{bullet_list_marker}']"
+        ).click()
 
         if indent_style is not None:
             indent_option = self.driver.find_element(By.CSS_SELECTOR, f"[name=indentation][value='{indent_style}']")

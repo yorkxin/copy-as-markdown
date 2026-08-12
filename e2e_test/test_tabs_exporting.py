@@ -50,7 +50,7 @@ class TestTabsExporting:
     @pytest.fixture(scope="class")
     @classmethod
     def set_default_format_style(cls):
-        cls.browser.macro_change_format_style("dash", "spaces")
+        cls.browser.macro_change_multiple_links_format_style("-", "spaces")
         yield
 
     def test_all_tabs_keyboard_shortcut(self, set_default_format_style):

@@ -187,9 +187,19 @@ npm run test:e2e:selenium
 
 This builds the `firefox-test` extension bundle and then runs `pytest e2e_test/ -v` under `xvfb-run`. `xvfb-run` is required — pyautogui sends X11 key events for keyboard-shortcut tests and needs a real (or virtual) display.
 
-**CI:** The `selenium` GitHub Actions job runs this suite natively on `ubuntu-latest` after the `build` job succeeds.
+**Docker (canonical / CI parity):**
 
-**Docker (coming soon):** A Docker variant (`test:e2e:selenium:docker`) for local Mac parity will be added in a follow-up branch, following the same pattern as `docker/playwright-ci/`.
+```sh
+npm run test:e2e:selenium:docker
+```
+
+This runs [docker/selenium-ci/docker-e2e.sh](docker/selenium-ci/docker-e2e.sh), following the same
+pattern as `docker/playwright-ci/`: it builds the image, runs the suite under Xvfb with `CI=true`,
+mounts `test-results/` back to the host, and prunes only the dangling image this project's previous
+build orphaned.
+
+**CI:** The `selenium` GitHub Actions job runs `docker/selenium-ci/docker-e2e.sh` — the same
+entrypoint — after the `build` job succeeds.
 
 ## Debugging the extension
 
