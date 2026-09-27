@@ -34,6 +34,8 @@ export interface SelectionMarkdownSettings {
   strongDelimiter: StrongDelimiter;
 }
 
+// Inline and list styles are following defaults from GitHub's Markdown Editor as of Sep 2026.
+// Others are based on the extension author's personal preferences.
 export const SelectionSettingDefaults: SelectionMarkdownSettings = {
   bulletListMarker: '-',
   codeBlockStyle: 'fenced',
