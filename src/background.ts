@@ -1,9 +1,8 @@
 import './ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
-import type { CodeBlockStyle } from './lib/selection-settings.js';
+import type { SelectionMarkdownSettings } from './lib/selection-settings.js';
 import SelectionSettings from './lib/selection-settings.js';
 import type { MarkdownSettings } from './lib/markdown-settings.js';
 import { loadMarkdownSettings, markdownSettingsKeys, readMarkdownSettings } from './lib/markdown-settings.js';
-import type { BulletListMarker } from './lib/markdown.js';
 import Markdown from './lib/markdown.js';
 import { Bookmarks } from './bookmarks.js';
 import BuiltInStyleSettings from './lib/built-in-style-settings.js';
@@ -34,8 +33,7 @@ import type { PendingPopupFeedbackCode, RuntimeMessage } from './contracts/messa
 
 // Link and tab exports share this instance; Copy Selection has separate settings.
 const markdownInstance = new Markdown();
-let selectionBulletListMarker: BulletListMarker = SelectionSettings.defaultSettings.bulletListMarker;
-let selectionCodeBlockStyle: CodeBlockStyle = SelectionSettings.defaultSettings.codeBlockStyle;
+let selectionSettings: SelectionMarkdownSettings = SelectionSettings.defaultSettings;
 const bookmarks = new Bookmarks({
   markdown: markdownInstance,
 });
@@ -75,8 +73,7 @@ const selectionConverterService = createBrowserSelectionConverterService(
   {
     getTurndownOptions: () => ({
       headingStyle: 'atx',
-      bulletListMarker: selectionBulletListMarker,
-      codeBlockStyle: selectionCodeBlockStyle,
+      ...selectionSettings,
     }),
   },
   markdownConverter,
@@ -119,8 +116,7 @@ function applyMarkdownSettings(settings: MarkdownSettings): void {
   markdownInstance.alwaysEscapeLinkBracket = settings.alwaysEscapeLinkBrackets;
   markdownInstance.bulletListMarker = settings.multipleLinks.bulletListMarker;
   markdownInstance.indentationStyle = settings.multipleLinks.tabGroupIndentation;
-  selectionBulletListMarker = settings.selection.bulletListMarker;
-  selectionCodeBlockStyle = settings.selection.codeBlockStyle;
+  selectionSettings = settings.selection;
 }
 
 browser.alarms.onAlarm.addListener(async (alarm) => {
