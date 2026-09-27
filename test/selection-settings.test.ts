@@ -20,6 +20,8 @@ describe('selection settings', () => {
       expect(await SelectionSettings.getAll()).toEqual({
         bulletListMarker: '-',
         codeBlockStyle: 'fenced',
+        emDelimiter: '_',
+        strongDelimiter: '**',
       });
     });
 
@@ -30,6 +32,8 @@ describe('selection settings', () => {
       expect(await SelectionSettings.getAll()).toEqual({
         bulletListMarker: '+',
         codeBlockStyle: 'indented',
+        emDelimiter: '_',
+        strongDelimiter: '**',
       });
     });
 
@@ -40,6 +44,8 @@ describe('selection settings', () => {
       expect(await SelectionSettings.getAll()).toEqual({
         bulletListMarker: '-',
         codeBlockStyle: 'indented',
+        emDelimiter: '_',
+        strongDelimiter: '**',
       });
     });
 
@@ -64,10 +70,40 @@ describe('selection settings', () => {
     });
   });
 
+  it.each(['_', '*'] as const)('persists emphasis %s', async (value) => {
+    await SelectionSettings.setEmDelimiter(value);
+    expect(storage.data[SelectionSettingKeys.emDelimiter]).toBe(value);
+    expect((await SelectionSettings.getAll()).emDelimiter).toBe(value);
+  });
+
+  it.each(['**', '__'] as const)('persists strong emphasis %s', async (value) => {
+    await SelectionSettings.setStrongDelimiter(value);
+    expect(storage.data[SelectionSettingKeys.strongDelimiter]).toBe(value);
+    expect((await SelectionSettings.getAll()).strongDelimiter).toBe(value);
+  });
+
+  it.each([null, 42, {}, '', '**', '__', 'future'])('falls back only for invalid emphasis %j without rewriting it', async (value) => {
+    storage.data[SelectionSettingKeys.emDelimiter] = value;
+    storage.data[SelectionSettingKeys.strongDelimiter] = '__';
+    const before = { ...storage.data };
+    expect(await SelectionSettings.getAll()).toMatchObject({ emDelimiter: '_', strongDelimiter: '__' });
+    expect(storage.data).toEqual(before);
+  });
+
+  it.each([null, 42, {}, '', '*', '_', 'future'])('falls back only for invalid strong emphasis %j without rewriting it', async (value) => {
+    storage.data[SelectionSettingKeys.emDelimiter] = '*';
+    storage.data[SelectionSettingKeys.strongDelimiter] = value;
+    const before = { ...storage.data };
+    expect(await SelectionSettings.getAll()).toMatchObject({ emDelimiter: '*', strongDelimiter: '**' });
+    expect(storage.data).toEqual(before);
+  });
+
   it('owns the documented storage keys', () => {
     expect(SelectionSettings.keys).toEqual([
       'selection.markdown.bulletListMarker',
       'selection.markdown.codeBlockStyle',
+      'selection.markdown.emDelimiter',
+      'selection.markdown.strongDelimiter',
     ]);
   });
 });
