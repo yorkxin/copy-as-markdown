@@ -187,8 +187,6 @@ describe('menu commands UI', () => {
   });
 
   it('shows what a half-finished reset actually persisted', async () => {
-    // reset() is two writes; when the second one fails the built-ins are
-    // already cleared, so the page must re-read rather than keep its old view.
     menuVisibilityMock.getAll.mockResolvedValue({
       builtIn: { ...AllBuiltInsVisible, tabLinkList: false },
       customFormats: customFormats({ 'single-link/1': { showInMenus: true } }),

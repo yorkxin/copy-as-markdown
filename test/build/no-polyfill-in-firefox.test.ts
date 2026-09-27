@@ -48,7 +48,6 @@ describe('webextension-polyfill ships to chrome only', () => {
     execSync('node scripts/build.js chrome', { cwd: root, stdio: 'inherit' });
   }, 180_000);
 
-  // --- Firefox: fully absent ---
   it('does not ship browser-polyfill.js to firefox vendor', () => {
     expect(existsSync(path.join(firefoxDist, 'vendor', 'browser-polyfill.js'))).toBe(false);
     expect(existsSync(path.join(firefoxDist, 'vendor', 'bulma.css'))).toBe(true);
@@ -67,7 +66,6 @@ describe('webextension-polyfill ships to chrome only', () => {
     }
   });
 
-  // --- Chrome: one shared external file, never inlined ---
   it('ships browser-polyfill.js to chrome vendor with polyfill code', () => {
     const vendor = path.join(chromeDist, 'vendor', 'browser-polyfill.js');
     expect(existsSync(vendor)).toBe(true);

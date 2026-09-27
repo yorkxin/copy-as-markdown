@@ -1,11 +1,4 @@
-/**
- * E2E tests for migrating legacy Markdown preferences into context-owned
- * storage, asserted through real `chrome.storage.sync` and the settings page.
- *
- * The clipboard-facing half of this coverage lives in
- * `test/e2e/formatting/settings-migration.spec.ts`.
- */
-
+// Covers migration storage and UI; rendered output is covered in ../formatting/settings-migration.spec.ts.
 import type { BrowserContext, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
 import { getServiceWorker, wait } from '../helpers';
@@ -100,10 +93,8 @@ test.describe('Markdown settings migration', () => {
     await multipleLinksPage.goto(`chrome-extension://${extensionId}/dist/static/multiple-links.html`);
     await multipleLinksPage.waitForLoadState('networkidle');
     await wait(500);
-    // Both contexts inherited the one legacy choice, so nothing changed on upgrade.
     await expect(multipleLinksPage.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
 
-    // Changing one context leaves the other where the migration put it.
     await copySelectionPage.locator('input[name="bullet-list-marker"][value="+"]').check();
     await wait(500);
 

@@ -1,6 +1,3 @@
-/**
- * Shared runtime message contracts between popup/background/handlers.
- */
 import type { ExportTabsOptions } from '../services/tab-export-service.js';
 
 export type PendingPopupFeedbackCode = 'empty-result';
@@ -44,10 +41,7 @@ export interface ConsumePendingPopupFeedbackMessage {
   params: Record<string, never>;
 }
 
-// e2e only: lets the Selenium readiness gate confirm the background's top-level
-// listeners are registered. Chrome's service worker can't be flag-read directly
-// (attaching a CDP debugger pauses the worker), so the suite probes via a message
-// round-trip; this handler answers with the __listenersReady flag.
+// Selenium uses a message round-trip because attaching a debugger pauses the worker.
 export interface ListenersReadyMessage {
   topic: 'e2e-listeners-ready';
   params: Record<string, never>;

@@ -1,8 +1,6 @@
 import type { TabsAPI } from './shared-types.js';
 
-/**
- * Ensure we have a tab; if none provided, fetch the current active tab.
- */
+/** Uses the provided tab or the current window's sole active tab; throws otherwise. */
 export async function mustGetCurrentTab(
   tabsAPI: TabsAPI,
   providedTab?: browser.tabs.Tab,
@@ -23,9 +21,6 @@ export async function mustGetCurrentTab(
   return tabs[0]!;
 }
 
-/**
- * Ensure a tab has a windowId and return it.
- */
 export function requireWindowId(tab: browser.tabs.Tab): number {
   if (tab.windowId === undefined) {
     throw new Error('tab has no windowId');
@@ -33,9 +28,7 @@ export function requireWindowId(tab: browser.tabs.Tab): number {
   return tab.windowId;
 }
 
-/**
- * Parse commands like "current-tab-custom-format-1" with constrained contexts.
- */
+/** Splits IDs such as `current-tab-custom-format-1` into a permitted context and slot. */
 export function parseCustomFormatCommand<T extends string>(
   command: string,
   contexts: readonly T[],

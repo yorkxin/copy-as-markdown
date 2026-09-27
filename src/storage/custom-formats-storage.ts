@@ -26,10 +26,7 @@ export default {
     return Promise.all(Slots.map(slot => this.get(context, slot)));
   },
 
-  /**
-   * Write only the menu-visibility flag, leaving the name and template exactly
-   * as stored. `save()` would rewrite all three from an in-memory copy.
-   */
+  /** Visibility is written directly so stale names or templates are not written back. */
   async setShowInMenus(context: Context, slot: string, showInMenus: boolean): Promise<void> {
     await browser.storage.sync.set({
       [storageKeyOf(context, slot, 'show_in_menus')]: showInMenus,
@@ -37,10 +34,7 @@ export default {
     await this.touch();
   },
 
-  /**
-   * Drop every menu-visibility flag, which restores the stored default of
-   * hidden. Names and templates are never read or written here.
-   */
+  /** Hides every custom format without changing stored names or templates. */
   async hideAllFromMenus(): Promise<void> {
     const keys = Contexts.flatMap(
       context => Slots.map(slot => storageKeyOf(context, slot, 'show_in_menus')),

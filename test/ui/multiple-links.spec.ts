@@ -83,8 +83,6 @@ describe('multiple links options page', () => {
     await expect.element(page.getByRole('heading', { name: /Multiple Links/ })).toBeVisible();
     expect(document.querySelector('#form-multiple-links-bullet-list-marker')).not.toBeNull();
     expect(document.querySelector('#form-multiple-links-tab-group-indentation')).not.toBeNull();
-    // Code-block style belongs to Copy Selection, escaping to Advanced, and
-    // command visibility to Menu Commands.
     expect(document.querySelector('[name="code-block-style"]')).toBeNull();
     expect(document.querySelector('#form-link-text-always-escape-brackets')).toBeNull();
     expect(document.querySelector('[data-built-in-style]')).toBeNull();

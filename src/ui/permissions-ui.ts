@@ -6,9 +6,6 @@ export enum PermissionStatusValue {
 
 export type PermissionStatus = Map<string, PermissionStatusValue>;
 
-/**
- * Loads the permissions statuses for the given permissions.
- */
 export async function loadPermissions(): Promise<PermissionStatus> {
   const permissionStatuses: PermissionStatus = new Map();
 

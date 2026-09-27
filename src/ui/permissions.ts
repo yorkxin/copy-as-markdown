@@ -1,5 +1,4 @@
-import '../ensure-browser-global.js';
-// MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before this entry evaluates.
 document.addEventListener('DOMContentLoaded', async () => {
   const permissionsParam = new URLSearchParams(window.location.search).get('permissions');
   if (!permissionsParam) {

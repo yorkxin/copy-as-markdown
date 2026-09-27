@@ -10,7 +10,6 @@ const bundlePath = path.join(root, 'chrome', 'dist', 'background.js');
 
 describe('chrome background bundle', () => {
   beforeAll(() => {
-    // Build the Chrome target so the assertion runs against fresh output.
     execSync('node scripts/build.js chrome', { cwd: root, stdio: 'inherit' });
   }, 120_000);
 

@@ -1,7 +1,3 @@
-/**
- * Helper utilities for E2E tests
- */
-
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import type { ClipboardMockCall } from '../../src/services/clipboard-service.js';
@@ -11,9 +7,6 @@ import process from 'node:process';
 const CLIPBOARD_SEPARATOR = '=========== CLIPBOARD SEPARATOR ===========';
 const MOCK_PERMISSION_STORAGE_KEY = '__pw_mock_optional_permissions__';
 
-/**
- * Get all mock clipboard calls from the service worker
- */
 export async function getMockClipboardCalls(serviceWorker: Worker): Promise<ClipboardMockCall[]> {
   return await serviceWorker.evaluate(async () => {
     const mock = (globalThis as any).__mockClipboardService;
@@ -24,17 +17,10 @@ export async function getMockClipboardCalls(serviceWorker: Worker): Promise<Clip
   });
 }
 
-/**
- * Reset the mock clipboard service in the service worker
- */
 export async function resetMockClipboard(serviceWorker: Worker): Promise<void> {
   await serviceWorker.evaluate(async () => {
-    // MV3 can evict and restart the service worker between when it was acquired
-    // (mock mode enabled, __mockClipboardService created in memory) and this call.
-    // A restarted worker starts with mockMode=false and no mock service — it's only
-    // restored asynchronously by initializeMockState. Re-enable mock mode here, which
-    // synchronously (re)creates the service AND ensures the upcoming export writes to
-    // the mock rather than the real clipboard. reset() wants a fresh mock anyway.
+    // MV3 may restart the worker after it was acquired. Re-enabling mock mode
+    // synchronously recreates the service before the next export can use the real clipboard.
     const setMock = (globalThis as any).setMockClipboardMode;
     if (typeof setMock === 'function') {
       await setMock(true);
@@ -47,9 +33,6 @@ export async function resetMockClipboard(serviceWorker: Worker): Promise<void> {
   });
 }
 
-/**
- * Wait for the mock clipboard to have at least one call (with timeout)
- */
 export async function waitForMockClipboard(serviceWorker: Worker, timeout = 3000): Promise<ClipboardMockCall> {
   const startTime = Date.now();
 
@@ -59,17 +42,13 @@ export async function waitForMockClipboard(serviceWorker: Worker, timeout = 3000
       return calls[calls.length - 1]!;
     }
 
-    // Wait a bit before checking again
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
   throw new Error(`Mock clipboard had no calls after ${timeout}ms`);
 }
 
-/**
- * Programmatically trigger a context menu handler by dispatching the Chrome
- * onClicked event inside the service worker.
- */
+/** Dispatches a synthetic context-menu click inside the extension worker. */
 export async function triggerContextMenu(
   serviceWorker: Worker,
   menuItemId: string,
@@ -94,21 +73,13 @@ export async function triggerContextMenu(
   }, { menuItemId, info, tabOverrides });
 }
 
-/**
- * Get the service worker for the extension
- * Filters by chrome-extension:// URL to ensure we get the extension's worker,
- * not some other service worker (like from PWAs or other extensions)
- *
- * Also polls to ensure Chrome APIs are ready before returning
- */
+/** Finds a chrome-extension:// worker, polls listener readiness, then enables mock clipboard mode. */
 export async function getServiceWorker(context: BrowserContext, timeout = 10000) {
-  // Get all service workers and filter for extension workers
   const serviceWorkers = context.serviceWorkers();
   let extensionWorker = serviceWorkers.find(sw =>
     sw.url().startsWith('chrome-extension://'),
   );
 
-  // If not found yet, wait for it
   if (!extensionWorker) {
     extensionWorker = await context.waitForEvent('serviceworker', {
       predicate: worker => worker.url().startsWith('chrome-extension://'),
@@ -116,13 +87,11 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
     });
   }
 
-  // Poll until Chrome APIs are ready
   const startTime = Date.now();
-  const pollInterval = 500; // Check every 500ms
+  const pollInterval = 500;
 
   while (Date.now() - startTime < timeout) {
     const workerState = await extensionWorker.evaluate(() => {
-      // In service worker context, use globalThis which has ServiceWorkerGlobalScope
       return {
         readyState: (globalThis as any).registration?.active?.state,
         hasChrome: typeof chrome !== 'undefined',
@@ -139,10 +108,9 @@ export async function getServiceWorker(context: BrowserContext, timeout = 10000)
       break;
     }
 
-    // Chrome APIs not ready yet, wait and retry
     await new Promise(resolve => setTimeout(resolve, pollInterval));
 
-    // Get fresh service worker reference in case it was restarted
+    // The original Worker handle becomes stale after MV3 restarts it.
     const freshWorkers = context.serviceWorkers();
     const freshWorker = freshWorkers.find(sw =>
       sw.url().startsWith('chrome-extension://'),
@@ -316,11 +284,8 @@ export async function waitForSystemClipboard(
       const value = await readSystemClipboard();
       if (value && value !== CLIPBOARD_SEPARATOR) {
         lastSeen = value;
-        // Wait for THIS test's write specifically. The real system clipboard is
-        // shared across the serial smoke specs, and the offscreen write path is
-        // slow, so a prior test's write can land after this test reset the
-        // clipboard. Returning the first non-sentinel value would capture that
-        // stale contamination instead of the write we're actually waiting for.
+        // A prior serial smoke test may finish writing after this test's reset.
+        // Match the expected value instead of accepting that stale write.
         if (normalize(value) === want) {
           return value;
         }
@@ -346,9 +311,6 @@ export async function setMockClipboardMode(serviceWorker: Worker, enabled: boole
   }, enabled);
 }
 
-/**
- * Wait for a specific time (helper to make timeouts more readable)
- */
 export async function wait(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -443,25 +405,18 @@ export async function ensureCustomFormatsVisible(
   }, { ctx: context, slots });
 }
 
-/**
- * Grant optional permissions to the extension
- * This requests permissions programmatically without user interaction
- */
+/** Requests optional permissions through the extension page without UI interaction. */
 export async function grantOptionalPermissions(
   page: Page,
   permissions: string[],
 ): Promise<boolean> {
   try {
-    // Request permissions using Chrome API
     const granted = await page.evaluate(async (perms) => {
-      // Check if already granted
       const hasPermissions = await chrome.permissions.contains({ permissions: perms });
       if (hasPermissions) {
         return true;
       }
 
-      // Request permissions
-      // Note: In test environment, this should grant automatically
       return await chrome.permissions.request({ permissions: perms });
     }, permissions);
 

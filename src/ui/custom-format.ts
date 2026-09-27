@@ -1,4 +1,4 @@
-import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
 import CustomFormat from '../lib/custom-format.js';
 import type { Context, RenderInput, RenderInputLink } from '../lib/custom-format.js';

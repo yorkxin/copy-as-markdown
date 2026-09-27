@@ -34,7 +34,6 @@ export function copyTextToClipboard(text: string): OffscreenClipboardResponse {
   }
 }
 
-/** Convert selection HTML to Markdown inside the offscreen document's DOM. */
 export function convertHtmlMessage(message: OffscreenMarkdownMessage): OffscreenMarkdownResponse {
   try {
     return { ok: true, markdown: htmlToMarkdown(message.html, message.options) };
@@ -43,8 +42,7 @@ export function convertHtmlMessage(message: OffscreenMarkdownMessage): Offscreen
   }
 }
 
-// Registered only in the extension runtime; guarded so unit tests (no `chrome`)
-// can import this module and test the handlers in isolation.
+// The guard keeps the pure handlers importable when the extension runtime is absent.
 if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
   chrome.runtime.onMessage.addListener((message: OffscreenMessage, _sender, sendResponse) => {
     if (!message || typeof (message as { target?: unknown }).target !== 'string') {

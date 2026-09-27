@@ -1,8 +1,3 @@
-/**
- * Shared command/menu identifiers to avoid stringly-typed branching.
- */
-
-// Keyboard command IDs registered in manifest
 export const KeyboardCommandIds = {
   SelectionAsMarkdown: 'selection-as-markdown',
   CurrentTabLink: 'current-tab-link',
@@ -23,7 +18,6 @@ export type CustomFormatCommandId = `${CustomFormatCommandContext}-custom-format
 
 export type KeyboardCommandId = BuiltInKeyboardCommandId | CustomFormatCommandId;
 
-// Context menu IDs
 export const ContextMenuIds = {
   CurrentTab: 'current-tab',
   Link: 'link',

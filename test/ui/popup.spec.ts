@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 const listMock = vi.fn();
 const getAllBuiltInStylesMock = vi.fn();
 
-// Mock the storage module before any imports
+// Register storage mocks before importing popup.ts.
 vi.mock('../../src/storage/custom-formats-storage.js', () => ({
   default: {
     list: listMock,
@@ -80,7 +80,7 @@ function mockBrowser(tabs: browser.tabs.Tab[]) {
 
 describe('popup UI', () => {
   beforeAll(async () => {
-    // Set up environment before loading the module
+    // Install DOM and browser mocks before import, then dispatch DOMContentLoaded to initialize.
     await loadPopupHtml();
 
     mockBrowser([
@@ -111,10 +111,8 @@ describe('popup UI', () => {
       };
     });
 
-    // Load the popup module - this will register DOM event listeners
     await import('../../src/ui/popup.js');
 
-    // Trigger initialization
     document.dispatchEvent(new Event('DOMContentLoaded'));
     await (window as any).__popupReady;
   });
@@ -136,7 +134,6 @@ describe('popup UI', () => {
     const clipboardMock = navigator.clipboard.writeText as ReturnType<typeof vi.fn>;
     const closeMock = window.close as ReturnType<typeof vi.fn>;
 
-    // Clear previous calls
     sendMessageMock.mockClear();
     clipboardMock.mockClear();
     closeMock.mockClear();

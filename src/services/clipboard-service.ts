@@ -6,27 +6,16 @@ export interface ClipboardMockCall {
 }
 
 export interface ClipboardService {
-  /**
-   * Write text to the clipboard, or throw. A backend never reports a soft failure —
-   * it either succeeds or raises. The empty-text no-op is the controller's policy.
-   */
+  /** Backends resolve on success and throw on failure; only the controller handles empty text. */
   copy: (text: string) => Promise<void>;
 }
 
-/**
- * The mock backend additionally exposes recorder methods used by E2E tests.
- * Segregated from the base interface so real backends don't carry these members.
- */
 export interface MockClipboardService extends ClipboardService {
   getCalls: () => Promise<ClipboardMockCall[]>;
   reset: () => Promise<void>;
   getLastCall: () => Promise<ClipboardMockCall | undefined>;
 }
 
-/**
- * Firefox backend: write directly with navigator.clipboard from the background.
- * A pure peer implementation — no runtime API-availability checks, no empty-text rule.
- */
 export function createNavigatorClipboardService(clipboardAPI: ClipboardAPI): ClipboardService {
   return {
     copy: async (text: string): Promise<void> => {
@@ -35,12 +24,7 @@ export function createNavigatorClipboardService(clipboardAPI: ClipboardAPI): Cli
   };
 }
 
-/**
- * Create a mock clipboard service for testing.
- * Records all copy calls instead of writing to clipboard.
- * Uses chrome.storage.session to persist data across service worker restarts.
- * The empty-text rule is enforced by the controller, not here.
- */
+/** Records writes in extension session storage for E2E inspection across worker restarts. */
 export function createMockClipboardService(): MockClipboardService {
   const STORAGE_KEY = 'mockClipboardCalls';
 
@@ -89,36 +73,19 @@ export function createMockClipboardService(): MockClipboardService {
 }
 
 export interface ClipboardServiceController {
-  /**
-   * Copy text to the clipboard.
-   * @returns `true` if a write was delegated to the active backend, `false` for an
-   * empty-text no-op.
-   */
+  /** Returns false only when empty text suppresses the backend write. */
   copy: (text: string) => Promise<boolean>;
-
-  /**
-   * Toggle mock clipboard mode and persist the preference.
-   */
+  /** Sets mock mode and best-effort persists it in e2e builds; otherwise a no-op. */
   setMockMode: (enabled: boolean) => Promise<void>;
-
-  /**
-   * Initialize the controller by restoring the last saved mock mode.
-   */
+  /** Initializes mock mode from storage in e2e builds; otherwise a no-op. */
   initializeMockState: () => Promise<void>;
-
-  /**
-   * Return whether the controller is currently using the mock clipboard.
-   */
+  /** Always false outside e2e builds. */
   isMockMode: () => boolean;
 }
 
 /**
- * Wrap an already-chosen real clipboard backend with the runtime mock toggle.
- *
- * Axis A (which real backend) is decided at the composition root by BUILD_TARGET
- * and injected here. This controller owns ONLY Axis B (mock vs real), persistence
- * of that preference, the E2E globals, and the single empty-text rule. It is also
- * the sole producer of the boolean no-op signal.
+ * The composition root selects the real backend. This controller switches between
+ * it and the persisted E2E mock, and treats empty text as a no-op.
  */
 export function createBrowserClipboardServiceController(
   realService: ClipboardService,

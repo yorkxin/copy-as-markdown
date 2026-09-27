@@ -1,16 +1,6 @@
-/**
- * E2E tests for Custom Format UI
- *
- * Tests the custom format editor accessible from the extension's options page.
- * The UI allows users to create custom templates using Mustache syntax.
- */
-
 import { expect, test } from '../fixtures';
 
-/**
- * Clear custom format storage for a specific slot and context
- * Must be called AFTER navigating to an extension page
- */
+/** Requires an open extension page so chrome.storage is available. */
 async function clearCustomFormatStorage(page: any, slot: string, context: string) {
   await page.evaluate(({ slot, context }: { slot: string; context: string }) => {
     const keys = [
@@ -25,62 +15,48 @@ async function clearCustomFormatStorage(page: any, slot: string, context: string
 test.describe('Custom Format UI', () => {
   test.describe('Single Link Context', () => {
     test('should load, edit, save, and persist custom format', async ({ page, extensionId }) => {
-      // Navigate to custom format page with slot 1 and single-link context
       const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=1&context=single-link`;
       await page.goto(customFormatUrl);
 
-      // Clear storage after navigating to extension page
       await clearCustomFormatStorage(page, '1', 'single-link');
 
-      // Reload to load cleared data
       await page.reload();
       await page.waitForLoadState('networkidle');
 
-      // Verify page loaded correctly
       await expect(page.locator('h1')).toContainText('Copy as Markdown');
       await expect(page.locator('h2')).toContainText('Custom Format 1');
       await expect(page.locator('h2')).toContainText('Single Link');
 
-      // Get form elements
       const nameInput = page.locator('#input-name');
       const templateInput = page.locator('#input-template');
       const showInMenusCheckbox = page.locator('#input-show-in-menus');
       const previewTextarea = page.locator('#preview');
       const saveButton = page.locator('#save');
 
-      // Verify initial state - name is pre-filled with default name when empty in storage
       await expect(nameInput).toHaveValue('Custom Format 1');
       await expect(templateInput).toHaveValue('');
       await expect(showInMenusCheckbox).not.toBeChecked();
       await expect(previewTextarea).toHaveValue('');
-      // Save button is enabled even with empty template (empty template is valid and renders to empty string)
+      // An empty template is valid and renders an empty string.
       await expect(saveButton).toBeEnabled();
 
-      // Fill in the form
       await nameInput.fill('My Custom Link Format');
       await templateInput.fill('{{title}} - {{url}}');
       await showInMenusCheckbox.check();
 
-      // Wait for preview to update
       await page.waitForTimeout(200);
 
-      // Verify preview updates correctly
       await expect(previewTextarea).toHaveValue('Example 1 - https://example.com/1');
 
-      // Save button should be enabled now
       await expect(saveButton).toBeEnabled();
 
-      // Save the format
       await saveButton.click();
 
-      // Wait for save to complete
       await page.waitForTimeout(500);
 
-      // Refresh the page to verify persistence
       await page.reload();
       await page.waitForLoadState('networkidle');
 
-      // Verify data persisted
       const nameInputAfterReload = page.locator('#input-name');
       const templateInputAfterReload = page.locator('#input-template');
       const showInMenusCheckboxAfterReload = page.locator('#input-show-in-menus');
@@ -101,23 +77,17 @@ test.describe('Custom Format UI', () => {
       const errorMessage = page.locator('#error-template');
       const saveButton = page.locator('#save');
 
-      // Initially no error
       await expect(errorMessage).toHaveClass(/is-hidden/);
 
-      // Enter invalid Mustache template (unclosed tag)
       await templateInput.fill('{{title');
 
-      // Wait for validation
       await page.waitForTimeout(200);
 
-      // Error should be visible
       await expect(errorMessage).not.toHaveClass(/is-hidden/);
       await expect(errorMessage).toContainText('Invalid template');
 
-      // Template input should have error styling
       await expect(templateInput).toHaveClass(/is-danger/);
 
-      // Save button should be disabled
       await expect(saveButton).toBeDisabled();
     });
 
@@ -125,10 +95,8 @@ test.describe('Custom Format UI', () => {
       const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=3&context=single-link`;
       await page.goto(customFormatUrl);
 
-      // Clear storage after navigating to extension page
       await clearCustomFormatStorage(page, '3', 'single-link');
 
-      // Reload to load cleared data
       await page.reload();
       await page.waitForLoadState('networkidle');
 
@@ -136,10 +104,8 @@ test.describe('Custom Format UI', () => {
       const templateInput = page.locator('#input-template');
       const saveButton = page.locator('#save');
 
-      // Verify placeholder shows default name
       await expect(nameInput).toHaveAttribute('placeholder', 'Custom Format 3');
 
-      // Leave name empty, just set template
       await templateInput.fill('[{{title}}]({{url}})');
       await page.waitForTimeout(200);
 
@@ -147,12 +113,11 @@ test.describe('Custom Format UI', () => {
       await saveButton.click();
       await page.waitForTimeout(500);
 
-      // Reload and verify name shows default (because storage has empty string)
       await page.reload();
       await page.waitForLoadState('networkidle');
 
       const nameInputAfterReload = page.locator('#input-name');
-      // When storage has empty string, the UI loads it with default name
+      // Stored empty names display the slot's default name.
       await expect(nameInputAfterReload).toHaveValue('Custom Format 3');
       await expect(nameInputAfterReload).toHaveAttribute('placeholder', 'Custom Format 3');
     });
@@ -164,7 +129,6 @@ test.describe('Custom Format UI', () => {
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
-      // Verify context in header
       await expect(page.locator('h2')).toContainText('Multiple Links');
 
       const nameInput = page.locator('#input-name');
@@ -173,14 +137,12 @@ test.describe('Custom Format UI', () => {
       const previewTextarea = page.locator('#preview');
       const saveButton = page.locator('#save');
 
-      // Fill in a template that uses the links array
       await nameInput.fill('Numbered List Format');
       await templateInput.fill('{{#links}}{{number}}. [{{title}}]({{url}})\n{{/links}}');
       await showInMenusCheckbox.check();
 
       await page.waitForTimeout(200);
 
-      // Preview should show the rendered output with all sample links
       const previewValue = await previewTextarea.inputValue();
       expect(previewValue).toContain('1. [Example 1](https://example.com/1)');
       expect(previewValue).toContain('2. [Example 2](https://example.com/2)');
@@ -190,7 +152,6 @@ test.describe('Custom Format UI', () => {
       await saveButton.click();
       await page.waitForTimeout(500);
 
-      // Verify persistence
       await page.reload();
       await page.waitForLoadState('networkidle');
 
@@ -207,7 +168,6 @@ test.describe('Custom Format UI', () => {
       const templateInput = page.locator('#input-template');
       const previewTextarea = page.locator('#preview');
 
-      // Template using grouped structure
       const groupedTemplate = `{{#grouped}}{{#isGroup}}## {{title}}
 {{#links}}- [{{title}}]({{url}})
 {{/links}}{{/isGroup}}{{^isGroup}}- [{{title}}]({{url}})
@@ -216,7 +176,6 @@ test.describe('Custom Format UI', () => {
       await templateInput.fill(groupedTemplate);
       await page.waitForTimeout(200);
 
-      // Preview should show grouped output
       const previewValue = await previewTextarea.inputValue();
       expect(previewValue).toContain('## Group 1');
       expect(previewValue).toContain('[Example 1](https://example.com/1)');
@@ -233,7 +192,6 @@ test.describe('Custom Format UI', () => {
       const templateInput = page.locator('#input-template');
       const previewTextarea = page.locator('#preview');
 
-      // Type progressively and verify preview updates
       await templateInput.fill('{{title}}');
       await page.waitForTimeout(200);
       await expect(previewTextarea).toHaveValue('Example 1');
@@ -257,7 +215,6 @@ test.describe('Custom Format UI', () => {
       const sampleInput = page.locator('#sample-input');
       const sampleText = await sampleInput.textContent();
 
-      // Should contain single link sample data
       expect(sampleText).toContain('"title": "Example 1"');
       expect(sampleText).toContain('"url": "https://example.com/1"');
       expect(sampleText).toContain('"number": 1');
@@ -271,7 +228,6 @@ test.describe('Custom Format UI', () => {
       const sampleInput = page.locator('#sample-input');
       const sampleText = await sampleInput.textContent();
 
-      // Should contain links array and grouped structure
       expect(sampleText).toContain('"links"');
       expect(sampleText).toContain('"grouped"');
       expect(sampleText).toContain('"isGroup"');
@@ -280,7 +236,6 @@ test.describe('Custom Format UI', () => {
 
   test.describe('Show in Menus', () => {
     test('should appear in popup when "show in menus" is enabled (single-link)', async ({ page, extensionId }) => {
-      // Configure custom format via UI
       const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=4&context=single-link`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
@@ -290,7 +245,6 @@ test.describe('Custom Format UI', () => {
       const showInMenusCheckbox = page.locator('#input-show-in-menus');
       const saveButton = page.locator('#save');
 
-      // Configure with "show in menus" enabled
       await nameInput.fill('Test Menu Format');
       await templateInput.fill('{{title}} - {{url}}');
       await showInMenusCheckbox.check();
@@ -300,18 +254,15 @@ test.describe('Custom Format UI', () => {
       await saveButton.click();
       await page.waitForTimeout(500);
 
-      // Navigate to popup
       const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html`;
       await page.goto(popupUrl);
       await page.waitForLoadState('networkidle');
 
-      // Verify custom format button appears in popup
       const customFormatButton = page.locator('#current-tab-custom-format-4');
       await expect(customFormatButton).toBeVisible();
       await expect(customFormatButton).toContainText('Current tab');
       await expect(customFormatButton).toContainText('Test Menu Format');
 
-      // Now disable "show in menus" and verify it doesn't appear
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -320,17 +271,14 @@ test.describe('Custom Format UI', () => {
       await page.locator('#save').click();
       await page.waitForTimeout(500);
 
-      // Navigate back to popup
       await page.goto(popupUrl);
       await page.waitForLoadState('networkidle');
 
-      // Verify custom format button does not appear
       const customFormatButtonAfter = page.locator('#current-tab-custom-format-4');
       await expect(customFormatButtonAfter).not.toBeVisible();
     });
 
     test('should appear in popup when "show in menus" is enabled (multiple-links)', async ({ page, extensionId }) => {
-      // Configure custom format via UI
       const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=5&context=multiple-links`;
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
@@ -340,7 +288,6 @@ test.describe('Custom Format UI', () => {
       const showInMenusCheckbox = page.locator('#input-show-in-menus');
       const saveButton = page.locator('#save');
 
-      // Configure with "show in menus" enabled
       await nameInput.fill('Batch Export Format');
       await templateInput.fill('{{#links}}- [{{title}}]({{url}})\n{{/links}}');
       await showInMenusCheckbox.check();
@@ -350,12 +297,11 @@ test.describe('Custom Format UI', () => {
       await saveButton.click();
       await page.waitForTimeout(500);
 
-      // Navigate to popup
       const popupUrl = `chrome-extension://${extensionId}/dist/static/popup.html`;
       await page.goto(popupUrl);
       await page.waitForLoadState('networkidle');
 
-      // Verify custom format buttons appear in popup (both all-tabs and highlighted-tabs)
+      // Multiple-link formats appear for both all-tabs and highlighted-tabs exports.
       const allTabsButton = page.locator('#all-tabs-custom-format-5');
       await expect(allTabsButton).toBeVisible();
       await expect(allTabsButton).toContainText('All tabs');
@@ -366,7 +312,6 @@ test.describe('Custom Format UI', () => {
       await expect(highlightedTabsButton).toContainText('Selected tabs');
       await expect(highlightedTabsButton).toContainText('Batch Export Format');
 
-      // Now disable "show in menus" and verify they don't appear
       await page.goto(customFormatUrl);
       await page.waitForLoadState('networkidle');
 
@@ -375,11 +320,9 @@ test.describe('Custom Format UI', () => {
       await page.locator('#save').click();
       await page.waitForTimeout(500);
 
-      // Navigate back to popup
       await page.goto(popupUrl);
       await page.waitForLoadState('networkidle');
 
-      // Verify custom format buttons do not appear
       const allTabsButtonAfter = page.locator('#all-tabs-custom-format-5');
       await expect(allTabsButtonAfter).not.toBeVisible();
 

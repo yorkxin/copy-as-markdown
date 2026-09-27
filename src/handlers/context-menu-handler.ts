@@ -1,7 +1,3 @@
-/**
- * Service for handling context menu click events
- */
-
 import { ContextMenuIds } from '../contracts/commands.js';
 import type { ContextMenuId } from '../contracts/commands.js';
 import Markdown from '../lib/markdown.js';
@@ -20,10 +16,8 @@ export interface BookmarksFormatter {
 
 export interface ContextMenuHandler {
   /**
-   * Handle a context menu click event
-   * @param info - The context menu click data
-   * @param tab - The active tab (may be undefined for bookmarks)
-   * @returns The text to copy to clipboard
+   * Returns the text produced by a context-menu event.
+   * Bookmark events may omit tab.
    */
   handleMenuClick: (
     info: browser.contextMenus.OnClickData,
@@ -31,7 +25,6 @@ export interface ContextMenuHandler {
   ) => Promise<string>;
 }
 
-// Lookup table for Firefox tab list menu items
 type TabListMenuId
   = | typeof ContextMenuIds.AllTabsLinkAsList
     | typeof ContextMenuIds.AllTabsLinkAsTaskList
@@ -81,7 +74,6 @@ export function createContextMenuHandler(
   ): Promise<string> {
     const menuItemId = info.menuItemId.toString() as ContextMenuId;
 
-    // Handle special menu items
     if (menuItemId === ContextMenuIds.CurrentTab) {
       if (!tab) {
         throw new Error('tab is required for current-tab menu item');
@@ -127,7 +119,6 @@ export function createContextMenuHandler(
       return services.selectionConverterService.convertSelectionToMarkdown(tab, info.frameId);
     }
 
-    // Check if menu item is in the tab list lookup table (Firefox only)
     if (isTabListMenuId(menuItemId)) {
       if (!tab) {
         throw new Error('tab is required for tab list menu item');
@@ -142,7 +133,6 @@ export function createContextMenuHandler(
       });
     }
 
-    // Only available on Firefox
     if (menuItemId === ContextMenuIds.BookmarkLink) {
       if (!info.bookmarkId) {
         throw new Error('bookmarkId is required for bookmark-link menu item');
@@ -158,7 +148,6 @@ export function createContextMenuHandler(
       return bookmarksFormatter.toMarkdown(bm[0]!);
     }
 
-    // Try to parse as custom format command
     try {
       const { context, slot } = parseCustomFormatCommand(menuItemId, ['all-tabs', 'highlighted-tabs', 'current-tab', 'link'] as const);
 
@@ -218,7 +207,6 @@ export function createContextMenuHandler(
           throw new TypeError(`unknown context menu custom format context: ${context}`);
       }
     } catch (error) {
-      // If it's not a custom format command, throw unknown menu item error
       if (error instanceof TypeError && error.message.includes('unknown custom format command')) {
         throw new TypeError(`unknown context menu item: ${menuItemId}`);
       }

@@ -65,7 +65,6 @@ describe('copy selection options page', () => {
     await startPage();
 
     await expect.element(page.getByRole('heading', { name: /Copy Selection/ })).toBeVisible();
-    // Tab group indentation belongs to Multiple Links, escaping to Advanced.
     expect(document.querySelector('#form-multiple-links-tab-group-indentation')).toBeNull();
     expect(document.querySelector('[name="indentation"]')).toBeNull();
     expect(document.querySelector('#form-link-text-always-escape-brackets')).toBeNull();
@@ -136,8 +135,6 @@ describe('copy selection options page', () => {
   it('shows the persisted value and flashes when a save fails', async () => {
     await startPage();
     selectionSettingsMock.setBulletListMarker.mockRejectedValueOnce(new Error('fail'));
-    // Another page changed it in the meantime: the failed save must show what is
-    // actually persisted, not simply undo the click.
     selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced' });
 
     await page.getByRole('radio', { name: /Plus Signs/ }).click();

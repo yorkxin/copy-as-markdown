@@ -1,6 +1,5 @@
 import type { CustomFormatsProvider, MarkdownFormatter } from './shared-types.js';
 
-// Type Definitions
 export type LinkExportFormat = 'link' | 'custom-format';
 
 export interface LinkExportOptions {
@@ -16,9 +15,6 @@ export function validateLinkExportOptions(options: LinkExportOptions): void {
   }
 }
 
-/**
- * Renders a link using a custom format template.
- */
 export async function renderCustomFormatLink(
   title: string,
   url: string,
@@ -42,27 +38,18 @@ export class LinkExportService {
   ) { }
 
   /**
-   * Export a link in the specified format.
+   * Exports a Markdown link or renders the selected custom format.
    *
-   * @param options - Export options
-   * @param options.format - Export format: 'link' for markdown link, 'custom-format' for custom template
-   * @param options.title - Link title text
-   * @param options.url - Link URL
-   * @param options.customFormatSlot - Custom format slot (required when format is 'custom-format')
-   * @returns Formatted link string
-   * @throws {TypeError} If format is invalid or customFormatSlot is missing for custom-format
+   * @throws {TypeError} When custom-format has no slot or format is invalid.
    */
   async exportLink(options: LinkExportOptions): Promise<string> {
-    // Validate options
     validateLinkExportOptions(options);
 
-    // Route to appropriate formatter
     switch (options.format) {
       case 'link':
         return this.markdown.linkTo(options.title, options.url);
 
       case 'custom-format':
-        // We already validated that customFormatSlot exists
         return renderCustomFormatLink(
           options.title,
           options.url,

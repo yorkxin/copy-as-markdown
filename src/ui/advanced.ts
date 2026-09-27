@@ -1,4 +1,4 @@
-import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import Settings from '../lib/settings.js';
 import { hideFlash, showFlash } from './flash.js';
 
@@ -20,11 +20,7 @@ async function loadSettings(): Promise<void> {
   if (checkbox) checkbox.checked = alwaysEscapeLinkBrackets;
 }
 
-/**
- * Put the checkbox back in sync with what is actually persisted after a write
- * fails. Re-reading rather than flipping the checkbox back keeps the UI honest
- * even when the failed write raced a change made on another page.
- */
+/** After a failed write, storage is re-read to include concurrent changes from other pages. */
 async function refresh(): Promise<void> {
   try {
     await loadSettings();
@@ -58,8 +54,6 @@ function wireReset(): void {
 
   resetButton.addEventListener('click', async () => {
     try {
-      // Only this page's setting: formatting, menu visibility, and permissions
-      // are owned by their own pages and must survive an Advanced reset.
       await Settings.reset();
       await loadSettings();
       hideFlash();

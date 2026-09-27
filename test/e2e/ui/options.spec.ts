@@ -1,11 +1,3 @@
-/**
- * E2E tests for the format options pages - UI Tests
- *
- * Copy Selection and Multiple Links each own their formatting settings, so this
- * covers persistence across reloads and that one page's reset never reaches into
- * the other's settings.
- */
-
 import type { Page } from '@playwright/test';
 import { expect, test } from '../fixtures';
 

@@ -1,9 +1,6 @@
 export type NestedArray = (string | NestedArray)[];
 
-/**
- * The literal Markdown token used to start an unordered list item.
- * Stored verbatim, so what is persisted is what is emitted.
- */
+/** Persisted verbatim and emitted as the unordered-list marker. */
 export type BulletListMarker = '-' | '*' | '+';
 
 export const BulletListMarkers: BulletListMarker[] = ['-', '*', '+'];
@@ -40,13 +37,10 @@ export default class Markdown {
     this.indentationStyle = indentationStyle;
   }
 
-  /**
-   * check if [] are balanced
-   */
   static bracketsAreBalanced(text: string): boolean {
     const stack: string[] = [];
 
-    // using an iterator to ensure Unicode code point is considered.
+    // String iteration advances by Unicode code point rather than UTF-16 code unit.
     const it = text[Symbol.iterator]();
     let ch = it.next();
 
@@ -85,7 +79,7 @@ export default class Markdown {
 
     const newString: string[] = [];
 
-    // using an iterator to ensure Unicode code point is considered.
+    // String iteration advances by Unicode code point rather than UTF-16 code unit.
     const it = text[Symbol.iterator]();
     let ch = it.next();
 
@@ -93,7 +87,6 @@ export default class Markdown {
       let chToUse: string | null = null;
 
       switch (ch.value) {
-        // Potential unbalanced brackets
         case '[':
         case ']':
           if (shouldEscapeBrackets) {
@@ -101,7 +94,6 @@ export default class Markdown {
           }
           break;
 
-        // chars that may be interpreted as inline formats
         case '*':
         case '_':
         case '`':
@@ -144,13 +136,13 @@ export default class Markdown {
 
   list(items: NestedArray): string {
     const rendered = this.renderList(items, this.bulletListMarker);
-    const flattened = rendered.flat(10); // otherwise it only flatters 1 level deep
+    const flattened = rendered.flat(10);
     return flattened.map(item => `${item}\n`).join('');
   }
 
   taskList(items: NestedArray): string {
     const rendered = this.renderList(items, '- [ ]');
-    const flattened = rendered.flat(10); // otherwise it only flatters 1 level deep
+    const flattened = rendered.flat(10);
     return flattened.map(item => `${item}\n`).join('');
   }
 
@@ -158,9 +150,7 @@ export default class Markdown {
     let renderedIndents = '';
     let indent = '';
     if (this.indentationStyle === TabGroupIndentationStyle.Spaces) {
-      // Two spaces, happens to work because we only support unordered list.
-      // It will break if we are going to support ordered list, in which the spaces to use
-      // depend on the length of prefix characters in the parent level.
+      // Ordered lists would need indentation based on the parent marker's width.
       indent = '  ';
     } else if (this.indentationStyle === TabGroupIndentationStyle.Tab) {
       indent = '\t';

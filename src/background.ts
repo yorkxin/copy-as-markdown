@@ -1,4 +1,4 @@
-import './ensure-browser-global.js'; // MUST be first — defines `browser` for the service worker.
+import './ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import type { CodeBlockStyle } from './lib/selection-settings.js';
 import SelectionSettings from './lib/selection-settings.js';
 import type { MarkdownSettings } from './lib/markdown-settings.js';
@@ -32,8 +32,7 @@ import { createBrowserRuntimeMessageHandler } from './handlers/runtime-message-h
 import type { KeyboardCommandId } from './contracts/commands.js';
 import type { PendingPopupFeedbackCode, RuntimeMessage } from './contracts/messages.js';
 
-// Initialize markdown and bookmarks. `markdownInstance` renders link and tab
-// exports, so it carries the Multiple Links style; Copy Selection keeps its own.
+// Link and tab exports share this instance; Copy Selection has separate settings.
 const markdownInstance = new Markdown();
 let selectionBulletListMarker: BulletListMarker = SelectionSettings.defaultSettings.bulletListMarker;
 let selectionCodeBlockStyle: CodeBlockStyle = SelectionSettings.defaultSettings.codeBlockStyle;
@@ -41,7 +40,6 @@ const bookmarks = new Bookmarks({
   markdown: markdownInstance,
 });
 
-// Initialize services
 const badgeService = createBrowserBadgeService();
 const contextMenuService = createBrowserContextMenuService(CustomFormatsStorage, BuiltInStyleSettings);
 const tabExportService = createBrowserTabExportService(markdownInstance, CustomFormatsStorage);
@@ -50,8 +48,8 @@ const linkExportService = new LinkExportService(markdownInstance, CustomFormatsS
 const pendingPopupFeedbackService = createBrowserPendingPopupFeedbackService();
 const EMPTY_RESULT_FEEDBACK: PendingPopupFeedbackCode = 'empty-result';
 
-// Chrome shares ONE offscreen document between clipboard writes and Markdown
-// conversion. Firefox has no offscreen API (navigator.clipboard + Event Page).
+// Chrome shares one offscreen document for clipboard writes and DOM conversion;
+// Firefox uses navigator.clipboard and its DOM-bearing Event Page.
 const offscreenDocumentService = BUILD_TARGET === 'firefox-mv3'
   ? null
   : createBrowserOffscreenDocumentService();
@@ -90,16 +88,13 @@ const handlerServices = {
   selectionConverterService,
 };
 
-// Keyboard command handler
 const keyboardCommandHandler = createKeyboardBrowserCommandHandler(handlerServices);
 
-// Context menu handler
 const contextMenuHandler = createBrowserContextMenuHandler(
   handlerServices,
   bookmarks,
 );
 
-// Runtime message handler
 const runtimeMessageHandler = createBrowserRuntimeMessageHandler(handlerServices);
 
 async function setPendingPopupFeedback(feedback: PendingPopupFeedbackCode): Promise<void> {
@@ -143,7 +138,7 @@ browser.runtime.onStartup.addListener(async () => {
   await clearPendingPopupFeedback();
 });
 
-contextMenuService.createAll().then(() => null /* NOP */);
+contextMenuService.createAll().then(() => null);
 browser.storage.sync.onChanged.addListener(async (changes) => {
   const changedKeys = Object.keys(changes);
   const hasCustomFormatUpdate = changedKeys.includes(CustomFormatsStorage.KeyOfLastUpdate());
@@ -154,8 +149,7 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
   }
 });
 
-// NOTE: All listeners must be registered at top level scope.
-
+// MV3 requires service-worker listeners to register synchronously during module evaluation.
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   try {
     const text = await contextMenuHandler.handleMenuClick(info, tab);
@@ -174,7 +168,6 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
-// listen to keyboard shortcuts
 browser.commands.onCommand.addListener(async (command: string, tab?: browser.tabs.Tab) => {
   try {
     const text = await keyboardCommandHandler.handleCommand(command as KeyboardCommandId, tab);
@@ -193,21 +186,17 @@ browser.commands.onCommand.addListener(async (command: string, tab?: browser.tab
   }
 });
 
-// listen to messages from popup
-// NOTE: async function will not work here
+// A non-async listener can keep the sendResponse channel open by returning true.
+// https://developer.chrome.com/docs/extensions/develop/concepts/messaging#simple
 browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const runtimeMessage = message as RuntimeMessage;
-  // e2e readiness probe: reaching this handler already proves the module body
-  // ran (onMessage is registered in the same synchronous pass as onCommand /
-  // onClicked), and __listenersReady is flipped true at the end of that pass, so
-  // it is true here. The Selenium suite polls this for the Chrome service worker,
-  // which cannot be flag-read directly.
   if (BUILD_PROFILE === 'e2e' && runtimeMessage.topic === 'e2e-listeners-ready') {
+    // Delivery waits for synchronous module evaluation, so reaching this branch
+    // proves the listeners above and the final readiness flag are initialized.
     sendResponse({ ok: true, listenersReady: (globalThis as any).__listenersReady === true });
     return true;
   }
 
-  // Handle check-mock-clipboard message from popup
   if (BUILD_PROFILE === 'e2e' && runtimeMessage.topic === 'check-mock-clipboard') {
     sendResponse({ ok: true, text: clipboardService.isMockMode() ? 'true' : 'false' });
     return true;
@@ -225,7 +214,6 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  // Handle badge messages directly in background.ts
   if (runtimeMessage.topic === 'badge') {
     if (runtimeMessage.params.type === 'success') {
       badgeService.showSuccess()
@@ -239,7 +227,6 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  // Handle copy-to-clipboard message from popup
   if (runtimeMessage.topic === 'copy-to-clipboard') {
     const text = runtimeMessage.params.text;
     clipboardService.copy(text)
@@ -260,17 +247,15 @@ browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
-  // Handle export messages via service
   runtimeMessageHandler
     .handleMessage(runtimeMessage)
     .then(text => sendResponse({ ok: true, text }))
     .catch(error => sendResponse({ ok: false, error: error.message }));
 
-  // Must return true to indicate async. See https://developer.chrome.com/docs/extensions/mv3/messaging/#simple
   return true;
 });
 
-// Migration already ran at startup, so a change only needs a re-read.
+// Startup migration has completed, so settings changes only require a re-read.
 browser.storage.sync.onChanged.addListener(async (changes) => {
   const hasSettingsChanged = Object.keys(changes)
     .some(key => markdownSettingsKeys.includes(key));
@@ -283,17 +268,12 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
     .catch(error => console.error('error getting settings', error));
 });
 
-// Runs on every worker start: migrates an upgrading profile before the first
-// read, so the user's Markdown style survives without them opening the
-// settings page.
+// Startup migration runs even when no options page is opened.
 loadMarkdownSettings()
   .then(applyMarkdownSettings)
   .catch(error => console.error('error getting settings', error));
 
 if (BUILD_PROFILE === 'e2e') {
-  // Flip this flag last so e2e's getServiceWorker() can gate on "listeners wired"
-  // rather than merely "chrome.* API exists" — closing the readiness race where a
-  // test dispatched an event before onCommand/onClicked/onMessage were registered.
-  // Re-set on every worker restart because the module body re-runs each time.
+  // This flag becomes true only after every listener is registered, including after restarts.
   (globalThis as any).__listenersReady = true;
 }

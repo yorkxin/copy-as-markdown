@@ -42,9 +42,6 @@ export class TabList {
     this.tabs = tabs;
   }
 
-  /**
-   * Represents a list of tabs that are not grouped.
-   */
   static nonGroup(tabs: Tab[]): TabList {
     return new TabList('', TabGroup.NonGroupId, tabs);
   }
@@ -97,7 +94,6 @@ export class TabListGrouper {
 
   makeTabListGroup(tab: Tab): TabList {
     if (tab.groupId === TabGroup.NonGroupId) {
-      // no group
       return TabList.nonGroup([tab]);
     }
 

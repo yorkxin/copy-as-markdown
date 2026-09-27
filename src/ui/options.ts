@@ -1,13 +1,10 @@
-import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import { isBulletListMarker } from '../lib/markdown.js';
 import { ensureMarkdownSettingsMigrated, resetSelectionSettings } from '../lib/markdown-settings.js';
 import SelectionSettings, { isCodeBlockStyle } from '../lib/selection-settings.js';
 import { hideFlash, showFlash } from './flash.js';
 
-// The Copy Selection page. It is also the extension's options landing page, so
-// it owns nothing but its own context: the bullet-list marker used when a
-// selected HTML list is converted, and the code-block style.
-
+// This page owns Copy Selection's bullet-list marker and code-block style.
 const BulletListMarkerFormId = 'form-selection-bullet-list-marker';
 const CodeBlockStyleFormId = 'form-selection-code-block-style';
 
@@ -27,11 +24,7 @@ async function loadSettings(): Promise<void> {
   if (codeBlockStyles) codeBlockStyles.value = codeBlockStyle;
 }
 
-/**
- * Put the controls back in sync with what is actually persisted after a write
- * fails. Re-reading rather than restoring the previous selection keeps the UI
- * honest even when the failed write raced a change made elsewhere.
- */
+/** After a failed write, storage is re-read to include concurrent changes from other pages. */
 async function refresh(): Promise<void> {
   try {
     await loadSettings();
@@ -84,8 +77,6 @@ function wireReset(): void {
 
   resetButton.addEventListener('click', async () => {
     try {
-      // Only this context: Multiple Links, menu visibility, Advanced, and every
-      // custom format are owned by their own pages and must survive this reset.
       await resetSelectionSettings();
       await loadSettings();
       hideFlash();
@@ -102,8 +93,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   wireCodeBlockStyle();
   wireReset();
 
-  // Migrate before the first read so an upgrading profile that lands here never
-  // sees its preferences fall back to defaults.
   await ensureMarkdownSettingsMigrated();
 
   try {

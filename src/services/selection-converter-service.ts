@@ -9,13 +9,8 @@ export interface TurndownOptionsProvider {
 
 export interface SelectionConverterService {
   /**
-   * Convert the current selection in a tab to Markdown.
-   *
-   * @param tab - The browser tab containing the selection
-   * @param frameId - The frame the user interacted with (from contextMenus.OnClickData).
-   *   When provided, only that frame is read. When omitted (keyboard shortcut), HTML is
-   *   extracted from all frames and only the focused leaf frame contributes.
-   * @returns The selection converted to Markdown for the single target frame
+   * A provided frameId targets only that frame. Without one, every frame runs
+   * the extractor and only the focused leaf contributes HTML.
    */
   convertSelectionToMarkdown: (tab: browser.tabs.Tab, frameId?: number) => Promise<string>;
 }
@@ -33,24 +28,19 @@ export function createSelectionConverterService(
       throw new Error('tab has no id');
     }
 
-    // Context menu gives a precise frameId (0 is the main frame). The keyboard shortcut
-    // gives no frame, so we inject into all frames and let each frame self-filter via the
-    // onlyIfFocused flag. NOTE: branch on `=== undefined`, not falsiness — frameId 0 is valid.
+    // frameId 0 is valid, so only undefined selects the all-frames path.
     const onlyIfFocused = frameId === undefined;
     const target = onlyIfFocused
       ? { tabId: tab.id, allFrames: true }
       : { tabId: tab.id, frameIds: [frameId] };
 
-    // Selection extraction must run in the page (it depends on the live Selection and
-    // base URL). Conversion runs out-of-page via the injected converter.
+    // Extraction needs the page's live Selection and base URL; conversion runs out of page.
     const results = await scriptingAPI.executeScript({
       target,
       func: extractSelectionHtml,
       args: [onlyIfFocused],
     });
 
-    // Exactly one frame should contribute HTML: either the explicitly targeted frame, or
-    // (keyboard path) the single focused leaf frame. Find that one and convert only it.
     const html = results
       .map(frame => frame.result as string)
       .find(result => result !== undefined && result !== '');

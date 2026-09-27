@@ -1,9 +1,6 @@
 /**
- * Regression test for the MV3 service-worker readiness race.
- *
- * background.ts must set globalThis.__listenersReady = true synchronously,
- * AFTER every top-level addListener call. getServiceWorker() gates on this
- * flag so tests never dispatch events before listeners are registered.
+ * getServiceWorker waits for __listenersReady, which background.ts sets only
+ * after every top-level listener is registered.
  */
 
 import { expect, test } from './fixtures';

@@ -136,11 +136,9 @@ class FirefoxBrowserEnvironment:
             self.driver.switch_to.window(original_window)
 
     def macro_change_multiple_links_format_style(self, bullet_list_marker: str, indent_style: str | None = None):
-        """Set the built-in tab-export formatting on the Multiple Links options page.
+        """Set Multiple Links formatting without changing Copy Selection.
 
-        Both settings are owned by that page; the marker is stored as the literal
-        Markdown token, so pass `-`, `*`, or `+`. Copy Selection has its own
-        marker on its own page and is unaffected.
+        ``bullet_list_marker`` is the literal Markdown token ``-``, ``*``, or ``+``.
         """
         original_window = self.driver.current_window_handle
         self.driver.switch_to.new_window('tab')

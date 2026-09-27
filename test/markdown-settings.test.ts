@@ -24,7 +24,6 @@ describe('markdown settings', () => {
 
   describe('loadMarkdownSettings() — the startup path', () => {
     it('honors a legacy profile without the settings page ever being opened', async () => {
-      // Exactly what an upgrading user's storage looks like: legacy keys only.
       storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
       storage.data[LegacyMarkdownSettingKeys.codeBlock] = 'indented';
       storage.data[LegacyMarkdownSettingKeys.tabGroupIndentation] = 'tab';
@@ -48,7 +47,6 @@ describe('markdown settings', () => {
 
       const { selection } = await loadMarkdownSettings();
 
-      // The shape background.ts hands to Turndown for Copy Selection.
       expect({
         headingStyle: 'atx',
         bulletListMarker: selection.bulletListMarker,
@@ -84,7 +82,6 @@ describe('markdown settings', () => {
       const settings = await loadMarkdownSettings();
 
       expect(settings.multipleLinks.bulletListMarker).toBe('-');
-      // The legacy key survives, so the next startup can still preserve it.
       expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBe('asterisk');
       expect((await loadMarkdownSettings()).multipleLinks.bulletListMarker).toBe('*');
     });
@@ -134,14 +131,10 @@ describe('markdown settings', () => {
       storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
       storage.failNextRemove = new Error('storage unavailable');
       await loadMarkdownSettings();
-      // The failed cleanup left the legacy key in place for a later retry, but
-      // both contexts already hold their migrated copy.
       expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBe('asterisk');
 
       await reset();
 
-      // Spent everywhere, so the reset retires it: the next startup cannot
-      // migrate it back over the default the user just asked for.
       expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBeUndefined();
       expect(markerOf(await loadMarkdownSettings())).toBe('-');
     });
@@ -165,16 +158,13 @@ describe('markdown settings', () => {
         storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
         storage.failNextSet = new Error('QUOTA_BYTES quota exceeded');
         await loadMarkdownSettings();
-        // Nothing materialized: the legacy key is still both contexts' only copy.
         expect(storage.data['selection.markdown.bulletListMarker']).toBeUndefined();
         expect(storage.data['multipleLinks.markdown.bulletListMarker']).toBeUndefined();
 
         await reset();
 
-        // The sibling's preference survives the retry...
         const migrated = await loadMarkdownSettings();
         expect(siblingMarkerOf(migrated)).toBe('*');
-        // ...while the reset context keeps the default it was just given.
         expect(ownMarkerOf(migrated)).toBe('-');
       },
     );
@@ -182,15 +172,11 @@ describe('markdown settings', () => {
     it('keeps the shared legacy marker for the sibling when the reset cannot migrate it', async () => {
       storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
       storage.data[LegacyMarkdownSettingKeys.codeBlock] = 'indented';
-      // The migration the reset runs first cannot materialize either context.
       storage.failNextSet = new Error('QUOTA_BYTES quota exceeded');
 
       await resetSelectionSettings();
 
-      // Still the only copy of the sibling's preference, so it stays...
       expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBe('asterisk');
-      // ...and Copy Selection records its defaults instead, which a later
-      // migration will not overwrite.
       expect(storage.data['selection.markdown.bulletListMarker']).toBe('-');
       expect(storage.data['selection.markdown.codeBlockStyle']).toBe('fenced');
 
@@ -201,7 +187,6 @@ describe('markdown settings', () => {
 
     it('does not spend the shared legacy marker for a sibling value it cannot read', async () => {
       storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
-      // Written by a newer version: present, but not a marker this version knows.
       storage.data['multipleLinks.markdown.bulletListMarker'] = 'em-dash';
 
       await resetSelectionSettings();

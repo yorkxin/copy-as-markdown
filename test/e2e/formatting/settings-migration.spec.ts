@@ -1,12 +1,4 @@
-/**
- * E2E coverage for the output side of the Markdown settings migration: once a
- * legacy profile has been migrated, Copy Selection and Multiple Links read
- * independent bullet markers.
- *
- * The storage-and-settings-page half lives in
- * `test/e2e/ui/settings-migration.spec.ts`.
- */
-
+// Covers migrated output; storage and settings UI are covered in ../ui/settings-migration.spec.ts.
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -47,7 +39,6 @@ async function selectPreByCodeLanguage(page: Page, language: string): Promise<vo
   }, language);
 }
 
-/** Opening the settings page migrates whatever legacy profile is in storage. */
 async function migrateViaOptionsPage(context: BrowserContext, extensionId: string): Promise<void> {
   const optionsPage = await context.newPage();
   await optionsPage.goto(`chrome-extension://${extensionId}/dist/static/options.html`);
@@ -104,7 +95,6 @@ test.describe('Markdown settings migration - output', () => {
     await seedStorage(serviceWorker, { [LegacyUnorderedListKey]: 'asterisk' });
     await migrateViaOptionsPage(context, extensionId);
 
-    // Diverge the two contexts through the Copy Selection page itself.
     const optionsPage = await context.newPage();
     await optionsPage.goto(`chrome-extension://${extensionId}/dist/static/options.html`);
     await optionsPage.waitForLoadState('networkidle');
@@ -112,7 +102,6 @@ test.describe('Markdown settings migration - output', () => {
     await wait(500);
     await optionsPage.close();
 
-    // Multiple Links keeps the migrated asterisk...
     await page.goto('http://localhost:5566/0.html');
     await page.waitForLoadState('networkidle');
     await serviceWorker.evaluate(() => {
@@ -123,7 +112,6 @@ test.describe('Markdown settings migration - output', () => {
     expect(tabListText).toContain('* [');
     expect(tabListText).not.toContain('+ [');
 
-    // ...while Copy Selection uses its own marker.
     await resetMockClipboard(serviceWorker);
     await page.goto('http://localhost:5566/selection.html');
     await page.waitForLoadState('networkidle');

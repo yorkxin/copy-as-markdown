@@ -1,4 +1,4 @@
-import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import type { BuiltInStyleKey } from '../lib/built-in-style-settings.js';
 import type CustomFormat from '../lib/custom-format.js';
 import type { Context } from '../lib/custom-format.js';
@@ -44,11 +44,7 @@ async function loadVisibility(): Promise<void> {
   apply(await MenuVisibilitySettings.getAll());
 }
 
-/**
- * Put the page back in sync with what is actually persisted after a write
- * fails. Re-reading rather than flipping the checkbox back keeps the UI honest
- * even when the failed write raced another change or applied only in part.
- */
+/** After a failed write, storage is re-read to include concurrent changes from other pages. */
 async function rollback(): Promise<void> {
   try {
     await loadVisibility();
@@ -100,8 +96,7 @@ function wireReset(): void {
       hideFlash();
     } catch (error) {
       console.error('failed to restore default menu visibility', error);
-      // A reset is two writes, so a failure can leave one of them applied.
-      // Re-read so the page shows the composition that actually persisted.
+      // Either of the reset's two writes may have succeeded.
       await rollback();
       showFlash('Failed to reset settings. Please try again.');
     }

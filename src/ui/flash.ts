@@ -1,10 +1,3 @@
-/**
- * The shared `#flash-error` banner every options page carries.
- *
- * Pages call these instead of poking at the element so the settings error
- * feedback stays identical across pages.
- */
-
 function flashElement(): HTMLElement | null {
   return document.getElementById('flash-error');
 }

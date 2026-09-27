@@ -152,7 +152,6 @@ describe('markdown settings migration', () => {
       expect(result.status).toBe('legacy-retained');
       expect(storage.data[LegacyMarkdownSettingKeys.codeBlock]).toBe('indented');
       expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBe('asterisk');
-      // The readable targets are still populated, so nothing is left waiting.
       expect(storage.data[SelectionBulletKey]).toBe('*');
       expect(storage.data[MultipleLinksBulletKey]).toBe('*');
     });

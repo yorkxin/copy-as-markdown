@@ -1,10 +1,3 @@
-/**
- * E2E tests for built-in style visibility toggles.
- *
- * These checkboxes live on the Menu Commands options page and control which
- * built-in commands appear in the popup UI.
- */
-
 import { expect, test } from '../fixtures';
 import type { Page } from '@playwright/test';
 

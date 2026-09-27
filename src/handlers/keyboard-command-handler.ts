@@ -1,7 +1,3 @@
-/**
- * Service for handling keyboard command shortcuts
- */
-
 import { KeyboardCommandIds } from '../contracts/commands.js';
 import type { KeyboardCommandId } from '../contracts/commands.js';
 import type { LinkExportService } from '../services/link-export-service.js';
@@ -12,15 +8,12 @@ import { mustGetCurrentTab, parseCustomFormatCommand, requireWindowId } from '..
 
 export interface KeyboardCommandHandler {
   /**
-   * Handle a keyboard command
-   * @param command - The command string from browser.commands.onCommand
-   * @param tab - The active tab (may be undefined on Firefox)
-   * @returns The text to copy to clipboard
+   * Returns the text produced by a keyboard command. If the browser omits tab
+   * (notably Firefox), the active tab is resolved first.
    */
   handleCommand: (command: KeyboardCommandId, tab?: browser.tabs.Tab) => Promise<string>;
 }
 
-// Command lookup table for tab export commands
 type TabExportCommandId
   = | typeof KeyboardCommandIds.AllTabsLinkAsList
     | typeof KeyboardCommandIds.AllTabsLinkAsTaskList
@@ -54,7 +47,6 @@ export function createKeyboardCommandHandler(
     const currentTab = await mustGetCurrentTab(tabsAPI, tab);
     const windowId = requireWindowId(currentTab);
 
-    // Handle special commands
     if (command === KeyboardCommandIds.SelectionAsMarkdown) {
       return services.selectionConverterService.convertSelectionToMarkdown(currentTab);
     }
@@ -67,7 +59,6 @@ export function createKeyboardCommandHandler(
       });
     }
 
-    // Check if command is in the tab export lookup table
     if (command in TAB_EXPORT_COMMANDS) {
       const params = TAB_EXPORT_COMMANDS[command as TabExportCommandId]!;
       return services.tabExportService.exportTabs({
@@ -76,7 +67,6 @@ export function createKeyboardCommandHandler(
       });
     }
 
-    // Try to parse as custom format command
     try {
       const { context, slot } = parseCustomFormatCommand(command, ['current-tab', 'all-tabs', 'highlighted-tabs'] as const);
 
@@ -109,7 +99,6 @@ export function createKeyboardCommandHandler(
           throw new TypeError(`unknown keyboard custom format context: ${context}`);
       }
     } catch (error) {
-      // If it's not a custom format command, throw unknown command error
       if (error instanceof TypeError && error.message.includes('unknown custom format command')) {
         throw new TypeError(`unknown keyboard command: ${command}`);
       }

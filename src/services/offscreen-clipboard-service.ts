@@ -3,10 +3,7 @@ import type { ClipboardService } from './clipboard-service.js';
 import type { OffscreenClipboardResponse } from '../contracts/offscreen-messages.js';
 import { OFFSCREEN_CLIPBOARD_TARGET } from '../contracts/offscreen-messages.js';
 
-/**
- * Chrome backend: write via the shared offscreen document. A peer implementation
- * of ClipboardService — it resolves on a successful write, otherwise throws.
- */
+/** Resolves only after the offscreen document reports a successful write. */
 export function createOffscreenClipboardService(
   documentService: OffscreenDocumentService,
 ): ClipboardService {

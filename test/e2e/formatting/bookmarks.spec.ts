@@ -4,10 +4,7 @@ import {
   waitForMockClipboard,
 } from '../helpers';
 
-// NOTE: Bookmarks context menu is only available on Firefox;
-// such context menu is not available on Chrome.
-// But since we're emulating context menu events by emitting an event
-// we can do e2e test for the event handler by emitting a fake event in Chrome.
+// Chrome lacks bookmark context menus, so these tests dispatch synthetic events.
 test.describe('bookmarks', () => {
   let bookmarkId: string | undefined;
 

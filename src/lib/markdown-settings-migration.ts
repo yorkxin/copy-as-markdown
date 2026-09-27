@@ -36,22 +36,11 @@ function legacyCodeBlockStyle(value: unknown): CodeBlockStyle | null {
 }
 
 /**
- * Moves the Markdown preferences that Copy Selection and Multiple Links used to
- * share into their context-owned keys.
- *
- * The migration is idempotent and safe to resume:
- *
- * - A target key that is already present is left untouched, valid or not. A
- *   user's post-migration choice therefore always wins, and a value written by
- *   a newer version is never clobbered.
- * - A missing target is populated from the legacy value, or from the context
- *   default when the legacy value is absent or unrecognized.
- * - Legacy keys are removed only once every target holds a value this version
- *   can read. An unreadable target means the preference is not preserved
- *   anywhere yet, so the legacy keys stay put rather than being destroyed —
- *   whoever wrote that value keeps its chance to migrate it.
- * - A failed write leaves the legacy keys in place for the next attempt; a
- *   failed removal can be retried without overwriting anything.
+ * Migration is idempotent and resume-safe:
+ * - Existing targets are never overwritten, including unreadable newer values.
+ * - Missing targets use a readable legacy value or their context default.
+ * - Legacy keys remain until every target is readable.
+ * - Failed writes preserve legacy input; failed removals retry without rewriting targets.
  */
 export async function migrateMarkdownSettings(): Promise<MarkdownSettingsMigrationResult> {
   const legacyKeys = Object.values(LegacyMarkdownSettingKeys) as string[];
@@ -63,7 +52,6 @@ export async function migrateMarkdownSettings(): Promise<MarkdownSettingsMigrati
 
   const presentLegacyKeys = legacyKeys.filter(key => Object.prototype.hasOwnProperty.call(stored, key));
   if (presentLegacyKeys.length === 0) {
-    // Nothing to preserve: a clean install, or migration already completed.
     return { status: 'skipped' };
   }
 
@@ -96,9 +84,7 @@ export async function migrateMarkdownSettings(): Promise<MarkdownSettingsMigrati
     }
   }
 
-  // Everything just written is valid by construction; only pre-existing target
-  // values can still be unreadable, and those must not cost the user a legacy
-  // key that still holds their real preference.
+  // A pre-existing unreadable target may belong to a newer version.
   const hasUnreadableTarget = Object.keys(targets)
     .filter(key => !Object.prototype.hasOwnProperty.call(updates, key))
     .some(key => !TargetValidators[key]!(stored[key]));

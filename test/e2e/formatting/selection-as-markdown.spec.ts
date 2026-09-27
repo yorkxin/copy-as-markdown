@@ -1,12 +1,4 @@
-/**
- * E2E tests for keyboard commands
- *
- * This file tests keyboard shortcuts by triggering them programmatically
- * and verifying the clipboard output. We test 3 different approaches to
- * see which one works best.
- *
- * NOTE: These tests use a mock clipboard service for deterministic results
- */
+// Mock clipboard isolation keeps command results deterministic.
 
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
@@ -77,7 +69,6 @@ test.describe('Selection as Markdown', () => {
   });
 
   test('should copy selection as markdown', async ({ page }) => {
-    // Select some text using JavaScript
     await page.evaluate(() => {
       const range = document.createRange();
       const body = document.querySelector('body');
@@ -89,16 +80,13 @@ test.describe('Selection as Markdown', () => {
       }
     });
 
-    // Trigger selection-as-markdown command
     await serviceWorker.evaluate(() => {
       // @ts-expect-error - Chrome APIs
       return chrome.commands.onCommand.dispatch('selection-as-markdown');
     });
 
-    // Wait for clipboard
     const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
-    // Should match the expected markdown output from the fixture
     const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection.md'), 'utf-8');
     expect(clipboardText).toBe(expectedMarkdown);
   });
@@ -156,7 +144,6 @@ test.describe('Selection as Markdown', () => {
 
   test.describe('Unordered List Character Setting', () => {
     test('should use dash character by default', async ({ page, context, extensionId }) => {
-      // Reset settings to default via options page in a new page
       const optionsPage = await context.newPage();
       const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
       await optionsPage.goto(optionsUrl);
@@ -167,10 +154,8 @@ test.describe('Selection as Markdown', () => {
       await optionsPage.waitForTimeout(500);
       await optionsPage.close();
 
-      // Page is already at test page from beforeEach
       await page.waitForLoadState('networkidle');
 
-      // Select the #test-ul element
       await page.evaluate(() => {
         const range = document.createRange();
         const testUl = document.querySelector('#test-ul');
@@ -182,22 +167,18 @@ test.describe('Selection as Markdown', () => {
         }
       });
 
-      // Trigger selection-as-markdown command
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
         return chrome.commands.onCommand.dispatch('selection-as-markdown');
       });
 
-      // Wait for clipboard
       const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
-      // Should match the expected markdown output with dashes
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-ul-dash.md'), 'utf-8');
       expect(clipboardText).toBe(expectedMarkdown);
     });
 
     test('should use asterisk character when setting is changed', async ({ page, context, extensionId }) => {
-      // Change setting to asterisk via options page in a new page
       const optionsPage = await context.newPage();
       const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
       await optionsPage.goto(optionsUrl);
@@ -208,10 +189,8 @@ test.describe('Selection as Markdown', () => {
       await optionsPage.waitForTimeout(500);
       await optionsPage.close();
 
-      // Page is already at test page from beforeEach
       await page.waitForLoadState('networkidle');
 
-      // Select the #test-ul element
       await page.evaluate(() => {
         const range = document.createRange();
         const testUl = document.querySelector('#test-ul');
@@ -223,22 +202,18 @@ test.describe('Selection as Markdown', () => {
         }
       });
 
-      // Trigger selection-as-markdown command
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
         return chrome.commands.onCommand.dispatch('selection-as-markdown');
       });
 
-      // Wait for clipboard
       const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
-      // Should match the expected markdown output with asterisks
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-ul-asterisk.md'), 'utf-8');
       expect(clipboardText).toBe(expectedMarkdown);
     });
 
     test('should use plus character when setting is changed', async ({ page, context, extensionId }) => {
-      // Change setting to plus via options page in a new page
       const optionsPage = await context.newPage();
       const optionsUrl = `chrome-extension://${extensionId}/dist/static/options.html`;
       await optionsPage.goto(optionsUrl);
@@ -249,10 +224,8 @@ test.describe('Selection as Markdown', () => {
       await optionsPage.waitForTimeout(500);
       await optionsPage.close();
 
-      // Page is already at test page from beforeEach
       await page.waitForLoadState('networkidle');
 
-      // Select the #test-ul element
       await page.evaluate(() => {
         const range = document.createRange();
         const testUl = document.querySelector('#test-ul');
@@ -264,16 +237,13 @@ test.describe('Selection as Markdown', () => {
         }
       });
 
-      // Trigger selection-as-markdown command
       await serviceWorker.evaluate(() => {
         // @ts-expect-error - Chrome APIs
         return chrome.commands.onCommand.dispatch('selection-as-markdown');
       });
 
-      // Wait for clipboard
       const clipboardText = (await waitForMockClipboard(serviceWorker, 3000)).text;
 
-      // Should match the expected markdown output with plus signs
       const expectedMarkdown = await readFile(join(__dirname, '../../../fixtures/selection-ul-plus.md'), 'utf-8');
       expect(clipboardText).toBe(expectedMarkdown);
     });

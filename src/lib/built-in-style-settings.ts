@@ -59,7 +59,7 @@ export default {
     await browser.storage.sync.set({ [StorageKeys[key]]: value });
   },
 
-  /** Drop every stored override so all built-in commands fall back to visible. */
+  /** Removes overrides so every built-in command is visible by default. */
   async reset(): Promise<void> {
     await browser.storage.sync.remove(Object.values(StorageKeys));
   },

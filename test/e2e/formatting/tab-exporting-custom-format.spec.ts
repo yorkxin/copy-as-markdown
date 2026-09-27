@@ -1,12 +1,4 @@
-/**
- * E2E tests for Custom Format Keyboard Shortcuts
- *
- * Tests that custom formats can be configured via the UI and then used
- * through keyboard shortcuts. This tests the full integration between
- * the custom format UI, storage, and keyboard command handling.
- *
- * NOTE: These tests use a mock clipboard service so they can run in parallel
- */
+// Mock clipboard isolation lets these integration cases run in parallel.
 
 import type { Page, Worker } from '@playwright/test';
 import { expect, test } from '../fixtures';
@@ -18,10 +10,6 @@ import {
   waitForMockClipboard,
 } from '../helpers';
 
-/**
- * Configure a custom format using the web UI
- * This simulates the user experience of setting up a custom format
- */
 async function configureCustomFormatViaUI(
   page: any,
   extensionId: string,
@@ -35,37 +23,30 @@ async function configureCustomFormatViaUI(
 ) {
   const { slot, context, name, template, showInMenus } = options;
 
-  // Navigate to custom format page
   const customFormatUrl = `chrome-extension://${extensionId}/dist/static/custom-format.html?slot=${slot}&context=${context}`;
   await page.goto(customFormatUrl);
   await page.waitForLoadState('networkidle');
 
-  // Fill in the form
   const nameInput = page.locator('#input-name');
   const templateInput = page.locator('#input-template');
   const showInMenusCheckbox = page.locator('#input-show-in-menus');
   const saveButton = page.locator('#save');
 
-  // Clear and fill name (using clear first to remove any default value)
   await nameInput.clear();
   await nameInput.fill(name);
 
-  // Fill template
   await templateInput.clear();
   await templateInput.fill(template);
 
-  // Set checkbox
   if (showInMenus) {
     await showInMenusCheckbox.check();
   } else {
     await showInMenusCheckbox.uncheck();
   }
 
-  // Save the configuration
   await expect(saveButton).toBeEnabled();
   await saveButton.click();
 
-  // Wait for save to complete
   await page.waitForTimeout(500);
 }
 
@@ -109,43 +90,35 @@ test.describe('Custom Format', () => {
         showInMenus: true,
       });
 
-      // Navigate to test page
       await page.goto('http://localhost:5566/qa.html');
       await page.waitForLoadState('networkidle');
     });
 
     test('should work with keyboard shortcut', async ({ page }) => {
-      // Trigger the custom format keyboard command
       await serviceWorker.evaluate(async () => {
         const currentTab = await chrome.tabs.getCurrent();
         // @ts-expect-error - Chrome APIs are available in service worker
         chrome.commands.onCommand.dispatch('current-tab-custom-format-1', currentTab);
       });
 
-      // Wait for clipboard to be populated
       await page.bringToFront();
       const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
-      // Verify clipboard contains the custom format output
       expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_ <http://localhost:5566/qa.html>');
     });
 
     test('should work with popup', async ({ page, context, extensionId }) => {
       const popupWindow = await openPopupWindow(serviceWorker, context, extensionId);
 
-      // Click the button for current-tab-custom-format-1
       const button = popupWindow.locator('#current-tab-custom-format-1');
       await expect(button).toBeVisible();
       await button.click();
 
-      // Wait for clipboard
       await page.bringToFront();
       const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
-      // Verify clipboard contains the custom format output
       expect(clipboardText).toEqual('[QA] \\*\\*Hello\\*\\* \\_World\\_ <http://localhost:5566/qa.html>');
 
-      // Cleanup
       await popupWindow.close();
     });
 
@@ -189,7 +162,6 @@ test.describe('Custom Format', () => {
     const TEMPLATE_WITH_GROUP = '{{#grouped}}{{#isGroup}}- {{title}}\n{{#links}}  - {{title}}\n{{/links}}{{/isGroup}}{{^isGroup}}- {{title}}\n{{/isGroup}}{{/grouped}}';
 
     test.beforeEach(async ({ page, context }) => {
-      // Create multiple tabs
       await page.goto('http://localhost:5566/1.html');
 
       page2 = await context.newPage();
@@ -203,7 +175,6 @@ test.describe('Custom Format', () => {
     });
 
     test.afterEach(async () => {
-      // Cleanup
       await page2.close();
       await page3.close();
       await page4.close();
@@ -318,12 +289,10 @@ test.describe('Custom Format', () => {
           });
           await optionsPage.close();
 
-          // Switch back to first page
           await page.bringToFront();
 
           await serviceWorker.evaluate(async ({ tabsAreGrouped, tabsAreHighlighted }) => {
             const allTabs = await chrome.tabs.query({ currentWindow: true });
-            // Find tabs by URL
             const tab1 = allTabs.find(tab => tab.url === 'http://localhost:5566/1.html');
             const tab2 = allTabs.find(tab => tab.url === 'http://localhost:5566/2.html');
             const tab3 = allTabs.find(tab => tab.url === 'http://localhost:5566/3.html');
@@ -334,7 +303,6 @@ test.describe('Custom Format', () => {
             }
 
             if (tabsAreGrouped) {
-              // Create first group with tabs 1 and 2
               const group1Id = await chrome.tabs.group({
                 tabIds: [tab1.id!, tab2.id!],
               });
@@ -343,7 +311,6 @@ test.describe('Custom Format', () => {
                 collapsed: false,
               });
 
-              // Create second group with tab 4 only
               const group2Id = await chrome.tabs.group({
                 tabIds: [tab4.id!],
               });
@@ -357,11 +324,8 @@ test.describe('Custom Format', () => {
               await chrome.tabs.update(tab1.id!, { highlighted: true });
               await chrome.tabs.update(tab3.id!, { highlighted: true });
 
-              // chrome.tabs.update({ highlighted }) resolves before the highlight is
-              // necessarily visible to chrome.tabs.query({ highlighted }). The export
-              // queries highlighted tabs, so on a slow/loaded browser (Docker) it can
-              // race ahead and capture only the always-highlighted active tab. Poll the
-              // same query the export uses until both tabs are reflected before continuing.
+              // chrome.tabs.update resolves before queries observe highlight changes.
+              // Poll the same query used by export to avoid a Docker timing race.
               const deadline = Date.now() + 5000;
               for (;;) {
                 const highlighted = await chrome.tabs.query({ highlighted: true, currentWindow: true });
@@ -388,26 +352,21 @@ test.describe('Custom Format', () => {
             chrome.commands.onCommand.dispatch(commandName, tabs[0]);
           }, commandName);
 
-          // Do NOT page.bringToFront() here: activating a tab collapses the multi-tab
-          // highlight selection to just the active tab, which races the async export
-          // handler and makes it capture only 1 tab (Docker-flaky). The mock clipboard
-          // needs no page focus; waitForMockClipboard polls for the result.
+          // Bringing the page forward collapses the multi-tab highlight before export reads it.
           const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
-          // Verify output contains all tabs in numbered format
           expect(clipboardText).toEqual(expected);
         });
 
         test('works with context menu', async () => {
           await triggerContextMenu(serviceWorker, commandName);
 
-          // No bringToFront — see "works with keyboard command" above.
+          // Keeping the page in the background preserves the multi-tab highlight.
           const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
           expect(clipboardText).toEqual(expected);
         });
 
         test('works with popup', async ({ context }) => {
-          // get window id from the current page's tab
           await serviceWorker.evaluate(async () => {
             const tabs = await chrome.tabs.query({ currentWindow: true, active: true });
             if (!tabs[0]) {
@@ -415,10 +374,8 @@ test.describe('Custom Format', () => {
             }
             const windowId = tabs[0].windowId;
 
-            // Open popup in a new window (not a new tab in the same window)
             const popupUrl = `${chrome.runtime.getURL('/dist/static/popup.html')}?window=${windowId}`;
 
-            // Create a new window with the popup
             await chrome.windows.create({
               url: popupUrl,
               type: 'popup',
@@ -427,11 +384,9 @@ test.describe('Custom Format', () => {
             });
           });
 
-          // Wait for the new window and get its page
           const popupWindow = await context.waitForEvent('page');
           await popupWindow.waitForLoadState('networkidle');
 
-          // Click the button with id = commandName
           const button = popupWindow.locator(`#${commandName}`);
           await expect(button).toBeVisible();
           await button.click();
@@ -440,10 +395,8 @@ test.describe('Custom Format', () => {
           // selection before the popup-triggered export reads it (Docker-flaky).
           const clipboardText = (await waitForMockClipboard(serviceWorker, 5000)).text;
 
-          // Verify output
           expect(clipboardText).toEqual(expected);
 
-          // Cleanup
           await popupWindow.close();
         });
       });

@@ -1,21 +1,13 @@
 /**
- * This function executes in the content script context.
- * It must be self-contained - no external function calls.
- *
- * NOTE: This function should be executed in a content script. It extracts the
- * current selection as an HTML fragment; the HTML→Markdown conversion happens
- * elsewhere (offscreen document on Chrome / Event Page on Firefox).
+ * Serialized into page frames, so it cannot reference other module members.
+ * HTML-to-Markdown conversion happens outside the page.
  */
 export function extractSelectionHtml(onlyIfFocused: boolean): string {
-  // When triggered without a precise frame (keyboard shortcut), this function runs in
-  // every frame. Only the frame the user is actually in should contribute text. A frame
-  // is the focused leaf when the document has focus AND its active element is not a nested
-  // frame (ancestors of the focused frame report hasFocus() too, but their activeElement is
-  // the child frame element). Background iframes that auto-select text do not have focus.
+  // Keyboard shortcuts inject into every frame. Ancestors of the focused frame also
+  // report hasFocus(), but their active element is the child frame, leaving one focused leaf.
   if (onlyIfFocused) {
     const active = document.activeElement;
-    // HTMLFrameElement is the legacy <frame> (framesets); kept for completeness even
-    // though modern pages only use <iframe>.
+    // HTMLFrameElement covers legacy framesets in addition to modern iframes.
     const activeIsSubFrame
       = active instanceof HTMLIFrameElement || active instanceof HTMLFrameElement;
     if (!document.hasFocus() || activeIsSubFrame) {
@@ -33,19 +25,17 @@ export function extractSelectionHtml(onlyIfFocused: boolean): string {
     container.appendChild(sel.getRangeAt(i).cloneContents());
   }
 
-  // Fix <a href> so that they are absolute URLs
+  // Reading .href/.src resolves relative URLs against the page; writing them back
+  // preserves absolute URLs after the fragment leaves that page.
   container.querySelectorAll('a').forEach((value) => {
     value.setAttribute('href', value.href);
   });
 
-  // Fix <img src> so that they are absolute URLs
   container.querySelectorAll('img').forEach((value) => {
     value.setAttribute('src', value.src);
   });
 
-  // Normalize wrapped PRE blocks into canonical <pre><code>...</code></pre>.
-  // This keeps matching conservative and delegates markdown rendering details
-  // (fenced vs indented, language handling, fence sizing) to Turndown built-ins.
+  // Canonical <pre><code> markup delegates fence style, language, and sizing to Turndown.
   container.querySelectorAll('pre').forEach((pre) => {
     if (pre.firstElementChild?.nodeName === 'CODE') {
       return;
@@ -62,7 +52,7 @@ export function extractSelectionHtml(onlyIfFocused: boolean): string {
     const codeText = codeNode.textContent || '';
     const hasMultilineCode = codeText.includes('\n');
 
-    // Conservative matcher: avoid rewriting instructional <pre> content.
+    // Single-line, unclassified <pre> elements may be instructional text rather than code.
     if (!hasLanguageClass && !hasMultilineCode) {
       return;
     }

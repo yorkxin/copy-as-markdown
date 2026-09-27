@@ -1,15 +1,14 @@
 import Mustache from 'mustache';
 import type { TabList } from './tabs.js';
 
-// disable HTML escape
+// Templates produce Markdown, so values bypass Mustache's default HTML escaping.
 Mustache.escape = (text: string) => text;
 
-/** Every context that owns custom formats, in Menu Commands form order. */
+/** Contexts appear in Menu Commands form order. */
 export const Contexts = ['single-link', 'multiple-links'] as const;
 
 export type Context = typeof Contexts[number];
 
-/** The fixed set of custom format slots each context offers. */
 export const Slots = ['1', '2', '3', '4', '5'] as const;
 
 export interface RenderInputLink {

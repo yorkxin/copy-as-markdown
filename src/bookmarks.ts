@@ -10,18 +10,13 @@ export class Bookmarks {
 
   aggregate(bookmark: browser.bookmarks.BookmarkTreeNode): NestedArray {
     if (bookmark.url) {
-      // an actual bookmark, not a folder, return
       return [this._markdown.linkTo(bookmark.title, bookmark.url)];
     }
 
-    // it is a folder, for sure
-
-    // empty folder
     if (typeof bookmark.children === 'undefined') {
       return [bookmark.title];
     }
 
-    // folder, traverse
     const children = bookmark.children.map(bm => this.aggregate(bm));
     if (children.length === 0) {
       return [bookmark.title];
@@ -33,8 +28,7 @@ export class Bookmarks {
     const tree = this.aggregate(bookmark);
 
     if (tree.length === 1) {
-      // The first item is always a string so it's safe to cast to string.
-      // FIXME: this fact is not checked by type system
+      // aggregate() represents a leaf or empty folder as a single string.
       return tree[0] as string;
     }
 

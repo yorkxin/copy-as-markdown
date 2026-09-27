@@ -267,7 +267,7 @@ describe('tab Export Service - Refactored (Pure Functions)', () => {
 
       expect(result).toContain('[GitHub](https://github.com)');
       expect(result).toContain('[Twitter](https://twitter.com)');
-      expect(result).toMatch(/^- /m); // starts with list marker
+      expect(result).toMatch(/^- /m);
     });
 
     it('should render tabs as task list when listType is task-list', () => {
@@ -308,7 +308,6 @@ describe('tab Export Service - Refactored (Pure Functions)', () => {
       expect(result).toContain('Work');
       expect(result).toContain('Gmail');
       expect(result).toContain('Calendar');
-      // Check for indentation (nested list)
       expect(result).toMatch(/ {2}- Gmail/);
     });
   });

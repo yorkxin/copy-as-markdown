@@ -28,6 +28,7 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
     }
   }
 
+  /** When tabs permission is not granted, opens the permissions page and then throws. */
   async fetchTabs(scope: ExportScope, windowId: number): Promise<chrome.tabs.Tab[]> {
     await this.ensureTabsPermission();
 
@@ -49,7 +50,7 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
         return [];
       }
     } catch {
-      // tabGroups permission doesn't exist in this browser
+      // Browsers without tabGroups reject this permission query.
       return [];
     }
 
@@ -61,9 +62,6 @@ export class BrowserTabDataFetcher implements TabDataFetcher {
   }
 }
 
-/**
- * Default browser-backed data fetcher factory.
- */
 export function createBrowserTabDataFetcher(): BrowserTabDataFetcher {
   return new BrowserTabDataFetcher({
     permissions: browser.permissions,

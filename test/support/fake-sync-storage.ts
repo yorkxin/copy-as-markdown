@@ -1,14 +1,3 @@
-/**
- * Minimal in-memory stand-in for `browser.storage.sync`, installed as the global
- * `browser` so storage-backed modules can be exercised without a real browser.
- *
- * It reproduces the two `get()` shapes the extension relies on:
- *   - array of keys  → only the keys that are actually present come back
- *   - defaults object → stored values merged over the supplied defaults
- *
- * `failNextSet` / `failNextRemove` inject one-shot write failures so partial
- * migration paths can be tested.
- */
 export interface FakeSyncStorage {
   data: Record<string, unknown>;
   failNextSet: Error | null;
@@ -21,6 +10,7 @@ function has(target: Record<string, unknown>, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(target, key);
 }
 
+/** Creates an installable storage.sync fake with native get semantics and one-shot write failures. */
 export function createFakeSyncStorage(
   initial: Record<string, unknown> = {},
 ): FakeSyncStorage {
@@ -36,8 +26,7 @@ export function createFakeSyncStorage(
         ? [query]
         : Array.isArray(query) ? query : Object.keys(query);
 
-      // The defaults-object form starts from the defaults; the key-list form
-      // starts empty so callers can tell "absent" from "set to the default".
+      // browser.storage.get(defaults) merges defaults; key queries return only stored values.
       const result: Record<string, unknown> = (typeof query === 'string' || Array.isArray(query))
         ? {}
         : { ...query };

@@ -24,63 +24,37 @@ export interface AlarmsAPI {
   create: (name: string, alarmInfo: { when: number }) => void;
 }
 
-/**
- * Creates a badge service instance.
- *
- * @param badgeAPI - The browser badge API (browser.browserAction or chrome.action)
- * @param alarmsAPI - The browser alarms API for scheduling badge clear
- * @returns Badge service with methods to show success/error and clear badge
- *
- * @example
- * ```typescript
- * const badge = createBadgeService(
- *   browser.browserAction || chrome.action,
- *   browser.alarms
- * );
- *
- * await badge.showSuccess();
- * // Badge shows ✓ with green background, auto-clears after 3s
- * ```
- */
 export function createBadgeService(
   badgeAPI: BadgeAPI,
   alarmsAPI: AlarmsAPI,
 ) {
+  // Reusing the alarm name replaces the alarm, so repeated flashes reset the timeout.
   return {
     /**
-     * Shows success badge (✓ with green background).
-     * Badge will auto-clear after 3 seconds.
-     *
-     * Note: Calling this multiple times will reset the 3-second timer.
+     * Shows a green `✓` and schedules its clear alarm for three seconds later;
+     * repeated calls restart the timer.
      */
     async showSuccess(): Promise<void> {
       await Promise.all([
         badgeAPI.setBadgeText({ text: TEXT_OK }),
         badgeAPI.setBadgeBackgroundColor({ color: COLOR_GREEN }),
       ]);
-      // Creating an alarm with the same name replaces any existing alarm
       alarmsAPI.create(ALARM_NAME_CLEAR_BADGE, { when: Date.now() + FLASH_DURATION_MS });
     },
 
     /**
-     * Shows error badge (× with red background).
-     * Badge will auto-clear after 3 seconds.
-     *
-     * Note: Calling this multiple times will reset the 3-second timer.
+     * Shows a red `×` and schedules its clear alarm for three seconds later;
+     * repeated calls restart the timer.
      */
     async showError(): Promise<void> {
       await Promise.all([
         badgeAPI.setBadgeText({ text: TEXT_ERROR }),
         badgeAPI.setBadgeBackgroundColor({ color: COLOR_RED }),
       ]);
-      // Creating an alarm with the same name replaces any existing alarm
       alarmsAPI.create(ALARM_NAME_CLEAR_BADGE, { when: Date.now() + FLASH_DURATION_MS });
     },
 
-    /**
-     * Shows a persistent warning badge (! with yellow background).
-     * This state is not auto-cleared and must be cleared explicitly.
-     */
+    /** Warning state persists until clear() is called. */
     async showWarning(): Promise<void> {
       await Promise.all([
         badgeAPI.setBadgeText({ text: TEXT_WARNING }),
@@ -88,10 +62,6 @@ export function createBadgeService(
       ]);
     },
 
-    /**
-     * Clears the badge (removes text and resets to transparent).
-     * This is automatically called after the flash duration expires.
-     */
     async clear(): Promise<void> {
       await Promise.all([
         badgeAPI.setBadgeText({ text: TEXT_EMPTY }),
@@ -100,17 +70,14 @@ export function createBadgeService(
     },
 
     /**
-     * Returns the alarm name used for clearing the badge.
-     * Use this to handle the alarm event in your alarm listener.
+     * Identifies the alarm that clears transient badges.
      *
      * @example
-     * ```typescript
      * browser.alarms.onAlarm.addListener(async (alarm) => {
      *   if (alarm.name === badge.getClearAlarmName()) {
      *     await badge.clear();
      *   }
      * });
-     * ```
      */
     getClearAlarmName(): string {
       return ALARM_NAME_CLEAR_BADGE;
@@ -120,15 +87,6 @@ export function createBadgeService(
 
 export type BadgeService = ReturnType<typeof createBadgeService>;
 
-/**
- * Creates a badge service using the browser's native APIs.
- *
- * @example
- * ```typescript
- * const badge = createBrowserBadgeService();
- * await badge.showSuccess();
- * ```
- */
 export function createBrowserBadgeService(): BadgeService {
   return createBadgeService(browser.action, browser.alarms);
 }

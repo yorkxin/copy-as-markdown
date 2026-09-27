@@ -4,13 +4,7 @@ interface Settings {
   alwaysEscapeLinkBrackets: boolean;
 }
 
-/**
- * Settings that are still shared across output contexts.
- *
- * Link-text escaping applies to every generated link, so it keeps its original
- * unscoped key. The Markdown style preferences that used to live here now
- * belong to `selection-settings.ts` and `multiple-links-settings.ts`.
- */
+/** Settings shared by every output context; context-specific Markdown styles live elsewhere. */
 export default {
   SKLinkTextAlwaysEscapeBrackets,
 
@@ -30,12 +24,7 @@ export default {
     });
   },
 
-  /**
-   * Restore the default by removing the key.
-   *
-   * Unlike the context-owned resets, this preference has no legacy key of its
-   * own to clear alongside it — it was never renamed.
-   */
+  /** Removes the key so browser.storage.get supplies its default; no legacy key is retired. */
   async reset(): Promise<void> {
     await browser.storage.sync.remove(this.keys);
   },

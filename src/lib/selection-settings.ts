@@ -24,22 +24,15 @@ export const SelectionSettingDefaults: SelectionMarkdownSettings = {
   codeBlockStyle: 'fenced',
 };
 
-/**
- * Markdown settings owned by the Copy Selection context.
- *
- * Persisted values are untrusted: each setting is validated against this
- * context's allowlist and falls back on its own default when invalid. An
- * invalid stored value is never rewritten during a read — it may belong to a
- * newer version of the extension.
- *
- * Resetting this context lives in `markdown-settings.ts`: retiring the legacy
- * keys it migrates from needs a view of both contexts, which this module does
- * not have.
- */
+/** Reset is centralized in markdown-settings.ts because retiring the shared marker requires both contexts. */
 export default {
   keys: Object.values(SelectionSettingKeys) as string[],
   defaultSettings: SelectionSettingDefaults,
 
+  /**
+   * Invalid stored values fall back to defaults without being rewritten because
+   * they may belong to a newer version.
+   */
   async getAll(): Promise<SelectionMarkdownSettings> {
     const stored = await browser.storage.sync.get(this.keys);
     const bulletListMarker = stored[SelectionSettingKeys.bulletListMarker];

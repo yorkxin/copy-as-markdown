@@ -1,11 +1,3 @@
-/**
- * E2E tests for the Menu Commands options page.
- *
- * This page owns which built-in and custom-format commands appear in menus.
- * The reset restores the default menu composition and must never touch a
- * custom format's name or template.
- */
-
 import { expect, test } from '../fixtures';
 import type { Page } from '@playwright/test';
 

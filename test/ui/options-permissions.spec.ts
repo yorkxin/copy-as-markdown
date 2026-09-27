@@ -42,10 +42,9 @@ async function flush(): Promise<void> {
 
 describe('options permissions UI', () => {
   beforeAll(async () => {
-    // Set up environment before loading the module
+    // Install DOM and browser mocks before import, then dispatch DOMContentLoaded to initialize.
     await loadOptionsPermissionsHtml();
 
-    // Set up initial permission statuses
     loadPermissionsMock.mockResolvedValue(new Map([
       ['tabs', 'yes'],
       ['tabGroups', 'no'],
@@ -54,29 +53,24 @@ describe('options permissions UI', () => {
 
     mockBrowser();
 
-    // Load the options-permissions module - this will register DOM event listeners
     await import('../../src/ui/options-permissions.js');
 
-    // Trigger initialization
     document.dispatchEvent(new Event('DOMContentLoaded'));
     await flush();
   });
 
   it('renders permission buttons according to status', async () => {
-    // Tabs granted: request hidden, remove visible
     const tabsGrant = page.getByRole('button', { name: 'Grant Tabs Permission' }); ;
     const tabsRemove = page.getByRole('button', { name: 'Revoke Tabs Permission' }); ;
     await expect.element(tabsGrant).toHaveClass('is-hidden');
     await expect.element(tabsRemove).not.toHaveClass('is-hidden');
 
-    // tabGroups not granted: request visible enabled, remove hidden
     const groupsGrant = page.getByRole('button', { name: 'Grant Tab Groups Permission' }); ;
     const groupsRemove = page.getByRole('button', { name: 'Revoke Tab Groups Permission' }); ;
     await expect.element(groupsGrant).toBeEnabled();
     await expect.element(groupsGrant).not.toHaveClass('is-hidden');
     await expect.element(groupsRemove).toHaveClass('is-hidden');
 
-    // bookmarks unavailable: request disabled
     const bookmarksGrant = page.getByRole('button', { name: 'Grant Bookmarks Permission' }); ;
     await expect.element(bookmarksGrant).not.toBeEnabled();
   });
@@ -95,22 +89,18 @@ describe('options permissions UI', () => {
   });
 
   it('hides or shows permission badges based on permissions', async () => {
-    // Tabs granted: badge should be hidden
     const tabsBadge = page.getByTestId('tabs-not-granted');
     await expect.element(tabsBadge).toHaveClass('is-hidden');
 
-    // Tab Groups not granted: badge should be visible
     const tabGroupsBadge = page.getByTestId('tab-groups-not-granted');
     await expect.element(tabGroupsBadge).not.toHaveClass('is-hidden');
 
-    // Bookmarks unavailable: should show "Unsupported"
     const bookmarksBadge = page.getByTestId('bookmarks-not-granted');
     await expect.element(bookmarksBadge).not.toHaveClass('is-hidden');
     await expect.element(bookmarksBadge).toHaveTextContent('Unsupported');
   });
 
   it('revokes all permissions via reset button, leaving settings alone', async () => {
-    // Use the existing mocks from the global browser object set up in beforeAll
     const removeMock = (globalThis as any).browser.permissions.remove;
 
     removeMock.mockClear();
@@ -121,8 +111,7 @@ describe('options permissions UI', () => {
     await revokeAll.click();
     await flush();
 
-    // Only tabs is granted in the initial setup, bookmarks is unavailable
-    // So only tabs and tabGroups are in the revoke call
+    // Unavailable permissions are excluded; granted and requestable permissions are revoked.
     expect(removeMock).toHaveBeenCalledWith({ permissions: ['tabs', 'tabGroups'] });
   });
 });

@@ -1,14 +1,11 @@
-import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import { isBulletListMarker, isTabGroupIndentationStyle } from '../lib/markdown.js';
 import { ensureMarkdownSettingsMigrated, resetMultipleLinksSettings } from '../lib/markdown-settings.js';
 import MultipleLinksSettings from '../lib/multiple-links-settings.js';
 import { hideFlash, showFlash } from './flash.js';
 import { disableUiIfPermissionsNotGranted, hideUiIfPermissionsNotGranted, loadPermissions } from './permissions-ui.js';
 
-// The Multiple Links page. It owns the marker used by the built-in list
-// exports — task lists keep their fixed `- [ ]` marker — and the indentation
-// used when tabs are exported along with their tab groups.
-
+// This page owns Multiple Links' bullet-list marker and tab-group indentation.
 const BulletListMarkerFormId = 'form-multiple-links-bullet-list-marker';
 const TabGroupIndentationFormId = 'form-multiple-links-tab-group-indentation';
 
@@ -28,11 +25,7 @@ async function loadSettings(): Promise<void> {
   if (indentations) indentations.value = tabGroupIndentation;
 }
 
-/**
- * Put the controls back in sync with what is actually persisted after a write
- * fails, rather than merely undoing the click — another page may have changed
- * the same setting in the meantime.
- */
+/** After a failed write, storage is re-read to include concurrent changes from other pages. */
 async function refresh(): Promise<void> {
   try {
     await loadSettings();
@@ -85,8 +78,6 @@ function wireReset(): void {
 
   resetButton.addEventListener('click', async () => {
     try {
-      // Only this context: Copy Selection, menu visibility, Advanced, and every
-      // custom format are owned by their own pages and must survive this reset.
       await resetMultipleLinksSettings();
       await loadSettings();
       hideFlash();
@@ -103,8 +94,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   wireTabGroupIndentation();
   wireReset();
 
-  // Migrate before the first read: this page may be the first one an upgrading
-  // profile opens.
   await ensureMarkdownSettingsMigrated();
 
   try {

@@ -29,9 +29,6 @@ export function validateOptions(options: ExportTabsOptions): void {
   }
 }
 
-/**
- * Converts browser tabs to our domain Tab model.
- */
 export function convertBrowserTabsToTabs(
   browserTabs: chrome.tabs.Tab[],
   escapeLinkText: (text: string) => string,
@@ -43,25 +40,16 @@ export function convertBrowserTabsToTabs(
   ));
 }
 
-/**
- * Converts browser tab groups to our domain TabGroup model.
- */
 export function convertBrowserTabGroups(groups: chrome.tabGroups.TabGroup[]): TabGroup[] {
   return groups.map((group: chrome.tabGroups.TabGroup) =>
     new TabGroup(group.title || '', group.id, group.color || ''),
   );
 }
 
-/**
- * Groups tabs into organized lists by tab group.
- */
 export function groupTabsIntoLists(tabs: Tab[], groups: TabGroup[]): TabList[] {
   return new TabListGrouper(groups).collectTabsByGroup(tabs);
 }
 
-/**
- * Gets the appropriate formatter function for the specified format.
- */
 export function getFormatter(
   format: 'link' | 'title' | 'url',
   markdown: MarkdownFormatter,
@@ -79,7 +67,9 @@ export function getFormatter(
 }
 
 /**
- * Formats tab lists into a nested array structure for Markdown rendering.
+ * Groups become a name followed by nested tabs; ungrouped tabs stay flat,
+ * producing the shape the built-in list renderers use for an indented sub-list.
+ * @example ['loose tab', 'Group A', ['tab a1', 'tab a2']]
  */
 export function formatTabListsToNestedArray(
   tabLists: TabList[],
@@ -89,12 +79,10 @@ export function formatTabListsToNestedArray(
 
   for (const tabList of tabLists) {
     if (tabList.groupId === TabGroup.NonGroupId) {
-      // Ungrouped tabs - add directly to items
       for (const tab of tabList.tabs) {
         items.push(formatter(tab));
       }
     } else {
-      // Grouped tabs - add group name and nested tab list
       items.push(tabList.name);
       items.push(tabList.tabs.map(formatter));
     }
@@ -103,9 +91,6 @@ export function formatTabListsToNestedArray(
   return items;
 }
 
-/**
- * Renders tabs using a built-in format (link, title, or URL).
- */
 export function renderBuiltInFormat(
   tabLists: TabList[],
   format: 'link' | 'title' | 'url',
@@ -120,9 +105,6 @@ export function renderBuiltInFormat(
     : markdown.taskList(items);
 }
 
-/**
- * Renders tabs using a custom format template.
- */
 export async function renderCustomFormat(
   tabLists: TabList[],
   slot: string,
@@ -133,10 +115,6 @@ export async function renderCustomFormat(
   return customFormat.render(input);
 }
 
-/**
- * Main rendering orchestrator.
- * Coordinates between built-in and custom format rendering.
- */
 export async function renderTabs(
   tabLists: TabList[],
   options: ExportTabsOptions,
@@ -157,16 +135,9 @@ export async function renderTabs(
 }
 
 export interface TabDataFetcher {
-  /**
-   * Fetch tabs from the specified window.
-   * Should handle permissions and throw errors if needed.
-   */
   fetchTabs: (scope: ExportScope, windowId: number) => Promise<chrome.tabs.Tab[]>;
 
-  /**
-   * Fetch tab groups from the specified window.
-   * Should return empty array if unavailable.
-   */
+  /** Returns [] when tab groups are unavailable. */
   fetchTabGroups: (windowId: number) => Promise<chrome.tabGroups.TabGroup[]>;
 }
 
@@ -178,21 +149,16 @@ export class TabExportService {
   ) { }
 
   /**
-   * Exports tabs as Markdown according to the specified options.
+   * Exports tabs using either a built-in list format or a custom format.
    *
-   * @throws {TypeError} If format is custom-format but customFormatSlot is missing
-   * @throws {TypeError} If format is custom-format but listType is provided
-   * @throws {Error} If tabs permission is not granted (thrown by tabDataFetcher)
+   * @throws {TypeError} When custom-format has no slot or also specifies listType.
    */
   async exportTabs(options: ExportTabsOptions): Promise<string> {
-    // Validate (pure function)
     validateOptions(options);
 
-    // Fetch data (delegated to injected fetcher)
     const browserTabs = await this.tabDataFetcher.fetchTabs(options.scope, options.windowId);
     const browserGroups = await this.tabDataFetcher.fetchTabGroups(options.windowId);
 
-    // Convert and process (pure functions)
     const tabs = convertBrowserTabsToTabs(
       browserTabs,
       text => this.markdown.escapeLinkText(text),
@@ -200,25 +166,10 @@ export class TabExportService {
     const groups = convertBrowserTabGroups(browserGroups);
     const tabLists = groupTabsIntoLists(tabs, groups);
 
-    // Render (mostly pure, except custom format storage access)
     return renderTabs(tabLists, options, this.markdown, this.customFormatsProvider);
   }
 }
 
-/**
- * Creates a tab export service using the browser's native APIs.
- *
- * @param markdown - Markdown formatter instance
- * @param customFormatsProvider - Provider for custom format templates
- * @example
- * ```typescript
- * const tabExportService = createBrowserTabExportService(
- *   markdownInstance,
- *   CustomFormatsStorage
- * );
- * await tabExportService.exportTabs({...});
- * ```
- */
 export function createBrowserTabExportService(
   markdown: Markdown,
   customFormatsProvider: CustomFormatsProvider,

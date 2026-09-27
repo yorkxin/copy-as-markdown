@@ -1,19 +1,10 @@
-/**
- * Service for handling runtime messages from popup and other extension pages
- */
-
 import type { RuntimeMessage } from '../contracts/messages.js';
 import type { LinkExportService } from '../services/link-export-service.js';
 import type { TabExportService } from '../services/tab-export-service.js';
 import type { TabsAPI } from '../services/shared-types.js';
 
 export interface RuntimeMessageHandler {
-  /**
-   * Handle a runtime message
-   * @param messageOrTopic - The runtime message or topic
-   * @param params - The runtime message params (when calling with topic only)
-   * @returns The result text, or null if no result
-   */
+  /** Accepts either a complete message or a topic with its params. */
   handleMessage: (
     messageOrTopic: RuntimeMessage | RuntimeMessage['topic'],
     params?: RuntimeMessage['params'],

@@ -71,8 +71,6 @@ describe('advanced UI', () => {
   it('restores the checkbox to the persisted value and flashes when a save fails', async () => {
     await startPage();
     settingsMock.setLinkTextAlwaysEscapeBrackets.mockRejectedValueOnce(new Error('fail'));
-    // Another page enabled it in the meantime: the failed save must show what is
-    // actually persisted, not simply undo the click.
     settingsMock.getAll.mockResolvedValue({ alwaysEscapeLinkBrackets: true });
 
     const checkbox = page.getByRole('checkbox', { name: /Always escape brackets/ });

@@ -1,4 +1,4 @@
-import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import type { PendingPopupFeedbackCode, RuntimeMessage } from '../contracts/messages.js';
 import type { ExportFormat, ExportScope, ListType } from '../services/tab-export-service.js';
 import CustomFormatsStorage from '../storage/custom-formats-storage.js';
@@ -287,7 +287,6 @@ async function getActiveTabId(crWindow: browser.windows.Window): Promise<number>
 async function loadCustomFormats(): Promise<void> {
   if (!actionsExportAll || !actionsExportHighlighted || !actionsExportCurrent) return;
 
-  // clear previous custom buttons
   actionsExportAll.querySelectorAll('[id^="all-tabs-custom-format"]').forEach(el => el.remove());
   actionsExportHighlighted.querySelectorAll('[id^="highlighted-tabs-custom-format"]').forEach(el => el.remove());
   actionsExportCurrent.querySelectorAll('[id^="current-tab-custom-format"]').forEach(el => el.remove());
@@ -423,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   })();
 
-  // expose for tests
+  // Browser tests await this initialization hook.
   (window as any).__popupReady = initPromise;
 });
 

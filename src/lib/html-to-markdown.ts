@@ -1,19 +1,6 @@
-// ⚠️ SERVICE-WORKER SAFETY: this module statically imports Turndown, which touches
-// the DOM at module load, so it must only run in a DOM-bearing context — the Chrome
-// offscreen document (src/offscreen.ts) or the Firefox Event Page — never the Chrome
-// MV3 service worker (src/background.ts).
-//
-// Two callers reach this module, and only one is allowed into the Chrome service
-// worker's bundle:
-//   - src/offscreen.ts imports it STATICALLY. That is correct: the Chrome offscreen
-//     document is the Chrome conversion path, so Turndown belongs in offscreen.js.
-//   - src/services/markdown-converter.ts (createEventPageMarkdownConverter) imports it
-//     via a DYNAMIC import() only, so it stays OUT of background.ts's static graph.
-//     On Chrome that converter is dead-code-eliminated via BUILD_TARGET and tree-shaken.
-//
-// Net: Turndown must be ABSENT from chrome/dist/background.js but PRESENT in
-// chrome/dist/offscreen.js. That per-entry invariant is enforced by
-// scripts/assert-no-turndown.js and test/build/no-turndown-in-chrome-background.test.ts.
+// Turndown touches the DOM at module load. Chrome reaches this module statically only
+// from offscreen.ts; Firefox reaches it through markdown-converter's dynamic import.
+// The build assertion keeps it out of Chrome's service-worker entry.
 import type { Rule, Options as TurndownOptions } from 'turndown';
 import { tables } from '@truto/turndown-plugin-gfm';
 import TurndownService from 'turndown';
@@ -38,9 +25,8 @@ const singleParagraphInListItemRule: Rule = {
 };
 
 /**
- * Convert an HTML fragment to Markdown. Requires a DOM (Turndown parses HTML via
- * the DOM API), so this only runs in a DOM-bearing context: the offscreen document
- * (Chrome) or the Event Page (Firefox) — never the service worker.
+ * Converts HTML with Turndown in a DOM-bearing context: Chrome's offscreen
+ * document or Firefox's Event Page, never Chrome's service worker.
  */
 export function htmlToMarkdown(html: string, options: TurndownOptions): string {
   const turndownService = new TurndownService(options)

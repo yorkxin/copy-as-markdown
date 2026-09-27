@@ -1,4 +1,4 @@
-import '../ensure-browser-global.js'; // MUST be first — installs `browser` for old Chrome.
+import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import type { PermissionStatus } from './permissions-ui.js';
 import { hideUiIfPermissionsNotGranted, loadPermissions, PermissionStatusValue } from './permissions-ui.js';
 
@@ -87,8 +87,6 @@ document.querySelectorAll('[data-remove-permission]').forEach((node) => {
 const revokeAllButton = document.querySelector('#revoke-all');
 if (revokeAllButton) {
   revokeAllButton.addEventListener('click', async () => {
-    // Permissions only. Formatting and menu-visibility settings are owned by
-    // their own pages, and revoking access must not silently reset them.
     const toBeRemoved = Array.from(permissionStatuses.entries())
       .filter(([, stat]) => stat !== PermissionStatusValue.Unavailable)
       .map(([perm]) => perm) as browser._manifest.OptionalPermission[];

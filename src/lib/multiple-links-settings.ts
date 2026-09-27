@@ -17,19 +17,17 @@ export const MultipleLinksSettingDefaults: MultipleLinksMarkdownSettings = {
 };
 
 /**
- * Markdown settings owned by the Multiple Links context.
- *
- * Only the built-in list marker lives here; task lists keep their fixed
- * `- [ ]` marker. Persisted values are validated per setting and an invalid
- * stored value is never rewritten during a read.
- *
- * Resetting this context lives in `markdown-settings.ts`, for the reason given
- * on the Copy Selection settings module.
+ * The marker configures unordered lists only; task lists keep their fixed `- [ ]` marker.
+ * Reset is centralized in markdown-settings.ts because retiring the shared marker requires both contexts.
  */
 export default {
   keys: Object.values(MultipleLinksSettingKeys) as string[],
   defaultSettings: MultipleLinksSettingDefaults,
 
+  /**
+   * Invalid stored values fall back to defaults without being rewritten because
+   * they may belong to a newer version.
+   */
   async getAll(): Promise<MultipleLinksMarkdownSettings> {
     const stored = await browser.storage.sync.get(this.keys);
     const bulletListMarker = stored[MultipleLinksSettingKeys.bulletListMarker];

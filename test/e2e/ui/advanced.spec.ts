@@ -1,11 +1,3 @@
-/**
- * E2E tests for the Advanced options page.
- *
- * This page owns link-text escaping, the one Markdown preference that still
- * spans output contexts. Its reset must restore only that preference, and the
- * resets owned by other pages must leave it alone.
- */
-
 import { expect, test } from '../fixtures';
 import type { Page } from '@playwright/test';
 
@@ -41,8 +33,7 @@ test.describe('Advanced page', () => {
     await expect(others.locator('a[href="options-permissions.html"]')).toBeVisible();
   });
 
-  // Every page carries its own copy of the sidebar, so placement is asserted on
-  // all of them — a page missed during the move is invisible from any one page.
+  // Each page embeds its own sidebar, so navigation coverage checks every copy.
   const pagesWithNav = [
     'options.html',
     'advanced.html',
@@ -119,7 +110,6 @@ test.describe('Advanced page', () => {
 
     await expect(page.locator('input[name="enabled"]')).not.toBeChecked();
 
-    // The format pages' own settings survive untouched.
     expect(await readSync(page, [
       'selection.markdown.bulletListMarker',
       'multipleLinks.markdown.bulletListMarker',

@@ -151,9 +151,7 @@ describe('menu visibility settings', () => {
   });
 
   describe('context menu refresh', () => {
-    // src/background.ts rebuilds the context menus only when a storage change
-    // names a built-in style key or the custom formats' updated_at key. Every
-    // write this page makes must land on one of those, or the menus go stale.
+    // Visibility updates use the keys that background.ts watches to rebuild menus.
     const WatchedKeys = [...BuiltInStyleSettings.keys, CustomFormatsStorage.KeyOfLastUpdate()];
 
     function recordWrittenKeys(): () => string[] {

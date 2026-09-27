@@ -7,18 +7,10 @@ import { Contexts } from './custom-format.js';
 
 export interface MenuVisibility {
   builtIn: BuiltInStyleSettings;
-  /** Every custom format across all contexts, in options-navigation order. */
   customFormats: CustomFormat[];
 }
 
-/**
- * Menu composition owned by the Menu Commands page: which built-in commands and
- * which custom formats appear in the popup and context menus.
- *
- * Reset is deliberately visibility-only. It removes the stored visibility flags
- * so both kinds fall back to their defaults — built-ins visible, custom formats
- * hidden — and never reads or writes a custom format's name or template.
- */
+/** Reset changes visibility only; custom format names and templates are preserved. */
 export default {
   async getAll(): Promise<MenuVisibility> {
     const [builtIn, ...customFormatsByContext] = await Promise.all([
