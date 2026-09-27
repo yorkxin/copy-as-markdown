@@ -1,12 +1,14 @@
 import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import { isBulletListMarker } from '../lib/markdown.js';
 import { ensureMarkdownSettingsMigrated, resetSelectionSettings } from '../lib/markdown-settings.js';
-import SelectionSettings, { isCodeBlockStyle } from '../lib/selection-settings.js';
+import SelectionSettings, { isCodeBlockStyle, isEmDelimiter, isStrongDelimiter } from '../lib/selection-settings.js';
 import { hideFlash, showFlash } from './flash.js';
 
-// This page owns Copy Selection's bullet-list marker and code-block style.
+// This page owns Copy Selection's Markdown formatting settings.
 const BulletListMarkerFormId = 'form-selection-bullet-list-marker';
 const CodeBlockStyleFormId = 'form-selection-code-block-style';
+const EmDelimiterFormId = 'form-selection-em-delimiter';
+const StrongDelimiterFormId = 'form-selection-strong-delimiter';
 
 function radioGroup(formId: string, name: string): RadioNodeList | null {
   const form = document.forms.namedItem(formId);
@@ -15,13 +17,19 @@ function radioGroup(formId: string, name: string): RadioNodeList | null {
 }
 
 async function loadSettings(): Promise<void> {
-  const { bulletListMarker, codeBlockStyle } = await SelectionSettings.getAll();
+  const { bulletListMarker, codeBlockStyle, emDelimiter, strongDelimiter } = await SelectionSettings.getAll();
 
   const markers = radioGroup(BulletListMarkerFormId, 'bullet-list-marker');
   if (markers) markers.value = bulletListMarker;
 
   const codeBlockStyles = radioGroup(CodeBlockStyleFormId, 'code-block-style');
   if (codeBlockStyles) codeBlockStyles.value = codeBlockStyle;
+
+  const emphasis = radioGroup(EmDelimiterFormId, 'em-delimiter');
+  if (emphasis) emphasis.value = emDelimiter;
+
+  const strong = radioGroup(StrongDelimiterFormId, 'strong-delimiter');
+  if (strong) strong.value = strongDelimiter;
 }
 
 /** After a failed write, storage is re-read to include concurrent changes from other pages. */
@@ -33,35 +41,20 @@ async function refresh(): Promise<void> {
   }
 }
 
-function wireBulletListMarker(): void {
-  const form = document.forms.namedItem(BulletListMarkerFormId);
+function wireSetting<T extends string>(
+  formId: string,
+  isValid: (value: unknown) => value is T,
+  save: (value: T) => Promise<void>,
+): void {
+  const form = document.forms.namedItem(formId);
   if (!form) return;
 
   form.addEventListener('change', async (event) => {
     const target = event.target;
-    if (!(target instanceof HTMLInputElement) || !isBulletListMarker(target.value)) return;
+    if (!(target instanceof HTMLInputElement) || !isValid(target.value)) return;
 
     try {
-      await SelectionSettings.setBulletListMarker(target.value);
-      hideFlash();
-    } catch (error) {
-      console.error('failed to save settings:', error);
-      await refresh();
-      showFlash('Failed to save setting. Please try again.');
-    }
-  });
-}
-
-function wireCodeBlockStyle(): void {
-  const form = document.forms.namedItem(CodeBlockStyleFormId);
-  if (!form) return;
-
-  form.addEventListener('change', async (event) => {
-    const target = event.target;
-    if (!(target instanceof HTMLInputElement) || !isCodeBlockStyle(target.value)) return;
-
-    try {
-      await SelectionSettings.setCodeBlockStyle(target.value);
+      await save(target.value);
       hideFlash();
     } catch (error) {
       console.error('failed to save settings:', error);
@@ -89,8 +82,10 @@ function wireReset(): void {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-  wireBulletListMarker();
-  wireCodeBlockStyle();
+  wireSetting(BulletListMarkerFormId, isBulletListMarker, SelectionSettings.setBulletListMarker);
+  wireSetting(CodeBlockStyleFormId, isCodeBlockStyle, SelectionSettings.setCodeBlockStyle);
+  wireSetting(EmDelimiterFormId, isEmDelimiter, SelectionSettings.setEmDelimiter);
+  wireSetting(StrongDelimiterFormId, isStrongDelimiter, SelectionSettings.setStrongDelimiter);
   wireReset();
 
   await ensureMarkdownSettingsMigrated();

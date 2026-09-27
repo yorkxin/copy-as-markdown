@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
 const selectionSettingsMock = {
-  keys: ['selection.markdown.bulletListMarker', 'selection.markdown.codeBlockStyle'],
+  keys: ['selection.markdown.bulletListMarker', 'selection.markdown.codeBlockStyle', 'selection.markdown.emDelimiter', 'selection.markdown.strongDelimiter'],
   getAll: vi.fn(),
   setBulletListMarker: vi.fn(),
   setCodeBlockStyle: vi.fn(),
+  setEmDelimiter: vi.fn(),
+  setStrongDelimiter: vi.fn(),
 };
 
 const ensureMarkdownSettingsMigratedMock = vi.fn();
@@ -54,9 +56,11 @@ describe('copy selection options page', () => {
     vi.clearAllMocks();
     mockBrowser();
     ensureMarkdownSettingsMigratedMock.mockResolvedValue(undefined);
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' });
     selectionSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
     selectionSettingsMock.setCodeBlockStyle.mockResolvedValue(undefined);
+    selectionSettingsMock.setEmDelimiter.mockResolvedValue(undefined);
+    selectionSettingsMock.setStrongDelimiter.mockResolvedValue(undefined);
     resetSelectionSettingsMock.mockResolvedValue(undefined);
     await loadPage();
   });
@@ -99,7 +103,7 @@ describe('copy selection options page', () => {
     });
     selectionSettingsMock.getAll.mockImplementation(async () => {
       order.push('read');
-      return { bulletListMarker: '*', codeBlockStyle: 'fenced' };
+      return { bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' };
     });
 
     await startPage();
@@ -109,7 +113,7 @@ describe('copy selection options page', () => {
   });
 
   it('loads the persisted settings into the controls', async () => {
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**' });
 
     await startPage();
 
@@ -132,10 +136,34 @@ describe('copy selection options page', () => {
     await vi.waitFor(() => expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('indented'));
   });
 
+  it.each([
+    ['Emphasis (italics)', 'Asterisk (*text*)', 'Underscore (_text_)', 'setEmDelimiter', '*'],
+    ['Strong emphasis (bold)', 'Double underscores (__text__)', 'Double asterisks (**text**)', 'setStrongDelimiter', '__'],
+  ] as const)('saves %s immediately and restores persisted values on failure', async (group, alternate, initial, setter, value) => {
+    await startPage();
+    const radios = page.getByRole('group', { name: group, exact: true });
+    await expect.element(radios.getByRole('radio', { name: initial, exact: true })).toBeChecked();
+    await radios.getByRole('radio', { name: alternate, exact: true }).click();
+    await vi.waitFor(() => expect(selectionSettingsMock[setter]).toHaveBeenCalledWith(value));
+    await expect.element(page.getByTestId('flash-error')).not.toBeVisible();
+
+    // The read after the failed write must win over the user's attempted choice.
+    selectionSettingsMock[setter].mockRejectedValueOnce(new Error('quota exceeded'));
+    selectionSettingsMock.getAll.mockResolvedValue({
+      bulletListMarker: '-',
+      codeBlockStyle: 'fenced',
+      emDelimiter: '*',
+      strongDelimiter: '__',
+    });
+    await radios.getByRole('radio', { name: initial, exact: true }).click();
+    await expect.element(radios.getByRole('radio', { name: alternate, exact: true })).toBeChecked();
+    await expect.element(page.getByTestId('flash-error')).toBeVisible();
+  });
+
   it('shows the persisted value and flashes when a save fails', async () => {
     await startPage();
     selectionSettingsMock.setBulletListMarker.mockRejectedValueOnce(new Error('fail'));
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' });
 
     await page.getByRole('radio', { name: /Plus Signs/ }).click();
     await flush();
@@ -145,18 +173,20 @@ describe('copy selection options page', () => {
   });
 
   it('resets only the Copy Selection context', async () => {
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__' });
     await startPage();
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' });
 
     await page.getByTestId('reset-copy-selection').click();
     await vi.waitFor(() => expect(resetSelectionSettingsMock).toHaveBeenCalledTimes(1));
     await expect.element(page.getByRole('radio', { name: /Dashes/ })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: 'Underscore (_text_)', exact: true })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: 'Double asterisks (**text**)', exact: true })).toBeChecked();
     await expect.element(page.getByRole('radio', { name: /Fenced code block/ })).toBeChecked();
   });
 
   it('flashes and shows the persisted values when a reset fails', async () => {
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' });
     await startPage();
     resetSelectionSettingsMock.mockRejectedValueOnce(new Error('fail'));
 
