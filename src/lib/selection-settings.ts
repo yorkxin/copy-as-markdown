@@ -3,6 +3,16 @@ import { isBulletListMarker } from './markdown.js';
 
 export type EmDelimiter = '_' | '*';
 export type StrongDelimiter = '**' | '__';
+export type HeadingStyle = 'atx' | 'setext';
+export type Fence = '```' | '~~~';
+
+export function isHeadingStyle(value: unknown): value is HeadingStyle {
+  return value === 'atx' || value === 'setext';
+}
+
+export function isFence(value: unknown): value is Fence {
+  return value === '```' || value === '~~~';
+}
 
 export function isEmDelimiter(value: unknown): value is EmDelimiter {
   return value === '_' || value === '*';
@@ -25,6 +35,8 @@ export const SelectionSettingKeys = {
   codeBlockStyle: 'selection.markdown.codeBlockStyle',
   emDelimiter: 'selection.markdown.emDelimiter',
   strongDelimiter: 'selection.markdown.strongDelimiter',
+  headingStyle: 'selection.markdown.headingStyle',
+  fence: 'selection.markdown.fence',
 } as const;
 
 export interface SelectionMarkdownSettings {
@@ -32,6 +44,8 @@ export interface SelectionMarkdownSettings {
   codeBlockStyle: CodeBlockStyle;
   emDelimiter: EmDelimiter;
   strongDelimiter: StrongDelimiter;
+  headingStyle: HeadingStyle;
+  fence: Fence;
 }
 
 // Inline and list styles are following defaults from GitHub's Markdown Editor as of Sep 2026.
@@ -41,6 +55,8 @@ export const SelectionSettingDefaults: SelectionMarkdownSettings = {
   codeBlockStyle: 'fenced',
   emDelimiter: '_',
   strongDelimiter: '**',
+  headingStyle: 'atx',
+  fence: '```',
 };
 
 /** Reset is centralized in markdown-settings.ts because retiring the shared marker requires both contexts. */
@@ -58,6 +74,8 @@ export default {
     const codeBlockStyle = stored[SelectionSettingKeys.codeBlockStyle];
     const emDelimiter = stored[SelectionSettingKeys.emDelimiter];
     const strongDelimiter = stored[SelectionSettingKeys.strongDelimiter];
+    const headingStyle = stored[SelectionSettingKeys.headingStyle];
+    const fence = stored[SelectionSettingKeys.fence];
 
     return {
       bulletListMarker: isBulletListMarker(bulletListMarker)
@@ -68,6 +86,8 @@ export default {
         : SelectionSettingDefaults.codeBlockStyle,
       emDelimiter: isEmDelimiter(emDelimiter) ? emDelimiter : SelectionSettingDefaults.emDelimiter,
       strongDelimiter: isStrongDelimiter(strongDelimiter) ? strongDelimiter : SelectionSettingDefaults.strongDelimiter,
+      headingStyle: isHeadingStyle(headingStyle) ? headingStyle : SelectionSettingDefaults.headingStyle,
+      fence: isFence(fence) ? fence : SelectionSettingDefaults.fence,
     };
   },
 
@@ -81,6 +101,14 @@ export default {
 
   async setStrongDelimiter(value: StrongDelimiter): Promise<void> {
     await browser.storage.sync.set({ [SelectionSettingKeys.strongDelimiter]: value });
+  },
+
+  async setHeadingStyle(value: HeadingStyle): Promise<void> {
+    await browser.storage.sync.set({ [SelectionSettingKeys.headingStyle]: value });
+  },
+
+  async setFence(value: Fence): Promise<void> {
+    await browser.storage.sync.set({ [SelectionSettingKeys.fence]: value });
   },
 
   async setCodeBlockStyle(value: CodeBlockStyle): Promise<void> {

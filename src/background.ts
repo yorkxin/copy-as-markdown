@@ -73,7 +73,10 @@ const selectionConverterService = createBrowserSelectionConverterService(
   {
     getTurndownOptions: () => ({
       headingStyle: 'atx',
-      ...selectionSettings,
+      bulletListMarker: selectionSettings.bulletListMarker,
+      codeBlockStyle: selectionSettings.codeBlockStyle,
+      emDelimiter: selectionSettings.emDelimiter,
+      strongDelimiter: selectionSettings.strongDelimiter,
     }),
   },
   markdownConverter,
