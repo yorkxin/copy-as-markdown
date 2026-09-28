@@ -33,7 +33,7 @@ describe('markdown settings', () => {
 
       expect(settings).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '*', codeBlockStyle: 'indented' },
+        selection: { bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**' },
         multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
       });
     });
@@ -70,7 +70,7 @@ describe('markdown settings', () => {
     it('gives a clean install the current defaults', async () => {
       expect(await loadMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: false,
-        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced' },
+        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' },
         multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
       });
     });
@@ -91,6 +91,8 @@ describe('markdown settings', () => {
     it('lets the Copy Selection reset restore only its own settings', async () => {
       storage.data['selection.markdown.bulletListMarker'] = '+';
       storage.data['selection.markdown.codeBlockStyle'] = 'indented';
+      storage.data['selection.markdown.emDelimiter'] = '*';
+      storage.data['selection.markdown.strongDelimiter'] = '__';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
       storage.data['multipleLinks.markdown.tabGroupIndentation'] = 'tab';
       storage.data.linkTextAlwaysEscapeBrackets = true;
@@ -101,7 +103,7 @@ describe('markdown settings', () => {
 
       expect(await readMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced' },
+        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' },
         multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
       });
       expect(storage.data['custom_formats.multiple-links.1.name']).toBe('My Format');
@@ -111,6 +113,8 @@ describe('markdown settings', () => {
     it('lets the Multiple Links reset restore only its own settings', async () => {
       storage.data['selection.markdown.bulletListMarker'] = '+';
       storage.data['selection.markdown.codeBlockStyle'] = 'indented';
+      storage.data['selection.markdown.emDelimiter'] = '*';
+      storage.data['selection.markdown.strongDelimiter'] = '__';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
       storage.data['multipleLinks.markdown.tabGroupIndentation'] = 'tab';
       storage.data.linkTextAlwaysEscapeBrackets = true;
@@ -119,7 +123,7 @@ describe('markdown settings', () => {
 
       expect(await readMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '+', codeBlockStyle: 'indented' },
+        selection: { bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__' },
         multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
       });
     });
@@ -172,6 +176,8 @@ describe('markdown settings', () => {
     it('keeps the shared legacy marker for the sibling when the reset cannot migrate it', async () => {
       storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
       storage.data[LegacyMarkdownSettingKeys.codeBlock] = 'indented';
+      storage.data['selection.markdown.emDelimiter'] = '*';
+      storage.data['selection.markdown.strongDelimiter'] = '__';
       storage.failNextSet = new Error('QUOTA_BYTES quota exceeded');
 
       await resetSelectionSettings();
@@ -182,7 +188,7 @@ describe('markdown settings', () => {
 
       const migrated = await loadMarkdownSettings();
       expect(migrated.multipleLinks.bulletListMarker).toBe('*');
-      expect(migrated.selection).toEqual({ bulletListMarker: '-', codeBlockStyle: 'fenced' });
+      expect(migrated.selection).toEqual({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' });
     });
 
     it('does not spend the shared legacy marker for a sibling value it cannot read', async () => {
