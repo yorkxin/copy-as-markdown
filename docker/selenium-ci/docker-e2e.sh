@@ -49,6 +49,12 @@ IMAGE="copy-as-markdown-selenium:$SELENIUM_BROWSER-$version"
 
 RESULTS="$ROOT/test-results/selenium-$SELENIUM_BROWSER-$version"
 mkdir -p "$RESULTS"
+# Linux runners need not share appuser's UID 1000. This directory contains only
+# generated reports; sticky permissions let the container write without running
+# it as root and keep other users from deleting one another's output files.
+chmod 1777 "$RESULTS"
+# A build/startup failure must not upload a previous run's successful JUnit.
+rm -f "$RESULTS/junit.xml" "$RESULTS/browser.log" "$RESULTS/run.log" "$RESULTS/metadata.json"
 if [[ -n "$metadata" ]]; then
   printf '%s\n' "$metadata" > "$RESULTS/metadata.json"
 fi

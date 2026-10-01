@@ -216,7 +216,9 @@ hashes and image ID. Read JUnit for pass/failure/skip counts. Extra arguments go
 to pytest inside Docker, e.g. append `-k test_current_tab` for a subset.
 
 [Docker harness](docker/selenium-ci/docker-e2e.sh) builds the image, mounts the
-report directory, exits with the test status and prunes only this project's
+report directory (writable to the container's fixed non-root UID even when the
+Linux host UID differs), clears stale reports, exits with the test status and
+prunes only this project's
 labelled dangling images. The CI `selenium` matrix uses this same harness for
 Firefox 139.0/latest and CfT 116.0.5845.96/latest. Each job runs its own suite and
 uploads separate reports on failure; clipboard tests stay serial within each job.
