@@ -1,7 +1,7 @@
 import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import { isBulletListMarker } from '../lib/markdown.js';
 import { ensureMarkdownSettingsMigrated, resetSelectionSettings } from '../lib/markdown-settings.js';
-import SelectionSettings, { isCodeBlockStyle, isEmDelimiter, isStrongDelimiter } from '../lib/selection-settings.js';
+import SelectionSettings, { isCodeBlockStyle, isEmDelimiter, isFence, isHeadingStyle, isStrongDelimiter } from '../lib/selection-settings.js';
 import { hideFlash, showFlash } from './flash.js';
 
 // This page owns Copy Selection's Markdown formatting settings.
@@ -9,6 +9,8 @@ const BulletListMarkerFormId = 'form-selection-bullet-list-marker';
 const CodeBlockStyleFormId = 'form-selection-code-block-style';
 const EmDelimiterFormId = 'form-selection-em-delimiter';
 const StrongDelimiterFormId = 'form-selection-strong-delimiter';
+const HeadingStyleFormId = 'form-selection-heading-style';
+const FenceFormId = 'form-selection-fence';
 
 function radioGroup(formId: string, name: string): RadioNodeList | null {
   const form = document.forms.namedItem(formId);
@@ -16,8 +18,16 @@ function radioGroup(formId: string, name: string): RadioNodeList | null {
   return form.elements.namedItem(name) as RadioNodeList | null;
 }
 
+function updateFenceAvailability(): void {
+  const fenceFieldset = document.querySelector<HTMLFieldSetElement>(`#${FenceFormId} fieldset`);
+  const codeBlockStyles = radioGroup(CodeBlockStyleFormId, 'code-block-style');
+  if (fenceFieldset && codeBlockStyles) {
+    fenceFieldset.disabled = codeBlockStyles.value === 'indented';
+  }
+}
+
 async function loadSettings(): Promise<void> {
-  const { bulletListMarker, codeBlockStyle, emDelimiter, strongDelimiter } = await SelectionSettings.getAll();
+  const { bulletListMarker, codeBlockStyle, emDelimiter, strongDelimiter, headingStyle, fence } = await SelectionSettings.getAll();
 
   const markers = radioGroup(BulletListMarkerFormId, 'bullet-list-marker');
   if (markers) markers.value = bulletListMarker;
@@ -30,6 +40,14 @@ async function loadSettings(): Promise<void> {
 
   const strong = radioGroup(StrongDelimiterFormId, 'strong-delimiter');
   if (strong) strong.value = strongDelimiter;
+
+  const headings = radioGroup(HeadingStyleFormId, 'heading-style');
+  if (headings) headings.value = headingStyle;
+
+  const fences = radioGroup(FenceFormId, 'fence');
+  if (fences) fences.value = fence;
+
+  updateFenceAvailability();
 }
 
 /** After a failed write, storage is re-read to include concurrent changes from other pages. */
@@ -45,6 +63,7 @@ function wireSetting<T extends string>(
   formId: string,
   isValid: (value: unknown) => value is T,
   save: (value: T) => Promise<void>,
+  onChange?: () => void,
 ): void {
   const form = document.forms.namedItem(formId);
   if (!form) return;
@@ -52,6 +71,9 @@ function wireSetting<T extends string>(
   form.addEventListener('change', async (event) => {
     const target = event.target;
     if (!(target instanceof HTMLInputElement) || !isValid(target.value)) return;
+
+    // XXX: this is ugly but shoganai until we migrate to a mini framework such as Preact.
+    onChange?.();
 
     try {
       await save(target.value);
@@ -83,9 +105,11 @@ function wireReset(): void {
 
 document.addEventListener('DOMContentLoaded', async () => {
   wireSetting(BulletListMarkerFormId, isBulletListMarker, SelectionSettings.setBulletListMarker);
-  wireSetting(CodeBlockStyleFormId, isCodeBlockStyle, SelectionSettings.setCodeBlockStyle);
+  wireSetting(CodeBlockStyleFormId, isCodeBlockStyle, SelectionSettings.setCodeBlockStyle, updateFenceAvailability);
   wireSetting(EmDelimiterFormId, isEmDelimiter, SelectionSettings.setEmDelimiter);
   wireSetting(StrongDelimiterFormId, isStrongDelimiter, SelectionSettings.setStrongDelimiter);
+  wireSetting(HeadingStyleFormId, isHeadingStyle, SelectionSettings.setHeadingStyle);
+  wireSetting(FenceFormId, isFence, SelectionSettings.setFence);
   wireReset();
 
   await ensureMarkdownSettingsMigrated();

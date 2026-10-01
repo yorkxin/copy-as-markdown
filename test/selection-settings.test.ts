@@ -22,6 +22,8 @@ describe('selection settings', () => {
         codeBlockStyle: 'fenced',
         emDelimiter: '_',
         strongDelimiter: '**',
+        headingStyle: 'atx',
+        fence: '```',
       });
     });
 
@@ -34,6 +36,8 @@ describe('selection settings', () => {
         codeBlockStyle: 'indented',
         emDelimiter: '_',
         strongDelimiter: '**',
+        headingStyle: 'atx',
+        fence: '```',
       });
     });
 
@@ -46,6 +50,8 @@ describe('selection settings', () => {
         codeBlockStyle: 'indented',
         emDelimiter: '_',
         strongDelimiter: '**',
+        headingStyle: 'atx',
+        fence: '```',
       });
     });
 
@@ -98,12 +104,50 @@ describe('selection settings', () => {
     expect(storage.data).toEqual(before);
   });
 
+  it.each(['atx', 'setext'] as const)('persists heading style %s', async (value) => {
+    await SelectionSettings.setHeadingStyle(value);
+    expect(storage.data[SelectionSettingKeys.headingStyle]).toBe(value);
+    expect((await SelectionSettings.getAll()).headingStyle).toBe(value);
+  });
+
+  it.each(['```', '~~~'] as const)('persists fence %s', async (value) => {
+    await SelectionSettings.setFence(value);
+    expect(storage.data[SelectionSettingKeys.fence]).toBe(value);
+    expect((await SelectionSettings.getAll()).fence).toBe(value);
+  });
+
+  it('keeps the fence preference while code blocks are indented', async () => {
+    await SelectionSettings.setFence('~~~');
+    await SelectionSettings.setCodeBlockStyle('indented');
+
+    expect(await SelectionSettings.getAll()).toMatchObject({ codeBlockStyle: 'indented', fence: '~~~' });
+    expect(storage.data[SelectionSettingKeys.fence]).toBe('~~~');
+  });
+
+  it.each([null, 42, {}, '', 'ATX', 'future'])('falls back only for invalid heading style %j without rewriting it', async (value) => {
+    storage.data[SelectionSettingKeys.headingStyle] = value;
+    storage.data[SelectionSettingKeys.fence] = '~~~';
+    const before = { ...storage.data };
+    expect(await SelectionSettings.getAll()).toMatchObject({ headingStyle: 'atx', fence: '~~~' });
+    expect(storage.data).toEqual(before);
+  });
+
+  it.each([null, 42, {}, '', '`', '~~~~', 'future'])('falls back only for invalid fence %j without rewriting it', async (value) => {
+    storage.data[SelectionSettingKeys.headingStyle] = 'setext';
+    storage.data[SelectionSettingKeys.fence] = value;
+    const before = { ...storage.data };
+    expect(await SelectionSettings.getAll()).toMatchObject({ headingStyle: 'setext', fence: '```' });
+    expect(storage.data).toEqual(before);
+  });
+
   it('owns the documented storage keys', () => {
     expect(SelectionSettings.keys).toEqual([
       'selection.markdown.bulletListMarker',
       'selection.markdown.codeBlockStyle',
       'selection.markdown.emDelimiter',
       'selection.markdown.strongDelimiter',
+      'selection.markdown.headingStyle',
+      'selection.markdown.fence',
     ]);
   });
 });

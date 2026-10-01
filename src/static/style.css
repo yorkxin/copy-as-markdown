@@ -6,6 +6,23 @@
     width: 220px;
 }
 
+#form-selection-heading-style .heading-style-options {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+}
+
+#form-selection-heading-style .heading-style-choice {
+    display: block;
+}
+
+#form-selection-heading-style .heading-style-example {
+    display: block;
+    width: fit-content;
+    margin: 0.25rem 0 0.5rem 1.5rem;
+    white-space: pre;
+}
+
 .button.is-primary {
     background-color: var(--scheme-color);
     color: white;
