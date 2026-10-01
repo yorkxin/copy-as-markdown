@@ -385,6 +385,10 @@ def _browser_environment(force_accessibility: bool):
 
         firefox_options = Options()
         firefox_options.profile = profile
+        firefox_binary = os.environ.get("FIREFOX_BINARY") or shutil.which("firefox")
+        if firefox_binary is None:
+            raise RuntimeError("Firefox not found; set FIREFOX_BINARY to its executable")
+        firefox_options.binary_location = firefox_binary
         # Firefox 153+ requires system access for navigation to extension pages.
         # https://bugzilla.mozilla.org/show_bug.cgi?id=2048451
         # The Firefox CLI flag was introduced in Firefox 138:
@@ -403,6 +407,15 @@ def _browser_environment(force_accessibility: bool):
         firefox_service = FirefoxService(executable_path=geckodriver_path)
 
         driver = webdriver.Firefox(options=firefox_options, service=firefox_service)
+        actual_version = driver.capabilities["browserVersion"]
+        expected_version = os.environ.get("FIREFOX_VERSION")
+        version_log = f"Firefox session version: {actual_version}; binary: {firefox_options.binary_location}"
+        print(version_log)
+        if expected_version:
+            with open(os.path.join(_ROOT_DIR, "test-results", "browser.log"), "a", encoding="utf-8") as log:
+                log.write(version_log + "\n")
+        if expected_version and actual_version != expected_version:
+            raise RuntimeError(f"Firefox version mismatch: expected {expected_version}, got {actual_version}")
         for path, addon_id, uuid, page in extensions:
             installed_id = driver.install_addon(path, temporary=True)
             if installed_id != addon_id:
