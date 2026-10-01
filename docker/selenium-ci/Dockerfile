@@ -14,24 +14,34 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# firefox-esr ships in Debian's main repo and satisfies manifest.json's
-# requires_min (139) as long as the current ESR major stays above it (140 as
-# of this writing). If requires_min is ever bumped past the current ESR major,
-# switch to release Firefox via Mozilla APT instead:
-#
-#   install -d -m 0755 /etc/apt/keyrings
-#   curl -fsSL https://packages.mozilla.org/apt/repo-signing-key.gpg \
-#        -o /etc/apt/keyrings/packages.mozilla.org.asc
-#   echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] \
-#        https://packages.mozilla.org/apt mozilla main" \
-#        > /etc/apt/sources.list.d/mozilla.list
-#   printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' \
-#        > /etc/apt/preferences.d/mozilla
-#   apt-get update && apt-get install -y firefox
-#
+# Mozilla release archives support the exact minimum version on both host arches.
+ARG TARGETARCH
+ARG FIREFOX_VERSION=139.0
+ENV FIREFOX_VERSION=${FIREFOX_VERSION}
+ENV FIREFOX_BINARY=/opt/firefox/firefox
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      firefox-esr \
+      xz-utils libgtk-3-0 libdbus-glib-1-2 libasound2 libxt6 libx11-xcb1 \
     && rm -rf /var/lib/apt/lists/*
+RUN set -eux; \
+    case "$TARGETARCH" in \
+      amd64) FF_ARCH=linux-x86_64 ;; \
+      arm64) FF_ARCH=linux-aarch64 ;; \
+      *) echo "Unsupported architecture: $TARGETARCH"; exit 1 ;; \
+    esac; \
+    RELEASE="https://archive.mozilla.org/pub/firefox/releases/${FIREFOX_VERSION}"; \
+    ARCHIVE="${FF_ARCH}/en-US/firefox-${FIREFOX_VERSION}.tar.xz"; \
+    curl -fsSL --retry 3 "$RELEASE/$ARCHIVE" -o /tmp/firefox.tar.xz; \
+    curl -fsSL --retry 3 "$RELEASE/SHA256SUMS" -o /tmp/SHA256SUMS; \
+    awk -v archive="$ARCHIVE" '$2 == archive {print $1 "  /tmp/firefox.tar.xz"}' \
+      /tmp/SHA256SUMS > /tmp/firefox.sha256; \
+    test "$(wc -l < /tmp/firefox.sha256)" -eq 1; \
+    sha256sum -c /tmp/firefox.sha256; \
+    mkdir -p /opt/firefox; \
+    tar -xJf /tmp/firefox.tar.xz -C /opt; \
+    ln -s /opt/firefox/firefox /usr/local/bin/firefox; \
+    test "$(firefox --version)" = "Mozilla Firefox ${FIREFOX_VERSION}"; \
+    cp /tmp/firefox.sha256 /opt/firefox/archive.sha256; \
+    rm /tmp/firefox.tar.xz /tmp/SHA256SUMS /tmp/firefox.sha256
 
 # geckodriver is not packaged in Debian; download the release binary directly.
 ARG GECKODRIVER_VERSION=0.35.0

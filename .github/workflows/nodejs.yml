@@ -76,19 +76,26 @@ jobs:
           retention-days: 30
 
   selenium:
+    name: Selenium Firefox (${{ matrix.firefox }})
     runs-on: ubuntu-latest
     needs: build
-    # Image build (apt + npm ci + PyGObject compile + geckodriver download) runs
-    # uncached on the ephemeral runner, so allow more than the host-install path.
+    # Allow for the uncached image build and the complete Selenium suite.
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        firefox: ["139.0", "latest"]
     steps:
       - uses: actions/checkout@v6
       - name: Run Selenium Firefox e2e tests (Docker)
-        # Runs the same Dockerized harness as `npm run test:e2e:selenium:docker`
-        # locally: the image bakes in deb firefox-esr + geckodriver + AT-SPI/D-Bus,
-        # and its entrypoint wraps the suite in dbus-run-session. This deliberately
-        # avoids ubuntu-latest's snap-packaged Firefox, whose geckodriver can't
-        # launch under the private session bus the AT-SPI context-menu tests need.
-        # The image is rebuilt each run (no layer cache) — see
-        # docs/ideas/ghcr-selenium-image.md for the prebuilt-image optimization.
+        # Resolve latest before Docker build so a new release invalidates its
+        # download layer. Both entries share the local Xvfb/D-Bus/AT-SPI harness.
+        env:
+          FIREFOX_VERSION: ${{ matrix.firefox }}
         run: bash docker/selenium-ci/docker-e2e.sh
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: selenium-firefox-${{ matrix.firefox }}
+          path: test-results/selenium-firefox-*/
+          retention-days: 30

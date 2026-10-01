@@ -33,7 +33,7 @@ test/
   e2e/             # Playwright e2e tests
   ui/, lib/        # vitest browser tests (real Chromium)
   **/*.test.ts     # vitest unit tests (node)
-e2e_test/          # Python (pytest) e2e tests for Firefox — currently broken
+e2e_test/          # Python (pytest) Selenium tests for Firefox + Chromium smoke
 docker/playwright-ci/  # Dockerized e2e harness (CI parity)
 ```
 
@@ -198,7 +198,24 @@ pattern as `docker/playwright-ci/`: it builds the image, runs the suite under Xv
 mounts `test-results/` back to the host, and prunes only the dangling image this project's previous
 build orphaned.
 
-**CI:** The `selenium` GitHub Actions job runs `docker/selenium-ci/docker-e2e.sh` — the same
+The default Docker run uses Firefox **139.0**, the exact minimum supported version.
+Select another stable release with `FIREFOX_VERSION`:
+
+```sh
+FIREFOX_VERSION=latest npm run test:e2e:selenium:docker
+FIREFOX_VERSION=157.0 npm run test:e2e:selenium:docker # reproduce a resolved run
+```
+
+`latest` is resolved from Mozilla's official release metadata before Docker build;
+the exact version becomes the build argument and image tag. The image installs a
+checksum-verified Mozilla archive for Linux x86_64 or aarch64, and Selenium uses
+that binary explicitly and checks the session version. geckodriver stays at 0.35.0.
+Logs (requested/actual version, architecture, image ID, archive checksum and driver)
+and JUnit results are saved under `test-results/selenium-firefox-<version>/`.
+Extra command arguments are forwarded to pytest inside Docker.
+
+**CI:** The `selenium` GitHub Actions matrix tests 139.0 and latest stable, uploads
+separate reports even on test failure, and runs `docker/selenium-ci/docker-e2e.sh` — the same
 entrypoint — after the `build` job succeeds.
 
 ## Debugging the extension
