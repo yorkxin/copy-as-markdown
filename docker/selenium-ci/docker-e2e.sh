@@ -11,6 +11,11 @@
 # Any extra arguments are forwarded to pytest by the container entrypoint.
 set -euo pipefail
 
+SELENIUM_BROWSER="${SELENIUM_BROWSER:-firefox}"
+case "$SELENIUM_BROWSER" in
+  firefox|cft) ;;
+  *) echo "Unsupported Selenium browser: $SELENIUM_BROWSER" >&2; exit 1 ;;
+esac
 FIREFOX_VERSION="${FIREFOX_VERSION:-139.0}"
 if [[ "$FIREFOX_VERSION" == latest ]]; then
   FIREFOX_VERSION="$(curl -fsSL --retry 3 https://product-details.mozilla.org/1.0/firefox_versions.json |
@@ -39,7 +44,7 @@ fi
 docker image inspect --format 'Image: {{.Id}}; architecture: {{.Architecture}}' "$IMAGE" |
   tee -a "$RESULTS/environment.log"
 set +e
-docker run --rm --ipc=host -e CI=true \
+docker run --rm --ipc=host -e CI=true -e "SELENIUM_BROWSER=$SELENIUM_BROWSER" \
   -v "$RESULTS:/workspace/test-results" \
   "$IMAGE" "$@" 2>&1 | tee "$RESULTS/run.log"
 code=${PIPESTATUS[0]}
