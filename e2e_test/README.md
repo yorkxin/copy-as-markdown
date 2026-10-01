@@ -28,6 +28,21 @@ npm run test:e2e:selenium
 
 This builds `firefox-test/` and runs `pytest e2e_test/ -v` under `xvfb-run`. The virtual display is required because `xdotool` sends real X11 key events for keyboard-shortcut tests.
 
+## Firefox extension URLs
+
+The fixture seeds `extensions.webextensions.uuids` in its fresh profile before
+installing either extension. These URL UUIDs are distinct from the add-on IDs in
+`browser_specific_settings.gecko.id`; both manifests must declare an ID. The
+fixture checks the installation result and the live `browser.runtime.id` /
+`browser.runtime.getURL("")` values.
+
+Firefox is launched with `--remote-allow-system-access` because
+[Firefox 153 introduced navigation restrictions for extension pages](https://bugzilla.mozilla.org/show_bug.cgi?id=2048451).
+[The CLI argument was introduced in Firefox 138](https://firefox-source-docs.mozilla.org/remote/Prefs.html#remote-system-access-check-enabled).
+It is passed directly to Firefox for compatibility with the Docker image's
+geckodriver 0.35. This elevated access is scoped to the disposable test browser
+session.
+
 ## Native context-menu tests (AT-SPI)
 
 `test_context_menu.py` exercises the extension's right-click menu items. The

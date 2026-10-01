@@ -2,6 +2,11 @@
   "name": "Copy as Markdown E2E Test Helper",
   "version": "0.0.1",
   "manifest_version": 3,
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "copy-as-markdown-e2e-helper@example.test"
+    }
+  },
   "description": "E2E Test no tame no Extension",
   "permissions": [
     "tabGroups",

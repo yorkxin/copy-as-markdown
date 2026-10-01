@@ -1,4 +1,4 @@
-import re
+import json
 import sys
 from textwrap import dedent
 import pytest
@@ -7,7 +7,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.service import Service as FirefoxService
@@ -29,6 +28,10 @@ _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FIREFOX_EXTENSION_PATH = os.path.join(_ROOT_DIR, "firefox-test")
 CHROME_EXTENSION_PATH = os.path.join(_ROOT_DIR, "chrome-test")
 E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "helper_extension")
+
+# URL UUIDs are profile-specific and distinct from manifest add-on IDs.
+FIREFOX_EXTENSION_UUID = "11111111-1111-4111-8111-111111111111"
+E2E_HELPER_EXTENSION_UUID = "22222222-2222-4222-8222-222222222222"
 
 
 @dataclass
@@ -356,7 +359,19 @@ class ChromeBrowserEnvironment:
 def _browser_environment(force_accessibility: bool):
     driver = None
     try:
+        extensions = []
+        for path, uuid, page in [
+            (FIREFOX_EXTENSION_PATH, FIREFOX_EXTENSION_UUID, "dist/static/options.html"),
+            (E2E_HELPER_EXTENSION_PATH, E2E_HELPER_EXTENSION_UUID, "main.html"),
+        ]:
+            with open(os.path.join(path, "manifest.json"), encoding="utf-8") as manifest_file:
+                addon_id = json.load(manifest_file)["browser_specific_settings"]["gecko"]["id"]
+            extensions.append((path, addon_id, uuid, page))
+
         profile = FirefoxProfile()
+        profile.set_preference("extensions.webextensions.uuids", json.dumps({
+            addon_id: uuid for _, addon_id, uuid, _ in extensions
+        }))
         profile.set_preference("intl.accept_languages", "en-US,en")
         profile.set_preference("intl.locale.requested", "en-US")
         profile.set_preference("browser.locale", "en-US")
@@ -370,6 +385,13 @@ def _browser_environment(force_accessibility: bool):
 
         firefox_options = Options()
         firefox_options.profile = profile
+        # Firefox 153+ requires system access for navigation to extension pages.
+        # https://bugzilla.mozilla.org/show_bug.cgi?id=2048451
+        # The Firefox CLI flag was introduced in Firefox 138:
+        # https://firefox-source-docs.mozilla.org/remote/Prefs.html#remote-system-access-check-enabled
+        # Pass this to Firefox directly: the Docker image uses geckodriver 0.35,
+        # which predates geckodriver's --allow-system-access flag.
+        firefox_options.add_argument("--remote-allow-system-access")
 
         # Explicitly locate geckodriver so Selenium Manager is not invoked.
         # Selenium Manager does not support linux/aarch64 and will raise
@@ -381,18 +403,22 @@ def _browser_environment(force_accessibility: bool):
         firefox_service = FirefoxService(executable_path=geckodriver_path)
 
         driver = webdriver.Firefox(options=firefox_options, service=firefox_service)
-        driver.install_addon(FIREFOX_EXTENSION_PATH, temporary=True)
-        driver.install_addon(E2E_HELPER_EXTENSION_PATH, temporary=True)
+        for path, addon_id, uuid, page in extensions:
+            installed_id = driver.install_addon(path, temporary=True)
+            if installed_id != addon_id:
+                raise RuntimeError(f"Installed add-on ID mismatch: expected {addon_id}, got {installed_id}")
 
-        extension_id = _find_extension_id_for_firefox("Copy as Markdown", driver)
-        if extension_id is None:
-            raise ValueError("Extension ID not found")
+        # Verify each UUID mapping against the live extension identity and URL.
+        for _, addon_id, uuid, page in extensions:
+            driver.get(f"moz-extension://{uuid}/{page}")
+            actual = driver.execute_script("return [browser.runtime.id, browser.runtime.getURL('')]")
+            expected = [addon_id, f"moz-extension://{uuid}/"]
+            if actual != expected:
+                raise RuntimeError(f"Extension identity mismatch: expected {expected}, got {actual}")
 
-        helper_extension_id = _find_extension_id_for_firefox("Copy as Markdown E2E Test Helper", driver)
-        if helper_extension_id is None:
-            raise ValueError("Helper extension ID not found")
-
-        browser_env = FirefoxBrowserEnvironment(extension_id, helper_extension_id, driver)
+        browser_env = FirefoxBrowserEnvironment(
+            FIREFOX_EXTENSION_UUID, E2E_HELPER_EXTENSION_UUID, driver
+        )
         # Gate on background readiness (__listenersReady) before any test fires a
         # keyboard shortcut or context-menu click. The smoke suite asserts the real
         # system clipboard, which is the clipboard service's default.
@@ -456,48 +482,6 @@ def _chrome_browser_environment():
 @pytest.fixture(scope="class")
 def chrome_browser_environment(request):
     yield from _chrome_browser_environment()
-
-
-def _find_extension_id_for_firefox(extension_name: str, driver: webdriver.Firefox):
-    assert isinstance(driver, webdriver.Firefox), "This function is only for Firefox"
-    driver.get("about:debugging#/runtime/this-firefox")
-
-    my_extension = None
-    wait = WebDriverWait(driver, 3)
-    wait.until(EC.presence_of_element_located((By.CLASS_NAME, "debug-target-item")))
-
-    extensions = driver.find_elements(By.CLASS_NAME, "debug-target-item")
-
-    for ext in extensions:
-        try:
-            name = ext.find_element(By.CLASS_NAME, "debug-target-item__name").text
-            if name == extension_name:
-                my_extension = ext
-                break
-        except NoSuchElementException:
-            continue
-
-    if my_extension is None:
-        raise ValueError(f"extension not found: {extension_name}")
-
-    try:
-        manifest_link = my_extension.find_element(By.XPATH, ".//a[contains(@href,'moz-extension')]")
-    except NoSuchElementException:
-        raise RuntimeError("could not find extension ID by looking for a link to manifest.json")
-
-    pattern = r"^moz-extension://([A-Za-z0-9\-]+)/.+$"
-    # Use get_dom_attribute() instead of get_attribute() because the latter
-    # internally calls execute_script(), which is forbidden on privileged
-    # parent-process pages like about:debugging (raises
-    # "UnsupportedOperationError: ExecuteScript … not supported for parent
-    # process browsing contexts").
-    href = manifest_link.get_dom_attribute("href")
-    match = re.match(pattern, href)
-
-    if not match:
-        raise RuntimeError("could not find extension ID by matching the link to manifest.json")
-
-    return match.group(1)
 
 
 class FixtureServer:
