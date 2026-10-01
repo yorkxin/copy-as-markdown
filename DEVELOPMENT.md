@@ -33,7 +33,7 @@ test/
   e2e/             # Playwright e2e tests
   ui/, lib/        # vitest browser tests (real Chromium)
   **/*.test.ts     # vitest unit tests (node)
-e2e_test/          # Python (pytest) Selenium tests for Firefox + Chromium smoke
+e2e_test/          # Python (pytest) Selenium tests for Firefox + Chrome for Testing smoke
 docker/playwright-ci/  # Dockerized e2e harness (CI parity)
 ```
 
@@ -168,55 +168,64 @@ xvfb-run -a npm run test:e2e
 `node scripts/build-test-extension.js`), which produces the test extension as a copy of the
 production build with manifest permissions rewritten for testing.
 
-### Firefox e2e tests (Python / pytest)
+### Selenium browser e2e tests (Python / pytest)
 
-[e2e_test/](e2e_test/) holds a pytest-based suite that drives **Firefox** via Selenium. It covers the hot-path clipboard copy flows (keyboard shortcuts and popup UI) that the Playwright suite cannot reach because Playwright cannot interact with Firefox extension pages.
-
-**Requirements (Linux):**
-
-```sh
-sudo apt-get install -y firefox xvfb xsel python3-pip
-pip install -r requirements.txt
-```
-
-**Run (Linux):**
+[e2e_test/](e2e_test/) drives Firefox extension pages and Chrome for Testing (CfT)
+real-input smoke paths via local Selenium. Run these tests in Docker: they use
+Xvfb, D-Bus, AT-SPI, xdotool and the real system clipboard.
 
 ```sh
-npm run test:e2e:selenium
-```
-
-This builds the `firefox-test` extension bundle and then runs `pytest e2e_test/ -v` under `xvfb-run`. `xvfb-run` is required — pyautogui sends X11 key events for keyboard-shortcut tests and needs a real (or virtual) display.
-
-**Docker (canonical / CI parity):**
-
-```sh
-npm run test:e2e:selenium:docker
-```
-
-This runs [docker/selenium-ci/docker-e2e.sh](docker/selenium-ci/docker-e2e.sh), following the same
-pattern as `docker/playwright-ci/`: it builds the image, runs the suite under Xvfb with `CI=true`,
-mounts `test-results/` back to the host, and prunes only the dangling image this project's previous
-build orphaned.
-
-The default Docker run uses Firefox **139.0**, the exact minimum supported version.
-Select another stable release with `FIREFOX_VERSION`:
-
-```sh
+npm run test:e2e:selenium:docker                         # Firefox 139.0
 FIREFOX_VERSION=latest npm run test:e2e:selenium:docker
-FIREFOX_VERSION=157.0 npm run test:e2e:selenium:docker # reproduce a resolved run
+FIREFOX_VERSION=157.0 npm run test:e2e:selenium:docker    # reproduce an exact run
+SELENIUM_BROWSER=cft CFT_VERSION=latest npm run test:e2e:selenium:docker
+SELENIUM_BROWSER=cft CFT_VERSION=116.0.5845.96 npm run test:e2e:selenium:docker
 ```
 
-`latest` is resolved from Mozilla's official release metadata before Docker build;
-the exact version becomes the build argument and image tag. The image installs a
-checksum-verified Mozilla archive for Linux x86_64 or aarch64, and Selenium uses
-that binary explicitly and checks the session version. geckodriver stays at 0.35.0.
-Logs (requested/actual version, architecture, image ID, archive checksum and driver)
-and JUnit results are saved under `test-results/selenium-firefox-<version>/`.
-Extra command arguments are forwarded to pytest inside Docker.
+The last command requires Linux AMD64: the fixed CfT 116 archive has no Linux
+ARM64 build. The harness uses the Docker server's architecture by default and
+honors `DOCKER_DEFAULT_PLATFORM` for both build and run (e.g. `linux/amd64` on an
+ARM host with emulation). Current CfT releases support native Linux ARM64; the
+resolver fails if either browser or driver lacks the selected platform.
+Host prerequisites are Docker, curl and Python 3; Node/Python test dependencies
+are installed inside the image.
 
-**CI:** The `selenium` GitHub Actions matrix tests 139.0 and latest stable, uploads
-separate reports even on test failure, and runs `docker/selenium-ci/docker-e2e.sh` — the same
-entrypoint — after the `build` job succeeds.
+The default selector is `firefox`: it excludes `test_chrome_smoke.py`.
+`SELENIUM_BROWSER=cft` runs only that file's three keyboard/context-menu smoke
+tests. The image installs only the selected browser; CfT uses its full headed
+browser, not headless shell or Debian Chromium. CfT retains the unpacked-extension
+loading flag used by the fixture; ordinary branded Chrome 137+ removed it.
+
+Both latest selectors resolve official metadata **before** Docker build. Exact
+versions enter the build arguments and image tag, so a new release invalidates
+the download layer. Firefox uses checksum-verified Mozilla archives and
+geckodriver 0.35.0. CfT uses Google's metadata URLs for a same-version browser and
+ChromeDriver; downloaded SHA-256 hashes are recorded (not verified against an
+upstream checksum manifest). The fixed CfT version represents the minimum
+supported milestone 116, not a claim about its earliest stable patch.
+
+Selenium explicitly chooses the installed binary and checks `browserVersion`;
+CfT also checks the session's ChromeDriver version. Missing CI browser/driver or
+version mismatch fails the run. Chrome focus uses an explicit test WM_CLASS.
+The temporary Firefox profile retains fixed UUIDs and system access.
+
+Reports land in `test-results/selenium-<browser>-<exact-version>/`: `junit.xml`,
+`browser.log`, `environment.log`, `build.log`, `run.log`, and `metadata.json`
+when metadata was resolved. These record versions, architecture, download URLs,
+hashes and image ID. Read JUnit for pass/failure/skip counts. Extra arguments go
+to pytest inside Docker, e.g. append `-k test_current_tab` for a subset.
+
+[Docker harness](docker/selenium-ci/docker-e2e.sh) builds the image, mounts the
+report directory, exits with the test status and prunes only this project's
+labelled dangling images. The CI `selenium` matrix uses this same harness for
+Firefox 139.0/latest and CfT 116.0.5845.96/latest. Each job runs its own suite and
+uploads separate reports on failure; clipboard tests stay serial within each job.
+
+Offline metadata selection checks (no browser or clipboard access):
+
+```sh
+python3 -m unittest discover -s docker/selenium-ci -p 'test_*.py'
+```
 
 ## Debugging the extension
 
