@@ -32,6 +32,16 @@ E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file_
 # URL UUIDs are profile-specific and distinct from manifest add-on IDs.
 FIREFOX_EXTENSION_UUID = "11111111-1111-4111-8111-111111111111"
 E2E_HELPER_EXTENSION_UUID = "22222222-2222-4222-8222-222222222222"
+CHROME_WINDOW_CLASS = "copy-as-markdown-e2e"
+
+
+def _log_browser_version(message):
+    print(message)
+    if os.environ.get("SELENIUM_BROWSER"):
+        results_dir = os.path.join(_ROOT_DIR, "test-results")
+        os.makedirs(results_dir, exist_ok=True)
+        with open(os.path.join(results_dir, "browser.log"), "a", encoding="utf-8") as log:
+            log.write(message + "\n")
 
 
 @dataclass
@@ -273,12 +283,13 @@ class ChromeBrowserEnvironment:
         self.driver = driver
 
     def focus_window(self):
-        # No window manager under Xvfb, so set X input focus on the Chromium
-        # window explicitly before injecting keys with xdotool.
+        # Use the class assigned at launch, shared by CfT and Chromium. Xvfb has
+        # no window manager to focus the browser for real keyboard injection.
         subprocess.run(
-            ["xdotool", "search", "--sync", "--onlyvisible", "--class", "chromium",
+            ["xdotool", "search", "--sync", "--onlyvisible", "--class", f"^{CHROME_WINDOW_CLASS}$",
              "windowfocus"],
-            check=False,
+            check=True,
+            timeout=10,
         )
 
     def press_shortcut(self, keystroke: str):
@@ -286,7 +297,8 @@ class ChromeBrowserEnvironment:
         time.sleep(0.3)
         subprocess.run(
             ["xdotool", "key", "--clearmodifiers", f"alt+shift+{keystroke}"],
-            check=False,
+            check=True,
+            timeout=10,
         )
 
     def select_all(self):
@@ -410,10 +422,7 @@ def _browser_environment(force_accessibility: bool):
         actual_version = driver.capabilities["browserVersion"]
         expected_version = os.environ.get("FIREFOX_VERSION")
         version_log = f"Firefox session version: {actual_version}; binary: {firefox_options.binary_location}"
-        print(version_log)
-        if expected_version:
-            with open(os.path.join(_ROOT_DIR, "test-results", "browser.log"), "a", encoding="utf-8") as log:
-                log.write(version_log + "\n")
+        _log_browser_version(version_log)
         if expected_version and actual_version != expected_version:
             raise RuntimeError(f"Firefox version mismatch: expected {expected_version}, got {actual_version}")
         for path, addon_id, uuid, page in extensions:
@@ -456,15 +465,20 @@ def accessible_browser_environment(request):
 def _chrome_browser_environment():
     driver = None
     try:
-        chromium_bin = (shutil.which("chromium")
+        chromium_bin = (os.environ.get("CHROME_BINARY")
+                        or shutil.which("chromium")
                         or shutil.which("chromium-browser")
                         or shutil.which("google-chrome"))
-        chromedriver_path = shutil.which("chromedriver")
-        if chromium_bin is None or chromedriver_path is None:
+        chromedriver_path = os.environ.get("CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
+        if not all(path and os.access(path, os.X_OK) for path in (chromium_bin, chromedriver_path)):
+            if os.environ.get("CI") or os.environ.get("SELENIUM_BROWSER") == "cft":
+                raise RuntimeError("Selected Chrome binary/driver missing; set CHROME_BINARY and CHROMEDRIVER_BINARY")
             pytest.skip("chromium/chromedriver not found on PATH")
 
         options = ChromeOptions()
         options.binary_location = chromium_bin
+        # --class overrides WM_CLASS on Linux, avoiding browser-brand assumptions.
+        options.add_argument(f"--class={CHROME_WINDOW_CLASS}")
         # Load the unpacked MV3 test extension. The second flag re-enables
         # --load-extension, which recent Chromium disables by default.
         options.add_argument(f"--load-extension={CHROME_EXTENSION_PATH}")
@@ -482,6 +496,13 @@ def _chrome_browser_environment():
 
         service = ChromeService(executable_path=chromedriver_path)
         driver = webdriver.Chrome(options=options, service=service)
+        actual_version = driver.capabilities["browserVersion"]
+        driver_version = driver.capabilities["chrome"]["chromedriverVersion"].split()[0]
+        expected_version = os.environ.get("CFT_VERSION")
+        _log_browser_version(f"Chrome session version: {actual_version}; driver: {driver_version}; binary: {chromium_bin}")
+        if expected_version and (actual_version != expected_version or driver_version != expected_version):
+            raise RuntimeError(f"CfT version mismatch: expected {expected_version}, "
+                               f"browser {actual_version}, driver {driver_version}")
         env = ChromeBrowserEnvironment(driver)
         # Wait for the background listeners to be registered (the __listenersReady
         # proxy) instead of a blind sleep.
