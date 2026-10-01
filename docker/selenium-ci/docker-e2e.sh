@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Host-side orchestrator for the Dockerized Selenium Firefox e2e suite.
+# Host-side orchestrator for the Dockerized Selenium browser e2e suites.
 #
 # Builds the image and runs the suite, then removes the image build that this run
 # superseded. Rebuilding a version-specific Docker tag
@@ -16,24 +16,45 @@ case "$SELENIUM_BROWSER" in
   firefox|cft) ;;
   *) echo "Unsupported Selenium browser: $SELENIUM_BROWSER" >&2; exit 1 ;;
 esac
-FIREFOX_VERSION="${FIREFOX_VERSION:-139.0}"
-if [[ "$FIREFOX_VERSION" == latest ]]; then
-  FIREFOX_VERSION="$(curl -fsSL --retry 3 https://product-details.mozilla.org/1.0/firefox_versions.json |
-    python3 -c 'import json, sys; print(json.load(sys.stdin)["LATEST_FIREFOX_VERSION"])')"
-fi
-if [[ ! "$FIREFOX_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
-  echo "Expected an exact stable Firefox version, got: $FIREFOX_VERSION" >&2
-  exit 1
-fi
-IMAGE="copy-as-markdown-selenium:firefox-$FIREFOX_VERSION"
-LABEL=com.copy-as-markdown.image=selenium-e2e
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+LABEL=com.copy-as-markdown.image=selenium-e2e
+platform="${DOCKER_DEFAULT_PLATFORM:-linux/$(docker version --format '{{.Server.Arch}}')}"
+build_args=(--platform "$platform" --build-arg "SELENIUM_BROWSER=$SELENIUM_BROWSER")
+metadata=""
+case "$SELENIUM_BROWSER" in
+  firefox)
+    version="${FIREFOX_VERSION:-139.0}"
+    if [[ "$version" == latest ]]; then
+      metadata="$(curl -fsSL --retry 3 https://product-details.mozilla.org/1.0/firefox_versions.json)"
+      version="$(python3 -c 'import json, sys; print(json.load(sys.stdin)["LATEST_FIREFOX_VERSION"])' <<< "$metadata")"
+    fi
+    if [[ ! "$version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+      echo "Expected an exact stable Firefox version, got: $version" >&2
+      exit 1
+    fi
+    build_args+=(--build-arg "FIREFOX_VERSION=$version")
+    ;;
+  cft)
+    case "$platform" in
+      linux/amd64) cft_platform=linux64 ;;
+      linux/arm64|linux/arm64/v8) cft_platform=linux-arm64 ;;
+      *) echo "Unsupported CfT Docker platform: $platform" >&2; exit 1 ;;
+    esac
+    metadata="$(python3 "$ROOT/docker/selenium-ci/resolve_cft.py" "${CFT_VERSION:-116.0.5845.96}" "$cft_platform")"
+    read -r version chrome_url driver_url <<< "$(python3 -c 'import json, sys; d=json.load(sys.stdin); print(d["version"], d["chrome_url"], d["chromedriver_url"])' <<< "$metadata")"
+    build_args+=(--build-arg "CFT_VERSION=$version" --build-arg "CFT_CHROME_URL=$chrome_url" --build-arg "CFT_DRIVER_URL=$driver_url")
+    ;;
+esac
+IMAGE="copy-as-markdown-selenium:$SELENIUM_BROWSER-$version"
 
-RESULTS="$ROOT/test-results/selenium-firefox-$FIREFOX_VERSION"
+RESULTS="$ROOT/test-results/selenium-$SELENIUM_BROWSER-$version"
 mkdir -p "$RESULTS"
-echo "Firefox requested version: $FIREFOX_VERSION" | tee "$RESULTS/environment.log"
+if [[ -n "$metadata" ]]; then
+  printf '%s\n' "$metadata" > "$RESULTS/metadata.json"
+fi
+echo "Requested $SELENIUM_BROWSER: $version; Docker platform: $platform" | tee "$RESULTS/environment.log"
 set +e
-docker build --build-arg "FIREFOX_VERSION=$FIREFOX_VERSION" -t "$IMAGE" \
+docker build "${build_args[@]}" -t "$IMAGE" \
   -f "$ROOT/docker/selenium-ci/Dockerfile" "$ROOT" 2>&1 | tee "$RESULTS/build.log"
 code=${PIPESTATUS[0]}
 set -e
@@ -44,7 +65,7 @@ fi
 docker image inspect --format 'Image: {{.Id}}; architecture: {{.Architecture}}' "$IMAGE" |
   tee -a "$RESULTS/environment.log"
 set +e
-docker run --rm --ipc=host -e CI=true -e "SELENIUM_BROWSER=$SELENIUM_BROWSER" \
+docker run --rm --platform "$platform" --ipc=host -e CI=true -e "SELENIUM_BROWSER=$SELENIUM_BROWSER" \
   -v "$RESULTS:/workspace/test-results" \
   "$IMAGE" "$@" 2>&1 | tee "$RESULTS/run.log"
 code=${PIPESTATUS[0]}

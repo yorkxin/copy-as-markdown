@@ -14,55 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Mozilla release archives support the exact minimum version on both host arches.
-ARG TARGETARCH
-ARG FIREFOX_VERSION=139.0
-ENV FIREFOX_VERSION=${FIREFOX_VERSION}
-ENV FIREFOX_BINARY=/opt/firefox/firefox
+# Runtime libraries are explicit because official archives have no APT dependencies.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      xz-utils libgtk-3-0 libdbus-glib-1-2 libasound2 libxt6 libx11-xcb1 \
-    && rm -rf /var/lib/apt/lists/*
-RUN set -eux; \
-    case "$TARGETARCH" in \
-      amd64) FF_ARCH=linux-x86_64 ;; \
-      arm64) FF_ARCH=linux-aarch64 ;; \
-      *) echo "Unsupported architecture: $TARGETARCH"; exit 1 ;; \
-    esac; \
-    RELEASE="https://archive.mozilla.org/pub/firefox/releases/${FIREFOX_VERSION}"; \
-    ARCHIVE="${FF_ARCH}/en-US/firefox-${FIREFOX_VERSION}.tar.xz"; \
-    curl -fsSL --retry 3 "$RELEASE/$ARCHIVE" -o /tmp/firefox.tar.xz; \
-    curl -fsSL --retry 3 "$RELEASE/SHA256SUMS" -o /tmp/SHA256SUMS; \
-    awk -v archive="$ARCHIVE" '$2 == archive {print $1 "  /tmp/firefox.tar.xz"}' \
-      /tmp/SHA256SUMS > /tmp/firefox.sha256; \
-    test "$(wc -l < /tmp/firefox.sha256)" -eq 1; \
-    sha256sum -c /tmp/firefox.sha256; \
-    mkdir -p /opt/firefox; \
-    tar -xJf /tmp/firefox.tar.xz -C /opt; \
-    ln -s /opt/firefox/firefox /usr/local/bin/firefox; \
-    test "$(firefox --version)" = "Mozilla Firefox ${FIREFOX_VERSION}"; \
-    cp /tmp/firefox.sha256 /opt/firefox/archive.sha256; \
-    rm /tmp/firefox.tar.xz /tmp/SHA256SUMS /tmp/firefox.sha256
-
-# geckodriver is not packaged in Debian; download the release binary directly.
-ARG GECKODRIVER_VERSION=0.35.0
-RUN set -eux; \
-    ARCH="$(uname -m)"; \
-    case "$ARCH" in \
-      x86_64)  GD_ARCH="linux64" ;; \
-      aarch64) GD_ARCH="linux-aarch64" ;; \
-      *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
-    esac; \
-    curl -fsSL \
-      "https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-${GD_ARCH}.tar.gz" \
-      | tar xz -C /usr/local/bin/ \
-    && chmod +x /usr/local/bin/geckodriver
-
-# Chromium + matching driver.
-# Debian's chromium-driver is version-matched to the chromium package, 
-# so no runtime Selenium Manager driver download is needed.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      chromium \
-      chromium-driver \
+      xz-utils unzip libgtk-3-0 libdbus-glib-1-2 libasound2 libxt6 libx11-xcb1 \
+      libnss3 libgbm1 libxss1 libxdamage1 libxrandr2 fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # xvfb: headless display   xauth: required by xvfb-run   xsel: real clipboard
@@ -95,6 +50,23 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY package.json package-lock.json* ./
 RUN mkdir -p src/vendor/ dist/ \
     && npm ci
+
+# Browser inputs appear after common dependencies so version changes reuse those layers.
+ARG TARGETARCH
+ARG SELENIUM_BROWSER=firefox
+ARG FIREFOX_VERSION=139.0
+ARG GECKODRIVER_VERSION=0.35.0
+ARG CFT_VERSION
+ARG CFT_CHROME_URL
+ARG CFT_DRIVER_URL
+ENV SELENIUM_BROWSER=${SELENIUM_BROWSER}
+ENV FIREFOX_VERSION=${FIREFOX_VERSION}
+ENV FIREFOX_BINARY=/opt/firefox/firefox
+ENV CFT_VERSION=${CFT_VERSION}
+ENV CHROME_BINARY=/opt/cft/chrome/chrome
+ENV CHROMEDRIVER_BINARY=/usr/local/bin/chromedriver
+COPY docker/selenium-ci/install-browser.sh /usr/local/bin/install-browser.sh
+RUN bash /usr/local/bin/install-browser.sh
 
 COPY . .
 

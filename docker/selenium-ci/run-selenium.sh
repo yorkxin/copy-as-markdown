@@ -11,10 +11,21 @@ esac
 
 mkdir -p test-results
 {
-  echo "Requested Firefox: $FIREFOX_VERSION; architecture: $(uname -m)"
-  "$FIREFOX_BINARY" --version
-  geckodriver --version
-  cat /opt/firefox/archive.sha256
+  echo "Selected browser: $SELENIUM_BROWSER; architecture: $(uname -m)"
+  case "$SELENIUM_BROWSER" in
+    firefox)
+      echo "Requested Firefox: $FIREFOX_VERSION; binary: $FIREFOX_BINARY"
+      "$FIREFOX_BINARY" --version
+      geckodriver --version
+      cat /opt/firefox/archive.sha256
+      ;;
+    cft)
+      echo "Requested CfT: $CFT_VERSION; binary: $CHROME_BINARY"
+      "$CHROME_BINARY" --version
+      "$CHROMEDRIVER_BINARY" --version
+      cat /opt/cft/archive.sha256
+      ;;
+  esac
 } | tee test-results/browser.log
 
 echo "[docker] Building test extensions..."
