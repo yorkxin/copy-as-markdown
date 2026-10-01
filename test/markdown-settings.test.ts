@@ -33,7 +33,7 @@ describe('markdown settings', () => {
 
       expect(settings).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**' },
+        selection: { bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' },
         multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
       });
     });
@@ -70,7 +70,7 @@ describe('markdown settings', () => {
     it('gives a clean install the current defaults', async () => {
       expect(await loadMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: false,
-        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' },
+        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' },
         multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
       });
     });
@@ -93,6 +93,8 @@ describe('markdown settings', () => {
       storage.data['selection.markdown.codeBlockStyle'] = 'indented';
       storage.data['selection.markdown.emDelimiter'] = '*';
       storage.data['selection.markdown.strongDelimiter'] = '__';
+      storage.data['selection.markdown.headingStyle'] = 'setext';
+      storage.data['selection.markdown.fence'] = '~~~';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
       storage.data['multipleLinks.markdown.tabGroupIndentation'] = 'tab';
       storage.data.linkTextAlwaysEscapeBrackets = true;
@@ -103,7 +105,7 @@ describe('markdown settings', () => {
 
       expect(await readMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' },
+        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' },
         multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
       });
       expect(storage.data['custom_formats.multiple-links.1.name']).toBe('My Format');
@@ -115,6 +117,8 @@ describe('markdown settings', () => {
       storage.data['selection.markdown.codeBlockStyle'] = 'indented';
       storage.data['selection.markdown.emDelimiter'] = '*';
       storage.data['selection.markdown.strongDelimiter'] = '__';
+      storage.data['selection.markdown.headingStyle'] = 'setext';
+      storage.data['selection.markdown.fence'] = '~~~';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
       storage.data['multipleLinks.markdown.tabGroupIndentation'] = 'tab';
       storage.data.linkTextAlwaysEscapeBrackets = true;
@@ -123,7 +127,7 @@ describe('markdown settings', () => {
 
       expect(await readMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__' },
+        selection: { bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__', headingStyle: 'setext', fence: '~~~' },
         multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
       });
     });
@@ -178,6 +182,8 @@ describe('markdown settings', () => {
       storage.data[LegacyMarkdownSettingKeys.codeBlock] = 'indented';
       storage.data['selection.markdown.emDelimiter'] = '*';
       storage.data['selection.markdown.strongDelimiter'] = '__';
+      storage.data['selection.markdown.headingStyle'] = 'setext';
+      storage.data['selection.markdown.fence'] = '~~~';
       storage.failNextSet = new Error('QUOTA_BYTES quota exceeded');
 
       await resetSelectionSettings();
@@ -188,7 +194,7 @@ describe('markdown settings', () => {
 
       const migrated = await loadMarkdownSettings();
       expect(migrated.multipleLinks.bulletListMarker).toBe('*');
-      expect(migrated.selection).toEqual({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**' });
+      expect(migrated.selection).toEqual({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
     });
 
     it('does not spend the shared legacy marker for a sibling value it cannot read', async () => {

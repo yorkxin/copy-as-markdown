@@ -118,6 +118,29 @@
           </fieldset>
         </form>
 
+        <form id="form-selection-heading-style" class="field">
+          <fieldset>
+            <legend class="label">Heading style</legend>
+            <div class="heading-style-options">
+              <div class="control">
+                <label class="radio heading-style-choice">
+                  <input type="radio" name="heading-style" value="atx"/>
+                  ATX
+                  <code class="heading-style-example"># Heading</code>
+                </label>
+              </div>
+              <div class="control">
+                <label class="radio heading-style-choice">
+                  <input type="radio" name="heading-style" value="setext"/>
+                  Setext
+                  <code class="heading-style-example">Heading&#10;=======</code>
+                </label>
+              </div>
+            </div>
+            <p class="help">Setext uses underlines for H1 and H2 only. H3 through H6 remain ATX headings.</p>
+          </fieldset>
+        </form>
+
         <form id='form-selection-code-block-style' class="field">
           <label class="label">Code Block Style</label>
           <div class="control">
@@ -136,6 +159,25 @@
             Controls how Copy Selection as Markdown renders code blocks.
             Fenced style keeps language tags for syntax highlighting, while indented style omits language tags.
           </p>
+        </form>
+
+        <form id="form-selection-fence" class="field">
+          <fieldset>
+            <legend class="label">Code-fence marker</legend>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="fence" value="```"/>
+                Backticks (<code>```js</code>)
+              </label>
+            </div>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="fence" value="~~~"/>
+                Tildes (<code>~~~js</code>)
+              </label>
+            </div>
+            <p class="help">Applies when code block style is fenced.</p>
+          </fieldset>
         </form>
       </div>
       <div class="field is-grouped">
