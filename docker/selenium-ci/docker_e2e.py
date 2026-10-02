@@ -47,8 +47,9 @@ def image_versions(image):
 
 
 def check_stable_majors(installed, stable):
-    for browser, version in installed.items():
-        current = stable[browser]["version"]
+    for browser, release in stable.items():
+        version = installed[browser]
+        current = release["version"]
         if version.split(".")[0] != current.split(".")[0]:
             raise ValueError(f"{browser}: image {version}, current Stable {current}; major mismatch. "
                              "Rebuild with npm run test:e2e:selenium:build-image.")
@@ -93,16 +94,23 @@ def main(build_only=False):
     stable = {}
     stable_check = {"status": "not_applicable"}
     if profile == "latest":
-        try:
-            stable = {b: resolve(b, "latest", platform) for b in MINIMUM}
-        except (subprocess.CalledProcessError, ValueError, KeyError, OSError) as error:
-            if build_only or not installed or os.environ.get("CI", "").lower() in ("true", "1"):
-                raise ValueError("Cannot verify current Stable metadata; an existing image is required "
-                                 "for offline local tests") from error
-            stable_check = {"status": "unverified", "reason": str(error)}
-            print("[Warning] Stable major unverified; using the existing local image.", file=sys.stderr)
-        else:
-            stable_check = {"status": "verified"}
+        stable_check = {"status": "verified", "browsers": {}}
+        for browser in MINIMUM:
+            try:
+                release = resolve(browser, "latest", platform)
+            except (subprocess.CalledProcessError, ValueError, KeyError, OSError) as error:
+                if build_only or not installed or os.environ.get("CI", "").lower() in ("true", "1"):
+                    raise ValueError(f"Cannot verify {browser} Stable metadata; stopping "
+                                     "(offline fallback requires an existing image and local mode)") from error
+                stable_check["status"] = "unverified"
+                stable_check["browsers"][browser] = {"status": "unverified", "reason": str(error)}
+                print(f"[Warning] {browser} Stable major unverified; using the existing local image.",
+                      file=sys.stderr)
+                continue
+            stable[browser] = release
+            stable_check["browsers"][browser] = {"status": "verified"}
+            if installed and not build_only:
+                check_stable_majors(installed, {browser: release})
     needs_build = build_only or not installed
     if not needs_build:
         releases = {b: {"version": v} for b, v in installed.items()}

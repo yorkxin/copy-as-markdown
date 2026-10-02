@@ -138,6 +138,19 @@ if args[0] in ("build", "run"):
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.runs)
 
+    def test_cft_unavailable_does_not_hide_firefox_major_mismatch(self):
+        result = self.run_harness({"INSTALLED_FIREFOX": "156.0", "FAIL_RESOLVE": "resolve_cft.py"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+        self.assertIn("major mismatch", result.stderr)
+
+    def test_firefox_unavailable_still_checks_cft_major(self):
+        result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2",
+                                   "FAIL_RESOLVE": "resolve_firefox.py"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+        self.assertIn("major mismatch", result.stderr)
+
     def test_offline_without_environment_cannot_run(self):
         result = self.run_harness({"FAIL_RESOLVE": "resolve_cft.py"})
         self.assertNotEqual(result.returncode, 0)
