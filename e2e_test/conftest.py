@@ -45,14 +45,14 @@ def pytest_sessionstart(session):
 
 
 def pytest_report_header(config):
-    if os.environ.get("SELENIUM_BROWSER"):
+    if os.environ.get("BROWSER"):
         return (f"Firefox {os.environ['FIREFOX_VERSION']} | "
                 f"Chrome for Testing {os.environ['CFT_VERSION']} | "
-                f"selected: {os.environ['SELENIUM_BROWSER']}")
+                f"selected: {os.environ['BROWSER']}")
 
 
 def pytest_collection_modifyitems(items):
-    if not os.environ.get("SELENIUM_BROWSER"):
+    if not os.environ.get("BROWSER"):
         return
     for item in items:
         browser = "cft" if item.path.name == "test_chrome_smoke.py" else "firefox"
@@ -62,7 +62,7 @@ def pytest_collection_modifyitems(items):
 
 
 def pytest_runtest_logreport(report):
-    if not os.environ.get("SELENIUM_BROWSER"):
+    if not os.environ.get("BROWSER"):
         return
     browser = "cft" if report.nodeid.endswith("[cft]") else "firefox"
     outcomes = _browser_results.setdefault(browser, {})
@@ -76,13 +76,13 @@ def pytest_runtest_logreport(report):
 
 
 def pytest_collectreport(report):
-    if os.environ.get("SELENIUM_BROWSER") and report.failed:
+    if os.environ.get("BROWSER") and report.failed:
         browser = "cft" if "test_chrome_smoke.py" in report.nodeid else "firefox"
         _browser_results.setdefault(browser, {})[report.nodeid] = "collection errors"
 
 
 def pytest_terminal_summary(terminalreporter):
-    if not os.environ.get("SELENIUM_BROWSER"):
+    if not os.environ.get("BROWSER"):
         return
     terminalreporter.section("Selenium browser summary")
     for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing")):
@@ -101,7 +101,7 @@ def _log_browser_version(message):
         reporter.write_line(f"[Session] {message}")
     else:
         print(f"[Session] {message}", flush=True)
-    if os.environ.get("SELENIUM_BROWSER"):
+    if os.environ.get("BROWSER"):
         results_dir = os.path.join(_ROOT_DIR, "test-results")
         os.makedirs(results_dir, exist_ok=True)
         with open(os.path.join(results_dir, "browser.log"), "a", encoding="utf-8") as log:
@@ -535,7 +535,7 @@ def _chrome_browser_environment():
                         or shutil.which("google-chrome"))
         chromedriver_path = os.environ.get("CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
         if not all(path and os.access(path, os.X_OK) for path in (chromium_bin, chromedriver_path)):
-            if os.environ.get("CI") or os.environ.get("SELENIUM_BROWSER") == "cft":
+            if os.environ.get("CI") or os.environ.get("BROWSER") == "cft":
                 raise RuntimeError("Selected Chrome binary/driver missing; set CHROME_BINARY and CHROMEDRIVER_BINARY")
             pytest.skip("chromium/chromedriver not found on PATH")
 

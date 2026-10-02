@@ -20,48 +20,39 @@ Host requirements: Docker and Python 3. Dependencies are installed in the image.
 
 ```sh
 npm run test:e2e:selenium:docker # both browsers, latest image profile
-SELENIUM_BROWSER=firefox npm run test:e2e:selenium:docker
-SELENIUM_BROWSER=cft npm run test:e2e:selenium:docker
-SELENIUM_PROFILE=minimum npm run test:e2e:selenium:docker
+BROWSER=firefox npm run test:e2e:selenium:docker
+BROWSER=cft npm run test:e2e:selenium:docker
+PROFILE=minimum npm run test:e2e:selenium:docker
 ```
 
-`SELENIUM_BROWSER=all` is equivalent to the default. `SELENIUM_PROFILE` selects:
+`BROWSER=all` is equivalent to the default. `PROFILE` selects:
 
 | Profile | Browser versions | Stable check |
 | --- | --- | --- |
 | `latest` (default) | Stable releases resolved when the environment is first built or explicitly refreshed | Both installed majors must equal current official Stable majors |
 | `minimum` | Firefox 139.0 + CfT 116.0.5845.96 | None; versions stay fixed |
-| `custom` | Explicit version requests; unspecified browser defaults to latest Stable | None |
 
-The latest profile accepts older patches within the current major. A major mismatch
-or inability to fetch current Stable metadata stops the run. Refresh the local
-latest environment with:
+The latest profile checks both installed majors against current official Stable
+majors. A confirmed mismatch stops the run and asks you to refresh the image.
+Older patches within the same major are accepted. If metadata is unavailable,
+local runs warn and reuse an existing environment, recording the check as
+unverified; CI (`CI=true` or `CI=1`) stops instead. Without a local environment,
+initial image creation still requires network access.
 
-```sh
-SELENIUM_REBUILD=1 npm run test:e2e:selenium:docker
-```
-
-`FIREFOX_VERSION` and `CFT_VERSION` automatically select the custom profile, without
-changing which browser tests run. Both accept `latest`, a major, or an exact version:
+Refresh browser versions separately from running tests:
 
 ```sh
-FIREFOX_VERSION=139 npm run test:e2e:selenium:docker # still tests both browsers
-SELENIUM_BROWSER=cft CFT_VERSION=116 npm run test:e2e:selenium:docker
-FIREFOX_VERSION=139.0 CFT_VERSION=116.0.5845.96 npm run test:e2e:selenium:docker
+npm run test:e2e:selenium:build-image
+PROFILE=minimum npm run test:e2e:selenium:build-image
 ```
-
-Firefox major selection excludes ESR and pre-releases; dotted versions are exact
-releases, not minor ranges. CfT major selects the latest downloadable milestone,
-which may be a pre-release; `latest` selects Stable. Version overrides cannot be
-combined with an explicit minimum/latest profile.
 
 Extra arguments are forwarded to pytest. No matched tests remains a failure
 (exit 5). Tests continue after ordinary test or collection failures; cancellation
 stops the session. For a subset:
 
 ```sh
-SELENIUM_BROWSER=firefox npm run test:e2e:selenium:docker -- -k test_current_tab
-SELENIUM_BROWSER=cft npm run test:e2e:selenium:docker -- -k test_context_menu_copy_link
+BROWSER=firefox npm run test:e2e:selenium:docker -- -k test_current_tab
+BROWSER=cft npm run test:e2e:selenium:docker -- -k test_context_menu_copy_link
 ```
 
 ## Reusable environment images
@@ -72,13 +63,17 @@ Browser download stages are independent, and unchanged environment layers use
 Docker's build cache. The current implementation builds environments locally;
 GHCR publication and scheduled refreshes are deferred.
 
-`SELENIUM_IMAGE=<reference>` uses an existing environment instead of building it.
-Use the matching `SELENIUM_PROFILE`; latest still checks both Stable majors,
-minimum checks the exact fixed pair, and custom checks the requested pair. The
-image must implement this harness's environment contract (both version variables,
-binaries, dependencies, appuser and entrypoint). External images are pulled only
-when absent locally; explicitly pull a moving tag to refresh it, or use a digest
-for reproducibility. `SELENIUM_REBUILD` cannot refresh an external image.
+Tests reuse the existing profile image directly; only the lightweight runner
+is built from the current checkout. This avoids browser metadata downloads and
+environment rebuilds beyond the latest profile's best-effort Stable check.
+Offline use requires the environment and runner build layers to be available
+locally.
+
+Advanced `FIREFOX_VERSION` / `CFT_VERSION` requests (`latest`, major or exact)
+are accepted only by the image build command and produce a custom image. The
+normal test entry supports only minimum/latest; it rejects old flags and version
+overrides rather than silently ignoring them. GHCR image selection will be managed
+by the harness when publication is added.
 
 ## Architecture
 
@@ -89,7 +84,7 @@ AMD64. An unavailable browser/driver platform fails the run.
 To run CfT 116 on an ARM host with AMD64 emulation available:
 
 ```sh
-DOCKER_DEFAULT_PLATFORM=linux/amd64 SELENIUM_PROFILE=minimum npm run test:e2e:selenium:docker
+DOCKER_DEFAULT_PLATFORM=linux/amd64 PROFILE=minimum npm run test:e2e:selenium:docker
 ```
 
 ## Reading results
@@ -102,7 +97,7 @@ previous report there. One JUnit report covers all selected tests:
 | `junit.xml` | Authoritative pass, failure and skip results |
 | `browser.log`, `environment.log` | Confirm tested versions, architecture, environment image ID and available registry digests |
 | `run.log`, `build.log` | Diagnose test/startup or image-build failures |
-| `metadata.json` | Find the environment profile, versions and resolution metadata |
+| `metadata.json` | Find the environment profile, versions and Stable-check status/reason |
 
 The command exits with the build/test failure status. CI uploads reports even
 when tests fail. Pytest labels each test with `[firefox]` or `[cft]`, prints live session versions
