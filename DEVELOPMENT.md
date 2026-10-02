@@ -175,9 +175,9 @@ native context-menu flows. Run it in Docker to keep real clipboard operations
 inside the container. Host requirements: Docker, curl and Python 3.
 
 ```sh
-npm run test:e2e:selenium:docker # currently defaults to Firefox 139.0 only
-FIREFOX_VERSION=latest npm run test:e2e:selenium:docker
-SELENIUM_BROWSER=cft CFT_VERSION=latest npm run test:e2e:selenium:docker
+npm run test:e2e:selenium:docker # Firefox + CfT, latest stable
+SELENIUM_BROWSER=firefox FIREFOX_VERSION=139 npm run test:e2e:selenium:docker
+SELENIUM_BROWSER=cft npm run test:e2e:selenium:docker
 ```
 
 See [the Selenium README](e2e_test/README.md) for browser/version selection,
