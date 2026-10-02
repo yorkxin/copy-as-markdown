@@ -8,18 +8,26 @@ METADATA_ROOT = "https://googlechromelabs.github.io/chrome-for-testing"
 
 
 def resolve(metadata, requested, platform):
-    release = metadata["channels"]["Stable"] if requested == "latest" else metadata
+    if requested == "latest":
+        release = metadata["channels"]["Stable"]
+    elif re.fullmatch(r"[1-9]\d*", requested):
+        if requested not in metadata["milestones"]:
+            raise ValueError(f"Unknown CfT major: {requested}")
+        release = metadata["milestones"][requested]
+    else:
+        release = metadata
     version = release["version"]
     if not re.fullmatch(r"\d+\.\d+\.\d+\.\d+", version):
         raise ValueError(f"Invalid CfT version: {version}")
-    if requested != "latest" and version != requested:
+    if requested.isdigit() and version.split(".")[0] != requested:
+        raise ValueError(f"Requested CfT major {requested}, metadata contains {version}")
+    if requested != "latest" and not requested.isdigit() and version != requested:
         raise ValueError(f"Requested CfT {requested}, metadata contains {version}")
-    result = {"version": version, "platform": platform, "timestamp": metadata.get("timestamp")}
+    result = {"requested": requested, "version": version, "platform": platform, "timestamp": metadata.get("timestamp")}
     for artifact in ("chrome", "chromedriver"):
         matches = [item for item in release["downloads"][artifact] if item["platform"] == platform]
         if len(matches) != 1:
-            raise ValueError(f"CfT {version}: no unique {artifact} archive for {platform}; "
-                             "use Linux AMD64 for the fixed 116 release")
+            raise ValueError(f"CfT {version}: no unique {artifact} archive for {platform}")
         url = matches[0]["url"]
         expected = f"https://storage.googleapis.com/chrome-for-testing-public/{version}/{platform}/"
         if not url.startswith(expected):
@@ -30,9 +38,14 @@ def resolve(metadata, requested, platform):
 
 def main():
     requested, platform = sys.argv[1:]
-    if requested != "latest" and not re.fullmatch(r"\d+\.\d+\.\d+\.\d+", requested):
-        raise ValueError("CFT_VERSION must be latest or an exact four-part version")
-    filename = "last-known-good-versions-with-downloads.json" if requested == "latest" else f"{requested}.json"
+    if requested == "latest":
+        filename = "last-known-good-versions-with-downloads.json"
+    elif re.fullmatch(r"[1-9]\d*", requested):
+        filename = "latest-versions-per-milestone-with-downloads.json"
+    elif re.fullmatch(r"[1-9]\d*\.\d+\.\d+\.\d+", requested):
+        filename = f"{requested}.json"
+    else:
+        raise ValueError("CFT_VERSION must be latest, a positive major, or an exact four-part version")
     metadata_url = f"{METADATA_ROOT}/{filename}"
     with urlopen(metadata_url, timeout=30) as response:
         metadata = json.load(response)

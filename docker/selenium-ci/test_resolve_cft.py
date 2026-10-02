@@ -42,3 +42,17 @@ class ResolveCftTest(unittest.TestCase):
             "https://storage.googleapis.com/chrome-for-testing-public/116.0.5845.96/linux64/driver.zip")
         with self.assertRaisesRegex(ValueError, "Unexpected chromedriver URL"):
             resolve(release, self.version, "linux64")
+
+    def test_major_selects_matching_milestone(self):
+        metadata = {"timestamp": "snapshot", "milestones": {"154": self.release}}
+        result = resolve(metadata, "154", "linux64")
+        self.assertEqual(result["requested"], "154")
+        self.assertEqual(result["version"], self.version)
+
+    def test_major_cannot_select_another_major(self):
+        with self.assertRaisesRegex(ValueError, "major 116"):
+            resolve({"milestones": {"116": self.release}}, "116", "linux64")
+
+    def test_unknown_major_fails(self):
+        with self.assertRaisesRegex(ValueError, "Unknown CfT major"):
+            resolve({"milestones": {}}, "999", "linux64")
