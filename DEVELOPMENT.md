@@ -170,64 +170,18 @@ production build with manifest permissions rewritten for testing.
 
 ### Selenium browser e2e tests (Python / pytest)
 
-[e2e_test/](e2e_test/) drives Firefox extension pages and Chrome for Testing (CfT)
-real-input smoke paths via local Selenium. Run these tests in Docker: they use
-Xvfb, D-Bus, AT-SPI, xdotool and the real system clipboard.
+Selenium covers Firefox extension pages and Chrome for Testing (CfT) keyboard /
+native context-menu flows. Run it in Docker to keep real clipboard operations
+inside the container. Host requirements: Docker, curl and Python 3.
 
 ```sh
-npm run test:e2e:selenium:docker                         # Firefox 139.0
+npm run test:e2e:selenium:docker # currently defaults to Firefox 139.0 only
 FIREFOX_VERSION=latest npm run test:e2e:selenium:docker
-FIREFOX_VERSION=157.0 npm run test:e2e:selenium:docker    # reproduce an exact run
 SELENIUM_BROWSER=cft CFT_VERSION=latest npm run test:e2e:selenium:docker
-SELENIUM_BROWSER=cft CFT_VERSION=116.0.5845.96 npm run test:e2e:selenium:docker
 ```
 
-The last command requires Linux AMD64: the fixed CfT 116 archive has no Linux
-ARM64 build. The harness uses the Docker server's architecture by default and
-honors `DOCKER_DEFAULT_PLATFORM` for both build and run (e.g. `linux/amd64` on an
-ARM host with emulation). Current CfT releases support native Linux ARM64; the
-resolver fails if either browser or driver lacks the selected platform.
-Host prerequisites are Docker, curl and Python 3; Node/Python test dependencies
-are installed inside the image.
-
-The default selector is `firefox`: it excludes `test_chrome_smoke.py`.
-`SELENIUM_BROWSER=cft` runs only that file's three keyboard/context-menu smoke
-tests. The image installs only the selected browser; CfT uses its full headed
-browser, not headless shell or Debian Chromium. CfT retains the unpacked-extension
-loading flag used by the fixture; ordinary branded Chrome 137+ removed it.
-
-Both latest selectors resolve official metadata **before** Docker build. Exact
-versions enter the build arguments and image tag, so a new release invalidates
-the download layer. Firefox uses checksum-verified Mozilla archives and
-geckodriver 0.35.0. CfT uses Google's metadata URLs for a same-version browser and
-ChromeDriver; downloaded SHA-256 hashes are recorded (not verified against an
-upstream checksum manifest). The fixed CfT version represents the minimum
-supported milestone 116, not a claim about its earliest stable patch.
-
-Selenium explicitly chooses the installed binary and checks `browserVersion`;
-CfT also checks the session's ChromeDriver version. Missing CI browser/driver or
-version mismatch fails the run. Chrome focus uses an explicit test WM_CLASS.
-The temporary Firefox profile retains fixed UUIDs and system access.
-
-Reports land in `test-results/selenium-<browser>-<exact-version>/`: `junit.xml`,
-`browser.log`, `environment.log`, `build.log`, `run.log`, and `metadata.json`
-when metadata was resolved. These record versions, architecture, download URLs,
-hashes and image ID. Read JUnit for pass/failure/skip counts. Extra arguments go
-to pytest inside Docker, e.g. append `-k test_current_tab` for a subset.
-
-[Docker harness](docker/selenium-ci/docker-e2e.sh) builds the image, mounts the
-report directory (writable to the container's fixed non-root UID even when the
-Linux host UID differs), clears stale reports, exits with the test status and
-prunes only this project's
-labelled dangling images. The CI `selenium` matrix uses this same harness for
-Firefox 139.0/latest and CfT 116.0.5845.96/latest. Each job runs its own suite and
-uploads separate reports on failure; clipboard tests stay serial within each job.
-
-Offline metadata selection checks (no browser or clipboard access):
-
-```sh
-python3 -m unittest discover -s docker/selenium-ci -p 'test_*.py'
-```
+See [the Selenium README](e2e_test/README.md) for browser/version selection,
+running a subset, architecture requirements and reading test reports.
 
 ## Debugging the extension
 
