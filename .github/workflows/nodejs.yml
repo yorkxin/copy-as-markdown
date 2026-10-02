@@ -78,7 +78,7 @@ jobs:
           retention-days: 30
 
   selenium:
-    name: Selenium ${{ matrix.browser }} (${{ matrix.version }})
+    name: Selenium ${{ matrix.browser }} (${{ matrix.profile }})
     runs-on: ubuntu-latest
     needs: build
     # Allow for the uncached image build and the complete Selenium suite.
@@ -88,27 +88,24 @@ jobs:
       matrix:
         include:
           - browser: firefox
-            version: "139.0"
+            profile: "minimum"
           - browser: firefox
-            version: "latest"
+            profile: "latest"
           - browser: cft
-            version: "116.0.5845.96"
+            profile: "minimum"
           - browser: cft
-            version: "latest"
+            profile: "latest"
     steps:
       - uses: actions/checkout@v6
       - name: Run selected Selenium browser suite (Docker)
-        # Resolve latest before Docker build so a new release invalidates its
-        # download layer. Each entry runs only its selected browser's tests,
-        # sharing the local Xvfb/D-Bus/AT-SPI harness.
+        # Both profiles contain both browsers; each job selects its test suite.
         env:
           SELENIUM_BROWSER: ${{ matrix.browser }}
-          FIREFOX_VERSION: ${{ matrix.version }}
-          CFT_VERSION: ${{ matrix.version }}
+          SELENIUM_PROFILE: ${{ matrix.profile }}
         run: bash docker/selenium-ci/docker-e2e.sh
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: selenium-${{ matrix.browser }}-${{ matrix.version }}
-          path: test-results/selenium-${{ matrix.browser }}-*/
+          name: selenium-${{ matrix.profile }}-${{ matrix.browser }}
+          path: test-results/selenium-${{ matrix.profile }}-${{ matrix.browser }}/
           retention-days: 30

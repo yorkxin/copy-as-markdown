@@ -34,9 +34,71 @@ FIREFOX_EXTENSION_UUID = "11111111-1111-4111-8111-111111111111"
 E2E_HELPER_EXTENSION_UUID = "22222222-2222-4222-8222-222222222222"
 CHROME_WINDOW_CLASS = "copy-as-markdown-e2e"
 
+_selenium_config = None
+_browser_results = {}
+
+
+def pytest_sessionstart(session):
+    global _selenium_config, _browser_results
+    _selenium_config = session.config
+    _browser_results = {}
+
+
+def pytest_report_header(config):
+    if os.environ.get("SELENIUM_BROWSER"):
+        return (f"Firefox {os.environ['FIREFOX_VERSION']} | "
+                f"Chrome for Testing {os.environ['CFT_VERSION']} | "
+                f"selected: {os.environ['SELENIUM_BROWSER']}")
+
+
+def pytest_collection_modifyitems(items):
+    if not os.environ.get("SELENIUM_BROWSER"):
+        return
+    for item in items:
+        browser = "cft" if item.path.name == "test_chrome_smoke.py" else "firefox"
+        item._nodeid += f"[{browser}]"
+        item.user_properties.extend([("browser", browser),
+                                     ("browser_version", os.environ[browser.upper() + "_VERSION"])])
+
+
+def pytest_runtest_logreport(report):
+    if not os.environ.get("SELENIUM_BROWSER"):
+        return
+    browser = "cft" if report.nodeid.endswith("[cft]") else "firefox"
+    counts = _browser_results.setdefault(browser, {"passed": 0, "failed": 0, "skipped": 0})
+    if report.failed:
+        counts["failed"] += 1
+    elif report.skipped:
+        counts["skipped"] += 1
+    elif report.when == "call":
+        counts["passed"] += 1
+
+
+def pytest_collectreport(report):
+    if os.environ.get("SELENIUM_BROWSER") and report.failed:
+        browser = "cft" if "test_chrome_smoke.py" in report.nodeid else "firefox"
+        counts = _browser_results.setdefault(browser, {"passed": 0, "failed": 0, "skipped": 0})
+        counts["failed"] += 1
+
+
+def pytest_terminal_summary(terminalreporter):
+    if not os.environ.get("SELENIUM_BROWSER"):
+        return
+    terminalreporter.section("Selenium browser summary")
+    for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing")):
+        counts = _browser_results.get(browser)
+        if counts:
+            version = os.environ[browser.upper() + "_VERSION"]
+            terminalreporter.write_line(f"{name} {version}: " + ", ".join(
+                f"{count} {outcome}" for outcome, count in counts.items()))
+
 
 def _log_browser_version(message):
-    print(f"[Session] {message}", flush=True)
+    reporter = _selenium_config.pluginmanager.getplugin("terminalreporter") if _selenium_config else None
+    if reporter:
+        reporter.write_line(f"[Session] {message}")
+    else:
+        print(f"[Session] {message}", flush=True)
     if os.environ.get("SELENIUM_BROWSER"):
         results_dir = os.path.join(_ROOT_DIR, "test-results")
         os.makedirs(results_dir, exist_ok=True)
