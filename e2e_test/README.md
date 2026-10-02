@@ -1,80 +1,80 @@
 # Selenium browser e2e suites
 
-Playwright cannot interact with Firefox extension pages (popup, options, background), so this separate pytest suite drives Firefox via Selenium. It covers the hot-path clipboard copy flows: keyboard shortcuts and popup UI for current-tab, all-tabs, and selection-as-markdown operations.
+Selenium drives Firefox extension pages and real keyboard/context-menu clipboard
+flows. Tests use the system clipboard, so run them in Docker.
 
-## Scope
+## Coverage
 
-- **Browser:** primarily Firefox. A small Chrome for Testing smoke suite
-  (`test_chrome_smoke.py`) additionally covers the real keyboard- and
-  context-menu → clipboard paths that the Playwright suite can only *simulate*
-  (it dispatches `chrome.commands` / `chrome.contextMenus` events directly).
-- **Tests:** `test_current_tab.py` — popup + keyboard shortcuts for single-tab copy. `test_tabs_exporting.py` — keyboard/popup flows for all/highlighted/grouped tabs.
-- **Clipboard:** real system clipboard (pyperclip via xsel). No mock.
+| Suite | Coverage |
+| --- | --- |
+| Firefox | Single-tab and multi-tab copy, popup UI, selection conversion and native context menus |
+| Chrome for Testing (CfT) | Three smoke tests: keyboard copy of the current tab, context-menu copy of a link and an image |
+
+The current selector runs one browser per invocation. Tests within each suite are
+serial. CI runs Firefox 139.0/latest and CfT 116.0.5845.96/latest as four separate jobs.
 
 ## Running
 
-Use the Docker harness so real keyboard/clipboard operations stay in the container:
+Host requirements: Docker, curl and Python 3. Test dependencies are installed in
+the image.
 
 ```sh
-npm run test:e2e:selenium:docker # Firefox 139.0, Firefox tests only
-FIREFOX_VERSION=latest npm run test:e2e:selenium:docker
+npm run test:e2e:selenium:docker # currently Firefox 139.0 only
+SELENIUM_BROWSER=firefox FIREFOX_VERSION=latest npm run test:e2e:selenium:docker
 SELENIUM_BROWSER=cft CFT_VERSION=latest npm run test:e2e:selenium:docker
+```
+
+Use an exact version to reproduce a run or test the minimum supported version:
+
+```sh
+SELENIUM_BROWSER=firefox FIREFOX_VERSION=139.0 npm run test:e2e:selenium:docker
 SELENIUM_BROWSER=cft CFT_VERSION=116.0.5845.96 npm run test:e2e:selenium:docker
 ```
 
-CfT 116 requires AMD64; latest resolves the selected platform's official paired
-browser/driver archives before Docker build. See [DEVELOPMENT.md](../DEVELOPMENT.md#selenium-browser-e2e-tests-python--pytest)
-for architecture selection, exact-version reproduction and report locations.
-Firefox and CfT run separate suites; shared clipboard tests run serially.
+`latest` means the official stable release; the resolved version is recorded in
+the reports. CfT 116 tests the minimum supported milestone; the selected patch is
+116.0.5845.96. The Chrome suite uses CfT, which supports loading the unpacked test
+extension, rather than ordinary branded Google Chrome.
 
-## Firefox extension URLs
+Extra arguments are forwarded to pytest. Select a browser when running a subset:
 
-The fixture seeds `extensions.webextensions.uuids` in its fresh profile before
-installing either extension. These URL UUIDs are distinct from the add-on IDs in
-`browser_specific_settings.gecko.id`; both manifests must declare an ID. The
-fixture checks the installation result and the live `browser.runtime.id` /
-`browser.runtime.getURL("")` values.
+```sh
+SELENIUM_BROWSER=firefox FIREFOX_VERSION=latest npm run test:e2e:selenium:docker -- -k test_current_tab
+SELENIUM_BROWSER=cft CFT_VERSION=latest npm run test:e2e:selenium:docker -- -k test_context_menu_copy_link
+```
 
-Firefox is launched with `--remote-allow-system-access` because
-[Firefox 153 introduced navigation restrictions for extension pages](https://bugzilla.mozilla.org/show_bug.cgi?id=2048451).
-[The CLI argument was introduced in Firefox 138](https://firefox-source-docs.mozilla.org/remote/Prefs.html#remote-system-access-check-enabled).
-It is passed directly to Firefox for compatibility with the Docker image's
-geckodriver 0.35. This elevated access is scoped to the disposable test browser
-session.
+## Architecture
 
-## Native context-menu tests (AT-SPI)
+The harness uses the Docker server's architecture. Firefox and current CfT
+releases support Linux AMD64 and ARM64; the fixed CfT 116 release supports only
+AMD64. An unavailable browser/driver platform fails the run.
 
-`test_context_menu.py` exercises the extension's right-click menu items. The
-native GTK menu is not in the DOM, so Selenium opens it with
-`ActionChains.context_click()` and `atspi_menu.py` reads/clicks the item via the
-AT-SPI accessibility bus (`gi.repository.Atspi`). This requires a D-Bus session
-and the AT-SPI registry, so these tests run **only** in Docker, where
-`run-selenium.sh` wraps pytest in `dbus-run-session` with `GNOME_ACCESSIBILITY=1`
-and Firefox is launched with `accessibility.force_disabled=0` (scoped to the
-`accessible_browser_environment` fixture used by `TestContextMenu`, not applied
-globally to every test).
+To run CfT 116 on an ARM host with AMD64 emulation available:
 
-## Chrome for Testing smoke tests (`test_chrome_smoke.py`)
+```sh
+DOCKER_DEFAULT_PLATFORM=linux/amd64 SELENIUM_BROWSER=cft CFT_VERSION=116.0.5845.96 npm run test:e2e:selenium:docker
+```
 
-The Playwright suite triggers Chrome commands and context menus by dispatching
-`chrome.commands.onCommand` / `chrome.contextMenus.onClicked` directly with mocked
-payloads — it never exercises the OS keyboard binding or a real right-click. This
-suite closes that gap on Chrome:
+## Reading results
 
-- **Keyboard:** the four shortcuts the suite uses are bound at load time via
-  manifest `suggested_key` (injected by `scripts/build-test-extension.js`, since
-  Chrome has no runtime `commands.update()` API). A real `xdotool` keystroke then
-  fires the command. Chromium under Xvfb has no window manager, so
-  `ChromeBrowserEnvironment.press_shortcut()` sets X input focus on the window first, using a WM_CLASS explicitly assigned at launch.
-- **Context menus:** same `atspi_menu.py` path as Firefox — Selenium opens the
-  native menu, AT-SPI clicks the item by accessible name.
-- CfT is launched with `--load-extension`, `--force-renderer-accessibility`
-  (so the UI is exposed over AT-SPI) and `--no-sandbox`. Requires the Docker image
-  (same-version CfT + ChromeDriver); the module self-skips outside the Docker
-  entrypoint, like the AT-SPI tests above.
+Each run writes to `test-results/selenium-<browser>-<exact-version>/`:
 
-Note: `test_context_menu_copy_link` asserts the **real** Chrome output
-`[(No Title)](about:blank)` — Chrome's `contextMenus` API has no `linkText` and a
-bare right-click yields no `selectionText`, so the link title is empty (see the
-`TODO` in `src/handlers/context-menu-handler.ts`). The Playwright test hides this
-by injecting `selectionText` from the DOM.
+| File | Use |
+| --- | --- |
+| `junit.xml` | Authoritative pass, failure and skip results |
+| `browser.log`, `environment.log` | Confirm tested versions, architecture and image ID |
+| `run.log`, `build.log` | Diagnose test/startup or image-build failures |
+| `metadata.json` (when resolved) | Find the resolved release and download URLs |
+
+The command exits with the build/test failure status. CI uploads reports even
+when tests fail. Pytest prints existing skip reasons with the results.
+
+## Maintaining the harness
+
+[The Docker harness](../docker/selenium-ci/docker-e2e.sh) and
+[browser fixtures](conftest.py) contain installation, version-check and native
+input details. When changing CfT metadata selection, run its offline checks:
+
+```sh
+python3 -m unittest discover -s docker/selenium-ci -p 'test_*.py'
+```
