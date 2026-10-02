@@ -65,20 +65,20 @@ def pytest_runtest_logreport(report):
     if not os.environ.get("SELENIUM_BROWSER"):
         return
     browser = "cft" if report.nodeid.endswith("[cft]") else "firefox"
-    counts = _browser_results.setdefault(browser, {"passed": 0, "failed": 0, "skipped": 0})
+    outcomes = _browser_results.setdefault(browser, {})
     if report.failed:
-        counts["failed"] += 1
-    elif report.skipped:
-        counts["skipped"] += 1
-    elif report.when == "call":
-        counts["passed"] += 1
+        outcomes[report.nodeid] = "failed"
+    elif outcomes.get(report.nodeid) != "failed":
+        if report.skipped:
+            outcomes[report.nodeid] = "skipped"
+        elif report.when == "call":
+            outcomes[report.nodeid] = "passed"
 
 
 def pytest_collectreport(report):
     if os.environ.get("SELENIUM_BROWSER") and report.failed:
         browser = "cft" if "test_chrome_smoke.py" in report.nodeid else "firefox"
-        counts = _browser_results.setdefault(browser, {"passed": 0, "failed": 0, "skipped": 0})
-        counts["failed"] += 1
+        _browser_results.setdefault(browser, {})[report.nodeid] = "collection errors"
 
 
 def pytest_terminal_summary(terminalreporter):
@@ -86,8 +86,10 @@ def pytest_terminal_summary(terminalreporter):
         return
     terminalreporter.section("Selenium browser summary")
     for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing")):
-        counts = _browser_results.get(browser)
-        if counts:
+        outcomes = _browser_results.get(browser)
+        if outcomes:
+            counts = {outcome: list(outcomes.values()).count(outcome)
+                      for outcome in ("passed", "failed", "skipped", "collection errors")}
             version = os.environ[browser.upper() + "_VERSION"]
             terminalreporter.write_line(f"{name} {version}: " + ", ".join(
                 f"{count} {outcome}" for outcome, count in counts.items()))
