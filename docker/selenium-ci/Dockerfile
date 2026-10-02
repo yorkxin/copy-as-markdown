@@ -73,7 +73,7 @@ RUN SELENIUM_BROWSER=cft bash /usr/local/bin/install-browser.sh
 FROM common AS environment
 ARG FIREFOX_VERSION=139.0
 ARG CFT_VERSION
-ENV SELENIUM_BROWSER=all
+ENV BROWSER=all
 ENV FIREFOX_VERSION=${FIREFOX_VERSION}
 ENV CFT_VERSION=${CFT_VERSION}
 COPY --from=firefox-browser /opt/firefox /opt/firefox

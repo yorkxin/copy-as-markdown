@@ -100,8 +100,8 @@ jobs:
       - name: Run selected Selenium browser suite (Docker)
         # Both profiles contain both browsers; each job selects its test suite.
         env:
-          SELENIUM_BROWSER: ${{ matrix.browser }}
-          SELENIUM_PROFILE: ${{ matrix.profile }}
+          BROWSER: ${{ matrix.browser }}
+          PROFILE: ${{ matrix.profile }}
         run: bash docker/selenium-ci/docker-e2e.sh
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}

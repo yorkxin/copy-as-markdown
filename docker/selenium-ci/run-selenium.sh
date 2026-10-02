@@ -2,17 +2,17 @@
 set -euo pipefail
 
 export FORCE_COLOR=1
-export SELENIUM_BROWSER="${SELENIUM_BROWSER:-all}"
-case "$SELENIUM_BROWSER" in
+export BROWSER="${BROWSER:-all}"
+case "$BROWSER" in
   all) pytest_targets=(e2e_test/) ;;
   firefox) pytest_targets=(e2e_test/ --ignore=e2e_test/test_chrome_smoke.py) ;;
   cft) pytest_targets=(e2e_test/test_chrome_smoke.py) ;;
-  *) echo "Unsupported Selenium browser: $SELENIUM_BROWSER" >&2; exit 1 ;;
+  *) echo "Unsupported Selenium browser: $BROWSER" >&2; exit 1 ;;
 esac
 
 mkdir -p test-results
 {
-  echo "Environment: Firefox $FIREFOX_VERSION + Chrome for Testing $CFT_VERSION; tests: $SELENIUM_BROWSER; architecture: $(uname -m)"
+  echo "Environment: Firefox $FIREFOX_VERSION + Chrome for Testing $CFT_VERSION; tests: $BROWSER; architecture: $(uname -m)"
   "$FIREFOX_BINARY" --version
   geckodriver --version
   cat /opt/firefox/archive.sha256
@@ -28,7 +28,7 @@ test "$("$CHROMEDRIVER_BINARY" --version | awk '{print $2}')" = "$CFT_VERSION"
 echo "[docker] Building test extensions..."
 npm run test:e2e:build
 
-echo "[Test] One pytest session; browsers: $SELENIUM_BROWSER (Xvfb)"
+echo "[Test] One pytest session; browsers: $BROWSER (Xvfb)"
 
 export GNOME_ACCESSIBILITY=1
 
