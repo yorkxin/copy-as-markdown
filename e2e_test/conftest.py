@@ -36,7 +36,7 @@ CHROME_WINDOW_CLASS = "copy-as-markdown-e2e"
 
 
 def _log_browser_version(message):
-    print(message)
+    print(f"[Session] {message}", flush=True)
     if os.environ.get("SELENIUM_BROWSER"):
         results_dir = os.path.join(_ROOT_DIR, "test-results")
         os.makedirs(results_dir, exist_ok=True)
@@ -499,7 +499,7 @@ def _chrome_browser_environment():
         actual_version = driver.capabilities["browserVersion"]
         driver_version = driver.capabilities["chrome"]["chromedriverVersion"].split()[0]
         expected_version = os.environ.get("CFT_VERSION")
-        _log_browser_version(f"Chrome session version: {actual_version}; driver: {driver_version}; binary: {chromium_bin}")
+        _log_browser_version(f"Chrome for Testing session version: {actual_version}; driver: {driver_version}; binary: {chromium_bin}")
         if expected_version and (actual_version != expected_version or driver_version != expected_version):
             raise RuntimeError(f"CfT version mismatch: expected {expected_version}, "
                                f"browser {actual_version}, driver {driver_version}")
