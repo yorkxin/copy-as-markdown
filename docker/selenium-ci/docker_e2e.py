@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import signal
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -142,6 +143,7 @@ def main():
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
     try:
         main()
     except KeyboardInterrupt:

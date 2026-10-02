@@ -101,6 +101,12 @@ if args[0] in ("build", "run"):
         self.assertIn("major mismatch", result.stderr)
         self.assertIn("SELENIUM_REBUILD=1", result.stderr)
 
+    def test_cached_latest_rejects_old_cft_major(self):
+        result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+        self.assertIn("major mismatch", result.stderr)
+
     def test_rebuild_refreshes_cached_latest(self):
         result = self.run_harness({"INSTALLED_FIREFOX": "156.0", "SELENIUM_REBUILD": "1"})
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -140,6 +146,12 @@ if args[0] in ("build", "run"):
         self.assertFalse(self.calls.exists())
 
     def test_ctrl_c_stops_scheduling(self):
+        self.check_signal(signal.SIGINT)
+
+    def test_sigterm_stops_the_session(self):
+        self.check_signal(signal.SIGTERM)
+
+    def check_signal(self, task_signal):
         task_env = dict(os.environ)
         for key in ("SELENIUM_BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM", "SELENIUM_PROFILE", "SELENIUM_IMAGE", "SELENIUM_REBUILD"):
             task_env.pop(key, None)
@@ -157,9 +169,9 @@ if args[0] in ("build", "run"):
                 time.sleep(0.02)
             else:
                 self.fail("Controlled Docker run did not start")
-            os.killpg(process.pid, signal.SIGINT)
+            os.killpg(process.pid, task_signal)
             _, stderr = process.communicate(timeout=5)
-            self.assertEqual(process.returncode, 130, stderr)
+            self.assertEqual(process.returncode, 128 + task_signal, stderr)
             calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
             self.assertEqual(sum(call[0] == "run" for call in calls), 1)
         finally:
