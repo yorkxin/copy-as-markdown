@@ -87,8 +87,9 @@ for browser in "${browsers[@]}"; do
   echo "[Result] $summary"
   summaries+=("$summary")
   if [[ "$overall_code" -eq 0 && "$code" -ne 0 ]]; then overall_code="$code"; fi
-  # pytest interruption (2), SIGINT and SIGTERM stop scheduling further suites.
-  if [[ "$code" -eq 2 || "$code" -eq 130 || "$code" -eq 143 ]]; then
+  # Exit 2 can also mean pytest collection failure; only explicit signal statuses
+  # stop scheduling. Host SIGINT/SIGTERM are handled by the traps above.
+  if [[ "$code" -eq 130 || "$code" -eq 143 ]]; then
     overall_code="$code"
     break
   fi

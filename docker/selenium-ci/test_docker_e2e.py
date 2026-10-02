@@ -81,6 +81,12 @@ if args[0] in ("build", "run"):
         self.assertEqual(len(self.runs), 2)
         self.assertIn("copy-as-markdown-selenium:firefox-139.0.4", self.runs[0])
 
+    def test_collection_failure_still_runs_second_browser(self):
+        result = self.run_harness({"RUN_FIREFOX": "2"})
+        self.assertEqual(result.returncode, 2)
+        self.assertEqual(len(self.runs), 2)
+        self.assertIn("Chrome for Testing 154.0.8037.92: PASSED", result.stdout)
+
     def test_first_test_failure_does_not_hide_second_success(self):
         result = self.run_harness({"RUN_FIREFOX": "1"})
         self.assertEqual(result.returncode, 1)
