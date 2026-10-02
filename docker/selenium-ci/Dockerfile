@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.14-slim AS common
 
 # The label lets docker-e2e.sh prune only images orphaned by this project's
 # own rebuilds, without touching dangling images from other projects.
@@ -51,24 +51,35 @@ COPY package.json package-lock.json* ./
 RUN mkdir -p src/vendor/ dist/ \
     && npm ci
 
-# Browser inputs appear after common dependencies so version changes reuse those layers.
-ARG TARGETARCH
-ARG SELENIUM_BROWSER=firefox
-ARG FIREFOX_VERSION=139.0
-ARG GECKODRIVER_VERSION=0.35.0
-ARG CFT_VERSION
-ARG CFT_CHROME_URL
-ARG CFT_DRIVER_URL
-ENV SELENIUM_BROWSER=${SELENIUM_BROWSER}
-ENV FIREFOX_VERSION=${FIREFOX_VERSION}
 ENV FIREFOX_BINARY=/opt/firefox/firefox
-ENV CFT_VERSION=${CFT_VERSION}
 ENV CHROME_BINARY=/opt/cft/chrome/chrome
 ENV CHROMEDRIVER_BINARY=/usr/local/bin/chromedriver
 COPY docker/selenium-ci/install-browser.sh /usr/local/bin/install-browser.sh
-RUN bash /usr/local/bin/install-browser.sh
 
-COPY . .
+# Independent browser stages keep a CfT update from re-downloading Firefox.
+FROM common AS firefox-browser
+ARG TARGETARCH
+ARG FIREFOX_VERSION=139.0
+ARG GECKODRIVER_VERSION=0.35.0
+RUN SELENIUM_BROWSER=firefox bash /usr/local/bin/install-browser.sh
+
+FROM common AS cft-browser
+ARG TARGETARCH
+ARG CFT_VERSION
+ARG CFT_CHROME_URL
+ARG CFT_DRIVER_URL
+RUN SELENIUM_BROWSER=cft bash /usr/local/bin/install-browser.sh
+
+FROM common AS environment
+ARG FIREFOX_VERSION=139.0
+ARG CFT_VERSION
+ENV SELENIUM_BROWSER=all
+ENV FIREFOX_VERSION=${FIREFOX_VERSION}
+ENV CFT_VERSION=${CFT_VERSION}
+COPY --from=firefox-browser /opt/firefox /opt/firefox
+COPY --from=firefox-browser /usr/local/bin/geckodriver /usr/local/bin/geckodriver
+COPY --from=cft-browser /opt/cft /opt/cft
+COPY --from=cft-browser /usr/local/bin/chromedriver /usr/local/bin/chromedriver
 
 COPY docker/selenium-ci/run-selenium.sh /usr/local/bin/run-selenium.sh
 RUN chmod +x /usr/local/bin/run-selenium.sh

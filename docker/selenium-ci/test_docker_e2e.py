@@ -19,7 +19,8 @@ class DockerHarnessTest(unittest.TestCase):
         scripts = self.root / "docker/selenium-ci"
         scripts.mkdir(parents=True)
         self.harness = scripts / "docker-e2e.sh"
-        shutil.copy(Path(__file__).with_name("docker-e2e.sh"), self.harness)
+        for name in ("docker-e2e.sh", "docker_e2e.py"):
+            shutil.copy(Path(__file__).with_name(name), scripts / name)
         resolver = '''import json, os, sys
 name = os.path.basename(__file__)
 if os.environ.get("FAIL_RESOLVE") == name:
@@ -39,19 +40,21 @@ args = sys.argv[1:]
 with open(os.environ["CALLS"], "a") as log:
     log.write(json.dumps(args) + "\\n")
 if args[0] == "version": print("arm64")
-if args[:2] == ["image", "inspect"]: print("controlled-image")
+if args[:2] == ["image", "inspect"]:
+    if "--format" in args: print("controlled-image"); sys.exit(0)
+    if not os.environ.get("INSTALLED_FIREFOX"): sys.exit(1)
+    print(json.dumps([{"Config": {"Env": ["FIREFOX_VERSION=" + os.environ["INSTALLED_FIREFOX"], "CFT_VERSION=" + os.environ.get("INSTALLED_CFT", "154.0.8037.91")]}}]))
 if args[0] == "run" and os.environ.get("WAIT_RUN"):
     import time
     time.sleep(60)
 if args[0] in ("build", "run"):
-    browser = "firefox" if any("selenium:firefox-" in a for a in args) else "cft"
-    sys.exit(int(os.environ.get(args[0].upper() + "_" + browser.upper(), "0")))
+    sys.exit(int(os.environ.get(args[0].upper() + "_CODE", "0")))
 ''')
         docker.chmod(0o755)
 
     def run_harness(self, env=None, args=()):
         task_env = {k: v for k, v in os.environ.items() if k not in
-                    ("SELENIUM_BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM")}
+                    ("SELENIUM_BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM", "SELENIUM_PROFILE", "SELENIUM_IMAGE", "SELENIUM_REBUILD")}
         task_env.update({"PATH": str(self.bin) + os.pathsep + os.environ["PATH"], "CALLS": str(self.calls)})
         task_env.update(env or {})
         result = subprocess.run(["bash", str(self.harness), *args], env=task_env,
@@ -60,66 +63,76 @@ if args[0] in ("build", "run"):
         self.runs = [call for call in calls if call[0] == "run"]
         return result
 
-    def test_default_runs_both_latest_and_preserves_arguments(self):
+    def test_default_has_one_session_and_preserves_arguments(self):
         result = self.run_harness(args=("-k", "link or image"))
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(self.runs), 2)
-        self.assertIn("copy-as-markdown-selenium:firefox-157.0", self.runs[0])
-        self.assertIn("copy-as-markdown-selenium:cft-154.0.8037.92", self.runs[1])
-        self.assertEqual(self.runs[1][-2:], ["-k", "link or image"])
-        self.assertIn("Chrome for Testing 154.0.8037.92: PASSED", result.stdout)
+        self.assertEqual(len(self.runs), 1)
+        self.assertIn("SELENIUM_BROWSER=all", self.runs[0])
+        self.assertEqual(self.runs[0][-2:], ["-k", "link or image"])
+        self.assertIn("Firefox 157.0 + Chrome for Testing 154.0.8037.92", result.stdout)
 
-    def test_explicit_browser_excludes_the_other(self):
+    def test_explicit_browser_filters_tests_not_image(self):
         result = self.run_harness({"SELENIUM_BROWSER": "cft"})
-        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(len(self.runs), 1)
-        self.assertIn("copy-as-markdown-selenium:cft-154.0.8037.92", self.runs[0])
+        self.assertIn("SELENIUM_BROWSER=cft", self.runs[0])
+        self.assertIn("Firefox 157.0 + Chrome for Testing", result.stdout)
 
-    def test_version_does_not_implicitly_select_browser(self):
+    def test_major_override_does_not_select_browser(self):
         result = self.run_harness({"FIREFOX_VERSION": "139"})
-        self.assertEqual(result.returncode, 0)
-        self.assertEqual(len(self.runs), 2)
-        self.assertIn("copy-as-markdown-selenium:firefox-139.0.4", self.runs[0])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("SELENIUM_BROWSER=all", self.runs[0])
+        self.assertIn("Firefox 139.0.4", result.stdout)
 
-    def test_collection_failure_still_runs_second_browser(self):
-        result = self.run_harness({"RUN_FIREFOX": "2"})
-        self.assertEqual(result.returncode, 2)
-        self.assertEqual(len(self.runs), 2)
-        self.assertIn("Chrome for Testing 154.0.8037.92: PASSED", result.stdout)
+    def test_minimum_image_contains_both_fixed_versions(self):
+        result = self.run_harness({"SELENIUM_PROFILE": "minimum"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Firefox 139.0 + Chrome for Testing 116.0.5845.96", result.stdout)
 
-    def test_first_test_failure_does_not_hide_second_success(self):
-        result = self.run_harness({"RUN_FIREFOX": "1"})
+    def test_cached_latest_accepts_older_patch_in_same_major(self):
+        result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "154.0.8037.91"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Chrome for Testing 154.0.8037.91", result.stdout)
+
+    def test_cached_latest_rejects_old_major_before_running(self):
+        result = self.run_harness({"INSTALLED_FIREFOX": "156.0"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+        self.assertIn("major mismatch", result.stderr)
+        self.assertIn("SELENIUM_REBUILD=1", result.stderr)
+
+    def test_rebuild_refreshes_cached_latest(self):
+        result = self.run_harness({"INSTALLED_FIREFOX": "156.0", "SELENIUM_REBUILD": "1"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Firefox 157.0", result.stdout)
+
+    def test_external_environment_is_not_rebuilt(self):
+        result = self.run_harness({"SELENIUM_IMAGE": "example/env:stable", "INSTALLED_FIREFOX": "157.0"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
+        builds = [c for c in calls if c[0] == "build"]
+        self.assertEqual(len(builds), 1)  # only the current checkout runner
+        self.assertIn("SELENIUM_BASE_IMAGE=example/env:stable", builds[0])
+
+    def test_test_failure_is_preserved(self):
+        result = self.run_harness({"RUN_CODE": "1"})
         self.assertEqual(result.returncode, 1)
-        self.assertEqual(len(self.runs), 2)
-        self.assertIn("Firefox 157.0: FAILED", result.stdout)
-        self.assertIn("Chrome for Testing 154.0.8037.92: PASSED", result.stdout)
+        self.assertEqual(len(self.runs), 1)
 
-    def test_second_test_failure_is_not_hidden(self):
-        result = self.run_harness({"RUN_CFT": "1"})
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(len(self.runs), 2)
-
-    def test_build_failure_still_runs_other_browser(self):
-        result = self.run_harness({"BUILD_FIREFOX": "7"})
+    def test_build_failure_does_not_run_tests(self):
+        result = self.run_harness({"BUILD_CODE": "7"})
         self.assertEqual(result.returncode, 7)
-        self.assertEqual(len(self.runs), 1)
-        self.assertIn("Firefox 157.0: FAILED", result.stdout)
+        self.assertFalse(self.runs)
 
-    def test_resolution_failure_retains_identity_and_runs_other_browser(self):
+    def test_resolution_failure_does_not_start_session(self):
         result = self.run_harness({"FAIL_RESOLVE": "resolve_firefox.py"})
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(len(self.runs), 1)
-        self.assertIn("Firefox requested latest (unresolved): FAILED", result.stdout)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
 
     def test_empty_subset_remains_failure(self):
-        result = self.run_harness({"RUN_CFT": "5"})
+        result = self.run_harness({"RUN_CODE": "5"})
         self.assertEqual(result.returncode, 5)
-        self.assertIn("No tests matched for Chrome for Testing", result.stderr)
-
-    def test_interruption_does_not_start_other_browser(self):
-        result = self.run_harness({"RUN_FIREFOX": "130"})
-        self.assertEqual(result.returncode, 130)
-        self.assertEqual(len(self.runs), 1)
+        self.assertIn("No tests matched", result.stderr)
 
     def test_invalid_selector_never_calls_docker(self):
         result = self.run_harness({"SELENIUM_BROWSER": "unknown"})
@@ -128,7 +141,7 @@ if args[0] in ("build", "run"):
 
     def test_ctrl_c_stops_scheduling(self):
         task_env = dict(os.environ)
-        for key in ("SELENIUM_BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM"):
+        for key in ("SELENIUM_BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM", "SELENIUM_PROFILE", "SELENIUM_IMAGE", "SELENIUM_REBUILD"):
             task_env.pop(key, None)
         task_env.update({"PATH": str(self.bin) + os.pathsep + os.environ["PATH"],
                          "CALLS": str(self.calls), "WAIT_RUN": "1"})
