@@ -22,6 +22,13 @@ class ResolveCftTest(unittest.TestCase):
         self.assertEqual(result["version"], self.version)
         self.assertEqual(result["timestamp"], "snapshot")
 
+    def test_version_selection_does_not_require_platform_downloads(self):
+        release = {"version": self.version}
+        result = resolve({"channels": {"Stable": release}}, "latest")
+        self.assertEqual(result["version"], self.version)
+        self.assertNotIn("platform", result)
+        self.assertNotIn("chrome_url", result)
+
     def test_exact_version_cannot_silently_select_another_release(self):
         with self.assertRaisesRegex(ValueError, "metadata contains"):
             resolve(self.release, "116.0.5845.96", "linux64")

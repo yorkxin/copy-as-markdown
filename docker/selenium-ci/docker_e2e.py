@@ -55,12 +55,9 @@ def check_stable_majors(installed, stable):
                              "Rebuild with npm run test:e2e:selenium:build-image.")
 
 
-def resolve(browser, requested, platform):
-    if browser == "cft":
-        platform = {"linux/amd64": "linux64", "linux/arm64": "linux-arm64",
-                    "linux/arm64/v8": "linux-arm64"}[platform]
+def resolve(browser, requested):
     return json.loads(capture([sys.executable, str(SCRIPTS / f"resolve_{browser}.py"),
-                               requested, platform]))
+                               requested]))
 
 
 def main(build_only=False):
@@ -85,11 +82,7 @@ def main(build_only=False):
     results.chmod(0o1777)
     for name in ("junit.xml", "browser.log", "run.log", "build.log", "metadata.json", "environment.log"):
         (results / name).unlink(missing_ok=True)
-    platform = os.environ.get("DOCKER_DEFAULT_PLATFORM") or "linux/" + capture(
-        ["docker", "version", "--format", "{{.Server.Arch}}"])
-    if platform not in ("linux/amd64", "linux/arm64", "linux/arm64/v8"):
-        raise ValueError(f"Unsupported Docker platform: {platform}")
-    image = f"copy-as-markdown-selenium-env:{profile}-{platform.split('/')[1]}"
+    image = f"copy-as-markdown-selenium-env:{profile}"
     installed = image_versions(image) if profile != "custom" else None
     stable = {}
     stable_check = {"status": "not_applicable"}
@@ -97,7 +90,7 @@ def main(build_only=False):
         stable_check = {"status": "verified", "browsers": {}}
         for browser in MINIMUM:
             try:
-                release = resolve(browser, "latest", platform)
+                release = resolve(browser, "latest")
             except (subprocess.CalledProcessError, ValueError, KeyError, OSError) as error:
                 if build_only or not installed or os.environ.get("CI", "").lower() in ("true", "1"):
                     raise ValueError(f"Cannot verify {browser} Stable metadata; stopping "
@@ -123,37 +116,35 @@ def main(build_only=False):
             requested = {b: stable[b]["version"] for b in MINIMUM}
         else:
             requested = {b: os.environ.get(b.upper() + "_VERSION", "latest") for b in MINIMUM}
-        releases = {b: resolve(b, v, platform) for b, v in requested.items()}
+        releases = {b: resolve(b, v) for b, v in requested.items()}
         if profile == "custom":
-            image = f"copy-as-markdown-selenium-env:ff-{releases['firefox']['version']}-cft-{releases['cft']['version']}-{platform.split('/')[1]}"
+            image = f"copy-as-markdown-selenium-env:ff-{releases['firefox']['version']}-cft-{releases['cft']['version']}"
     versions = {b: r["version"] for b, r in releases.items()}
     if stable:
         check_stable_majors(versions, stable)
-    metadata = {"profile": profile, "platform": platform, "image": image,
+    metadata = {"profile": profile, "image": image,
                 "browsers": releases, "stable": stable, "stable_check": stable_check}
     (results / "metadata.json").write_text(json.dumps(metadata, indent=2))
     identity = f"Firefox {versions['firefox']} + Chrome for Testing {versions['cft']}"
     print(f"[Environment] {profile}: {identity}; tests: {selector}", flush=True)
     if needs_build:
-        args = ["docker", "build", "--platform", platform, "--target", "environment",
+        args = ["docker", "build", "--target", "environment",
                 "--build-arg", f"FIREFOX_VERSION={versions['firefox']}",
                 "--build-arg", f"CFT_VERSION={versions['cft']}",
-                "--build-arg", f"CFT_CHROME_URL={releases['cft']['chrome_url']}",
-                "--build-arg", f"CFT_DRIVER_URL={releases['cft']['chromedriver_url']}",
                 "-t", image, "-f", str(SCRIPTS / "Dockerfile"), str(ROOT)]
         run(args, results / "build.log")
     if build_only:
         print(f"[Image ready] {image}", flush=True)
         return
-    runner = f"copy-as-markdown-selenium-runner:{profile}-{selector}-{platform.split('/')[1]}"
-    run(["docker", "build", "--platform", platform, "--build-arg", f"SELENIUM_BASE_IMAGE={image}",
+    runner = f"copy-as-markdown-selenium-runner:{profile}-{selector}"
+    run(["docker", "build", "--build-arg", f"SELENIUM_BASE_IMAGE={image}",
          "-t", runner, "-f", str(SCRIPTS / "Runner.Dockerfile"), str(ROOT)], results / "build.log")
     info = capture(["docker", "image", "inspect", "--format",
                     "Image: {{.Id}}; architecture: {{.Architecture}}; digests: {{json .RepoDigests}}", image])
     (results / "environment.log").write_text(identity + "\n" + info + "\n")
     print(info, flush=True)
-    run(["docker", "run", "--rm", "--init", "--platform", platform, "--ipc=host", "-e", "CI=true",
-         "-e", f"BROWSER={selector}", "-v", f"{results}:/workspace/test-results",
+    run(["docker", "run", "--rm", "--init", "--ipc=host", "-e", "CI=true",
+         "-e", f"BROWSER={selector}", "-v", f"{results}:/workspace/test-results:Z",
          runner, *sys.argv[1:]], results / "run.log", stream=True)
 
 

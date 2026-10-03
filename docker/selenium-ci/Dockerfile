@@ -54,6 +54,7 @@ RUN mkdir -p src/vendor/ dist/ \
 ENV FIREFOX_BINARY=/opt/firefox/firefox
 ENV CHROME_BINARY=/opt/cft/chrome/chrome
 ENV CHROMEDRIVER_BINARY=/usr/local/bin/chromedriver
+COPY docker/selenium-ci/resolve_cft.py /usr/local/bin/resolve_cft.py
 COPY docker/selenium-ci/install-browser.sh /usr/local/bin/install-browser.sh
 
 # Independent browser stages keep a CfT update from re-downloading Firefox.
@@ -66,8 +67,6 @@ RUN SELENIUM_BROWSER=firefox bash /usr/local/bin/install-browser.sh
 FROM common AS cft-browser
 ARG TARGETARCH
 ARG CFT_VERSION
-ARG CFT_CHROME_URL
-ARG CFT_DRIVER_URL
 RUN SELENIUM_BROWSER=cft bash /usr/local/bin/install-browser.sh
 
 FROM common AS environment

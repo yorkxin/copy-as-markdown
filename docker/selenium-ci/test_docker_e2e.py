@@ -39,7 +39,7 @@ print(json.dumps({"requested": requested, "version": version, "chrome_url": "htt
 args = sys.argv[1:]
 with open(os.environ["CALLS"], "a") as log:
     log.write(json.dumps(args) + "\\n")
-if args[0] == "version": print("arm64")
+if args[0] in ("version", "info"): sys.exit("Engine detection is unsupported")
 if args[:2] == ["image", "inspect"]:
     if "--format" in args: print("controlled-image"); sys.exit(0)
     if not os.environ.get("INSTALLED_FIREFOX"): sys.exit(1)
@@ -71,6 +71,18 @@ if args[0] in ("build", "run"):
         self.assertIn("BROWSER=all", self.runs[0])
         self.assertEqual(self.runs[0][-2:], ["-k", "link or image"])
         self.assertIn("Firefox 157.0 + Chrome for Testing 154.0.8037.92", result.stdout)
+
+    def test_engine_selects_native_platform_and_reports_are_selinux_labelled(self):
+        result = self.run_harness()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
+        self.assertFalse(any(call[0] in ("version", "info") for call in calls))
+        self.assertFalse(any("--platform" in call for call in calls))
+        builds = [call for call in calls if call[0] == "build"]
+        self.assertFalse(any("CFT_CHROME_URL=" in arg or "CFT_DRIVER_URL=" in arg
+                             for call in builds for arg in call))
+        mount = self.runs[0][self.runs[0].index("-v") + 1]
+        self.assertTrue(mount.endswith(":/workspace/test-results:Z"))
 
     def test_explicit_browser_filters_tests_not_image(self):
         result = self.run_harness({"BROWSER": "cft"})
