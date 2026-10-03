@@ -37,6 +37,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:unit
+      - name: Check Selenium version resolution
+        run: python3 -m unittest discover -s docker/selenium-ci -p 'test_*.py'
       - run: npm install -g web-ext # build tool
       - run: npm run package-chrome
       - run: npm run package-firefox-mv3
@@ -76,19 +78,34 @@ jobs:
           retention-days: 30
 
   selenium:
+    name: Selenium ${{ matrix.browser }} (${{ matrix.profile }})
     runs-on: ubuntu-latest
     needs: build
-    # Image build (apt + npm ci + PyGObject compile + geckodriver download) runs
-    # uncached on the ephemeral runner, so allow more than the host-install path.
+    # Allow for the uncached image build and the complete Selenium suite.
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: firefox
+            profile: "minimum"
+          - browser: firefox
+            profile: "latest"
+          - browser: cft
+            profile: "minimum"
+          - browser: cft
+            profile: "latest"
     steps:
       - uses: actions/checkout@v6
-      - name: Run Selenium Firefox e2e tests (Docker)
-        # Runs the same Dockerized harness as `npm run test:e2e:selenium:docker`
-        # locally: the image bakes in deb firefox-esr + geckodriver + AT-SPI/D-Bus,
-        # and its entrypoint wraps the suite in dbus-run-session. This deliberately
-        # avoids ubuntu-latest's snap-packaged Firefox, whose geckodriver can't
-        # launch under the private session bus the AT-SPI context-menu tests need.
-        # The image is rebuilt each run (no layer cache) — see
-        # docs/ideas/ghcr-selenium-image.md for the prebuilt-image optimization.
+      - name: Run selected Selenium browser suite (Docker)
+        # Both profiles contain both browsers; each job selects its test suite.
+        env:
+          BROWSER: ${{ matrix.browser }}
+          PROFILE: ${{ matrix.profile }}
         run: bash docker/selenium-ci/docker-e2e.sh
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: selenium-${{ matrix.profile }}-${{ matrix.browser }}
+          path: test-results/selenium-${{ matrix.profile }}-${{ matrix.browser }}/
+          retention-days: 30

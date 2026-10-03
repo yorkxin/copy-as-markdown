@@ -1,4 +1,4 @@
-FROM python:3.14-slim
+FROM python:3.14-slim AS common
 
 # The label lets docker-e2e.sh prune only images orphaned by this project's
 # own rebuilds, without touching dangling images from other projects.
@@ -14,45 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# firefox-esr ships in Debian's main repo and satisfies manifest.json's
-# requires_min (139) as long as the current ESR major stays above it (140 as
-# of this writing). If requires_min is ever bumped past the current ESR major,
-# switch to release Firefox via Mozilla APT instead:
-#
-#   install -d -m 0755 /etc/apt/keyrings
-#   curl -fsSL https://packages.mozilla.org/apt/repo-signing-key.gpg \
-#        -o /etc/apt/keyrings/packages.mozilla.org.asc
-#   echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] \
-#        https://packages.mozilla.org/apt mozilla main" \
-#        > /etc/apt/sources.list.d/mozilla.list
-#   printf 'Package: *\nPin: origin packages.mozilla.org\nPin-Priority: 1000\n' \
-#        > /etc/apt/preferences.d/mozilla
-#   apt-get update && apt-get install -y firefox
-#
+# Runtime libraries are explicit because official archives have no APT dependencies.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      firefox-esr \
-    && rm -rf /var/lib/apt/lists/*
-
-# geckodriver is not packaged in Debian; download the release binary directly.
-ARG GECKODRIVER_VERSION=0.35.0
-RUN set -eux; \
-    ARCH="$(uname -m)"; \
-    case "$ARCH" in \
-      x86_64)  GD_ARCH="linux64" ;; \
-      aarch64) GD_ARCH="linux-aarch64" ;; \
-      *) echo "Unsupported arch: $ARCH" && exit 1 ;; \
-    esac; \
-    curl -fsSL \
-      "https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/geckodriver-v${GECKODRIVER_VERSION}-${GD_ARCH}.tar.gz" \
-      | tar xz -C /usr/local/bin/ \
-    && chmod +x /usr/local/bin/geckodriver
-
-# Chromium + matching driver.
-# Debian's chromium-driver is version-matched to the chromium package, 
-# so no runtime Selenium Manager driver download is needed.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-      chromium \
-      chromium-driver \
+      xz-utils unzip libgtk-3-0 libdbus-glib-1-2 libasound2 libxt6 libx11-xcb1 \
+      libnss3 libgbm1 libxss1 libxdamage1 libxrandr2 fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # xvfb: headless display   xauth: required by xvfb-run   xsel: real clipboard
@@ -86,7 +51,34 @@ COPY package.json package-lock.json* ./
 RUN mkdir -p src/vendor/ dist/ \
     && npm ci
 
-COPY . .
+ENV FIREFOX_BINARY=/opt/firefox/firefox
+ENV CHROME_BINARY=/opt/cft/chrome/chrome
+ENV CHROMEDRIVER_BINARY=/usr/local/bin/chromedriver
+COPY docker/selenium-ci/resolve_cft.py /usr/local/bin/resolve_cft.py
+COPY docker/selenium-ci/install-browser.sh /usr/local/bin/install-browser.sh
+
+# Independent browser stages keep a CfT update from re-downloading Firefox.
+FROM common AS firefox-browser
+ARG TARGETARCH
+ARG FIREFOX_VERSION=139.0
+ARG GECKODRIVER_VERSION=0.35.0
+RUN SELENIUM_BROWSER=firefox bash /usr/local/bin/install-browser.sh
+
+FROM common AS cft-browser
+ARG TARGETARCH
+ARG CFT_VERSION
+RUN SELENIUM_BROWSER=cft bash /usr/local/bin/install-browser.sh
+
+FROM common AS environment
+ARG FIREFOX_VERSION=139.0
+ARG CFT_VERSION
+ENV BROWSER=all
+ENV FIREFOX_VERSION=${FIREFOX_VERSION}
+ENV CFT_VERSION=${CFT_VERSION}
+COPY --from=firefox-browser /opt/firefox /opt/firefox
+COPY --from=firefox-browser /usr/local/bin/geckodriver /usr/local/bin/geckodriver
+COPY --from=cft-browser /opt/cft /opt/cft
+COPY --from=cft-browser /usr/local/bin/chromedriver /usr/local/bin/chromedriver
 
 COPY docker/selenium-ci/run-selenium.sh /usr/local/bin/run-selenium.sh
 RUN chmod +x /usr/local/bin/run-selenium.sh
