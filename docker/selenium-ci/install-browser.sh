@@ -28,6 +28,13 @@ case "$SELENIUM_BROWSER" in
     rm /tmp/firefox.tar.xz /tmp/SHA256SUMS /tmp/firefox.sha256
     ;;
   cft)
+    case "$TARGETARCH" in
+      amd64) cft_platform=linux64 ;;
+      arm64) cft_platform=linux-arm64 ;;
+    esac
+    python /usr/local/bin/resolve_cft.py "$CFT_VERSION" "$cft_platform" > /tmp/cft-release.json
+    CFT_CHROME_URL="$(python -c 'import json; print(json.load(open("/tmp/cft-release.json"))["chrome_url"])')"
+    CFT_DRIVER_URL="$(python -c 'import json; print(json.load(open("/tmp/cft-release.json"))["chromedriver_url"])')"
     curl -fsSL --retry 3 "$CFT_CHROME_URL" -o /tmp/chrome.zip
     curl -fsSL --retry 3 "$CFT_DRIVER_URL" -o /tmp/chromedriver.zip
     mkdir -p /opt/cft
@@ -35,16 +42,12 @@ case "$SELENIUM_BROWSER" in
     sha256sum /tmp/chrome.zip /tmp/chromedriver.zip > /opt/cft/archive.sha256
     unzip -q /tmp/chrome.zip -d /opt/cft
     unzip -q /tmp/chromedriver.zip -d /tmp/cft-driver
-    case "$TARGETARCH" in
-      amd64) cft_platform=linux64 ;;
-      arm64) cft_platform=linux-arm64 ;;
-    esac
     mv "/opt/cft/chrome-$cft_platform" /opt/cft/chrome
     mv "/tmp/cft-driver/chromedriver-$cft_platform/chromedriver" "$CHROMEDRIVER_BINARY"
     chmod +x "$CHROME_BINARY" "$CHROMEDRIVER_BINARY"
     test "$("$CHROME_BINARY" --version | awk '{print $NF}')" = "$CFT_VERSION"
     test "$("$CHROMEDRIVER_BINARY" --version | awk '{print $2}')" = "$CFT_VERSION"
-    rm /tmp/chrome.zip /tmp/chromedriver.zip
+    rm /tmp/chrome.zip /tmp/chromedriver.zip /tmp/cft-release.json
     rm -r /tmp/cft-driver
     ;;
   *) echo "Unsupported Selenium browser: $SELENIUM_BROWSER" >&2; exit 1 ;;

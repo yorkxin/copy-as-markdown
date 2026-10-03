@@ -39,11 +39,7 @@ def read_json(url):
 
 
 def main():
-    requested, platform = sys.argv[1:]
-    architectures = {"linux/amd64": "linux-x86_64", "linux/arm64": "linux-aarch64",
-                     "linux/arm64/v8": "linux-aarch64"}
-    if platform not in architectures:
-        raise ValueError(f"Unsupported Firefox platform: {platform}")
+    requested = sys.argv[1]
     sources = []
     if requested == "latest":
         sources.append(f"{METADATA_ROOT}/firefox_versions.json")
@@ -62,11 +58,8 @@ def main():
         raise ValueError("FIREFOX_VERSION must be latest, a positive major, or an exact release")
     if not re.fullmatch(RELEASE_PATTERN, version):
         raise ValueError(f"Invalid Firefox release: {version}")
-    release_url = f"{ARCHIVE_ROOT}/{version}"
-    print(json.dumps({"requested": requested, "version": version, "platform": platform,
-                      "metadata_urls": sources,
-                      "archive_url": f"{release_url}/{architectures[platform]}/en-US/firefox-{version}.tar.xz",
-                      "checksums_url": f"{release_url}/SHA256SUMS"}, indent=2))
+    print(json.dumps({"requested": requested, "version": version,
+                      "metadata_urls": sources}, indent=2))
 
 
 if __name__ == "__main__":

@@ -60,7 +60,8 @@ BROWSER=cft npm run test:e2e:selenium:docker -- -k test_context_menu_copy_link
 The environment contains dependencies and both browsers. A separate lightweight
 runner image adds the current checkout; extension builds run once per session.
 Browser download stages are independent, and unchanged environment layers use
-Docker's build cache. The current implementation builds environments locally;
+Docker's build cache. Version checks on the host resolve releases only; the CfT
+download URLs are resolved for the native architecture during image build. The current implementation builds environments locally;
 GHCR publication and scheduled refreshes are deferred.
 
 Tests reuse the existing profile image directly; only the lightweight runner
@@ -77,15 +78,16 @@ by the harness when publication is added.
 
 ## Architecture
 
-The harness uses the Docker server's architecture. Firefox and current CfT
-releases support Linux AMD64 and ARM64; the fixed CfT 116 release supports only
-AMD64. An unavailable browser/driver platform fails the run.
+The container engine selects the native build architecture. Browser downloads
+are selected inside the image build using `TARGETARCH`; the harness does not
+detect the engine or offer a platform override. Cross-architecture browser
+emulation is not supported.
 
-To run CfT 116 on an ARM host with AMD64 emulation available:
+Firefox and current CfT releases support Linux AMD64 and ARM64; the fixed CfT
+116 release supports only AMD64. On ARM64, the minimum profile fails during
+image build with an unavailable browser/driver archive error.
 
-```sh
-DOCKER_DEFAULT_PLATFORM=linux/amd64 PROFILE=minimum npm run test:e2e:selenium:docker
-```
+Report directories are mounted with `:Z` for SELinux container access.
 
 ## Reading results
 
