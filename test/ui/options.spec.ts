@@ -386,7 +386,7 @@ describe('copy selection options page', () => {
     await page.getByTestId('reset-copy-selection').click();
     await flush();
 
-    await expect.element(page.getByRole('radio', { name: /Asterisks/ })).toBeChecked();
+    await expect.element(page.getByRole('group', {name: 'Unordered List Character'}).getByRole('radio', { name: /Asterisks/ })).toBeChecked();
     const shortcut = page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(shortcut\)/ });
     await expect.element(shortcut).toBeChecked();
     await expect.element(shortcut).toBeEnabled();

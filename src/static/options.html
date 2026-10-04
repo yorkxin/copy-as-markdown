@@ -60,27 +60,47 @@
         <form id='form-selection-bullet-list-marker' class="field">
           <fieldset>
             <legend class="label">Unordered List Character</legend>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="bullet-list-marker" value="-"/>
-                Dashes (<code>-</code>)
-              </label>
+            <div class="columns">
+              <div class="column">
+                <label class="box is-block is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="bullet-list-marker" value="-"/>
+                    Dashes
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    - Lorem<br>
+                    - Ipsum<br>
+                    - Dolar
+                  </samp>
+                </label>
+              </div>
+              <div class="column">
+                <label class="box is-block is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="bullet-list-marker" value="*"/>
+                    Asterisks
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    * Lorem<br>
+                    * Ipsum<br>
+                    * Dolar
+                  </samp>
+                </label>
+              </div>
+              <div class="column">
+                <label class="box is-block is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="bullet-list-marker" value="+"/>
+                    Plus Signs
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    + Lorem<br>
+                    + Ipsum<br>
+                    + Dolar
+                  </samp>
+                </label>
+              </div>
             </div>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="bullet-list-marker" value="*"/>
-                Asterisks (<code>*</code>)
-              </label>
-            </div>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="bullet-list-marker" value="+"/>
-                Plus Signs (<code>+</code>)
-              </label>
-            </div>
-            <p class="help">
-              The character that starts each item when a selected HTML list is converted to Markdown.
-            </p>
           </fieldset>
         </form>
 
