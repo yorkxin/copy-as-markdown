@@ -238,8 +238,8 @@ describe('copy selection options page', () => {
   });
 
   it.each([
-    ['Emphasis (italics)', 'Asterisk (*text*)', 'Underscore (_text_)', 'setEmDelimiter', '*'],
-    ['Strong emphasis (bold)', 'Double underscores (__text__)', 'Double asterisks (**text**)', 'setStrongDelimiter', '__'],
+    ['Emphasis (italics)', 'Asterisk', 'Underscore', 'setEmDelimiter', '*'],
+    ['Strong emphasis (bold)', 'Double underscores', 'Double asterisks', 'setStrongDelimiter', '__'],
   ] as const)('saves %s immediately and restores persisted values on failure', async (group, alternate, initial, setter, value) => {
     await startPage();
     const radios = page.getByRole('group', { name: group, exact: true });
@@ -369,8 +369,8 @@ describe('copy selection options page', () => {
     await page.getByTestId('reset-copy-selection').click();
     await vi.waitFor(() => expect(resetSelectionSettingsMock).toHaveBeenCalledTimes(1));
     await expect.element(page.getByRole('radio', { name: /Dashes/ })).toBeChecked();
-    await expect.element(page.getByRole('radio', { name: 'Underscore (_text_)', exact: true })).toBeChecked();
-    await expect.element(page.getByRole('radio', { name: 'Double asterisks (**text**)', exact: true })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: 'Underscore', exact: true })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: 'Double asterisks', exact: true })).toBeChecked();
     await expect.element(page.getByRole('radio', { name: /Fenced code block/ })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /ATX/ })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Code-fence marker' }).getByRole('radio', { name: /Backticks/ })).toBeChecked();

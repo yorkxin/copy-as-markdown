@@ -107,17 +107,29 @@
         <form id="form-selection-em-delimiter" class="field">
           <fieldset>
             <legend class="label">Emphasis (italics)</legend>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="em-delimiter" value="_"/>
-                Underscore (<code>_text_</code>)
+            <div class="columns">
+             	<div class="column is-one-third">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="em-delimiter" value="_" aria-labelledby="em-delimiter-underscore-title" />
+                    <span id="em-delimiter-underscore-title">Underscore</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    _text_
+                  </samp>
               </label>
             </div>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="em-delimiter" value="*"/>
-                Asterisk (<code>*text*</code>)
+             	<div class="column is-one-third">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="em-delimiter" value="*" aria-labelledby="em-delimiter-asterisk-title" />
+                    <span id="em-delimiter-asterisk-title">Asterisk</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    *text*
+                  </samp>
               </label>
+            </div>
             </div>
           </fieldset>
         </form>
@@ -125,17 +137,29 @@
         <form id="form-selection-strong-delimiter" class="field">
           <fieldset>
             <legend class="label">Strong emphasis (bold)</legend>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="strong-delimiter" value="**"/>
-                Double asterisks (<code>**text**</code>)
+            <div class="columns">
+             	<div class="column is-one-third">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="strong-delimiter" value="**" aria-labelledby="strong-delimiter-double-asterisks-title" />
+                    <span id="strong-delimiter-double-asterisks-title">Double asterisks</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    **text**
+                  </samp>
               </label>
             </div>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="strong-delimiter" value="__"/>
-                Double underscores (<code>__text__</code>)
+             	<div class="column is-one-third">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="strong-delimiter" value="__" aria-labelledby="strong-selimiter-double-underscores-title" />
+                    <span id="strong-selimiter-double-underscores-title">Double underscores</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    __text__
+                  </samp>
               </label>
+            </div>
             </div>
           </fieldset>
         </form>
