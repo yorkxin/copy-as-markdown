@@ -58,28 +58,30 @@
         </p>
 
         <form id='form-selection-bullet-list-marker' class="field">
-          <label class="label">Unordered List Character</label>
-          <div class="control">
-            <label class="radio">
-              <input type="radio" name="bullet-list-marker" value="-"/>
-              Dashes (<code>-</code>)
-            </label>
-          </div>
-          <div class="control">
-            <label class="radio">
-              <input type="radio" name="bullet-list-marker" value="*"/>
-              Asterisks (<code>*</code>)
-            </label>
-          </div>
-          <div class="control">
-            <label class="radio">
-              <input type="radio" name="bullet-list-marker" value="+"/>
-              Plus Signs (<code>+</code>)
-            </label>
-          </div>
-          <p class="help">
-            The character that starts each item when a selected HTML list is converted to Markdown.
-          </p>
+          <fieldset>
+            <legend class="label">Unordered List Character</legend>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="bullet-list-marker" value="-"/>
+                Dashes (<code>-</code>)
+              </label>
+            </div>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="bullet-list-marker" value="*"/>
+                Asterisks (<code>*</code>)
+              </label>
+            </div>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="bullet-list-marker" value="+"/>
+                Plus Signs (<code>+</code>)
+              </label>
+            </div>
+            <p class="help">
+              The character that starts each item when a selected HTML list is converted to Markdown.
+            </p>
+          </fieldset>
         </form>
 
         <form id="form-selection-em-delimiter" class="field">
@@ -142,23 +144,25 @@
         </form>
 
         <form id='form-selection-code-block-style' class="field">
-          <label class="label">Code Block Style</label>
-          <div class="control">
-            <label class="radio">
-              <input type="radio" name="code-block-style" value="fenced"/>
-              Fenced code block (<code>```lang</code>)
-            </label>
-          </div>
-          <div class="control">
-            <label class="radio">
-              <input type="radio" name="code-block-style" value="indented"/>
-              Indented code block (4 spaces)
-            </label>
-          </div>
-          <p class="help">
-            Controls how Copy Selection as Markdown renders code blocks.
-            Fenced style keeps language tags for syntax highlighting, while indented style omits language tags.
-          </p>
+          <fieldset>
+            <legend class="label">Code Block Style</legend>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="code-block-style" value="fenced"/>
+                Fenced code block (<code>```lang</code>)
+              </label>
+            </div>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="code-block-style" value="indented"/>
+                Indented code block (4 spaces)
+              </label>
+            </div>
+            <p class="help">
+              Controls how Copy Selection as Markdown renders code blocks.
+              Fenced style keeps language tags for syntax highlighting, while indented style omits language tags.
+            </p>
+          </fieldset>
         </form>
 
         <form id="form-selection-fence" class="field">
