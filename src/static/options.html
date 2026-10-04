@@ -117,8 +117,8 @@
                   <samp class="is-block mt-3 is-size-7 code-sample">
                     _text_
                   </samp>
-              </label>
-            </div>
+                </label>
+              </div>
              	<div class="column is-one-third">
                 <label class="box is-shadowless radio-card">
                   <span class="radio">
@@ -128,8 +128,8 @@
                   <samp class="is-block mt-3 is-size-7 code-sample">
                     *text*
                   </samp>
-              </label>
-            </div>
+                </label>
+              </div>
             </div>
           </fieldset>
         </form>
@@ -147,8 +147,8 @@
                   <samp class="is-block mt-3 is-size-7 code-sample">
                     **text**
                   </samp>
-              </label>
-            </div>
+                </label>
+              </div>
              	<div class="column is-one-third">
                 <label class="box is-shadowless radio-card">
                   <span class="radio">
@@ -158,8 +158,8 @@
                   <samp class="is-block mt-3 is-size-7 code-sample">
                     __text__
                   </samp>
-              </label>
-            </div>
+                </label>
+              </div>
             </div>
           </fieldset>
         </form>
@@ -167,23 +167,38 @@
         <form id="form-selection-heading-style" class="field">
           <fieldset>
             <legend class="label">Heading style</legend>
-            <div class="heading-style-options">
-              <div class="control">
-                <label class="radio heading-style-choice">
-                  <input type="radio" name="heading-style" value="atx"/>
-                  ATX
-                  <code class="heading-style-example"># Heading</code>
+            <p class="help">Setext uses underlines for H1 and H2 only. H3 through H6 remain ATX headings.</p>
+            <div class="columns">
+             	<div class="column is-one-third is-flex">
+                <label class="box is-shadowless radio-card is-flex-grow-1">
+                  <span class="radio">
+                    <input type="radio" name="heading-style" value="atx" aria-labelledby="heading-atx-title" />
+                    <span id="heading-atx-title">ATX</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                  # Heading 1<br>
+                  <br>
+                  ## Heading 2<br>
+                  <br>
+                  </samp>
                 </label>
               </div>
-              <div class="control">
-                <label class="radio heading-style-choice">
-                  <input type="radio" name="heading-style" value="setext"/>
-                  Setext
-                  <code class="heading-style-example">Heading&#10;=======</code>
+             	<div class="column is-one-third">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="heading-style" value="setext" aria-labelledby="heading-setext-title"/>
+                    <span id="heading-setext-title">Setext</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                  Heading 1<br>
+                  =========<br>
+                  <br>
+                  Heading 2<br>
+                  ---------<br>
+                  </samp>
                 </label>
               </div>
             </div>
-            <p class="help">Setext uses underlines for H1 and H2 only. H3 through H6 remain ATX headings.</p>
           </fieldset>
         </form>
 
