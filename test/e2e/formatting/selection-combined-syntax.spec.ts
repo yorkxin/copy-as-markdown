@@ -56,8 +56,8 @@ test('applies combined syntax through both selection handlers without reloading 
 
   await options.bringToFront();
   await options.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /Setext/ }).check();
-  await options.getByRole('group', { name: 'Emphasis (italics)', exact: true }).getByRole('radio', { name: 'Asterisk (*text*)', exact: true }).check();
-  await options.getByRole('group', { name: 'Strong emphasis (bold)', exact: true }).getByRole('radio', { name: 'Double underscores (__text__)', exact: true }).check();
+  await options.getByRole('group', { name: 'Emphasis (italics)', exact: true }).getByRole('radio', { name: 'Asterisk', exact: true }).check();
+  await options.getByRole('group', { name: 'Strong emphasis (bold)', exact: true }).getByRole('radio', { name: 'Double underscores', exact: true }).check();
   await options.getByRole('radio', { name: /Plus Signs/ }).check();
   await options.getByRole('group', { name: 'Code-fence marker' }).getByRole('radio', { name: /Tildes/ }).check();
   // Click the example itself, proving the whole label selects its output format.

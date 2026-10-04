@@ -14,8 +14,8 @@ test('applies emphasis choices to the next Copy Selection and resets them withou
   await options.goto(`chrome-extension://${extensionId}/dist/static/options.html`);
   const emphasis = options.getByRole('group', { name: 'Emphasis (italics)', exact: true });
   const strong = options.getByRole('group', { name: 'Strong emphasis (bold)', exact: true });
-  await expect(emphasis.getByRole('radio', { name: 'Underscore (_text_)', exact: true })).toBeChecked();
-  await expect(strong.getByRole('radio', { name: 'Double asterisks (**text**)', exact: true })).toBeChecked();
+  await expect(emphasis.getByRole('radio', { name: 'Underscore', exact: true })).toBeChecked();
+  await expect(strong.getByRole('radio', { name: 'Double asterisks', exact: true })).toBeChecked();
 
   async function copySelection(): Promise<string | null> {
     await page.bringToFront();
@@ -29,14 +29,14 @@ test('applies emphasis choices to the next Copy Selection and resets them withou
 
   expect(await copySelection()).toBe('_text_ and **bold**');
   await options.bringToFront();
-  await emphasis.getByRole('radio', { name: 'Asterisk (*text*)', exact: true }).check();
+  await emphasis.getByRole('radio', { name: 'Asterisk', exact: true }).check();
   await expect.poll(() => serviceWorker.evaluate(async () => {
     return (await chrome.storage.sync.get('selection.markdown.emDelimiter'))['selection.markdown.emDelimiter'];
   })).toBe('*');
   expect(await copySelection()).toBe('*text* and **bold**');
 
   await options.bringToFront();
-  await strong.getByRole('radio', { name: 'Double underscores (__text__)', exact: true }).check();
+  await strong.getByRole('radio', { name: 'Double underscores', exact: true }).check();
   await expect.poll(() => serviceWorker.evaluate(async () => {
     return (await chrome.storage.sync.get('selection.markdown.strongDelimiter'))['selection.markdown.strongDelimiter'];
   })).toBe('__');
@@ -44,7 +44,7 @@ test('applies emphasis choices to the next Copy Selection and resets them withou
 
   await options.bringToFront();
   await options.getByTestId('reset-copy-selection').click();
-  await expect(emphasis.getByRole('radio', { name: 'Underscore (_text_)', exact: true })).toBeChecked();
-  await expect(strong.getByRole('radio', { name: 'Double asterisks (**text**)', exact: true })).toBeChecked();
+  await expect(emphasis.getByRole('radio', { name: 'Underscore', exact: true })).toBeChecked();
+  await expect(strong.getByRole('radio', { name: 'Double asterisks', exact: true })).toBeChecked();
   expect(await copySelection()).toBe('_text_ and **bold**');
 });
