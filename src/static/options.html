@@ -205,41 +205,55 @@
         <form id='form-selection-code-block-style' class="field">
           <fieldset>
             <legend class="label">Code Block Style</legend>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="code-block-style" value="fenced"/>
-                Fenced code block (<code>```lang</code>)
-              </label>
-            </div>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="code-block-style" value="indented"/>
-                Indented code block (4 spaces)
-              </label>
-            </div>
             <p class="help">
-              Controls how Copy Selection as Markdown renders code blocks.
-              Fenced style keeps language tags for syntax highlighting, while indented style omits language tags.
+              Converts <code>&lt;pre&gt;&lt;code&gt;</code>blocks only.
+              Fenced style keeps language tags for syntax highlighting.
             </p>
-          </fieldset>
-        </form>
-
-        <form id="form-selection-fence" class="field">
-          <fieldset>
-            <legend class="label">Code-fence marker</legend>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="fence" value="```"/>
-                Backticks (<code>```js</code>)
-              </label>
+            <div class="columns is-multiline">
+             	<div class="column is-half">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="code-block-style" value="fenced-backticks" aria-labelledby="code-block-indented-fenced-backticks" />
+                    <span id="code-block-indented-fenced-backticks">Fenced code block (backticks)</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                  ```c<br>
+                  if (true) {<br>
+                  &nbsp;&nbsp;puts("OK");<br>
+                  }<br>
+                  ```
+                  </samp>
+                </label>
+             	</div>
+             	<div class="column is-half">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="code-block-style" value="fenced-tildes" aria-labelledby="code-block-indented-fenced-tildes" />
+                    <span id="code-block-indented-fenced-tildes">Fenced code block (tildes)</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                  ~~~c<br>
+                  if (true) {<br>
+                  &nbsp;&nbsp;puts("OK");<br>
+                  }<br>
+                  ~~~
+                  </samp>
+                </label>
+             	</div>
+             	<div class="column is-half">
+                <label class="box is-shadowless radio-card">
+                  <span class="radio">
+                    <input type="radio" name="code-block-style" value="indented" aria-labelledby="code-block-indented-title" />
+                    <span id="code-block-indented-title">Indented code block (4 spaces)</span>
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                  &nbsp;&nbsp;&nbsp;&nbsp;if (true) {<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;puts("OK");<br>
+                  &nbsp;&nbsp;&nbsp;&nbsp;}
+                  </samp>
+                </label>
+             	</div>
             </div>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="fence" value="~~~"/>
-                Tildes (<code>~~~js</code>)
-              </label>
-            </div>
-            <p class="help">Applies when code block style is fenced.</p>
           </fieldset>
         </form>
 

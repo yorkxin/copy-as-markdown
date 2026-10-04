@@ -152,4 +152,12 @@ export default {
   async setCodeBlockStyle(value: CodeBlockStyle): Promise<void> {
     await browser.storage.sync.set({ [SelectionSettingKeys.codeBlockStyle]: value });
   },
+
+  /** A fenced choice updates both keys together, avoiding an intermediate format. */
+  async setFencedCodeBlockStyle(value: Fence): Promise<void> {
+    await browser.storage.sync.set({
+      [SelectionSettingKeys.codeBlockStyle]: 'fenced',
+      [SelectionSettingKeys.fence]: value,
+    });
+  },
 };

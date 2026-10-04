@@ -123,6 +123,19 @@ describe('selection settings', () => {
     expect((await SelectionSettings.getAll()).fence).toBe(value);
   });
 
+  it.each(['```', '~~~'] as const)('writes fenced style and fence %s together', async (fence) => {
+    await SelectionSettings.setCodeBlockStyle('indented');
+    const set = vi.spyOn(browser.storage.sync, 'set');
+
+    await SelectionSettings.setFencedCodeBlockStyle(fence);
+
+    expect(set).toHaveBeenCalledExactlyOnceWith({
+      [SelectionSettingKeys.codeBlockStyle]: 'fenced',
+      [SelectionSettingKeys.fence]: fence,
+    });
+    expect(await SelectionSettings.getAll()).toMatchObject({ codeBlockStyle: 'fenced', fence });
+  });
+
   it('keeps the fence preference while code blocks are indented', async () => {
     await SelectionSettings.setFence('~~~');
     await SelectionSettings.setCodeBlockStyle('indented');
