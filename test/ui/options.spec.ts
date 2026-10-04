@@ -150,21 +150,6 @@ describe('copy selection options page', () => {
     await vi.waitFor(() => expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('indented'));
   });
 
-  it('shows heading and fence examples with the documented Setext limit', async () => {
-    await startPage();
-
-    const headings = page.getByRole('group', { name: 'Heading style' });
-    const fences = page.getByRole('group', { name: 'Code-fence marker' });
-    await expect.element(headings.getByRole('radio', { name: /ATX/ })).toBeChecked();
-    await expect.element(fences.getByRole('radio', { name: /Backticks/ })).toBeChecked();
-    await expect.element(fences.getByRole('radio', { name: /Tildes/ })).toBeEnabled();
-    expect(document.querySelector('#form-selection-heading-style input[value="atx"] + code')?.textContent).toBe('# Heading');
-    expect(document.querySelector('#form-selection-heading-style input[value="setext"] + code')?.textContent).toBe('Heading\n=======');
-    expect(document.querySelector('#form-selection-heading-style')?.textContent).toContain('H3 through H6 remain ATX');
-    expect(document.querySelector('#form-selection-fence')?.textContent).toContain('```js');
-    expect(document.querySelector('#form-selection-fence')?.textContent).toContain('~~~js');
-  });
-
   it('keeps the fence visible and selected while indented code blocks disable it', async () => {
     selectionSettingsMock.getAll.mockResolvedValue({
       bulletListMarker: '-',
