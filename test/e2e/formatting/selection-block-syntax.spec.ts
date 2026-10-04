@@ -10,9 +10,9 @@ test('applies heading and fence choices to the next Copy Selection without reloa
   const options = await context.newPage();
   await options.goto(`chrome-extension://${extensionId}/dist/static/options.html`);
   const headings = options.getByRole('group', { name: 'Heading style' });
-  const fences = options.getByRole('group', { name: 'Code-fence marker' });
+  const codeBlocks = options.getByRole('group', { name: 'Code Block Style' });
   await expect(headings.getByRole('radio', { name: /ATX/ })).toBeChecked();
-  await expect(fences.getByRole('radio', { name: /Backticks/ })).toBeChecked();
+  await expect(codeBlocks.getByRole('radio', { name: /backticks/ })).toBeChecked();
 
   async function copySelection(method: 'command' | 'context-menu'): Promise<string | null> {
     await page.bringToFront();
@@ -38,7 +38,7 @@ test('applies heading and fence choices to the next Copy Selection without reloa
 
   await options.bringToFront();
   await headings.getByRole('radio', { name: /Setext/ }).check();
-  await fences.getByRole('radio', { name: /Tildes/ }).check();
+  await codeBlocks.getByRole('radio', { name: /tildes/ }).check();
   await expect.poll(() => serviceWorker.evaluate(async () => {
     return await chrome.storage.sync.get([
       'selection.markdown.headingStyle',
@@ -56,6 +56,6 @@ test('applies heading and fence choices to the next Copy Selection without reloa
   await options.bringToFront();
   await options.getByTestId('reset-copy-selection').click();
   await expect(headings.getByRole('radio', { name: /ATX/ })).toBeChecked();
-  await expect(fences.getByRole('radio', { name: /Backticks/ })).toBeChecked();
+  await expect(codeBlocks.getByRole('radio', { name: /backticks/ })).toBeChecked();
   expect(await copySelection('command')).toBe('# Heading\n\n```js\nconst x = 1;\n```');
 });

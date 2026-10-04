@@ -51,7 +51,7 @@ class TestSelectionFormatting:
             ("em-delimiter", "*"),
             ("strong-delimiter", "__"),
             ("bullet-list-marker", "+"),
-            ("fence", "~~~"),
+            ("code-block-style", "fenced-tildes"),
             ("link-style", "shortcut"),
         ]:
             driver.find_element(By.CSS_SELECTOR, f'input[name="{name}"][value="{value}"]').click()
