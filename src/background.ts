@@ -72,12 +72,7 @@ const markdownConverter: MarkdownConverter = BUILD_TARGET === 'firefox-mv3'
 const selectionConverterService = createBrowserSelectionConverterService(
   {
     getTurndownOptions: () => ({
-      bulletListMarker: selectionSettings.bulletListMarker,
-      codeBlockStyle: selectionSettings.codeBlockStyle,
-      emDelimiter: selectionSettings.emDelimiter,
-      strongDelimiter: selectionSettings.strongDelimiter,
-      headingStyle: selectionSettings.headingStyle,
-      fence: selectionSettings.fence,
+      ...selectionSettings,
     }),
   },
   markdownConverter,
