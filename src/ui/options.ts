@@ -1,7 +1,7 @@
 import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import { isBulletListMarker } from '../lib/markdown.js';
 import { ensureMarkdownSettingsMigrated, resetSelectionSettings } from '../lib/markdown-settings.js';
-import SelectionSettings, { isCodeBlockStyle, isEmDelimiter, isFence, isHeadingStyle, isStrongDelimiter } from '../lib/selection-settings.js';
+import SelectionSettings, { isCodeBlockStyle, isEmDelimiter, isFence, isHeadingStyle, isLinkReferenceStyle, isStrongDelimiter } from '../lib/selection-settings.js';
 import { hideFlash, showFlash } from './flash.js';
 
 // This page owns Copy Selection's Markdown formatting settings.
@@ -11,6 +11,19 @@ const EmDelimiterFormId = 'form-selection-em-delimiter';
 const StrongDelimiterFormId = 'form-selection-strong-delimiter';
 const HeadingStyleFormId = 'form-selection-heading-style';
 const FenceFormId = 'form-selection-fence';
+const LinkStyleFormId = 'form-selection-link-style';
+
+// The UI presents four output formats; storage retains Turndown's two independent options.
+type LinkFormat = 'inlined' | 'full' | 'collapsed' | 'shortcut';
+
+function isLinkFormat(value: unknown): value is LinkFormat {
+  return value === 'inlined' || isLinkReferenceStyle(value);
+}
+
+async function saveLinkFormat(value: LinkFormat): Promise<void> {
+  if (value === 'inlined') await SelectionSettings.setLinkStyle('inlined');
+  else await SelectionSettings.setReferencedLinkStyle(value);
+}
 
 function radioGroup(formId: string, name: string): RadioNodeList | null {
   const form = document.forms.namedItem(formId);
@@ -27,7 +40,7 @@ function updateFenceAvailability(): void {
 }
 
 async function loadSettings(): Promise<void> {
-  const { bulletListMarker, codeBlockStyle, emDelimiter, strongDelimiter, headingStyle, fence } = await SelectionSettings.getAll();
+  const { bulletListMarker, codeBlockStyle, emDelimiter, strongDelimiter, headingStyle, fence, linkStyle, linkReferenceStyle } = await SelectionSettings.getAll();
 
   const markers = radioGroup(BulletListMarkerFormId, 'bullet-list-marker');
   if (markers) markers.value = bulletListMarker;
@@ -46,6 +59,9 @@ async function loadSettings(): Promise<void> {
 
   const fences = radioGroup(FenceFormId, 'fence');
   if (fences) fences.value = fence;
+
+  const links = radioGroup(LinkStyleFormId, 'link-style');
+  if (links) links.value = linkStyle === 'inlined' ? 'inlined' : linkReferenceStyle;
 
   updateFenceAvailability();
 }
@@ -110,6 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   wireSetting(StrongDelimiterFormId, isStrongDelimiter, SelectionSettings.setStrongDelimiter);
   wireSetting(HeadingStyleFormId, isHeadingStyle, SelectionSettings.setHeadingStyle);
   wireSetting(FenceFormId, isFence, SelectionSettings.setFence);
+  wireSetting(LinkStyleFormId, isLinkFormat, saveLinkFormat);
   wireReset();
 
   await ensureMarkdownSettingsMigrated();

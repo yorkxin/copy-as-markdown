@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SelectionSettings, { SelectionSettingKeys } from '../src/lib/selection-settings';
 import type { FakeSyncStorage } from './support/fake-sync-storage';
 import { createFakeSyncStorage } from './support/fake-sync-storage';
@@ -24,7 +24,10 @@ describe('selection settings', () => {
         strongDelimiter: '**',
         headingStyle: 'atx',
         fence: '```',
+        linkStyle: 'inlined',
+        linkReferenceStyle: 'full',
       });
+      expect(storage.data).toEqual({});
     });
 
     it('reads persisted values', async () => {
@@ -38,6 +41,8 @@ describe('selection settings', () => {
         strongDelimiter: '**',
         headingStyle: 'atx',
         fence: '```',
+        linkStyle: 'inlined',
+        linkReferenceStyle: 'full',
       });
     });
 
@@ -52,6 +57,8 @@ describe('selection settings', () => {
         strongDelimiter: '**',
         headingStyle: 'atx',
         fence: '```',
+        linkStyle: 'inlined',
+        linkReferenceStyle: 'full',
       });
     });
 
@@ -140,6 +147,78 @@ describe('selection settings', () => {
     expect(storage.data).toEqual(before);
   });
 
+  it.each(['inlined', 'referenced'] as const)('persists link style %s', async (value) => {
+    await SelectionSettings.setLinkStyle(value);
+    expect(storage.data[SelectionSettingKeys.linkStyle]).toBe(value);
+    expect((await SelectionSettings.getAll()).linkStyle).toBe(value);
+  });
+
+  it.each(['full', 'collapsed', 'shortcut'] as const)('persists link reference style %s', async (value) => {
+    await SelectionSettings.setLinkReferenceStyle(value);
+    expect(storage.data[SelectionSettingKeys.linkReferenceStyle]).toBe(value);
+    expect((await SelectionSettings.getAll()).linkReferenceStyle).toBe(value);
+  });
+
+  it.each(['full', 'collapsed', 'shortcut'] as const)('retains %s references when switching to inline and back', async (value) => {
+    await SelectionSettings.setLinkReferenceStyle(value);
+    await SelectionSettings.setLinkStyle('referenced');
+    await SelectionSettings.setLinkStyle('inlined');
+    expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'inlined', linkReferenceStyle: value });
+    expect(storage.data[SelectionSettingKeys.linkReferenceStyle]).toBe(value);
+    await SelectionSettings.setLinkStyle('referenced');
+    expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'referenced', linkReferenceStyle: value });
+  });
+
+  it.each([null, 42, {}, [], true, '', 'inline', 'full', 'future'])('falls back only for invalid link style %j without rewriting it', async (value) => {
+    storage.data[SelectionSettingKeys.linkStyle] = value;
+    storage.data[SelectionSettingKeys.linkReferenceStyle] = 'collapsed';
+    const before = { ...storage.data };
+    expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'inlined', linkReferenceStyle: 'collapsed' });
+    expect(storage.data).toEqual(before);
+  });
+
+  it.each([null, 42, {}, [], true, '', 'FULL', 'referenced', 'future'])('falls back only for invalid link reference style %j without rewriting it', async (value) => {
+    storage.data[SelectionSettingKeys.linkStyle] = 'referenced';
+    storage.data[SelectionSettingKeys.linkReferenceStyle] = value;
+    const before = { ...storage.data };
+    expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'referenced', linkReferenceStyle: 'full' });
+    expect(storage.data).toEqual(before);
+  });
+
+  it.each([
+    ['link style', () => SelectionSettings.setLinkStyle('referenced')],
+    ['link reference style', () => SelectionSettings.setLinkReferenceStyle('shortcut')],
+  ] as const)('propagates a failed %s write and retains persisted values', async (_name, save) => {
+    storage.data[SelectionSettingKeys.linkStyle] = 'inlined';
+    storage.data[SelectionSettingKeys.linkReferenceStyle] = 'collapsed';
+    const before = { ...storage.data };
+    const error = new Error('QUOTA_BYTES quota exceeded');
+    storage.failNextSet = error;
+    await expect(save()).rejects.toBe(error);
+    expect(storage.data).toEqual(before);
+    expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'inlined', linkReferenceStyle: 'collapsed' });
+  });
+
+  it.each(['full', 'collapsed', 'shortcut'] as const)('writes referenced %s output in a single storage update', async (value) => {
+    const set = vi.spyOn(browser.storage.sync, 'set');
+    await SelectionSettings.setReferencedLinkStyle(value);
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith({
+      [SelectionSettingKeys.linkStyle]: 'referenced',
+      [SelectionSettingKeys.linkReferenceStyle]: value,
+    });
+    expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'referenced', linkReferenceStyle: value });
+  });
+
+  it('retains both persisted settings when a referenced output write fails', async () => {
+    storage.data[SelectionSettingKeys.linkStyle] = 'inlined';
+    storage.data[SelectionSettingKeys.linkReferenceStyle] = 'shortcut';
+    const before = { ...storage.data };
+    storage.failNextSet = new Error('quota exceeded');
+    await expect(SelectionSettings.setReferencedLinkStyle('collapsed')).rejects.toThrow('quota exceeded');
+    expect(storage.data).toEqual(before);
+  });
+
   it('owns the documented storage keys', () => {
     expect(SelectionSettings.keys).toEqual([
       'selection.markdown.bulletListMarker',
@@ -148,6 +227,8 @@ describe('selection settings', () => {
       'selection.markdown.strongDelimiter',
       'selection.markdown.headingStyle',
       'selection.markdown.fence',
+      'selection.markdown.linkStyle',
+      'selection.markdown.linkReferenceStyle',
     ]);
   });
 });

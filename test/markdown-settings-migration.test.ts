@@ -44,6 +44,8 @@ describe('markdown settings migration', () => {
         strongDelimiter: '**',
         headingStyle: 'atx',
         fence: '```',
+        linkStyle: 'inlined',
+        linkReferenceStyle: 'full',
       });
       expect(await MultipleLinksSettings.getAll()).toEqual({
         bulletListMarker: '-',
@@ -247,7 +249,7 @@ describe('markdown settings migration', () => {
       const selection = await SelectionSettings.getAll();
       const multipleLinks = await MultipleLinksSettings.getAll();
 
-      expect(selection).toEqual({ bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
+      expect(selection).toEqual({ bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
       expect(multipleLinks).toEqual({ bulletListMarker: '+', tabGroupIndentation: 'tab' });
     });
 
