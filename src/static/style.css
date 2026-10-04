@@ -23,12 +23,12 @@
     white-space: pre;
 }
 
-#form-selection-link-style .link-style-choice {
+.radio-card {
     border: 2px solid var(--bulma-border);
     cursor: pointer;
 }
 
-#form-selection-link-style .link-style-choice:has(input:checked) {
+.radio-card:has(input:checked) {
     border-color: var(--scheme-color);
 }
 
