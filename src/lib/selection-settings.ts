@@ -141,6 +141,14 @@ export default {
     await browser.storage.sync.set({ [SelectionSettingKeys.linkReferenceStyle]: value });
   },
 
+  /** A referenced output choice updates both keys together, avoiding an intermediate format. */
+  async setReferencedLinkStyle(value: LinkReferenceStyle): Promise<void> {
+    await browser.storage.sync.set({
+      [SelectionSettingKeys.linkStyle]: 'referenced',
+      [SelectionSettingKeys.linkReferenceStyle]: value,
+    });
+  },
+
   async setCodeBlockStyle(value: CodeBlockStyle): Promise<void> {
     await browser.storage.sync.set({ [SelectionSettingKeys.codeBlockStyle]: value });
   },

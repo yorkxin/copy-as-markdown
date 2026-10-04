@@ -23,6 +23,26 @@
     white-space: pre;
 }
 
+#form-selection-link-style .link-style-choice {
+    border: 2px solid var(--bulma-border);
+    cursor: pointer;
+}
+
+#form-selection-link-style .link-style-choice:has(input:checked) {
+    border-color: var(--scheme-color);
+}
+
+.code-sample {
+    white-space: normal;
+    word-break: break-all;
+    background-color: var(--bulma-code-background);
+    border-radius: 0.5em;
+    color: var(--bulma-code);
+    font-size: var(--bulma-code-size);
+    font-weight: var(--bulma-code-weight);
+    padding: var(--bulma-code-padding);
+}
+
 .button.is-primary {
     background-color: var(--scheme-color);
     color: white;

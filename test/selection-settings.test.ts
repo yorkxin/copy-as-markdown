@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SelectionSettings, { SelectionSettingKeys } from '../src/lib/selection-settings';
 import type { FakeSyncStorage } from './support/fake-sync-storage';
 import { createFakeSyncStorage } from './support/fake-sync-storage';
@@ -197,6 +197,26 @@ describe('selection settings', () => {
     await expect(save()).rejects.toBe(error);
     expect(storage.data).toEqual(before);
     expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'inlined', linkReferenceStyle: 'collapsed' });
+  });
+
+  it.each(['full', 'collapsed', 'shortcut'] as const)('writes referenced %s output in a single storage update', async (value) => {
+    const set = vi.spyOn(browser.storage.sync, 'set');
+    await SelectionSettings.setReferencedLinkStyle(value);
+    expect(set).toHaveBeenCalledTimes(1);
+    expect(set).toHaveBeenCalledWith({
+      [SelectionSettingKeys.linkStyle]: 'referenced',
+      [SelectionSettingKeys.linkReferenceStyle]: value,
+    });
+    expect(await SelectionSettings.getAll()).toMatchObject({ linkStyle: 'referenced', linkReferenceStyle: value });
+  });
+
+  it('retains both persisted settings when a referenced output write fails', async () => {
+    storage.data[SelectionSettingKeys.linkStyle] = 'inlined';
+    storage.data[SelectionSettingKeys.linkReferenceStyle] = 'shortcut';
+    const before = { ...storage.data };
+    storage.failNextSet = new Error('quota exceeded');
+    await expect(SelectionSettings.setReferencedLinkStyle('collapsed')).rejects.toThrow('quota exceeded');
+    expect(storage.data).toEqual(before);
   });
 
   it('owns the documented storage keys', () => {

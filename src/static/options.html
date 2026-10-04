@@ -179,6 +179,67 @@
             <p class="help">Applies when code block style is fenced.</p>
           </fieldset>
         </form>
+
+        <form id="form-selection-link-style" class="field">
+          <fieldset>
+            <legend class="label">Link style</legend>
+            <div class="columns is-multiline">
+              <div class="column is-half is-flex">
+                <label class="box is-block is-shadowless is-flex-grow-1 link-style-choice">
+                  <span class="radio">
+                    <input type="radio" name="link-style" value="inlined"/>
+                    Inline
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    Here is a [Link](https://example.com), and [Another](https://example.com/2) one.
+                  </samp>
+                </label>
+              </div>
+              <div class="column is-half is-flex">
+                <label class="box is-block is-shadowless is-flex-grow-1 link-style-choice">
+                  <span class="radio">
+                    <input type="radio" name="link-style" value="full"/>
+                    Referenced (full)
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    Here is a [Link][1], and [Another][2] one.
+                    <br><br>
+                    [1]: https://example.com/1<br>
+                    [2]: https://example.com/2
+                  </samp>
+                </label>
+              </div>
+              <div class="column is-half is-flex">
+                <label class="box is-block is-shadowless is-flex-grow-1 link-style-choice">
+                  <span class="radio">
+                    <input type="radio" name="link-style" value="collapsed"/>
+                    Referenced (collapsed)
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    Here is a [Link][], and [Another][] one.
+                    <br><br>
+                    [Link]: https://example.com/1<br>
+                    [Another]: https://example.com/2
+                  </samp>
+                </label>
+              </div>
+              <div class="column is-half is-flex">
+                <label class="box is-block is-shadowless is-flex-grow-1 link-style-choice">
+                  <span class="radio">
+                    <input type="radio" name="link-style" value="shortcut"/>
+                    Referenced (shortcut)
+                  </span>
+                  <samp class="is-block mt-3 is-size-7 code-sample">
+                    Here is a [Link], and [Another] one.
+                    <br><br>
+                    [Link]: https://example.com/1<br>
+                    [Another]: https://example.com/2
+                  </samp>
+                </label>
+              </div>
+            </div>
+          </fieldset>
+        </form>
       </div>
       <div class="field is-grouped">
         <div class="control">

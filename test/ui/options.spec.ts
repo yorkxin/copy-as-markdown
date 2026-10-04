@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 
 const selectionSettingsMock = {
-  keys: ['selection.markdown.bulletListMarker', 'selection.markdown.codeBlockStyle', 'selection.markdown.emDelimiter', 'selection.markdown.strongDelimiter', 'selection.markdown.headingStyle', 'selection.markdown.fence'],
+  keys: ['selection.markdown.bulletListMarker', 'selection.markdown.codeBlockStyle', 'selection.markdown.emDelimiter', 'selection.markdown.strongDelimiter', 'selection.markdown.headingStyle', 'selection.markdown.fence', 'selection.markdown.linkStyle', 'selection.markdown.linkReferenceStyle'],
   getAll: vi.fn(),
   setBulletListMarker: vi.fn(),
   setCodeBlockStyle: vi.fn(),
@@ -10,6 +10,8 @@ const selectionSettingsMock = {
   setStrongDelimiter: vi.fn(),
   setHeadingStyle: vi.fn(),
   setFence: vi.fn(),
+  setLinkStyle: vi.fn(),
+  setReferencedLinkStyle: vi.fn(),
 };
 
 const ensureMarkdownSettingsMigratedMock = vi.fn();
@@ -36,9 +38,15 @@ async function loadPage(): Promise<void> {
   document.documentElement.innerHTML = doc.documentElement.innerHTML;
 }
 
+// Browser-mode module imports can stay cached between tests, so retain the registered callback
+// independently of mock call history, which beforeEach clears.
+let storageChangeListener: Parameters<typeof browser.storage.sync.onChanged.addListener>[0];
+
 function mockBrowser(): void {
   (globalThis as any).browser = {
-    storage: { sync: { onChanged: { addListener: vi.fn() } } },
+    storage: { sync: { onChanged: { addListener: vi.fn((listener) => {
+      storageChangeListener = listener;
+    }) } } },
   };
 }
 
@@ -58,13 +66,15 @@ describe('copy selection options page', () => {
     vi.clearAllMocks();
     mockBrowser();
     ensureMarkdownSettingsMigratedMock.mockResolvedValue(undefined);
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
     selectionSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
     selectionSettingsMock.setCodeBlockStyle.mockResolvedValue(undefined);
     selectionSettingsMock.setEmDelimiter.mockResolvedValue(undefined);
     selectionSettingsMock.setStrongDelimiter.mockResolvedValue(undefined);
     selectionSettingsMock.setHeadingStyle.mockResolvedValue(undefined);
     selectionSettingsMock.setFence.mockResolvedValue(undefined);
+    selectionSettingsMock.setLinkStyle.mockResolvedValue(undefined);
+    selectionSettingsMock.setReferencedLinkStyle.mockResolvedValue(undefined);
     resetSelectionSettingsMock.mockResolvedValue(undefined);
     await loadPage();
   });
@@ -107,7 +117,7 @@ describe('copy selection options page', () => {
     });
     selectionSettingsMock.getAll.mockImplementation(async () => {
       order.push('read');
-      return { bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' };
+      return { bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' };
     });
 
     await startPage();
@@ -117,7 +127,7 @@ describe('copy selection options page', () => {
   });
 
   it('loads the persisted settings into the controls', async () => {
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
 
     await startPage();
 
@@ -163,6 +173,8 @@ describe('copy selection options page', () => {
       strongDelimiter: '**',
       headingStyle: 'setext',
       fence: '~~~',
+      linkStyle: 'inlined',
+      linkReferenceStyle: 'full',
     });
     await startPage();
 
@@ -195,6 +207,8 @@ describe('copy selection options page', () => {
       strongDelimiter: '**',
       headingStyle: 'setext',
       fence: '~~~',
+      linkStyle: 'inlined',
+      linkReferenceStyle: 'full',
     });
     await radios.getByRole('radio', { name: initial }).click();
     await expect.element(radios.getByRole('radio', { name: alternate })).toBeChecked();
@@ -211,6 +225,8 @@ describe('copy selection options page', () => {
       strongDelimiter: '**',
       headingStyle: 'atx',
       fence: '~~~',
+      linkStyle: 'inlined',
+      linkReferenceStyle: 'full',
     });
 
     await page.getByRole('radio', { name: /Indented code block/ }).click();
@@ -241,16 +257,102 @@ describe('copy selection options page', () => {
       strongDelimiter: '__',
       headingStyle: 'atx',
       fence: '```',
+      linkStyle: 'inlined',
+      linkReferenceStyle: 'full',
     });
     await radios.getByRole('radio', { name: initial, exact: true }).click();
     await expect.element(radios.getByRole('radio', { name: alternate, exact: true })).toBeChecked();
     await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
 
+  it('shows four enabled output formats in one group with concrete examples', async () => {
+    await startPage();
+    const links = page.getByRole('group', { name: 'Link style', exact: true });
+    await expect.element(links.getByRole('radio', { name: /Inline/ })).toBeChecked();
+    expect(document.querySelectorAll('#form-selection-link-style input[type="radio"]')).toHaveLength(4);
+    expect(document.querySelector('#form-selection-link-reference-style')).toBeNull();
+    for (const name of [/Inline/, /Referenced \(full\)/, /Referenced \(collapsed\)/, /Referenced \(shortcut\)/]) {
+      await expect.element(links.getByRole('radio', { name })).toBeEnabled();
+    }
+    const examples = document.querySelector('#form-selection-link-style')!.textContent;
+    for (const example of ['[Link](https://example.com)', '[Link][1]', '[Link][]', '[Link]', '[1]: https://example.com/1', '[Link]: https://example.com/1']) {
+      expect(examples).toContain(example);
+    }
+  });
+
+  it.each(['full', 'collapsed', 'shortcut'] as const)('loads %s references and saves inline without resetting reference style', async (style) => {
+    selectionSettingsMock.getAll.mockResolvedValue({
+      ...await selectionSettingsMock.getAll(),
+      linkStyle: 'referenced',
+      linkReferenceStyle: style,
+    });
+    await startPage();
+    const links = page.getByRole('group', { name: 'Link style', exact: true });
+    await expect.element(links.getByRole('radio', { name: new RegExp(`Referenced.*${style}`) })).toBeChecked();
+    await links.getByRole('radio', { name: /Inline/ }).click();
+    await vi.waitFor(() => expect(selectionSettingsMock.setLinkStyle).toHaveBeenCalledWith('inlined'));
+    expect(selectionSettingsMock.setReferencedLinkStyle).not.toHaveBeenCalled();
+  });
+
+  it.each(['full', 'collapsed', 'shortcut'] as const)('saves referenced %s directly from inline and restores the persisted choice on failure', async (style) => {
+    await startPage();
+    const links = page.getByRole('group', { name: 'Link style', exact: true });
+    const choice = links.getByRole('radio', { name: new RegExp(`Referenced.*${style}`) });
+    await choice.click();
+    await vi.waitFor(() => expect(selectionSettingsMock.setReferencedLinkStyle).toHaveBeenCalledWith(style));
+    await expect.element(page.getByTestId('flash-error')).not.toBeVisible();
+    selectionSettingsMock.getAll.mockResolvedValue({
+      ...await selectionSettingsMock.getAll(),
+      linkStyle: 'referenced',
+      linkReferenceStyle: style,
+    });
+    selectionSettingsMock.setLinkStyle.mockRejectedValueOnce(new Error('quota exceeded'));
+    await links.getByRole('radio', { name: /Inline/ }).click();
+    await expect.element(choice).toBeChecked();
+    await expect.element(page.getByTestId('flash-error')).toBeVisible();
+  });
+
+  it.each(['inlined', 'shortcut'] as const)('restores persisted %s output when a referenced-format write fails', async (format) => {
+    selectionSettingsMock.getAll.mockResolvedValue({
+      ...await selectionSettingsMock.getAll(),
+      linkStyle: format === 'inlined' ? 'inlined' : 'referenced',
+      linkReferenceStyle: 'shortcut',
+    });
+    await startPage();
+    selectionSettingsMock.setReferencedLinkStyle.mockRejectedValueOnce(new Error('quota exceeded'));
+    const links = page.getByRole('group', { name: 'Link style', exact: true });
+    await links.getByRole('radio', { name: /Referenced \(collapsed\)/ }).click();
+    await expect.element(links.getByRole('radio', { name: format === 'inlined' ? /Inline/ : /Referenced \(shortcut\)/ })).toBeChecked();
+    await expect.element(page.getByTestId('flash-error')).toBeVisible();
+  });
+
+  it.each(['selection.markdown.linkStyle', 'selection.markdown.linkReferenceStyle'])('refreshes the selected output when %s changes in another page', async (key) => {
+    await startPage();
+    selectionSettingsMock.getAll.mockResolvedValue({
+      ...await selectionSettingsMock.getAll(),
+      linkStyle: 'referenced',
+      linkReferenceStyle: 'collapsed',
+    });
+    await storageChangeListener({ [key]: { newValue: key.endsWith('linkStyle') ? 'referenced' : 'collapsed' } });
+    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(collapsed\)/ })).toBeChecked();
+    expect(selectionSettingsMock.setLinkStyle).not.toHaveBeenCalled();
+    expect(selectionSettingsMock.setReferencedLinkStyle).not.toHaveBeenCalled();
+  });
+
+  it('keeps inline selected when only its inactive reference preference changes', async () => {
+    await startPage();
+    selectionSettingsMock.getAll.mockResolvedValue({
+      ...await selectionSettingsMock.getAll(),
+      linkReferenceStyle: 'shortcut',
+    });
+    await storageChangeListener({ 'selection.markdown.linkReferenceStyle': { newValue: 'shortcut' } });
+    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Inline/ })).toBeChecked();
+  });
+
   it('shows the persisted value and flashes when a save fails', async () => {
     await startPage();
     selectionSettingsMock.setBulletListMarker.mockRejectedValueOnce(new Error('fail'));
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
 
     await page.getByRole('radio', { name: /Plus Signs/ }).click();
     await flush();
@@ -260,9 +362,9 @@ describe('copy selection options page', () => {
   });
 
   it('resets only the Copy Selection context', async () => {
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__', headingStyle: 'setext', fence: '~~~' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__', headingStyle: 'setext', fence: '~~~', linkStyle: 'referenced', linkReferenceStyle: 'shortcut' });
     await startPage();
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
 
     await page.getByTestId('reset-copy-selection').click();
     await vi.waitFor(() => expect(resetSelectionSettingsMock).toHaveBeenCalledTimes(1));
@@ -272,10 +374,12 @@ describe('copy selection options page', () => {
     await expect.element(page.getByRole('radio', { name: /Fenced code block/ })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /ATX/ })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Code-fence marker' }).getByRole('radio', { name: /Backticks/ })).toBeChecked();
+    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Inline/ })).toBeChecked();
+    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(full\)/ })).not.toBeChecked();
   });
 
   it('flashes and shows the persisted values when a reset fails', async () => {
-    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
+    selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '*', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'referenced', linkReferenceStyle: 'shortcut' });
     await startPage();
     resetSelectionSettingsMock.mockRejectedValueOnce(new Error('fail'));
 
@@ -283,6 +387,9 @@ describe('copy selection options page', () => {
     await flush();
 
     await expect.element(page.getByRole('radio', { name: /Asterisks/ })).toBeChecked();
+    const shortcut = page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(shortcut\)/ });
+    await expect.element(shortcut).toBeChecked();
+    await expect.element(shortcut).toBeEnabled();
     await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
 });
