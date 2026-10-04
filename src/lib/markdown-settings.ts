@@ -104,6 +104,8 @@ export async function resetSelectionSettings(): Promise<void> {
       [SelectionSettingKeys.strongDelimiter]: SelectionSettingDefaults.strongDelimiter,
       [SelectionSettingKeys.headingStyle]: SelectionSettingDefaults.headingStyle,
       [SelectionSettingKeys.fence]: SelectionSettingDefaults.fence,
+      [SelectionSettingKeys.linkStyle]: SelectionSettingDefaults.linkStyle,
+      [SelectionSettingKeys.linkReferenceStyle]: SelectionSettingDefaults.linkReferenceStyle,
     },
     exclusiveLegacyKeys: [LegacyMarkdownSettingKeys.codeBlock],
     siblingBulletListMarkerKey: MultipleLinksSettingKeys.bulletListMarker,

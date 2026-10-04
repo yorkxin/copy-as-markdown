@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { MarkdownSettings } from '../src/lib/markdown-settings';
 import {
   loadMarkdownSettings,
+  markdownSettingsKeys,
   readMarkdownSettings,
   resetMultipleLinksSettings,
   resetSelectionSettings,
@@ -33,7 +34,7 @@ describe('markdown settings', () => {
 
       expect(settings).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' },
+        selection: { bulletListMarker: '*', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' },
         multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
       });
     });
@@ -70,7 +71,7 @@ describe('markdown settings', () => {
     it('gives a clean install the current defaults', async () => {
       expect(await loadMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: false,
-        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' },
+        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' },
         multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
       });
     });
@@ -95,6 +96,8 @@ describe('markdown settings', () => {
       storage.data['selection.markdown.strongDelimiter'] = '__';
       storage.data['selection.markdown.headingStyle'] = 'setext';
       storage.data['selection.markdown.fence'] = '~~~';
+      storage.data['selection.markdown.linkStyle'] = 'referenced';
+      storage.data['selection.markdown.linkReferenceStyle'] = 'shortcut';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
       storage.data['multipleLinks.markdown.tabGroupIndentation'] = 'tab';
       storage.data.linkTextAlwaysEscapeBrackets = true;
@@ -105,7 +108,7 @@ describe('markdown settings', () => {
 
       expect(await readMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' },
+        selection: { bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' },
         multipleLinks: { bulletListMarker: '*', tabGroupIndentation: 'tab' },
       });
       expect(storage.data['custom_formats.multiple-links.1.name']).toBe('My Format');
@@ -119,6 +122,8 @@ describe('markdown settings', () => {
       storage.data['selection.markdown.strongDelimiter'] = '__';
       storage.data['selection.markdown.headingStyle'] = 'setext';
       storage.data['selection.markdown.fence'] = '~~~';
+      storage.data['selection.markdown.linkStyle'] = 'referenced';
+      storage.data['selection.markdown.linkReferenceStyle'] = 'shortcut';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
       storage.data['multipleLinks.markdown.tabGroupIndentation'] = 'tab';
       storage.data.linkTextAlwaysEscapeBrackets = true;
@@ -127,7 +132,7 @@ describe('markdown settings', () => {
 
       expect(await readMarkdownSettings()).toEqual({
         alwaysEscapeLinkBrackets: true,
-        selection: { bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__', headingStyle: 'setext', fence: '~~~' },
+        selection: { bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '*', strongDelimiter: '__', headingStyle: 'setext', fence: '~~~', linkStyle: 'referenced', linkReferenceStyle: 'shortcut' },
         multipleLinks: { bulletListMarker: '-', tabGroupIndentation: 'spaces' },
       });
     });
@@ -184,6 +189,8 @@ describe('markdown settings', () => {
       storage.data['selection.markdown.strongDelimiter'] = '__';
       storage.data['selection.markdown.headingStyle'] = 'setext';
       storage.data['selection.markdown.fence'] = '~~~';
+      storage.data['selection.markdown.linkStyle'] = 'referenced';
+      storage.data['selection.markdown.linkReferenceStyle'] = 'shortcut';
       storage.failNextSet = new Error('QUOTA_BYTES quota exceeded');
 
       await resetSelectionSettings();
@@ -191,10 +198,12 @@ describe('markdown settings', () => {
       expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBe('asterisk');
       expect(storage.data['selection.markdown.bulletListMarker']).toBe('-');
       expect(storage.data['selection.markdown.codeBlockStyle']).toBe('fenced');
+      expect(storage.data['selection.markdown.linkStyle']).toBe('inlined');
+      expect(storage.data['selection.markdown.linkReferenceStyle']).toBe('full');
 
       const migrated = await loadMarkdownSettings();
       expect(migrated.multipleLinks.bulletListMarker).toBe('*');
-      expect(migrated.selection).toEqual({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```' });
+      expect(migrated.selection).toEqual({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
     });
 
     it('does not spend the shared legacy marker for a sibling value it cannot read', async () => {
@@ -210,6 +219,11 @@ describe('markdown settings', () => {
   });
 
   describe('readMarkdownSettings() — the storage-change path', () => {
+    it('watches both link settings for background refresh', () => {
+      expect(markdownSettingsKeys).toContain('selection.markdown.linkStyle');
+      expect(markdownSettingsKeys).toContain('selection.markdown.linkReferenceStyle');
+    });
+
     it('does not migrate', async () => {
       storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
 
@@ -221,11 +235,15 @@ describe('markdown settings', () => {
 
     it('reads what each context owns', async () => {
       storage.data['selection.markdown.bulletListMarker'] = '+';
+      storage.data['selection.markdown.linkStyle'] = 'referenced';
+      storage.data['selection.markdown.linkReferenceStyle'] = 'collapsed';
       storage.data['multipleLinks.markdown.bulletListMarker'] = '*';
 
       const settings = await readMarkdownSettings();
 
       expect(settings.selection.bulletListMarker).toBe('+');
+      expect(settings.selection.linkStyle).toBe('referenced');
+      expect(settings.selection.linkReferenceStyle).toBe('collapsed');
       expect(settings.multipleLinks.bulletListMarker).toBe('*');
     });
   });

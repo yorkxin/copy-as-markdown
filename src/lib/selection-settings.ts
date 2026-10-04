@@ -5,6 +5,16 @@ export type EmDelimiter = '_' | '*';
 export type StrongDelimiter = '**' | '__';
 export type HeadingStyle = 'atx' | 'setext';
 export type Fence = '```' | '~~~';
+export type LinkStyle = 'inlined' | 'referenced';
+export type LinkReferenceStyle = 'full' | 'collapsed' | 'shortcut';
+
+export function isLinkStyle(value: unknown): value is LinkStyle {
+  return value === 'inlined' || value === 'referenced';
+}
+
+export function isLinkReferenceStyle(value: unknown): value is LinkReferenceStyle {
+  return value === 'full' || value === 'collapsed' || value === 'shortcut';
+}
 
 export function isHeadingStyle(value: unknown): value is HeadingStyle {
   return value === 'atx' || value === 'setext';
@@ -37,6 +47,8 @@ export const SelectionSettingKeys = {
   strongDelimiter: 'selection.markdown.strongDelimiter',
   headingStyle: 'selection.markdown.headingStyle',
   fence: 'selection.markdown.fence',
+  linkStyle: 'selection.markdown.linkStyle',
+  linkReferenceStyle: 'selection.markdown.linkReferenceStyle',
 } as const;
 
 export interface SelectionMarkdownSettings {
@@ -46,6 +58,8 @@ export interface SelectionMarkdownSettings {
   strongDelimiter: StrongDelimiter;
   headingStyle: HeadingStyle;
   fence: Fence;
+  linkStyle: LinkStyle;
+  linkReferenceStyle: LinkReferenceStyle;
 }
 
 // Inline and list styles are following defaults from GitHub's Markdown Editor as of Sep 2026.
@@ -57,6 +71,8 @@ export const SelectionSettingDefaults: SelectionMarkdownSettings = {
   strongDelimiter: '**',
   headingStyle: 'atx',
   fence: '```',
+  linkStyle: 'inlined',
+  linkReferenceStyle: 'full',
 };
 
 /** Reset is centralized in markdown-settings.ts because retiring the shared marker requires both contexts. */
@@ -76,6 +92,8 @@ export default {
     const strongDelimiter = stored[SelectionSettingKeys.strongDelimiter];
     const headingStyle = stored[SelectionSettingKeys.headingStyle];
     const fence = stored[SelectionSettingKeys.fence];
+    const linkStyle = stored[SelectionSettingKeys.linkStyle];
+    const linkReferenceStyle = stored[SelectionSettingKeys.linkReferenceStyle];
 
     return {
       bulletListMarker: isBulletListMarker(bulletListMarker)
@@ -88,6 +106,10 @@ export default {
       strongDelimiter: isStrongDelimiter(strongDelimiter) ? strongDelimiter : SelectionSettingDefaults.strongDelimiter,
       headingStyle: isHeadingStyle(headingStyle) ? headingStyle : SelectionSettingDefaults.headingStyle,
       fence: isFence(fence) ? fence : SelectionSettingDefaults.fence,
+      linkStyle: isLinkStyle(linkStyle) ? linkStyle : SelectionSettingDefaults.linkStyle,
+      linkReferenceStyle: isLinkReferenceStyle(linkReferenceStyle)
+        ? linkReferenceStyle
+        : SelectionSettingDefaults.linkReferenceStyle,
     };
   },
 
@@ -109,6 +131,14 @@ export default {
 
   async setFence(value: Fence): Promise<void> {
     await browser.storage.sync.set({ [SelectionSettingKeys.fence]: value });
+  },
+
+  async setLinkStyle(value: LinkStyle): Promise<void> {
+    await browser.storage.sync.set({ [SelectionSettingKeys.linkStyle]: value });
+  },
+
+  async setLinkReferenceStyle(value: LinkReferenceStyle): Promise<void> {
+    await browser.storage.sync.set({ [SelectionSettingKeys.linkReferenceStyle]: value });
   },
 
   async setCodeBlockStyle(value: CodeBlockStyle): Promise<void> {
