@@ -61,6 +61,16 @@ async function startPage(): Promise<void> {
   await flush();
 }
 
+function linkStyleRadio(value: string) {
+  const input = document.querySelector(
+    `#form-selection-link-style input[name="link-style"][value="${value}"]`,
+  );
+  if (!input) {
+    throw new Error(`Missing link-style radio with value "${value}"`);
+  }
+  return page.elementLocator(input);
+}
+
 describe('copy selection options page', () => {
   beforeEach(async () => {
     vi.resetModules();
@@ -271,7 +281,7 @@ describe('copy selection options page', () => {
     await expect.element(links.getByRole('radio', { name: /Inline/ })).toBeChecked();
     expect(document.querySelectorAll('#form-selection-link-style input[type="radio"]')).toHaveLength(4);
     expect(document.querySelector('#form-selection-link-reference-style')).toBeNull();
-    for (const name of [/Inline/, /Referenced \(full\)/, /Referenced \(collapsed\)/, /Referenced \(shortcut\)/]) {
+    for (const name of [/Inline/, /Referenced \(numbered\)/, /Referenced \(collapsed\)/, /Referenced \(shortcut\)/]) {
       await expect.element(links.getByRole('radio', { name })).toBeEnabled();
     }
     const examples = document.querySelector('#form-selection-link-style')!.textContent;
@@ -288,7 +298,7 @@ describe('copy selection options page', () => {
     });
     await startPage();
     const links = page.getByRole('group', { name: 'Link style', exact: true });
-    await expect.element(links.getByRole('radio', { name: new RegExp(`Referenced.*${style}`) })).toBeChecked();
+    await expect.element(linkStyleRadio(style)).toBeChecked();
     await links.getByRole('radio', { name: /Inline/ }).click();
     await vi.waitFor(() => expect(selectionSettingsMock.setLinkStyle).toHaveBeenCalledWith('inlined'));
     expect(selectionSettingsMock.setReferencedLinkStyle).not.toHaveBeenCalled();
@@ -297,7 +307,7 @@ describe('copy selection options page', () => {
   it.each(['full', 'collapsed', 'shortcut'] as const)('saves referenced %s directly from inline and restores the persisted choice on failure', async (style) => {
     await startPage();
     const links = page.getByRole('group', { name: 'Link style', exact: true });
-    const choice = links.getByRole('radio', { name: new RegExp(`Referenced.*${style}`) });
+    const choice = linkStyleRadio(style);
     await choice.click();
     await vi.waitFor(() => expect(selectionSettingsMock.setReferencedLinkStyle).toHaveBeenCalledWith(style));
     await expect.element(page.getByTestId('flash-error')).not.toBeVisible();
@@ -374,7 +384,7 @@ describe('copy selection options page', () => {
     await expect.element(page.getByRole('radio', { name: 'Fenced code block (backticks)', exact: true })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /ATX/ })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Inline/ })).toBeChecked();
-    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(full\)/ })).not.toBeChecked();
+    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(numbered\)/ })).not.toBeChecked();
   });
 
   it('flashes and shows the persisted values when a reset fails', async () => {
