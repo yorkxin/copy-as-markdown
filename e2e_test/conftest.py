@@ -32,6 +32,80 @@ E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file_
 # URL UUIDs are profile-specific and distinct from manifest add-on IDs.
 FIREFOX_EXTENSION_UUID = "11111111-1111-4111-8111-111111111111"
 E2E_HELPER_EXTENSION_UUID = "22222222-2222-4222-8222-222222222222"
+CHROME_WINDOW_CLASS = "copy-as-markdown-e2e"
+
+_selenium_config = None
+_browser_results = {}
+
+
+def pytest_sessionstart(session):
+    global _selenium_config, _browser_results
+    _selenium_config = session.config
+    _browser_results = {}
+
+
+def pytest_report_header(config):
+    if os.environ.get("BROWSER"):
+        return (f"Firefox {os.environ['FIREFOX_VERSION']} | "
+                f"Chrome for Testing {os.environ['CFT_VERSION']} | "
+                f"selected: {os.environ['BROWSER']}")
+
+
+def pytest_collection_modifyitems(items):
+    if not os.environ.get("BROWSER"):
+        return
+    for item in items:
+        browser = "cft" if item.path.name == "test_chrome_smoke.py" else "firefox"
+        item._nodeid += f"[{browser}]"
+        item.user_properties.extend([("browser", browser),
+                                     ("browser_version", os.environ[browser.upper() + "_VERSION"])])
+
+
+def pytest_runtest_logreport(report):
+    if not os.environ.get("BROWSER"):
+        return
+    browser = "cft" if report.nodeid.endswith("[cft]") else "firefox"
+    outcomes = _browser_results.setdefault(browser, {})
+    if report.failed:
+        outcomes[report.nodeid] = "failed"
+    elif outcomes.get(report.nodeid) != "failed":
+        if report.skipped:
+            outcomes[report.nodeid] = "skipped"
+        elif report.when == "call":
+            outcomes[report.nodeid] = "passed"
+
+
+def pytest_collectreport(report):
+    if os.environ.get("BROWSER") and report.failed:
+        browser = "cft" if "test_chrome_smoke.py" in report.nodeid else "firefox"
+        _browser_results.setdefault(browser, {})[report.nodeid] = "collection errors"
+
+
+def pytest_terminal_summary(terminalreporter):
+    if not os.environ.get("BROWSER"):
+        return
+    terminalreporter.section("Selenium browser summary")
+    for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing")):
+        outcomes = _browser_results.get(browser)
+        if outcomes:
+            counts = {outcome: list(outcomes.values()).count(outcome)
+                      for outcome in ("passed", "failed", "skipped", "collection errors")}
+            version = os.environ[browser.upper() + "_VERSION"]
+            terminalreporter.write_line(f"{name} {version}: " + ", ".join(
+                f"{count} {outcome}" for outcome, count in counts.items()))
+
+
+def _log_browser_version(message):
+    reporter = _selenium_config.pluginmanager.getplugin("terminalreporter") if _selenium_config else None
+    if reporter:
+        reporter.write_line(f"[Session] {message}")
+    else:
+        print(f"[Session] {message}", flush=True)
+    if os.environ.get("BROWSER"):
+        results_dir = os.path.join(_ROOT_DIR, "test-results")
+        os.makedirs(results_dir, exist_ok=True)
+        with open(os.path.join(results_dir, "browser.log"), "a", encoding="utf-8") as log:
+            log.write(message + "\n")
 
 
 @dataclass
@@ -273,12 +347,13 @@ class ChromeBrowserEnvironment:
         self.driver = driver
 
     def focus_window(self):
-        # No window manager under Xvfb, so set X input focus on the Chromium
-        # window explicitly before injecting keys with xdotool.
+        # Use the class assigned at launch, shared by CfT and Chromium. Xvfb has
+        # no window manager to focus the browser for real keyboard injection.
         subprocess.run(
-            ["xdotool", "search", "--sync", "--onlyvisible", "--class", "chromium",
+            ["xdotool", "search", "--sync", "--onlyvisible", "--class", f"^{CHROME_WINDOW_CLASS}$",
              "windowfocus"],
-            check=False,
+            check=True,
+            timeout=10,
         )
 
     def press_shortcut(self, keystroke: str):
@@ -286,7 +361,8 @@ class ChromeBrowserEnvironment:
         time.sleep(0.3)
         subprocess.run(
             ["xdotool", "key", "--clearmodifiers", f"alt+shift+{keystroke}"],
-            check=False,
+            check=True,
+            timeout=10,
         )
 
     def select_all(self):
@@ -385,6 +461,10 @@ def _browser_environment(force_accessibility: bool):
 
         firefox_options = Options()
         firefox_options.profile = profile
+        firefox_binary = os.environ.get("FIREFOX_BINARY") or shutil.which("firefox")
+        if firefox_binary is None:
+            raise RuntimeError("Firefox not found; set FIREFOX_BINARY to its executable")
+        firefox_options.binary_location = firefox_binary
         # Firefox 153+ requires system access for navigation to extension pages.
         # https://bugzilla.mozilla.org/show_bug.cgi?id=2048451
         # The Firefox CLI flag was introduced in Firefox 138:
@@ -403,6 +483,12 @@ def _browser_environment(force_accessibility: bool):
         firefox_service = FirefoxService(executable_path=geckodriver_path)
 
         driver = webdriver.Firefox(options=firefox_options, service=firefox_service)
+        actual_version = driver.capabilities["browserVersion"]
+        expected_version = os.environ.get("FIREFOX_VERSION")
+        version_log = f"Firefox session version: {actual_version}; binary: {firefox_options.binary_location}"
+        _log_browser_version(version_log)
+        if expected_version and actual_version != expected_version:
+            raise RuntimeError(f"Firefox version mismatch: expected {expected_version}, got {actual_version}")
         for path, addon_id, uuid, page in extensions:
             installed_id = driver.install_addon(path, temporary=True)
             if installed_id != addon_id:
@@ -443,15 +529,20 @@ def accessible_browser_environment(request):
 def _chrome_browser_environment():
     driver = None
     try:
-        chromium_bin = (shutil.which("chromium")
+        chromium_bin = (os.environ.get("CHROME_BINARY")
+                        or shutil.which("chromium")
                         or shutil.which("chromium-browser")
                         or shutil.which("google-chrome"))
-        chromedriver_path = shutil.which("chromedriver")
-        if chromium_bin is None or chromedriver_path is None:
+        chromedriver_path = os.environ.get("CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
+        if not all(path and os.access(path, os.X_OK) for path in (chromium_bin, chromedriver_path)):
+            if os.environ.get("CI") or os.environ.get("BROWSER") == "cft":
+                raise RuntimeError("Selected Chrome binary/driver missing; set CHROME_BINARY and CHROMEDRIVER_BINARY")
             pytest.skip("chromium/chromedriver not found on PATH")
 
         options = ChromeOptions()
         options.binary_location = chromium_bin
+        # --class overrides WM_CLASS on Linux, avoiding browser-brand assumptions.
+        options.add_argument(f"--class={CHROME_WINDOW_CLASS}")
         # Load the unpacked MV3 test extension. The second flag re-enables
         # --load-extension, which recent Chromium disables by default.
         options.add_argument(f"--load-extension={CHROME_EXTENSION_PATH}")
@@ -469,6 +560,13 @@ def _chrome_browser_environment():
 
         service = ChromeService(executable_path=chromedriver_path)
         driver = webdriver.Chrome(options=options, service=service)
+        actual_version = driver.capabilities["browserVersion"]
+        driver_version = driver.capabilities["chrome"]["chromedriverVersion"].split()[0]
+        expected_version = os.environ.get("CFT_VERSION")
+        _log_browser_version(f"Chrome for Testing session version: {actual_version}; driver: {driver_version}; binary: {chromium_bin}")
+        if expected_version and (actual_version != expected_version or driver_version != expected_version):
+            raise RuntimeError(f"CfT version mismatch: expected {expected_version}, "
+                               f"browser {actual_version}, driver {driver_version}")
         env = ChromeBrowserEnvironment(driver)
         # Wait for the background listeners to be registered (the __listenersReady
         # proxy) instead of a blind sleep.

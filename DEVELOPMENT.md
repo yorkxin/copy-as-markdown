@@ -33,7 +33,7 @@ test/
   e2e/             # Playwright e2e tests
   ui/, lib/        # vitest browser tests (real Chromium)
   **/*.test.ts     # vitest unit tests (node)
-e2e_test/          # Python (pytest) e2e tests for Firefox — currently broken
+e2e_test/          # Python (pytest) Selenium tests for Firefox + Chrome for Testing smoke
 docker/playwright-ci/  # Dockerized e2e harness (CI parity)
 ```
 
@@ -168,38 +168,20 @@ xvfb-run -a npm run test:e2e
 `node scripts/build-test-extension.js`), which produces the test extension as a copy of the
 production build with manifest permissions rewritten for testing.
 
-### Firefox e2e tests (Python / pytest)
+### Selenium browser e2e tests (Python / pytest)
 
-[e2e_test/](e2e_test/) holds a pytest-based suite that drives **Firefox** via Selenium. It covers the hot-path clipboard copy flows (keyboard shortcuts and popup UI) that the Playwright suite cannot reach because Playwright cannot interact with Firefox extension pages.
-
-**Requirements (Linux):**
-
-```sh
-sudo apt-get install -y firefox xvfb xsel python3-pip
-pip install -r requirements.txt
-```
-
-**Run (Linux):**
+Selenium covers Firefox extension pages and Chrome for Testing (CfT) keyboard /
+native context-menu flows. Run it in Docker to keep real clipboard operations
+inside the container. Host requirements: Docker, curl and Python 3.
 
 ```sh
-npm run test:e2e:selenium
+npm run test:e2e:selenium:docker # Firefox + CfT, one session
+PROFILE=minimum npm run test:e2e:selenium:docker
+BROWSER=cft npm run test:e2e:selenium:docker
 ```
 
-This builds the `firefox-test` extension bundle and then runs `pytest e2e_test/ -v` under `xvfb-run`. `xvfb-run` is required — pyautogui sends X11 key events for keyboard-shortcut tests and needs a real (or virtual) display.
-
-**Docker (canonical / CI parity):**
-
-```sh
-npm run test:e2e:selenium:docker
-```
-
-This runs [docker/selenium-ci/docker-e2e.sh](docker/selenium-ci/docker-e2e.sh), following the same
-pattern as `docker/playwright-ci/`: it builds the image, runs the suite under Xvfb with `CI=true`,
-mounts `test-results/` back to the host, and prunes only the dangling image this project's previous
-build orphaned.
-
-**CI:** The `selenium` GitHub Actions job runs `docker/selenium-ci/docker-e2e.sh` — the same
-entrypoint — after the `build` job succeeds.
+See [the Selenium README](e2e_test/README.md) for browser/version selection,
+running a subset, architecture requirements and reading test reports.
 
 ## Debugging the extension
 
