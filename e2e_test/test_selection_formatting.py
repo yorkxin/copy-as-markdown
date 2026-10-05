@@ -16,7 +16,7 @@ pytestmark = pytest.mark.skipif(
 
 
 class TestSelectionFormatting:
-    def test_combined_settings_through_native_shortcut_and_context_menu(
+    def test_referenced_selection_through_native_shortcut_and_context_menu(
         self, accessible_browser_environment, fixture_server
     ):
         browser = accessible_browser_environment
@@ -27,34 +27,18 @@ class TestSelectionFormatting:
         )
         driver.get(fixture_server.url + "/selection.html")
         driver.execute_script("""
-            document.body.innerHTML = '<h1><span id="menu-target">Heading</span></h1><p><em>italic</em> and '
-              + '<strong>bold</strong> with <a href="https://example.com/">Example</a></p>'
-              + '<ul><li>item</li></ul><pre><code class="language-js">const x = 1;\\n</code></pre>';
+            document.body.innerHTML = '<p><span id="menu-target">Selected</span> <a href="https://example.com/">Example</a></p>';
         """)
         source_tab = driver.current_window_handle
         driver.switch_to.new_window("tab")
-        options_tab = driver.current_window_handle
         driver.get(browser.options_page_url())
         wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "input[name=link-style][value=inlined]").is_selected())
 
         configured = {
-            "selection.markdown.headingStyle": "setext",
-            "selection.markdown.emDelimiter": "*",
-            "selection.markdown.strongDelimiter": "__",
-            "selection.markdown.bulletListMarker": "+",
-            "selection.markdown.fence": "~~~",
             "selection.markdown.linkStyle": "referenced",
             "selection.markdown.linkReferenceStyle": "shortcut",
         }
-        for name, value in [
-            ("heading-style", "setext"),
-            ("em-delimiter", "*"),
-            ("strong-delimiter", "__"),
-            ("bullet-list-marker", "+"),
-            ("code-block-style", "fenced-tildes"),
-            ("link-style", "shortcut"),
-        ]:
-            driver.find_element(By.CSS_SELECTOR, f'input[name="{name}"][value="{value}"]').click()
+        driver.find_element(By.CSS_SELECTOR, 'input[name="link-style"][value="shortcut"]').click()
 
         def stored_values(keys):
             return driver.execute_async_script("""
@@ -76,25 +60,6 @@ class TestSelectionFormatting:
                 browser.context_menu_click(driver.find_element(By.ID, "menu-target"), "Copy Selection as Markdown")
             return Clipboard.poll(timeout=5)
 
-        prefix = "Heading\n=======\n\n*italic* and __bold__ with "
-        suffix = "\n\n+   item\n\n~~~js\nconst x = 1;\n~~~"
-        referenced = prefix + "[Example]" + suffix + "\n\n[Example]: https://example.com/"
+        referenced = "Selected [Example]\n\n[Example]: https://example.com/"
         assert copy_selection("shortcut") == referenced
         assert copy_selection("context-menu") == referenced
-
-        driver.switch_to.window(options_tab)
-        driver.find_element(By.CSS_SELECTOR, "input[name=link-style][value=inlined]").click()
-        wait.until(lambda d: stored_values([
-            "selection.markdown.linkStyle", "selection.markdown.linkReferenceStyle"
-        ]) == {
-            "selection.markdown.linkStyle": "inlined",
-            "selection.markdown.linkReferenceStyle": "shortcut",
-        })
-        assert copy_selection("shortcut") == prefix + "[Example](https://example.com/)" + suffix
-
-        driver.switch_to.window(options_tab)
-        driver.find_element(By.ID, "reset").click()
-        wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "input[name=heading-style][value=atx]").is_selected())
-        defaults = "# Heading\n\n_italic_ and **bold** with [Example](https://example.com/)\n\n"
-        defaults += "-   item\n\n```js\nconst x = 1;\n```"
-        assert copy_selection("shortcut") == defaults

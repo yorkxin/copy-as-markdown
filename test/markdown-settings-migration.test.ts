@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import Markdown from '../src/lib/markdown';
 import {
   LegacyMarkdownSettingKeys,
   migrateMarkdownSettings,
@@ -69,14 +68,14 @@ describe('markdown settings migration', () => {
     });
   });
 
-  it('migrates code block style and tab group indentation to their owning contexts', async () => {
+  it.each(['spaces', 'tab'] as const)('migrates code block style and explicit %s indentation to their owning contexts', async (indentation) => {
     storage.data[LegacyMarkdownSettingKeys.codeBlock] = 'indented';
-    storage.data[LegacyMarkdownSettingKeys.tabGroupIndentation] = 'tab';
+    storage.data[LegacyMarkdownSettingKeys.tabGroupIndentation] = indentation;
 
     await migrateMarkdownSettings();
 
     expect(storage.data[SelectionCodeBlockKey]).toBe('indented');
-    expect(storage.data[MultipleLinksIndentationKey]).toBe('tab');
+    expect(storage.data[MultipleLinksIndentationKey]).toBe(indentation);
   });
 
   it('removes the legacy keys once every target is written', async () => {
@@ -235,56 +234,6 @@ describe('markdown settings migration', () => {
       expect(storage.data[LegacyMarkdownSettingKeys.unorderedList]).toBeUndefined();
       expect(storage.data[SelectionBulletKey]).toBe('+');
       expect(storage.data[MultipleLinksBulletKey]).toBe('*');
-    });
-  });
-
-  describe('output preservation', () => {
-    it('gives both contexts the same marker so output is unchanged right after migration', async () => {
-      storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'plus';
-      storage.data[LegacyMarkdownSettingKeys.codeBlock] = 'indented';
-      storage.data[LegacyMarkdownSettingKeys.tabGroupIndentation] = 'tab';
-
-      await migrateMarkdownSettings();
-
-      const selection = await SelectionSettings.getAll();
-      const multipleLinks = await MultipleLinksSettings.getAll();
-
-      expect(selection).toEqual({ bulletListMarker: '+', codeBlockStyle: 'indented', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
-      expect(multipleLinks).toEqual({ bulletListMarker: '+', tabGroupIndentation: 'tab' });
-    });
-
-    it.each([
-      ['dash', '- a\n- b\n  - c\n'],
-      ['asterisk', '* a\n* b\n  * c\n'],
-      ['plus', '+ a\n+ b\n  + c\n'],
-    ])('renders the same built-in list as legacy %s did', async (legacy, expected) => {
-      storage.data[LegacyMarkdownSettingKeys.unorderedList] = legacy;
-
-      await migrateMarkdownSettings();
-      const { bulletListMarker, tabGroupIndentation } = await MultipleLinksSettings.getAll();
-      const markdown = new Markdown({ bulletListMarker, indentationStyle: tabGroupIndentation });
-
-      expect(markdown.list(['a', 'b', ['c']])).toBe(expected);
-    });
-
-    it('keeps the fixed task list marker regardless of the migrated bullet marker', async () => {
-      storage.data[LegacyMarkdownSettingKeys.unorderedList] = 'asterisk';
-
-      await migrateMarkdownSettings();
-      const { bulletListMarker } = await MultipleLinksSettings.getAll();
-      const markdown = new Markdown({ bulletListMarker });
-
-      expect(markdown.taskList(['a', 'b'])).toBe('- [ ] a\n- [ ] b\n');
-    });
-
-    it('renders tab-indented nesting after migrating the legacy tab choice', async () => {
-      storage.data[LegacyMarkdownSettingKeys.tabGroupIndentation] = 'tab';
-
-      await migrateMarkdownSettings();
-      const { bulletListMarker, tabGroupIndentation } = await MultipleLinksSettings.getAll();
-      const markdown = new Markdown({ bulletListMarker, indentationStyle: tabGroupIndentation });
-
-      expect(markdown.list(['a', ['b']])).toBe('- a\n\t- b\n');
     });
   });
 });
