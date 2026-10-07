@@ -71,7 +71,7 @@ test.describe('Format options pages - UI Tests', () => {
     await page.waitForTimeout(500);
 
     await expect(marker(page, '-')).toBeChecked();
-    await expect(page.locator('input[name="code-block-style"][value="fenced"]')).toBeChecked();
+    await expect(page.locator('input[name="code-block-style"][value="fenced-backticks"]')).toBeChecked();
 
     await open(page, multipleLinksUrl(extensionId));
     await expect(marker(page, '+')).toBeChecked();

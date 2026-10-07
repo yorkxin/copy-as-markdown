@@ -1,7 +1,7 @@
 import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import { isBulletListMarker } from '../lib/markdown.js';
 import { ensureMarkdownSettingsMigrated, resetSelectionSettings } from '../lib/markdown-settings.js';
-import SelectionSettings, { isCodeBlockStyle, isEmDelimiter, isFence, isHeadingStyle, isLinkReferenceStyle, isStrongDelimiter } from '../lib/selection-settings.js';
+import SelectionSettings, { isEmDelimiter, isHeadingStyle, isLinkReferenceStyle, isStrongDelimiter } from '../lib/selection-settings.js';
 import { hideFlash, showFlash } from './flash.js';
 
 // This page owns Copy Selection's Markdown formatting settings.
@@ -10,11 +10,11 @@ const CodeBlockStyleFormId = 'form-selection-code-block-style';
 const EmDelimiterFormId = 'form-selection-em-delimiter';
 const StrongDelimiterFormId = 'form-selection-strong-delimiter';
 const HeadingStyleFormId = 'form-selection-heading-style';
-const FenceFormId = 'form-selection-fence';
 const LinkStyleFormId = 'form-selection-link-style';
 
 // The UI presents four output formats; storage retains Turndown's two independent options.
 type LinkFormat = 'inlined' | 'full' | 'collapsed' | 'shortcut';
+type CodeBlockStyle = 'indented' | 'fenced-backticks' | 'fenced-tildes';
 
 function isLinkFormat(value: unknown): value is LinkFormat {
   return value === 'inlined' || isLinkReferenceStyle(value);
@@ -25,18 +25,24 @@ async function saveLinkFormat(value: LinkFormat): Promise<void> {
   else await SelectionSettings.setReferencedLinkStyle(value);
 }
 
+function isCodeBlockFormat(value: unknown): value is CodeBlockStyle {
+  return value === 'fenced-backticks'
+    || value === 'fenced-tildes'
+    || value === 'indented';
+}
+
+async function saveCodeBlockFormat(value: CodeBlockStyle): Promise<void> {
+  if (value === 'indented') {
+    await SelectionSettings.setCodeBlockStyle('indented');
+  } else {
+    await SelectionSettings.setFencedCodeBlockStyle(value === 'fenced-backticks' ? '```' : '~~~');
+  }
+}
+
 function radioGroup(formId: string, name: string): RadioNodeList | null {
   const form = document.forms.namedItem(formId);
   if (!form) return null;
   return form.elements.namedItem(name) as RadioNodeList | null;
-}
-
-function updateFenceAvailability(): void {
-  const fenceFieldset = document.querySelector<HTMLFieldSetElement>(`#${FenceFormId} fieldset`);
-  const codeBlockStyles = radioGroup(CodeBlockStyleFormId, 'code-block-style');
-  if (fenceFieldset && codeBlockStyles) {
-    fenceFieldset.disabled = codeBlockStyles.value === 'indented';
-  }
 }
 
 async function loadSettings(): Promise<void> {
@@ -46,7 +52,17 @@ async function loadSettings(): Promise<void> {
   if (markers) markers.value = bulletListMarker;
 
   const codeBlockStyles = radioGroup(CodeBlockStyleFormId, 'code-block-style');
-  if (codeBlockStyles) codeBlockStyles.value = codeBlockStyle;
+  if (codeBlockStyles) {
+    if (codeBlockStyle === 'indented') {
+      codeBlockStyles.value = 'indented';
+    } else if (codeBlockStyle === 'fenced') {
+      if (fence === '```') {
+        codeBlockStyles.value = 'fenced-backticks';
+      } else if (fence === '~~~') {
+        codeBlockStyles.value = 'fenced-tildes';
+      }
+    }
+  }
 
   const emphasis = radioGroup(EmDelimiterFormId, 'em-delimiter');
   if (emphasis) emphasis.value = emDelimiter;
@@ -57,13 +73,8 @@ async function loadSettings(): Promise<void> {
   const headings = radioGroup(HeadingStyleFormId, 'heading-style');
   if (headings) headings.value = headingStyle;
 
-  const fences = radioGroup(FenceFormId, 'fence');
-  if (fences) fences.value = fence;
-
   const links = radioGroup(LinkStyleFormId, 'link-style');
   if (links) links.value = linkStyle === 'inlined' ? 'inlined' : linkReferenceStyle;
-
-  updateFenceAvailability();
 }
 
 /** After a failed write, storage is re-read to include concurrent changes from other pages. */
@@ -79,7 +90,6 @@ function wireSetting<T extends string>(
   formId: string,
   isValid: (value: unknown) => value is T,
   save: (value: T) => Promise<void>,
-  onChange?: () => void,
 ): void {
   const form = document.forms.namedItem(formId);
   if (!form) return;
@@ -87,9 +97,6 @@ function wireSetting<T extends string>(
   form.addEventListener('change', async (event) => {
     const target = event.target;
     if (!(target instanceof HTMLInputElement) || !isValid(target.value)) return;
-
-    // XXX: this is ugly but shoganai until we migrate to a mini framework such as Preact.
-    onChange?.();
 
     try {
       await save(target.value);
@@ -121,11 +128,10 @@ function wireReset(): void {
 
 document.addEventListener('DOMContentLoaded', async () => {
   wireSetting(BulletListMarkerFormId, isBulletListMarker, SelectionSettings.setBulletListMarker);
-  wireSetting(CodeBlockStyleFormId, isCodeBlockStyle, SelectionSettings.setCodeBlockStyle, updateFenceAvailability);
+  wireSetting(CodeBlockStyleFormId, isCodeBlockFormat, saveCodeBlockFormat);
   wireSetting(EmDelimiterFormId, isEmDelimiter, SelectionSettings.setEmDelimiter);
   wireSetting(StrongDelimiterFormId, isStrongDelimiter, SelectionSettings.setStrongDelimiter);
   wireSetting(HeadingStyleFormId, isHeadingStyle, SelectionSettings.setHeadingStyle);
-  wireSetting(FenceFormId, isFence, SelectionSettings.setFence);
   wireSetting(LinkStyleFormId, isLinkFormat, saveLinkFormat);
   wireReset();
 

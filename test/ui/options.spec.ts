@@ -6,6 +6,7 @@ const selectionSettingsMock = {
   getAll: vi.fn(),
   setBulletListMarker: vi.fn(),
   setCodeBlockStyle: vi.fn(),
+  setFencedCodeBlockStyle: vi.fn(),
   setEmDelimiter: vi.fn(),
   setStrongDelimiter: vi.fn(),
   setHeadingStyle: vi.fn(),
@@ -60,6 +61,16 @@ async function startPage(): Promise<void> {
   await flush();
 }
 
+function linkStyleRadio(value: string) {
+  const input = document.querySelector(
+    `#form-selection-link-style input[name="link-style"][value="${value}"]`,
+  );
+  if (!input) {
+    throw new Error(`Missing link-style radio with value "${value}"`);
+  }
+  return page.elementLocator(input);
+}
+
 describe('copy selection options page', () => {
   beforeEach(async () => {
     vi.resetModules();
@@ -69,6 +80,7 @@ describe('copy selection options page', () => {
     selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
     selectionSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
     selectionSettingsMock.setCodeBlockStyle.mockResolvedValue(undefined);
+    selectionSettingsMock.setFencedCodeBlockStyle.mockResolvedValue(undefined);
     selectionSettingsMock.setEmDelimiter.mockResolvedValue(undefined);
     selectionSettingsMock.setStrongDelimiter.mockResolvedValue(undefined);
     selectionSettingsMock.setHeadingStyle.mockResolvedValue(undefined);
@@ -150,49 +162,48 @@ describe('copy selection options page', () => {
     await vi.waitFor(() => expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('indented'));
   });
 
-  it('shows heading and fence examples with the documented Setext limit', async () => {
+  it.each([
+    ['fenced', '```', 'Fenced code block (backticks)'],
+    ['fenced', '~~~', 'Fenced code block (tildes)'],
+    ['indented', '```', 'Indented code block (4 spaces)'],
+    ['indented', '~~~', 'Indented code block (4 spaces)'],
+  ] as const)('loads code block style %s with fence %s as %s', async (codeBlockStyle, fence, label) => {
+    const settings = await selectionSettingsMock.getAll();
+    selectionSettingsMock.getAll.mockResolvedValue({ ...settings, codeBlockStyle, fence });
     await startPage();
 
-    const headings = page.getByRole('group', { name: 'Heading style' });
-    const fences = page.getByRole('group', { name: 'Code-fence marker' });
-    await expect.element(headings.getByRole('radio', { name: /ATX/ })).toBeChecked();
-    await expect.element(fences.getByRole('radio', { name: /Backticks/ })).toBeChecked();
-    await expect.element(fences.getByRole('radio', { name: /Tildes/ })).toBeEnabled();
-    expect(document.querySelector('#form-selection-heading-style input[value="atx"] + code')?.textContent).toBe('# Heading');
-    expect(document.querySelector('#form-selection-heading-style input[value="setext"] + code')?.textContent).toBe('Heading\n=======');
-    expect(document.querySelector('#form-selection-heading-style')?.textContent).toContain('H3 through H6 remain ATX');
-    expect(document.querySelector('#form-selection-fence')?.textContent).toContain('```js');
-    expect(document.querySelector('#form-selection-fence')?.textContent).toContain('~~~js');
+    const group = page.getByRole('group', { name: 'Code Block Style', exact: true });
+    await expect.element(group.getByRole('radio', { name: label, exact: true })).toBeChecked();
+    expect(document.querySelectorAll('#form-selection-code-block-style input:checked')).toHaveLength(1);
+    expect(document.querySelector('#form-selection-fence')).toBeNull();
   });
 
-  it('keeps the fence visible and selected while indented code blocks disable it', async () => {
-    selectionSettingsMock.getAll.mockResolvedValue({
-      bulletListMarker: '-',
-      codeBlockStyle: 'indented',
-      emDelimiter: '_',
-      strongDelimiter: '**',
-      headingStyle: 'setext',
-      fence: '~~~',
-      linkStyle: 'inlined',
-      linkReferenceStyle: 'full',
-    });
+  it.each([
+    ['Fenced code block (backticks)', '```'],
+    ['Fenced code block (tildes)', '~~~'],
+  ] as const)('saves %s and restores the persisted format after a failed write', async (label, fence) => {
+    const settings = await selectionSettingsMock.getAll();
+    selectionSettingsMock.getAll.mockResolvedValue({ ...settings, codeBlockStyle: 'indented' });
     await startPage();
 
-    const tildes = page.getByRole('group', { name: 'Code-fence marker' }).getByRole('radio', { name: /Tildes/ });
-    await expect.element(page.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /Setext/ })).toBeChecked();
-    await expect.element(tildes).toBeChecked();
-    await expect.element(tildes).toBeDisabled();
-
-    await page.getByRole('radio', { name: /Fenced code block/ }).click();
-    await vi.waitFor(() => expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('fenced'));
-    await expect.element(tildes).toBeChecked();
-    await expect.element(tildes).toBeEnabled();
+    const group = page.getByRole('group', { name: 'Code Block Style', exact: true });
+    const choice = group.getByRole('radio', { name: label, exact: true });
+    await choice.click();
+    await vi.waitFor(() => expect(selectionSettingsMock.setFencedCodeBlockStyle).toHaveBeenCalledWith(fence));
+    expect(selectionSettingsMock.setCodeBlockStyle).not.toHaveBeenCalled();
     expect(selectionSettingsMock.setFence).not.toHaveBeenCalled();
+    await expect.element(page.getByTestId('flash-error')).not.toBeVisible();
+
+    await group.getByRole('radio', { name: 'Indented code block (4 spaces)', exact: true }).click();
+    await vi.waitFor(() => expect(selectionSettingsMock.setCodeBlockStyle).toHaveBeenCalledWith('indented'));
+    selectionSettingsMock.setFencedCodeBlockStyle.mockRejectedValueOnce(new Error('quota exceeded'));
+    await choice.click();
+    await expect.element(group.getByRole('radio', { name: 'Indented code block (4 spaces)', exact: true })).toBeChecked();
+    await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
 
   it.each([
     ['Heading style', /Setext/, /ATX/, 'setHeadingStyle', 'setext'],
-    ['Code-fence marker', /Tildes/, /Backticks/, 'setFence', '~~~'],
   ] as const)('saves %s immediately and restores the persisted choice on failure', async (group, alternate, initial, setter, value) => {
     await startPage();
     const radios = page.getByRole('group', { name: group });
@@ -215,7 +226,7 @@ describe('copy selection options page', () => {
     await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
 
-  it('restores fence availability from storage when code block style save fails', async () => {
+  it('restores the persisted fenced format when saving indented code blocks fails', async () => {
     await startPage();
     selectionSettingsMock.setCodeBlockStyle.mockRejectedValueOnce(new Error('quota exceeded'));
     selectionSettingsMock.getAll.mockResolvedValue({
@@ -230,16 +241,15 @@ describe('copy selection options page', () => {
     });
 
     await page.getByRole('radio', { name: /Indented code block/ }).click();
-    const tildes = page.getByRole('group', { name: 'Code-fence marker' }).getByRole('radio', { name: /Tildes/ });
-    await expect.element(page.getByRole('radio', { name: /Fenced code block/ })).toBeChecked();
+    const tildes = page.getByRole('radio', { name: 'Fenced code block (tildes)', exact: true });
     await expect.element(tildes).toBeChecked();
     await expect.element(tildes).toBeEnabled();
     await expect.element(page.getByTestId('flash-error')).toBeVisible();
   });
 
   it.each([
-    ['Emphasis (italics)', 'Asterisk (*text*)', 'Underscore (_text_)', 'setEmDelimiter', '*'],
-    ['Strong emphasis (bold)', 'Double underscores (__text__)', 'Double asterisks (**text**)', 'setStrongDelimiter', '__'],
+    ['Emphasis (italics)', 'Asterisk', 'Underscore', 'setEmDelimiter', '*'],
+    ['Strong emphasis (bold)', 'Double underscores', 'Double asterisks', 'setStrongDelimiter', '__'],
   ] as const)('saves %s immediately and restores persisted values on failure', async (group, alternate, initial, setter, value) => {
     await startPage();
     const radios = page.getByRole('group', { name: group, exact: true });
@@ -271,7 +281,7 @@ describe('copy selection options page', () => {
     await expect.element(links.getByRole('radio', { name: /Inline/ })).toBeChecked();
     expect(document.querySelectorAll('#form-selection-link-style input[type="radio"]')).toHaveLength(4);
     expect(document.querySelector('#form-selection-link-reference-style')).toBeNull();
-    for (const name of [/Inline/, /Referenced \(full\)/, /Referenced \(collapsed\)/, /Referenced \(shortcut\)/]) {
+    for (const name of [/Inline/, /Referenced \(numbered\)/, /Referenced \(collapsed\)/, /Referenced \(shortcut\)/]) {
       await expect.element(links.getByRole('radio', { name })).toBeEnabled();
     }
     const examples = document.querySelector('#form-selection-link-style')!.textContent;
@@ -288,7 +298,7 @@ describe('copy selection options page', () => {
     });
     await startPage();
     const links = page.getByRole('group', { name: 'Link style', exact: true });
-    await expect.element(links.getByRole('radio', { name: new RegExp(`Referenced.*${style}`) })).toBeChecked();
+    await expect.element(linkStyleRadio(style)).toBeChecked();
     await links.getByRole('radio', { name: /Inline/ }).click();
     await vi.waitFor(() => expect(selectionSettingsMock.setLinkStyle).toHaveBeenCalledWith('inlined'));
     expect(selectionSettingsMock.setReferencedLinkStyle).not.toHaveBeenCalled();
@@ -297,7 +307,7 @@ describe('copy selection options page', () => {
   it.each(['full', 'collapsed', 'shortcut'] as const)('saves referenced %s directly from inline and restores the persisted choice on failure', async (style) => {
     await startPage();
     const links = page.getByRole('group', { name: 'Link style', exact: true });
-    const choice = links.getByRole('radio', { name: new RegExp(`Referenced.*${style}`) });
+    const choice = linkStyleRadio(style);
     await choice.click();
     await vi.waitFor(() => expect(selectionSettingsMock.setReferencedLinkStyle).toHaveBeenCalledWith(style));
     await expect.element(page.getByTestId('flash-error')).not.toBeVisible();
@@ -369,13 +379,12 @@ describe('copy selection options page', () => {
     await page.getByTestId('reset-copy-selection').click();
     await vi.waitFor(() => expect(resetSelectionSettingsMock).toHaveBeenCalledTimes(1));
     await expect.element(page.getByRole('radio', { name: /Dashes/ })).toBeChecked();
-    await expect.element(page.getByRole('radio', { name: 'Underscore (_text_)', exact: true })).toBeChecked();
-    await expect.element(page.getByRole('radio', { name: 'Double asterisks (**text**)', exact: true })).toBeChecked();
-    await expect.element(page.getByRole('radio', { name: /Fenced code block/ })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: 'Underscore', exact: true })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: 'Double asterisks', exact: true })).toBeChecked();
+    await expect.element(page.getByRole('radio', { name: 'Fenced code block (backticks)', exact: true })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /ATX/ })).toBeChecked();
-    await expect.element(page.getByRole('group', { name: 'Code-fence marker' }).getByRole('radio', { name: /Backticks/ })).toBeChecked();
     await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Inline/ })).toBeChecked();
-    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(full\)/ })).not.toBeChecked();
+    await expect.element(page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(numbered\)/ })).not.toBeChecked();
   });
 
   it('flashes and shows the persisted values when a reset fails', async () => {
@@ -386,7 +395,7 @@ describe('copy selection options page', () => {
     await page.getByTestId('reset-copy-selection').click();
     await flush();
 
-    await expect.element(page.getByRole('radio', { name: /Asterisks/ })).toBeChecked();
+    await expect.element(page.getByRole('group', { name: 'Unordered List Character' }).getByRole('radio', { name: /Asterisks/ })).toBeChecked();
     const shortcut = page.getByRole('group', { name: 'Link style', exact: true }).getByRole('radio', { name: /Referenced \(shortcut\)/ });
     await expect.element(shortcut).toBeChecked();
     await expect.element(shortcut).toBeEnabled();

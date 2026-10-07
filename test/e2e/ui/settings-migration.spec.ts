@@ -1,112 +1,60 @@
-// Covers migration storage and UI; rendered output is covered in ../formatting/settings-migration.spec.ts.
-import type { BrowserContext, Worker } from '@playwright/test';
+import { chromium } from '@playwright/test';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, test } from '../fixtures';
-import { getServiceWorker, wait } from '../helpers';
+import { getServiceWorker } from '../helpers';
 
-const LegacyUnorderedListKey = 'styleOfUnorderedList ';
-const LegacyCodeBlockKey = 'styleOfCodeBlock';
-const LegacyTabGroupIndentationKey = 'style.tabgroup.indentation ';
+const legacy = {
+  'styleOfUnorderedList ': 'asterisk',
+  'styleOfCodeBlock': 'indented',
+  'style.tabgroup.indentation ': 'tab',
+};
+const migrated = {
+  'selection.markdown.bulletListMarker': '*',
+  'selection.markdown.codeBlockStyle': 'indented',
+  'multipleLinks.markdown.bulletListMarker': '*',
+  'multipleLinks.markdown.tabGroupIndentation': 'tab',
+};
 
-const SelectionBulletKey = 'selection.markdown.bulletListMarker';
-const SelectionCodeBlockKey = 'selection.markdown.codeBlockStyle';
-const MultipleLinksBulletKey = 'multipleLinks.markdown.bulletListMarker';
-const MultipleLinksIndentationKey = 'multipleLinks.markdown.tabGroupIndentation';
-
-async function seedStorage(serviceWorker: Worker, items: Record<string, unknown>): Promise<void> {
-  await serviceWorker.evaluate(async (toSet) => {
-    await chrome.storage.sync.set(toSet);
-  }, items);
-}
-
-async function readStorage(serviceWorker: Worker): Promise<Record<string, unknown>> {
-  return await serviceWorker.evaluate(async () => {
-    return await chrome.storage.sync.get(null);
+test('migrates legacy settings on browser restart before any options page opens', async ({ extensionPath }) => {
+  const profile = await mkdtemp(join(tmpdir(), 'selection-migration-'));
+  const launch = () => chromium.launchPersistentContext(profile, {
+    headless: false,
+    args: [`--disable-extensions-except=${extensionPath}`, `--load-extension=${extensionPath}`],
   });
-}
+  let context = await launch();
+  try {
+    const original = await getServiceWorker(context);
+    await original.evaluate(items => chrome.storage.sync.set(items), legacy);
+    // Seeding an already running worker must not itself run the startup migration.
+    expect(await original.evaluate(keys => chrome.storage.sync.get(keys), Object.keys(migrated))).toEqual({});
+    await context.close();
 
-function optionsUrlOf(extensionId: string): string {
-  return `chrome-extension://${extensionId}/dist/static/options.html`;
-}
+    // A fresh browser runs background.ts against the same persisted legacy profile.
+    context = await launch();
+    const worker = await getServiceWorker(context);
+    expect(worker).not.toBe(original);
+    await expect.poll(() => worker.evaluate(keys => chrome.storage.sync.get(keys), [
+      ...Object.keys(legacy),
+      ...Object.keys(migrated),
+    ])).toEqual(migrated);
+  } finally {
+    await context.close();
+    await rm(profile, { recursive: true, force: true });
+  }
+});
 
-async function openOptionsPage(context: BrowserContext, extensionId: string): Promise<void> {
-  const optionsPage = await context.newPage();
-  await optionsPage.goto(optionsUrlOf(extensionId));
-  await optionsPage.waitForLoadState('networkidle');
-  await wait(500);
-  await optionsPage.close();
-}
-
-test.describe('Markdown settings migration', () => {
-  let serviceWorker: Worker;
-
-  test.beforeEach(async ({ context }) => {
-    serviceWorker = await getServiceWorker(context);
-  });
-
-  test('moves a legacy profile into context-owned keys and drops the legacy ones', async ({ context, extensionId }) => {
-    await seedStorage(serviceWorker, {
-      [LegacyUnorderedListKey]: 'asterisk',
-      [LegacyCodeBlockKey]: 'indented',
-      [LegacyTabGroupIndentationKey]: 'tab',
-    });
-
-    await openOptionsPage(context, extensionId);
-
-    const stored = await readStorage(serviceWorker);
-    expect(stored[SelectionBulletKey]).toBe('*');
-    expect(stored[SelectionCodeBlockKey]).toBe('indented');
-    expect(stored[MultipleLinksBulletKey]).toBe('*');
-    expect(stored[MultipleLinksIndentationKey]).toBe('tab');
-    expect(stored).not.toHaveProperty(LegacyUnorderedListKey);
-    expect(stored).not.toHaveProperty(LegacyCodeBlockKey);
-    expect(stored).not.toHaveProperty(LegacyTabGroupIndentationKey);
-  });
-
-  test('keeps the migrated preferences visible in the settings page after a reload', async ({ context, extensionId }) => {
-    await seedStorage(serviceWorker, {
-      [LegacyUnorderedListKey]: 'plus',
-      [LegacyCodeBlockKey]: 'indented',
-    });
-
-    const optionsPage = await context.newPage();
-    await optionsPage.goto(optionsUrlOf(extensionId));
-    await optionsPage.waitForLoadState('networkidle');
-    await wait(500);
-    await optionsPage.reload();
-    await optionsPage.waitForLoadState('networkidle');
-
-    await expect(optionsPage.locator('input[name="bullet-list-marker"][value="+"]')).toBeChecked();
-    await expect(optionsPage.locator('input[name="code-block-style"][value="indented"]')).toBeChecked();
-    await optionsPage.close();
-  });
-
-  test('starts both format pages on the migrated marker, then lets them diverge', async ({ context, extensionId }) => {
-    await seedStorage(serviceWorker, { [LegacyUnorderedListKey]: 'asterisk' });
-
-    const copySelectionPage = await context.newPage();
-    await copySelectionPage.goto(optionsUrlOf(extensionId));
-    await copySelectionPage.waitForLoadState('networkidle');
-    await wait(500);
-    await expect(copySelectionPage.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
-
-    const multipleLinksPage = await context.newPage();
-    await multipleLinksPage.goto(`chrome-extension://${extensionId}/dist/static/multiple-links.html`);
-    await multipleLinksPage.waitForLoadState('networkidle');
-    await wait(500);
-    await expect(multipleLinksPage.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
-
-    await copySelectionPage.locator('input[name="bullet-list-marker"][value="+"]').check();
-    await wait(500);
-
-    await multipleLinksPage.reload();
-    await multipleLinksPage.waitForLoadState('networkidle');
-    await expect(multipleLinksPage.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
-
-    const stored = await readStorage(serviceWorker);
-    expect(stored[SelectionBulletKey]).toBe('+');
-    expect(stored[MultipleLinksBulletKey]).toBe('*');
-
-    await copySelectionPage.close();
-    await multipleLinksPage.close();
-  });
+test('options fallback migrates a running legacy profile and displays the saved preferences after reload', async ({ context, extensionId, serviceWorker }) => {
+  await serviceWorker.evaluate(items => chrome.storage.sync.set(items), legacy);
+  const options = await context.newPage();
+  await options.goto(`chrome-extension://${extensionId}/dist/static/options.html`);
+  await expect(options.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
+  await expect.poll(() => serviceWorker.evaluate(keys => chrome.storage.sync.get(keys), [
+    ...Object.keys(legacy),
+    ...Object.keys(migrated),
+  ])).toEqual(migrated);
+  await options.reload();
+  await expect(options.locator('input[name="bullet-list-marker"][value="*"]')).toBeChecked();
+  await expect(options.locator('input[name="code-block-style"][value="indented"]')).toBeChecked();
 });

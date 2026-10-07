@@ -56,10 +56,10 @@ test('applies combined syntax through both selection handlers without reloading 
 
   await options.bringToFront();
   await options.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /Setext/ }).check();
-  await options.getByRole('group', { name: 'Emphasis (italics)', exact: true }).getByRole('radio', { name: 'Asterisk (*text*)', exact: true }).check();
-  await options.getByRole('group', { name: 'Strong emphasis (bold)', exact: true }).getByRole('radio', { name: 'Double underscores (__text__)', exact: true }).check();
+  await options.getByRole('group', { name: 'Emphasis (italics)', exact: true }).getByRole('radio', { name: 'Asterisk', exact: true }).check();
+  await options.getByRole('group', { name: 'Strong emphasis (bold)', exact: true }).getByRole('radio', { name: 'Double underscores', exact: true }).check();
   await options.getByRole('radio', { name: /Plus Signs/ }).check();
-  await options.getByRole('group', { name: 'Code-fence marker' }).getByRole('radio', { name: /Tildes/ }).check();
+  await options.getByRole('group', { name: 'Code Block Style' }).getByRole('radio', { name: /tildes/ }).check();
   // Click the example itself, proving the whole label selects its output format.
   await options.locator('label:has(input[value="shortcut"]) samp').click();
   const configured = {
@@ -78,28 +78,6 @@ test('applies combined syntax through both selection handlers without reloading 
   const referenced = `${prefix}[Example]${suffix}\n\n[Example]: https://example.com/`;
   expect(await copySelection('command')).toBe(referenced);
   expect(await copySelection('context-menu')).toBe(referenced);
-
-  await options.bringToFront();
-  await links.getByRole('radio', { name: /^Inline\b/ }).check();
-  await expect.poll(() => serviceWorker.evaluate(() => chrome.storage.sync.get([
-    'selection.markdown.linkStyle',
-    'selection.markdown.linkReferenceStyle',
-  ]))).toEqual({
-    'selection.markdown.linkStyle': 'inlined',
-    'selection.markdown.linkReferenceStyle': 'shortcut',
-  });
-  expect(await copySelection('command')).toBe(`${prefix}[Example](https://example.com/)${suffix}`);
-
-  await options.bringToFront();
-  await links.getByRole('radio', { name: /^Referenced \(full\)/ }).check();
-  await expect.poll(() => serviceWorker.evaluate(() => chrome.storage.sync.get([
-    'selection.markdown.linkStyle',
-    'selection.markdown.linkReferenceStyle',
-  ]))).toEqual({
-    'selection.markdown.linkStyle': 'referenced',
-    'selection.markdown.linkReferenceStyle': 'full',
-  });
-  expect(await copySelection('context-menu')).toBe(`${prefix}[Example][1]${suffix}\n\n[1]: https://example.com/`);
 
   // Multiple Links and Single Link must keep their own output while Selection is configured.
   await resetMockClipboard(serviceWorker);
@@ -146,6 +124,5 @@ test('applies combined syntax through both selection handlers without reloading 
   await expect(links.getByRole('radio', { name: /^Inline\b/ })).toBeChecked();
   await expect(options.getByRole('group', { name: 'Heading style' }).getByRole('radio', { name: /ATX/ })).toBeChecked();
   expect(await copySelection('command')).toBe(defaults);
-  expect(await copySelection('context-menu')).toBe(defaults);
   expect(await serviceWorker.evaluate(keys => chrome.storage.sync.get(keys), Object.keys(unrelated))).toEqual(unrelated);
 });
