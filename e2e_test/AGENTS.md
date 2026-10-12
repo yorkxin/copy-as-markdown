@@ -7,7 +7,7 @@ Read [CLAUDE.md](../CLAUDE.md) and [DEVELOPMENT.md](../DEVELOPMENT.md) first.
   tests. They use the real clipboard and native keyboard/context-menu input.
 - Use the current pytest `junit.xml` as the authoritative result. Report passed,
   failed and skipped counts separately; do not treat skipped tests as validated.
-- Check `browser.log` and `environment.log` before claiming a browser version or
+- Check `run.log` and `environment.log` before claiming a browser version or
   architecture was tested. Keep resolver/unit/controlled-stub checks distinct
   from actual browser runtime verification.
 - Do not introduce cross-architecture emulation or special handling of platform overrides.
@@ -24,13 +24,11 @@ python3 -m unittest discover -s docker/selenium-ci -p 'test_*.py'
 CI downloads test extensions from the same run’s build artifact. Tests run as
 `seluser` with distro-compatible Python / APT GI, on the same Xvfb and D-Bus
 session as the browser. `FIREFOX_ESR_MAJOR` pins its ESR
-branch; resolve the latest patch from Mozilla ESR metadata, then try that exact
-release in APT. If unavailable or installation fails, use the official archive
-and verify SHA256SUMS. Never silently switch the pinned major; missing channel
+branch; resolve the latest patch from Mozilla ESR metadata, download the official
+archive and verify SHA256SUMS. Never silently switch the pinned major; missing channel
 metadata requires revisiting the pin.
 There is no CI image build or remote freshness check. Preserve actual browser
-version checks: Chromium requires matching driver major. Older local geckodriver needs Firefox's system-access
-argument; newer geckodriver requires its own `--allow-system-access` flag.
+version checks: Chromium requires matching driver major. Use geckodriver’s `--allow-system-access` flag for extension-page navigation.
 The official Chromium image mixes Debian sid packages into its base and removes
 the Debian APT source. Restore that source for matching GI/GLib packages; do not
 downgrade browser libraries to satisfy Ubuntu's GI dependencies. Firefox uses

@@ -50,29 +50,22 @@ if [[ "$BROWSER" == chromium ]]; then
 else
   if [[ "$PROFILE" == esr ]]; then
     version=$(/tmp/selenium-test-venv/bin/python docker/selenium-ci/resolve_firefox.py "${FIREFOX_ESR_MAJOR:?Set FIREFOX_ESR_MAJOR}")
-    release="$(apt-cache madison firefox-esr | awk -v version="$version" 'index($3, version "~") == 1 {print $3; exit}')"
-    if [[ -n "$release" ]] && apt-get install -y --no-install-recommends "firefox-esr=$release"; then
-      export FIREFOX_BINARY="$(command -v firefox-esr)"
-      echo "[ESR] $version installed via APT"
-    else
-      echo "[ESR] APT cannot install $version; downloading Mozilla archive"
-      case "$(dpkg --print-architecture)" in
-        amd64) archive_arch=linux-x86_64 ;;
-        arm64) archive_arch=linux-aarch64 ;;
-        *) echo 'Unsupported Firefox archive architecture' >&2; exit 1 ;;
-      esac
-      archive="$archive_arch/en-US/firefox-$version.tar.xz"
-      url="https://archive.mozilla.org/pub/firefox/releases/$version"
-      curl -fsSL --retry 3 "$url/$archive" -o /tmp/firefox-esr.tar.xz
-      curl -fsSL --retry 3 "$url/SHA256SUMS" -o /tmp/firefox-esr-SHA256SUMS
-      awk -v archive="$archive" '$2 == archive {print $1 "  /tmp/firefox-esr.tar.xz"}' \
-        /tmp/firefox-esr-SHA256SUMS > "$results/firefox-esr.sha256"
-      test "$(wc -l < "$results/firefox-esr.sha256")" -eq 1
-      sha256sum -c "$results/firefox-esr.sha256"
-      mkdir -p /opt/firefox-esr
-      tar -xJf /tmp/firefox-esr.tar.xz --strip-components=1 -C /opt/firefox-esr
-      export FIREFOX_BINARY=/opt/firefox-esr/firefox
-    fi
+    case "$(dpkg --print-architecture)" in
+      amd64) archive_arch=linux-x86_64 ;;
+      arm64) archive_arch=linux-aarch64 ;;
+      *) echo 'Unsupported Firefox archive architecture' >&2; exit 1 ;;
+    esac
+    archive="$archive_arch/en-US/firefox-$version.tar.xz"
+    url="https://archive.mozilla.org/pub/firefox/releases/$version"
+    curl -fsSL --retry 3 "$url/$archive" -o /tmp/firefox-esr.tar.xz
+    curl -fsSL --retry 3 "$url/SHA256SUMS" -o /tmp/firefox-esr-SHA256SUMS
+    awk -v archive="$archive" '$2 == archive {print $1 "  /tmp/firefox-esr.tar.xz"}' \
+      /tmp/firefox-esr-SHA256SUMS > "$results/firefox-esr.sha256"
+    test "$(wc -l < "$results/firefox-esr.sha256")" -eq 1
+    sha256sum -c "$results/firefox-esr.sha256"
+    mkdir -p /opt/firefox-esr
+    tar -xJf /tmp/firefox-esr.tar.xz --strip-components=1 -C /opt/firefox-esr
+    export FIREFOX_BINARY=/opt/firefox-esr/firefox
     test "$("$FIREFOX_BINARY" --version)" = "Mozilla Firefox $version"
   else
     export FIREFOX_BINARY="$(command -v firefox)"

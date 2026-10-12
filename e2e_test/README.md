@@ -23,7 +23,7 @@ Each run needs network access to install test utilities.
 
 CI selects the ESR major with `FIREFOX_ESR_MAJOR` in the workflow. Local ESR runs
 default to 140; set the same variable to test another active ESR branch. Its latest
-patch is installed from APT or Mozilla's archive.
+patch is downloaded from Mozilla’s archive.
 
 Pass pytest arguments after `--` to select tests:
 
@@ -35,6 +35,6 @@ BROWSER=firefox npm run test:e2e:selenium:docker -- -k test_current_tab
 
 The terminal shows actual browser versions and results for each session. Reports
 replace the previous run in `test-results/selenium-<profile>-<browser>/`.
-Read `junit.xml` for results, `run.log` for failures, and `browser.log` /
-`environment.log` for the tested versions. If either session fails, the command
+Read `junit.xml` for results, `run.log` for failures and actual browser session versions, and
+`environment.log` for the installed versions. If either session fails, the command
 exits with a failure status after running both browsers.
