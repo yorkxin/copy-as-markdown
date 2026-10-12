@@ -49,8 +49,7 @@ if [[ "$BROWSER" == chromium ]]; then
   "$CHROMEDRIVER_BINARY" --version
 else
   if [[ "$PROFILE" == esr ]]; then
-    resolved=$(/tmp/selenium-test-venv/bin/python docker/selenium-ci/resolve_firefox.py "esr:${FIREFOX_ESR_MAJOR:?Set FIREFOX_ESR_MAJOR in CI}")
-    version=$(/tmp/selenium-test-venv/bin/python -c 'import json,sys; print(json.load(sys.stdin)["version"])' <<< "$resolved")
+    version=$(/tmp/selenium-test-venv/bin/python docker/selenium-ci/resolve_firefox.py "${FIREFOX_ESR_MAJOR:?Set FIREFOX_ESR_MAJOR}")
     release="$(apt-cache madison firefox-esr | awk -v version="$version" 'index($3, version "~") == 1 {print $3; exit}')"
     if [[ -n "$release" ]] && apt-get install -y --no-install-recommends "firefox-esr=$release"; then
       export FIREFOX_BINARY="$(command -v firefox-esr)"

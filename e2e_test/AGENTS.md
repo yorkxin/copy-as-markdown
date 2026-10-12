@@ -10,40 +10,26 @@ Read [CLAUDE.md](../CLAUDE.md) and [DEVELOPMENT.md](../DEVELOPMENT.md) first.
 - Check `browser.log` and `environment.log` before claiming a browser version or
   architecture was tested. Keep resolver/unit/controlled-stub checks distinct
   from actual browser runtime verification.
-- The local shared-image harness writes `metadata.json` with channel-check status. An offline `unverified` run
-  validates the installed browser, not its agreement with the current release channel.
-- The ESR profile tracks Mozilla’s primary `FIREFOX_ESR` branch; it uses a real
-  ESR binary at `/opt/firefox-esr/firefox`, alongside Stable at `/opt/firefox/firefox`
-  and CfT in the shared environment image. Check only the selected profile's
-  channels when reusing it; rebuilding refreshes all three browser installations.
-  Additional supported branches during ESR transitions are a separate
-  scope decision. Do not introduce cross-architecture emulation or special
-  handling of shell platform overrides.
+- Do not introduce cross-architecture emulation or special handling of platform overrides.
 
-For harness changes, inspect [docker_e2e.py](../docker/selenium-ci/docker_e2e.py),
-[run-selenium.sh](../docker/selenium-ci/run-selenium.sh) and
-[conftest.py](conftest.py) for existing behavior instead of duplicating its
-implementation in documentation. Run the resolver and host-flow checks:
+Local runs and CI share [run-official.sh](../docker/selenium-ci/run-official.sh).
+The local launcher builds extensions once and copies test inputs into disposable
+containers; it must not modify source ownership. Resolver checks are independent
+of browser runtime validation:
 
 ```sh
 python3 -m unittest discover -s docker/selenium-ci -p 'test_*.py'
 ```
 
-Browser version overrides belong to the image build tool,
-[build_image.py](../docker/selenium-ci/build_image.py). Keep the normal test
-interface limited to `PROFILE`, `BROWSER` and pytest arguments.
-
-CI uses [run-official.sh](../docker/selenium-ci/run-official.sh) inside official
-Firefox/Chromium images, with test extensions downloaded from the same run's
-build artifact. Tests run as `seluser` with distro-compatible Python / APT GI, on the
-same Xvfb and D-Bus session as the browser. CI's `FIREFOX_ESR_MAJOR` pins its ESR
+CI downloads test extensions from the same run’s build artifact. Tests run as
+`seluser` with distro-compatible Python / APT GI, on the same Xvfb and D-Bus
+session as the browser. `FIREFOX_ESR_MAJOR` pins its ESR
 branch; resolve the latest patch from Mozilla ESR metadata, then try that exact
 release in APT. If unavailable or installation fails, use the official archive
 and verify SHA256SUMS. Never silently switch the pinned major; missing channel
-metadata requires revisiting the pin. The local image still follows primary ESR.
+metadata requires revisiting the pin.
 There is no CI image build or remote freshness check. Preserve actual browser
-version checks: Chromium requires matching driver major; CfT requires its exact
-browser/driver pair. Older local geckodriver needs Firefox's system-access
+version checks: Chromium requires matching driver major. Older local geckodriver needs Firefox's system-access
 argument; newer geckodriver requires its own `--allow-system-access` flag.
 The official Chromium image mixes Debian sid packages into its base and removes
 the Debian APT source. Restore that source for matching GI/GLib packages; do not

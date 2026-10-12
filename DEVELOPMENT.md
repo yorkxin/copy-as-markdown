@@ -33,7 +33,7 @@ test/
   e2e/             # Playwright e2e tests
   ui/, lib/        # vitest browser tests (real Chromium)
   **/*.test.ts     # vitest unit tests (node)
-e2e_test/          # Python (pytest) Selenium tests for Firefox + Chrome for Testing smoke
+e2e_test/          # Python (pytest) Selenium tests for Firefox + Chromium smoke
 docker/playwright-ci/  # Dockerized e2e harness (CI parity)
 ```
 
@@ -170,14 +170,14 @@ production build with manifest permissions rewritten for testing.
 
 ### Selenium browser e2e tests (Python / pytest)
 
-Selenium covers Firefox extension pages and Chrome for Testing (CfT) keyboard /
+Selenium covers Firefox extension pages and Chromium keyboard /
 native context-menu flows. Run it in Docker to keep real clipboard operations
-inside the container. Host requirements: Docker, curl and Python 3.
+inside the container. Host requirements: Docker and the project’s Node dependencies.
 
 ```sh
-npm run test:e2e:selenium:docker # Firefox + CfT, one session
+npm run test:e2e:selenium:docker # Firefox then Chromium, separate sessions
 PROFILE=esr npm run test:e2e:selenium:docker
-BROWSER=cft npm run test:e2e:selenium:docker
+BROWSER=chromium npm run test:e2e:selenium:docker
 ```
 
 See [the Selenium README](e2e_test/README.md) for browser/version selection,

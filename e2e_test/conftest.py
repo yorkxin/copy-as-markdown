@@ -33,7 +33,7 @@ E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file_
 FIREFOX_EXTENSION_UUID = "11111111-1111-4111-8111-111111111111"
 E2E_HELPER_EXTENSION_UUID = "22222222-2222-4222-8222-222222222222"
 CHROME_WINDOW_CLASS = "copy-as-markdown-e2e"
-CHROME_BROWSER = "chromium" if os.environ.get("BROWSER") == "chromium" else "cft"
+CHROME_BROWSER = "chromium"
 
 _selenium_config = None
 _browser_results = {}
@@ -53,9 +53,7 @@ def pytest_report_header(config):
             return f"Chromium {os.environ['CHROMIUM_VERSION']} | selected: chromium"
         if os.environ["BROWSER"] == "firefox":
             return f"Firefox {os.environ['FIREFOX_VERSION']} | selected: firefox"
-        return (f"Firefox {os.environ['FIREFOX_VERSION']} | "
-                f"Chrome for Testing {os.environ['CFT_VERSION']} | "
-                f"selected: {os.environ['BROWSER']}")
+
 
 
 def pytest_collection_modifyitems(items):
@@ -92,7 +90,7 @@ def pytest_terminal_summary(terminalreporter):
     if not os.environ.get("BROWSER"):
         return
     terminalreporter.section("Selenium browser summary")
-    for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing"), ("chromium", "Chromium")):
+    for browser, name in (("firefox", "Firefox"), ("chromium", "Chromium")):
         if browser == "firefox" and os.environ.get("PROFILE") == "esr":
             name = "Firefox ESR"
         outcomes = _browser_results.get(browser)
@@ -546,7 +544,7 @@ def _chrome_browser_environment():
                         or shutil.which("google-chrome"))
         chromedriver_path = os.environ.get("CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
         if not all(path and os.access(path, os.X_OK) for path in (chromium_bin, chromedriver_path)):
-            if os.environ.get("CI") or os.environ.get("BROWSER") in ("cft", "chromium"):
+            if os.environ.get("CI") or os.environ.get("BROWSER") == "chromium":
                 raise RuntimeError("Selected Chrome binary/driver missing; set CHROME_BINARY and CHROMEDRIVER_BINARY")
             pytest.skip("chromium/chromedriver not found on PATH")
 
@@ -574,12 +572,11 @@ def _chrome_browser_environment():
         actual_version = driver.capabilities["browserVersion"]
         driver_version = driver.capabilities["chrome"]["chromedriverVersion"].split()[0]
         expected_version = os.environ.get(CHROME_BROWSER.upper() + "_VERSION")
-        name = "Chromium" if CHROME_BROWSER == "chromium" else "Chrome for Testing"
+        name = "Chromium"
         _log_browser_version(f"{name} session version: {actual_version}; driver: {driver_version}; binary: {chromium_bin}")
-        if CHROME_BROWSER == "chromium" and driver_version.split(".")[0] != actual_version.split(".")[0]:
+        if driver_version.split(".")[0] != actual_version.split(".")[0]:
             raise RuntimeError(f"Chromium/driver major mismatch: {actual_version}, {driver_version}")
-        if expected_version and (actual_version != expected_version or
-                                 (CHROME_BROWSER == "cft" and driver_version != expected_version)):
+        if expected_version and actual_version != expected_version:
             raise RuntimeError(f"{name} version mismatch: expected {expected_version}, "
                                f"browser {actual_version}, driver {driver_version}")
         env = ChromeBrowserEnvironment(driver)

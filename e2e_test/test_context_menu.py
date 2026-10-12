@@ -10,7 +10,7 @@ from e2e_test.helpers import Clipboard
 
 # These tests drive Firefox's native GTK context menu through the AT-SPI
 # accessibility bus, which only exists when the suite runs via the Docker
-# entrypoint (run-selenium.sh wraps pytest in `dbus-run-session` and exports
+# entrypoint (run-official.sh wraps pytest in `dbus-run-session` and exports
 # GNOME_ACCESSIBILITY=1). Running them on the bare `npm run test:e2e:selenium`
 # path (no bus) would just time out, so skip the module unless both signals are
 # present. In Docker both are set, so the tests run normally.
