@@ -53,7 +53,7 @@ class TestSelectionFormatting:
             browser.select_all()
             Clipboard.clear()
             if method == "shortcut":
-                shortcut.press()
+                shortcut.press(driver)
             else:
                 # Right-click selected text, not the body's empty space, so Firefox
                 # opens the single-item selection context instead of a page submenu.
