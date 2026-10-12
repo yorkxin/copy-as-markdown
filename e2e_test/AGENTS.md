@@ -10,7 +10,7 @@ Read [CLAUDE.md](../CLAUDE.md) and [DEVELOPMENT.md](../DEVELOPMENT.md) first.
 - Check `browser.log` and `environment.log` before claiming a browser version or
   architecture was tested. Keep resolver/unit/controlled-stub checks distinct
   from actual browser runtime verification.
-- `metadata.json` records the channel-check status. An offline `unverified` run
+- The local shared-image harness writes `metadata.json` with channel-check status. An offline `unverified` run
   validates the installed browser, not its agreement with the current release channel.
 - The ESR profile tracks Mozilla’s primary `FIREFOX_ESR` branch; it uses a real
   ESR binary at `/opt/firefox-esr/firefox`, alongside Stable at `/opt/firefox/firefox`
@@ -32,3 +32,20 @@ python3 -m unittest discover -s docker/selenium-ci -p 'test_*.py'
 Browser version overrides belong to the image build tool,
 [build_image.py](../docker/selenium-ci/build_image.py). Keep the normal test
 interface limited to `PROFILE`, `BROWSER` and pytest arguments.
+
+CI uses [run-official.sh](../docker/selenium-ci/run-official.sh) inside official
+Firefox/Chromium images, with test extensions downloaded from the same run's
+build artifact. Tests run as `seluser` with distro-compatible Python / APT GI, on the
+same Xvfb and D-Bus session as the browser. ESR is installed from Mozilla APT
+using the primary channel's major, rather than APT's potentially newer next ESR.
+There is no CI image build or remote freshness check. Preserve actual browser
+version checks: Chromium requires matching driver major; CfT requires its exact
+browser/driver pair. Older local geckodriver needs Firefox's system-access
+argument; newer geckodriver requires its own `--allow-system-access` flag.
+The official Chromium image mixes Debian sid packages into its base and removes
+the Debian APT source. Restore that source for matching GI/GLib packages; do not
+downgrade browser libraries to satisfy Ubuntu's GI dependencies. Firefox uses
+Ubuntu's Python 3.12 for its GI bindings.
+Replace the Chromium image's Ubuntu PPA Python with the distro packages before
+installing GI: its monolithic files otherwise conflict with Debian's minimal
+Python packages. These changes are limited to the disposable CI container.

@@ -33,6 +33,7 @@ E2E_HELPER_EXTENSION_PATH = os.path.join(os.path.dirname(os.path.abspath(__file_
 FIREFOX_EXTENSION_UUID = "11111111-1111-4111-8111-111111111111"
 E2E_HELPER_EXTENSION_UUID = "22222222-2222-4222-8222-222222222222"
 CHROME_WINDOW_CLASS = "copy-as-markdown-e2e"
+CHROME_BROWSER = "chromium" if os.environ.get("BROWSER") == "chromium" else "cft"
 
 _selenium_config = None
 _browser_results = {}
@@ -48,6 +49,10 @@ def pytest_report_header(config):
     if os.environ.get("BROWSER"):
         if os.environ.get("PROFILE") == "esr":
             return f"Firefox ESR {os.environ['FIREFOX_VERSION']} | selected: firefox"
+        if os.environ["BROWSER"] == "chromium":
+            return f"Chromium {os.environ['CHROMIUM_VERSION']} | selected: chromium"
+        if os.environ["BROWSER"] == "firefox":
+            return f"Firefox {os.environ['FIREFOX_VERSION']} | selected: firefox"
         return (f"Firefox {os.environ['FIREFOX_VERSION']} | "
                 f"Chrome for Testing {os.environ['CFT_VERSION']} | "
                 f"selected: {os.environ['BROWSER']}")
@@ -57,7 +62,7 @@ def pytest_collection_modifyitems(items):
     if not os.environ.get("BROWSER"):
         return
     for item in items:
-        browser = "cft" if item.path.name == "test_chrome_smoke.py" else "firefox"
+        browser = CHROME_BROWSER if item.path.name == "test_chrome_smoke.py" else "firefox"
         item._nodeid += f"[{browser}]"
         item.user_properties.extend([("browser", browser),
                                      ("browser_version", os.environ[browser.upper() + "_VERSION"])])
@@ -66,7 +71,7 @@ def pytest_collection_modifyitems(items):
 def pytest_runtest_logreport(report):
     if not os.environ.get("BROWSER"):
         return
-    browser = "cft" if report.nodeid.endswith("[cft]") else "firefox"
+    browser = CHROME_BROWSER if report.nodeid.endswith(f"[{CHROME_BROWSER}]") else "firefox"
     outcomes = _browser_results.setdefault(browser, {})
     if report.failed:
         outcomes[report.nodeid] = "failed"
@@ -79,7 +84,7 @@ def pytest_runtest_logreport(report):
 
 def pytest_collectreport(report):
     if os.environ.get("BROWSER") and report.failed:
-        browser = "cft" if "test_chrome_smoke.py" in report.nodeid else "firefox"
+        browser = CHROME_BROWSER if "test_chrome_smoke.py" in report.nodeid else "firefox"
         _browser_results.setdefault(browser, {})[report.nodeid] = "collection errors"
 
 
@@ -87,7 +92,7 @@ def pytest_terminal_summary(terminalreporter):
     if not os.environ.get("BROWSER"):
         return
     terminalreporter.section("Selenium browser summary")
-    for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing")):
+    for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing"), ("chromium", "Chromium")):
         if browser == "firefox" and os.environ.get("PROFILE") == "esr":
             name = "Firefox ESR"
         outcomes = _browser_results.get(browser)
@@ -106,7 +111,8 @@ def _log_browser_version(message):
     else:
         print(f"[Session] {message}", flush=True)
     if os.environ.get("BROWSER"):
-        results_dir = os.path.join(_ROOT_DIR, "test-results")
+        junit_path = getattr(_selenium_config.option, "xmlpath", None) if _selenium_config else None
+        results_dir = os.path.dirname(os.path.abspath(junit_path)) if junit_path else os.path.join(_ROOT_DIR, "test-results")
         os.makedirs(results_dir, exist_ok=True)
         with open(os.path.join(results_dir, "browser.log"), "a", encoding="utf-8") as log:
             log.write(message + "\n")
@@ -470,14 +476,6 @@ def _browser_environment(force_accessibility: bool):
         if firefox_binary is None:
             raise RuntimeError("Firefox not found; set FIREFOX_BINARY to its executable")
         firefox_options.binary_location = firefox_binary
-        # Firefox 153+ requires system access for navigation to extension pages.
-        # https://bugzilla.mozilla.org/show_bug.cgi?id=2048451
-        # The Firefox CLI flag was introduced in Firefox 138:
-        # https://firefox-source-docs.mozilla.org/remote/Prefs.html#remote-system-access-check-enabled
-        # Pass this to Firefox directly: the Docker image uses geckodriver 0.35,
-        # which predates geckodriver's --allow-system-access flag.
-        firefox_options.add_argument("--remote-allow-system-access")
-
         # Explicitly locate geckodriver so Selenium Manager is not invoked.
         # Selenium Manager does not support linux/aarch64 and will raise
         # WebDriverException on ARM-based Linux hosts (e.g. OrbStack on Apple
@@ -485,7 +483,15 @@ def _browser_environment(force_accessibility: bool):
         geckodriver_path = shutil.which("geckodriver")
         if geckodriver_path is None:
             raise RuntimeError("geckodriver not found on PATH; install it (e.g. apt install firefox-geckodriver)")
-        firefox_service = FirefoxService(executable_path=geckodriver_path)
+        # New geckodriver rejects system-access capabilities; older local images
+        # need the Firefox argument. Both enable navigation to extension pages.
+        driver_help = subprocess.check_output([geckodriver_path, "--help"], text=True)
+        service_args = []
+        if "--allow-system-access" in driver_help:
+            service_args.append("--allow-system-access")
+        else:
+            firefox_options.add_argument("--remote-allow-system-access")
+        firefox_service = FirefoxService(executable_path=geckodriver_path, service_args=service_args)
 
         driver = webdriver.Firefox(options=firefox_options, service=firefox_service)
         actual_version = driver.capabilities["browserVersion"]
@@ -540,7 +546,7 @@ def _chrome_browser_environment():
                         or shutil.which("google-chrome"))
         chromedriver_path = os.environ.get("CHROMEDRIVER_BINARY") or shutil.which("chromedriver")
         if not all(path and os.access(path, os.X_OK) for path in (chromium_bin, chromedriver_path)):
-            if os.environ.get("CI") or os.environ.get("BROWSER") == "cft":
+            if os.environ.get("CI") or os.environ.get("BROWSER") in ("cft", "chromium"):
                 raise RuntimeError("Selected Chrome binary/driver missing; set CHROME_BINARY and CHROMEDRIVER_BINARY")
             pytest.skip("chromium/chromedriver not found on PATH")
 
@@ -567,10 +573,14 @@ def _chrome_browser_environment():
         driver = webdriver.Chrome(options=options, service=service)
         actual_version = driver.capabilities["browserVersion"]
         driver_version = driver.capabilities["chrome"]["chromedriverVersion"].split()[0]
-        expected_version = os.environ.get("CFT_VERSION")
-        _log_browser_version(f"Chrome for Testing session version: {actual_version}; driver: {driver_version}; binary: {chromium_bin}")
-        if expected_version and (actual_version != expected_version or driver_version != expected_version):
-            raise RuntimeError(f"CfT version mismatch: expected {expected_version}, "
+        expected_version = os.environ.get(CHROME_BROWSER.upper() + "_VERSION")
+        name = "Chromium" if CHROME_BROWSER == "chromium" else "Chrome for Testing"
+        _log_browser_version(f"{name} session version: {actual_version}; driver: {driver_version}; binary: {chromium_bin}")
+        if CHROME_BROWSER == "chromium" and driver_version.split(".")[0] != actual_version.split(".")[0]:
+            raise RuntimeError(f"Chromium/driver major mismatch: {actual_version}, {driver_version}")
+        if expected_version and (actual_version != expected_version or
+                                 (CHROME_BROWSER == "cft" and driver_version != expected_version)):
+            raise RuntimeError(f"{name} version mismatch: expected {expected_version}, "
                                f"browser {actual_version}, driver {driver_version}")
         env = ChromeBrowserEnvironment(driver)
         # Wait for the background listeners to be registered (the __listenersReady

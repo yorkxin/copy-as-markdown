@@ -42,6 +42,14 @@ jobs:
       - run: npm install -g web-ext # build tool
       - run: npm run package-chrome
       - run: npm run package-firefox-mv3
+      - run: npm run test:e2e:build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: selenium-test-extensions
+          path: |
+            chrome-test/
+            firefox-test/
+          retention-days: 1
 
   playwright:
     runs-on: ubuntu-latest
@@ -81,26 +89,34 @@ jobs:
     name: Selenium ${{ matrix.browser }} (${{ matrix.profile }})
     runs-on: ubuntu-latest
     needs: build
-    # Allow for the uncached image build and the complete Selenium suite.
-    timeout-minutes: 25
+    timeout-minutes: 10
+    container:
+      image: ${{ matrix.image }}
+      options: --user root --ipc=host
     strategy:
       fail-fast: false
       matrix:
         include:
           - browser: firefox
             profile: "esr"
+            image: selenium/standalone-firefox:latest
           - browser: firefox
             profile: "latest"
-          - browser: cft
+            image: selenium/standalone-firefox:latest
+          - browser: chromium
             profile: "latest"
+            image: selenium/standalone-chromium:latest
     steps:
       - uses: actions/checkout@v6
-      - name: Run selected Selenium browser suite (Docker)
-        # Both profiles share one image; the profile selects Stable or ESR Firefox.
+      - uses: actions/download-artifact@v5
+        with:
+          name: selenium-test-extensions
+      - name: Run selected Selenium browser suite
         env:
           BROWSER: ${{ matrix.browser }}
           PROFILE: ${{ matrix.profile }}
-        run: bash docker/selenium-ci/docker-e2e.sh
+          SELENIUM_BASE_IMAGE: ${{ matrix.image }}
+        run: bash docker/selenium-ci/run-official.sh
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:

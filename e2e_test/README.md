@@ -19,7 +19,12 @@ BROWSER=cft npm run test:e2e:selenium:docker
 
 One image contains Firefox Stable, Firefox ESR and CfT Stable. The default runs
 both Stable browsers in one session. `PROFILE=esr` selects Mozilla's current
-primary ESR instead. CI tests Firefox Stable, CfT Stable and Firefox ESR.
+primary ESR instead.
+
+CI runs Firefox, Chromium and primary Firefox ESR using official Selenium images,
+installing test utilities with APT. It reuses test extensions from the build job.
+Stable browsers use the versions shipped in those images, which may lag Stable.
+The local commands above retain the shared image and CfT version selection.
 
 To run a subset of test cases, pass pytest arguments after `--`:
 
@@ -38,13 +43,14 @@ npm run test:e2e:selenium:build-image
 
 Older patches within the same major are accepted. If metadata is unavailable,
 local runs reuse an existing image with a warning. Creating or updating an image
-requires network access. CI requires the channel check to succeed.
+requires network access. This check applies to the local shared image; CI does
+not perform a remote freshness check.
 
 ## Results
 
 The terminal shows browser versions, test results and skip reasons. Reports are
 saved in `test-results/selenium-<profile>-<browser>/` (`browser` is `all`,
-`firefox` or `cft`), replacing the previous run there.
+`firefox`, `cft` or CI's `chromium`), replacing the previous run there.
 
 Read `junit.xml` for test results, `run.log` for test failures and `build.log`
 for image-build failures. `browser.log` and `environment.log` record the tested

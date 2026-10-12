@@ -182,6 +182,7 @@ BROWSER=cft npm run test:e2e:selenium:docker
 
 See [the Selenium README](e2e_test/README.md) for browser/version selection,
 running a subset, architecture requirements and reading test reports.
+CI runs Firefox, Chromium and Firefox ESR in official Selenium images.
 
 ## Debugging the extension
 
