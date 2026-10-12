@@ -2,6 +2,11 @@
 set -euo pipefail
 
 export FORCE_COLOR=1
+if [[ "${PROFILE:-latest}" == esr ]]; then
+  export FIREFOX_VERSION="$FIREFOX_ESR_VERSION"
+  export FIREFOX_BINARY=/opt/firefox-esr/firefox
+  export BROWSER=firefox
+fi
 export BROWSER="${BROWSER:-all}"
 case "$BROWSER" in
   all) pytest_targets=(e2e_test/) ;;
@@ -15,7 +20,7 @@ mkdir -p test-results
   echo "Environment: Firefox $FIREFOX_VERSION + Chrome for Testing ${CFT_VERSION:-not installed}; tests: $BROWSER; architecture: $(uname -m)"
   "$FIREFOX_BINARY" --version
   geckodriver --version
-  cat /opt/firefox/archive.sha256
+  cat "$(dirname "$FIREFOX_BINARY")/archive.sha256"
   if [[ -n "${CFT_VERSION:-}" ]]; then
     "$CHROME_BINARY" --version
     "$CHROMEDRIVER_BINARY" --version

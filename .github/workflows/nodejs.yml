@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Run selected Selenium browser suite (Docker)
-        # Stable contains both browsers; ESR contains Firefox only.
+        # Both profiles share one image; the profile selects Stable or ESR Firefox.
         env:
           BROWSER: ${{ matrix.browser }}
           PROFILE: ${{ matrix.profile }}

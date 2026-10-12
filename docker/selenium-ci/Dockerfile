@@ -77,20 +77,25 @@ ARG TARGETARCH
 ARG CFT_VERSION
 RUN SELENIUM_BROWSER=cft bash /usr/local/bin/install-browser.sh
 
-FROM runtime AS firefox-environment
-ARG FIREFOX_VERSION
-ENV PROFILE=esr
-ENV BROWSER=firefox
-ENV FIREFOX_VERSION=${FIREFOX_VERSION}
-COPY --from=firefox-browser /opt/firefox /opt/firefox
-COPY --from=firefox-browser /usr/local/bin/geckodriver /usr/local/bin/geckodriver
-USER appuser
-ENTRYPOINT ["/usr/local/bin/run-selenium.sh"]
+FROM common AS firefox-esr-browser
+ARG TARGETARCH
+ARG FIREFOX_ESR_VERSION
+ARG GECKODRIVER_VERSION=0.35.0
+RUN FIREFOX_VERSION="$FIREFOX_ESR_VERSION" SELENIUM_BROWSER=firefox bash /usr/local/bin/install-browser.sh
 
-FROM firefox-environment AS environment
+FROM runtime AS environment
+ARG FIREFOX_VERSION
+ARG FIREFOX_ESR_VERSION
 ARG CFT_VERSION
 ENV PROFILE=latest
 ENV BROWSER=all
+ENV FIREFOX_VERSION=${FIREFOX_VERSION}
+ENV FIREFOX_ESR_VERSION=${FIREFOX_ESR_VERSION}
 ENV CFT_VERSION=${CFT_VERSION}
+COPY --from=firefox-browser /opt/firefox /opt/firefox
+COPY --from=firefox-esr-browser /opt/firefox /opt/firefox-esr
+COPY --from=firefox-browser /usr/local/bin/geckodriver /usr/local/bin/geckodriver
 COPY --from=cft-browser /opt/cft /opt/cft
 COPY --from=cft-browser /usr/local/bin/chromedriver /usr/local/bin/chromedriver
+USER appuser
+ENTRYPOINT ["/usr/local/bin/run-selenium.sh"]

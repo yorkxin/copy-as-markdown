@@ -45,7 +45,7 @@ if args[0] in ("version", "info"): sys.exit("Engine detection is unsupported")
 if args[:2] == ["image", "inspect"]:
     if "--format" in args: print("controlled-image"); sys.exit(0)
     if not os.environ.get("INSTALLED_FIREFOX"): sys.exit(1)
-    print(json.dumps([{"Config": {"Env": ["FIREFOX_VERSION=" + os.environ["INSTALLED_FIREFOX"], "CFT_VERSION=" + os.environ.get("INSTALLED_CFT", "154.0.8037.91")]}}]))
+    print(json.dumps([{"Config": {"Env": ["FIREFOX_VERSION=" + os.environ["INSTALLED_FIREFOX"], "CFT_VERSION=" + os.environ.get("INSTALLED_CFT", "154.0.8037.91"), "FIREFOX_ESR_VERSION=" + os.environ.get("INSTALLED_ESR", "140.17.0esr")]}}]))
 if args[0] == "run" and os.environ.get("WAIT_RUN"):
     import time
     time.sleep(60)
@@ -73,7 +73,7 @@ if args[0] in ("build", "run"):
         self.assertEqual(len(self.runs), 1)
         self.assertIn("BROWSER=all", self.runs[0])
         self.assertEqual(self.runs[0][-2:], ["-k", "link or image"])
-        self.assertIn("Firefox 157.0 + Chrome for Testing 154.0.8037.92", result.stdout)
+        self.assertIn("Firefox 157.0 + Firefox ESR 140.17.0esr + Chrome for Testing 154.0.8037.92", result.stdout)
 
     def test_engine_selects_native_platform_and_reports_are_selinux_labelled(self):
         result = self.run_harness()
@@ -92,7 +92,7 @@ if args[0] in ("build", "run"):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(len(self.runs), 1)
         self.assertIn("BROWSER=cft", self.runs[0])
-        self.assertIn("Firefox 157.0 + Chrome for Testing", result.stdout)
+        self.assertIn("Firefox 157.0 + Firefox ESR 140.17.0esr + Chrome for Testing", result.stdout)
 
     def test_version_override_is_rejected_by_test_entry(self):
         result = self.run_harness({"FIREFOX_VERSION": "139"})
@@ -100,21 +100,25 @@ if args[0] in ("build", "run"):
         self.assertFalse(self.runs)
 
     def test_image_builder_supports_major_override(self):
-        result = self.run_harness({"FIREFOX_VERSION": "139"}, build_only=True)
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertFalse(self.runs)
-        self.assertIn("Firefox 139.0.4", result.stdout)
+        for firefox, cft in (("139", "154"), ("139.0.4", "154.0.8037.92")):
+            with self.subTest(firefox=firefox, cft=cft):
+                result = self.run_harness({"FIREFOX_VERSION": firefox, "CFT_VERSION": cft}, build_only=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse(self.runs)
+                self.assertIn("Firefox 139.0.4 + Firefox ESR 140.17.0esr", result.stdout)
 
-    def test_esr_image_has_only_firefox_and_uses_firefox_target(self):
+    def test_esr_uses_shared_image_but_tests_only_firefox(self):
         result = self.run_harness({"PROFILE": "esr"})
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("BROWSER=firefox", self.runs[0])
         self.assertIn("Firefox ESR 140.17.0esr", result.stdout)
-        self.assertNotIn("Chrome for Testing", result.stdout)
+        self.assertIn("Chrome for Testing", result.stdout)
         calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
         environment = next(c for c in calls if c[0] == "build")
-        self.assertIn("firefox-environment", environment)
-        self.assertFalse(any("CFT_VERSION=" in arg for arg in environment))
+        self.assertIn("environment", environment)
+        self.assertIn("FIREFOX_ESR_VERSION=140.17.0esr", environment)
+        self.assertIn("CFT_VERSION=154.0.8037.92", environment)
+        self.assertIn("copy-as-markdown-selenium-env:latest", environment)
 
     def test_esr_cannot_select_chrome(self):
         result = self.run_harness({"PROFILE": "esr", "BROWSER": "cft"})
@@ -122,16 +126,36 @@ if args[0] in ("build", "run"):
         self.assertFalse(self.runs)
 
     def test_cached_esr_accepts_old_patch_without_chrome_resolution(self):
-        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "140.16.0esr",
-                                   "INSTALLED_CFT": "", "FAIL_RESOLVE": "resolve_cft.py"})
+        result = self.run_harness({"PROFILE": "esr", "BROWSER": "all",
+                                   "INSTALLED_FIREFOX": "156.0", "INSTALLED_CFT": "153.0.1.2",
+                                   "INSTALLED_ESR": "140.16.0esr", "FAIL_RESOLVE": "resolve_cft.py"})
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Firefox ESR 140.16.0esr", result.stdout)
+        self.assertIn("BROWSER=firefox", self.runs[0])
+
+    def test_profiles_reuse_same_complete_environment(self):
+        for profile in ("latest", "esr"):
+            with self.subTest(profile=profile):
+                result = self.run_harness({"PROFILE": profile, "INSTALLED_FIREFOX": "157.0"})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
+                builds = [c for c in calls if c[0] == "build"]
+                self.assertEqual(len(builds), 1)
+                self.assertIn("SELENIUM_BASE_IMAGE=copy-as-markdown-selenium-env:latest", builds[0])
+
+    def test_split_environment_is_replaced(self):
+        result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_ESR": ""})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
+        builds = [c for c in calls if c[0] == "build"]
+        self.assertEqual(len(builds), 2)
+        self.assertIn("FIREFOX_ESR_VERSION=140.17.0esr", builds[0])
 
     def test_cached_major_mismatches_stop_before_running(self):
         cases = (
             {"INSTALLED_FIREFOX": "156.0"},
             {"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2"},
-            {"PROFILE": "esr", "INSTALLED_FIREFOX": "153.4.0esr", "INSTALLED_CFT": ""},
+            {"PROFILE": "esr", "INSTALLED_FIREFOX": "157.0", "INSTALLED_ESR": "153.4.0esr"},
             {"INSTALLED_FIREFOX": "156.0", "FAIL_RESOLVE": "resolve_cft.py"},
             {"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2", "FAIL_RESOLVE": "resolve_firefox.py"},
         )
@@ -144,8 +168,7 @@ if args[0] in ("build", "run"):
                 self.assertIn("test:e2e:selenium:build-image", result.stderr)
 
     def test_esr_rejects_cached_ordinary_firefox(self):
-        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "140.17.0",
-                                   "INSTALLED_CFT": ""})
+        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "157.0", "INSTALLED_ESR": "140.17.0"})
         self.assertNotEqual(result.returncode, 0)
         self.assertFalse(self.runs)
         self.assertIn("must contain an ESR release", result.stderr)
@@ -158,8 +181,8 @@ if args[0] in ("build", "run"):
             for ci in ("", "true"):
                 with self.subTest(profile=profile, ci=ci):
                     result = self.run_harness({"PROFILE": profile, "CI": ci,
-                        "INSTALLED_FIREFOX": version,
-                        "INSTALLED_CFT": "" if profile == "esr" else "154.0.8037.91",
+                        "INSTALLED_FIREFOX": "157.0",
+                        "INSTALLED_ESR": version if profile == "esr" else "140.17.0esr",
                         "FAIL_RESOLVE": failed_resolver})
                     self.assertEqual(result.returncode, 1 if ci else 0, result.stderr)
                     self.assertEqual(len(self.runs), 0 if ci else 1)

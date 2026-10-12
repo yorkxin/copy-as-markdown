@@ -13,7 +13,10 @@ Read [CLAUDE.md](../CLAUDE.md) and [DEVELOPMENT.md](../DEVELOPMENT.md) first.
 - `metadata.json` records the channel-check status. An offline `unverified` run
   validates the installed browser, not its agreement with the current release channel.
 - The ESR profile tracks Mozilla’s primary `FIREFOX_ESR` branch; it uses a real
-  ESR binary. Additional supported branches during ESR transitions are a separate
+  ESR binary at `/opt/firefox-esr/firefox`, alongside Stable at `/opt/firefox/firefox`
+  and CfT in the shared environment image. Check only the selected profile's
+  channels when reusing it; rebuilding refreshes all three browser installations.
+  Additional supported branches during ESR transitions are a separate
   scope decision. Do not introduce cross-architecture emulation or special
   handling of shell platform overrides.
 

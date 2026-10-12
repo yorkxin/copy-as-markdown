@@ -17,9 +17,9 @@ BROWSER=firefox npm run test:e2e:selenium:docker
 BROWSER=cft npm run test:e2e:selenium:docker
 ```
 
-The default runs both browsers in one session. `latest` uses the Stable versions
-installed when the image was built. `esr` runs Firefox only, using Mozilla's
-current primary ESR channel. CI tests Firefox Stable, CfT Stable and Firefox ESR.
+One image contains Firefox Stable, Firefox ESR and CfT Stable. The default runs
+both Stable browsers in one session. `PROFILE=esr` selects Mozilla's current
+primary ESR instead. CI tests Firefox Stable, CfT Stable and Firefox ESR.
 
 To run a subset of test cases, pass pytest arguments after `--`:
 
@@ -29,12 +29,11 @@ BROWSER=firefox npm run test:e2e:selenium:docker -- -k test_current_tab
 
 ## Version checking
 
-The installed major must match its current channel: Stable for `latest`, ESR for
-`esr`. If it differs, refresh the corresponding image:
+The selected profile's installed majors must match their current channels:
+Stable for `latest`, ESR for `esr`. If they differ, refresh the shared image:
 
 ```sh
 npm run test:e2e:selenium:build-image
-PROFILE=esr npm run test:e2e:selenium:build-image
 ```
 
 Older patches within the same major are accepted. If metadata is unavailable,

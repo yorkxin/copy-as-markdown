@@ -1,4 +1,4 @@
-"""Build/reuse a two-browser environment and run the current checkout once."""
+"""Reuse one Stable/ESR browser environment and run the current checkout once."""
 import json
 import os
 from pathlib import Path
@@ -9,6 +9,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPTS = ROOT / "docker/selenium-ci"
 BROWSERS = ("firefox", "cft")
+IMAGE_BROWSERS = ("firefox", "firefox_esr", "cft")
 
 
 def capture(command):
@@ -43,7 +44,7 @@ def image_versions(image):
         return None
     info = json.loads(inspection.stdout)[0]
     env = dict(item.split("=", 1) for item in info["Config"]["Env"] if "=" in item)
-    return {b: env[b.upper() + "_VERSION"] for b in BROWSERS if env.get(b.upper() + "_VERSION")}
+    return {b: env[b.upper() + "_VERSION"] for b in IMAGE_BROWSERS if env.get(b.upper() + "_VERSION")}
 
 
 def check_stable_majors(installed, stable):
@@ -56,6 +57,8 @@ def check_stable_majors(installed, stable):
 
 
 def resolve(browser, requested):
+    if browser == "firefox_esr":
+        browser, requested = "firefox", "esr"
     return json.loads(capture([sys.executable, str(SCRIPTS / f"resolve_{browser}.py"),
                                requested]))
 
@@ -70,7 +73,7 @@ def main(build_only=False):
         raise ValueError(f"Unsupported Selenium browser: {selector}")
     if profile == "esr":
         if selector == "cft":
-            raise ValueError("PROFILE=esr contains Firefox only; BROWSER=cft is unavailable")
+            raise ValueError("PROFILE=esr tests Firefox ESR only; BROWSER=cft is unavailable")
         selector = "firefox"
     if profile == "custom" and not build_only:
         raise ValueError("Custom versions belong to npm run test:e2e:selenium:build-image")
@@ -84,20 +87,21 @@ def main(build_only=False):
     results.chmod(0o1777)
     for name in ("junit.xml", "browser.log", "run.log", "build.log", "metadata.json", "environment.log"):
         (results / name).unlink(missing_ok=True)
-    image = f"copy-as-markdown-selenium-env:{profile}"
+    image = "copy-as-markdown-selenium-env:latest"
     installed = image_versions(image) if profile != "custom" else None
-    browsers = ("firefox",) if profile == "esr" else BROWSERS
-    if installed and set(installed) != set(browsers):
-        raise ValueError(f"Image {image} must contain {browsers}; rebuild its environment")
-    if installed and profile == "esr" and not installed["firefox"].endswith("esr"):
+    # Older split images lack ESR; replace them through the normal build path.
+    if installed and set(installed) != set(IMAGE_BROWSERS):
+        installed = None
+    browsers = ("firefox_esr",) if profile == "esr" else BROWSERS
+    if installed and not installed["firefox_esr"].endswith("esr"):
         raise ValueError("ESR image must contain an ESR release; rebuild its environment")
     stable = {}
     stable_check = {"status": "not_applicable"}
     if profile in ("latest", "esr"):
         stable_check = {"status": "verified", "browsers": {}}
-        for browser in browsers:
+        for browser in IMAGE_BROWSERS if build_only or not installed else browsers:
             try:
-                release = resolve(browser, "esr" if profile == "esr" else "latest")
+                release = resolve(browser, "latest")
             except (subprocess.CalledProcessError, ValueError, KeyError, OSError) as error:
                 if build_only or not installed or os.environ.get("CI", "").lower() in ("true", "1"):
                     raise ValueError(f"Cannot verify {browser} {profile} channel metadata; stopping "
@@ -115,24 +119,22 @@ def main(build_only=False):
     if not needs_build:
         releases = {b: {"version": v} for b, v in installed.items()}
     elif profile == "custom":
-        releases = {b: resolve(b, os.environ.get(b.upper() + "_VERSION", "latest")) for b in browsers}
-        image = f"copy-as-markdown-selenium-env:ff-{releases['firefox']['version']}-cft-{releases['cft']['version']}"
+        releases = {b: resolve(b, os.environ.get(b.upper() + "_VERSION", "latest")) for b in IMAGE_BROWSERS}
+        image = (f"copy-as-markdown-selenium-env:ff-{releases['firefox']['version']}"
+                 f"-esr-{releases['firefox_esr']['version']}-cft-{releases['cft']['version']}")
     else:
         releases = stable
     versions = {b: r["version"] for b, r in releases.items()}
     metadata = {"profile": profile, "image": image,
                 "browsers": releases, "stable": stable, "stable_check": stable_check}
     (results / "metadata.json").write_text(json.dumps(metadata, indent=2))
-    identity = f"Firefox {versions['firefox']}" if profile != "esr" else f"Firefox ESR {versions['firefox']}"
-    if "cft" in versions:
-        identity += f" + Chrome for Testing {versions['cft']}"
+    identity = (f"Firefox {versions['firefox']} + Firefox ESR {versions['firefox_esr']}"
+                f" + Chrome for Testing {versions['cft']}")
     print(f"[Environment] {profile}: {identity}; tests: {selector}", flush=True)
     if needs_build:
-        target = "firefox-environment" if profile == "esr" else "environment"
-        args = ["docker", "build", "--target", target,
-                "--build-arg", f"FIREFOX_VERSION={versions['firefox']}"]
-        if "cft" in versions:
-            args.extend(["--build-arg", f"CFT_VERSION={versions['cft']}"])
+        args = ["docker", "build", "--target", "environment"]
+        for browser, version in versions.items():
+            args.extend(["--build-arg", f"{browser.upper()}_VERSION={version}"])
         args.extend(["-t", image, "-f", str(SCRIPTS / "Dockerfile"), str(ROOT)])
         run(args, results / "build.log")
     if build_only:
