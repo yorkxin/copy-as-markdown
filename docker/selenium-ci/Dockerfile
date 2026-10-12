@@ -1,9 +1,5 @@
 FROM python:3.14-slim AS common
 
-# The label lets docker-e2e.sh prune only images orphaned by this project's
-# own rebuilds, without touching dangling images from other projects.
-LABEL com.copy-as-markdown.image=selenium-e2e
-
 ENV DEBIAN_FRONTEND=noninteractive
 ENV CI=true
 

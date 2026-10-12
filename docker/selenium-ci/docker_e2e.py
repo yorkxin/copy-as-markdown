@@ -76,9 +76,7 @@ def main(build_only=False):
         raise ValueError("Custom versions belong to npm run test:e2e:selenium:build-image")
     if overrides and profile != "custom":
         raise ValueError("Version overrides require PROFILE=custom (or omit the profile)")
-    if not build_only and any(name in os.environ for name in
-                             ("FIREFOX_VERSION", "CFT_VERSION", "SELENIUM_IMAGE", "SELENIUM_REBUILD",
-                              "SELENIUM_PROFILE", "SELENIUM_BROWSER")):
+    if not build_only and any(name in os.environ for name in ("FIREFOX_VERSION", "CFT_VERSION")):
         raise ValueError("Use PROFILE/BROWSER for tests; version overrides belong to the image build command")
     results = ROOT / (f"test-results/selenium-image-{profile}" if build_only else
                       f"test-results/selenium-{profile}-{selector}")
@@ -116,17 +114,12 @@ def main(build_only=False):
     needs_build = build_only or not installed
     if not needs_build:
         releases = {b: {"version": v} for b, v in installed.items()}
+    elif profile == "custom":
+        releases = {b: resolve(b, os.environ.get(b.upper() + "_VERSION", "latest")) for b in browsers}
+        image = f"copy-as-markdown-selenium-env:ff-{releases['firefox']['version']}-cft-{releases['cft']['version']}"
     else:
-        if profile in ("latest", "esr"):
-            requested = {b: stable[b]["version"] for b in browsers}
-        else:
-            requested = {b: os.environ.get(b.upper() + "_VERSION", "latest") for b in browsers}
-        releases = {b: resolve(b, v) for b, v in requested.items()}
-        if profile == "custom":
-            image = f"copy-as-markdown-selenium-env:ff-{releases['firefox']['version']}-cft-{releases['cft']['version']}"
+        releases = stable
     versions = {b: r["version"] for b, r in releases.items()}
-    if stable:
-        check_stable_majors(versions, stable)
     metadata = {"profile": profile, "image": image,
                 "browsers": releases, "stable": stable, "stable_check": stable_check}
     (results / "metadata.json").write_text(json.dumps(metadata, indent=2))

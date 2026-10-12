@@ -26,6 +26,8 @@ name = os.path.basename(__file__)
 if os.environ.get("FAIL_RESOLVE") == name:
     sys.exit("controlled metadata failure")
 requested = sys.argv[1]
+if os.environ.get("FAIL_EXACT_RESOLVE") and requested not in ("latest", "esr"):
+    sys.exit("Unexpected second host resolution")
 version = ("140.17.0esr" if requested == "esr" else "157.0" if requested == "latest" else "139.0.4" if requested == "139" else requested) if "firefox" in name else ("154.0.8037.92" if requested in ("latest", "154") else requested)
 print(json.dumps({"requested": requested, "version": version, "chrome_url": "https://example.invalid/chrome", "chromedriver_url": "https://example.invalid/driver"}))
 '''
@@ -53,8 +55,9 @@ if args[0] in ("build", "run"):
         docker.chmod(0o755)
 
     def run_harness(self, env=None, args=(), build_only=False):
+        self.calls.unlink(missing_ok=True)
         task_env = {k: v for k, v in os.environ.items() if k not in
-                    ("BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM", "PROFILE", "SELENIUM_IMAGE", "SELENIUM_REBUILD", "CI")}
+                    ("BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM", "PROFILE", "CI")}
         task_env.update({"PATH": str(self.bin) + os.pathsep + os.environ["PATH"], "CALLS": str(self.calls)})
         task_env.update(env or {})
         command = [sys.executable, str(self.harness.with_name("build_image.py"))] if build_only else ["bash", str(self.harness)]
@@ -124,12 +127,21 @@ if args[0] in ("build", "run"):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Firefox ESR 140.16.0esr", result.stdout)
 
-    def test_esr_compares_primary_esr_major_not_stable_major(self):
-        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "153.4.0esr",
-                                   "INSTALLED_CFT": ""})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
-        self.assertIn("major mismatch", result.stderr)
+    def test_cached_major_mismatches_stop_before_running(self):
+        cases = (
+            {"INSTALLED_FIREFOX": "156.0"},
+            {"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2"},
+            {"PROFILE": "esr", "INSTALLED_FIREFOX": "153.4.0esr", "INSTALLED_CFT": ""},
+            {"INSTALLED_FIREFOX": "156.0", "FAIL_RESOLVE": "resolve_cft.py"},
+            {"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2", "FAIL_RESOLVE": "resolve_firefox.py"},
+        )
+        for env in cases:
+            with self.subTest(env=env):
+                result = self.run_harness(env)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(self.runs)
+                self.assertIn("major mismatch", result.stderr)
+                self.assertIn("test:e2e:selenium:build-image", result.stderr)
 
     def test_esr_rejects_cached_ordinary_firefox(self):
         result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "140.17.0",
@@ -138,40 +150,36 @@ if args[0] in ("build", "run"):
         self.assertFalse(self.runs)
         self.assertIn("must contain an ESR release", result.stderr)
 
-    def test_esr_offline_local_fallback(self):
-        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "140.17.0esr",
-                                   "INSTALLED_CFT": "", "FAIL_RESOLVE": "resolve_firefox.py"})
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("unverified", result.stderr)
+    def test_offline_cached_profiles(self):
+        for profile, version, failed_resolver in (
+            ("latest", "157.0", "resolve_cft.py"),
+            ("esr", "140.17.0esr", "resolve_firefox.py"),
+        ):
+            for ci in ("", "true"):
+                with self.subTest(profile=profile, ci=ci):
+                    result = self.run_harness({"PROFILE": profile, "CI": ci,
+                        "INSTALLED_FIREFOX": version,
+                        "INSTALLED_CFT": "" if profile == "esr" else "154.0.8037.91",
+                        "FAIL_RESOLVE": failed_resolver})
+                    self.assertEqual(result.returncode, 1 if ci else 0, result.stderr)
+                    self.assertEqual(len(self.runs), 0 if ci else 1)
+                    if not ci:
+                        self.assertIn("unverified", result.stderr)
+                        selector = "firefox" if profile == "esr" else "all"
+                        metadata = json.loads((self.root / f"test-results/selenium-{profile}-{selector}/metadata.json").read_text())
+                        self.assertEqual(metadata["stable_check"]["status"], "unverified")
 
-    def test_esr_offline_ci_stops(self):
-        result = self.run_harness({"PROFILE": "esr", "CI": "true", "INSTALLED_FIREFOX": "140.17.0esr",
-                                   "INSTALLED_CFT": "", "FAIL_RESOLVE": "resolve_firefox.py"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
-
-    def test_minimum_profile_is_removed(self):
-        result = self.run_harness({"PROFILE": "minimum"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
+    def test_invalid_selection_never_calls_docker(self):
+        for env in ({"BROWSER": "unknown"}, {"PROFILE": "unknown"}, {"PROFILE": "minimum"}):
+            with self.subTest(env=env):
+                result = self.run_harness(env)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(self.calls.exists())
 
     def test_cached_latest_accepts_older_patch_in_same_major(self):
         result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "154.0.8037.91"})
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Chrome for Testing 154.0.8037.91", result.stdout)
-
-    def test_cached_latest_rejects_old_major_before_running(self):
-        result = self.run_harness({"INSTALLED_FIREFOX": "156.0"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
-        self.assertIn("major mismatch", result.stderr)
-        self.assertIn("test:e2e:selenium:build-image", result.stderr)
-
-    def test_cached_latest_rejects_old_cft_major(self):
-        result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
-        self.assertIn("major mismatch", result.stderr)
 
     def test_build_command_refreshes_cached_latest(self):
         result = self.run_harness({"INSTALLED_FIREFOX": "156.0"}, build_only=True)
@@ -179,37 +187,18 @@ if args[0] in ("build", "run"):
         self.assertIn("Firefox 157.0", result.stdout)
         self.assertFalse(self.runs)
 
+    def test_channel_builds_reuse_resolved_versions(self):
+        for profile in ("latest", "esr"):
+            with self.subTest(profile=profile):
+                result = self.run_harness({"PROFILE": profile, "FAIL_EXACT_RESOLVE": "1"}, build_only=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse(self.runs)
+
     def test_cached_environment_is_not_rebuilt(self):
         result = self.run_harness({"INSTALLED_FIREFOX": "157.0"})
         self.assertEqual(result.returncode, 0, result.stderr)
         calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
         self.assertEqual(len([c for c in calls if c[0] == "build"]), 1)
-
-    def test_offline_local_reuses_environment_and_records_unverified(self):
-        result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "FAIL_RESOLVE": "resolve_cft.py"})
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(len(self.runs), 1)
-        self.assertIn("unverified", result.stderr)
-        metadata = json.loads((self.root / "test-results/selenium-latest-all/metadata.json").read_text())
-        self.assertEqual(metadata["stable_check"]["status"], "unverified")
-
-    def test_offline_ci_stops_even_with_environment(self):
-        result = self.run_harness({"CI": "true", "INSTALLED_FIREFOX": "157.0", "FAIL_RESOLVE": "resolve_cft.py"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
-
-    def test_cft_unavailable_does_not_hide_firefox_major_mismatch(self):
-        result = self.run_harness({"INSTALLED_FIREFOX": "156.0", "FAIL_RESOLVE": "resolve_cft.py"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
-        self.assertIn("major mismatch", result.stderr)
-
-    def test_firefox_unavailable_still_checks_cft_major(self):
-        result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "153.0.1.2",
-                                   "FAIL_RESOLVE": "resolve_firefox.py"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.runs)
-        self.assertIn("major mismatch", result.stderr)
 
     def test_offline_without_environment_cannot_run(self):
         result = self.run_harness({"FAIL_RESOLVE": "resolve_cft.py"})
@@ -236,11 +225,6 @@ if args[0] in ("build", "run"):
         self.assertEqual(result.returncode, 5)
         self.assertIn("No tests matched", result.stderr)
 
-    def test_invalid_selector_never_calls_docker(self):
-        result = self.run_harness({"BROWSER": "unknown"})
-        self.assertNotEqual(result.returncode, 0)
-        self.assertFalse(self.calls.exists())
-
     def test_ctrl_c_stops_scheduling(self):
         self.check_signal(signal.SIGINT)
 
@@ -249,7 +233,7 @@ if args[0] in ("build", "run"):
 
     def check_signal(self, task_signal):
         task_env = dict(os.environ)
-        for key in ("BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM", "PROFILE", "SELENIUM_IMAGE", "SELENIUM_REBUILD"):
+        for key in ("BROWSER", "FIREFOX_VERSION", "CFT_VERSION", "DOCKER_DEFAULT_PLATFORM", "PROFILE"):
             task_env.pop(key, None)
         task_env.update({"PATH": str(self.bin) + os.pathsep + os.environ["PATH"],
                          "CALLS": str(self.calls), "WAIT_RUN": "1"})

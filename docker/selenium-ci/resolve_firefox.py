@@ -1,4 +1,4 @@
-"""Resolve Firefox release versions, excluding ESR/pre-release archive entries."""
+"""Resolve Firefox Stable, primary ESR, or a requested release version."""
 import json
 import re
 import sys
