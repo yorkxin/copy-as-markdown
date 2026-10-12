@@ -11,6 +11,17 @@ RELEASE_PATTERN = r"[1-9]\d*\.\d+(?:\.\d+)?"
 
 
 def channel_version(metadata, requested):
+    if requested.startswith("esr:"):
+        major = requested.removeprefix("esr:")
+        if not re.fullmatch(r"[1-9]\d*", major):
+            raise ValueError(f"Invalid ESR major: {major}")
+        versions = [version for key, version in metadata.items()
+                    if key.startswith("FIREFOX_ESR")
+                    and re.fullmatch(RELEASE_PATTERN + "esr", version)
+                    and version.split(".")[0] == major]
+        if not versions:
+            raise ValueError(f"No current Firefox ESR release for major {major}")
+        return max(versions, key=lambda v: tuple(map(int, v.removesuffix("esr").split("."))))
     key = "FIREFOX_ESR" if requested == "esr" else "LATEST_FIREFOX_VERSION"
     version = metadata[key]
     pattern = RELEASE_PATTERN + ("esr" if requested == "esr" else "")
@@ -50,7 +61,7 @@ def read_json(url):
 def main():
     requested = sys.argv[1]
     sources = []
-    if requested in ("latest", "esr"):
+    if requested in ("latest", "esr") or requested.startswith("esr:"):
         sources.append(f"{METADATA_ROOT}/firefox_versions.json")
         version = channel_version(read_json(sources[0]), requested)
     elif re.fullmatch(r"[1-9]\d*", requested):
@@ -64,7 +75,7 @@ def main():
     elif re.fullmatch(RELEASE_PATTERN + r"(?:esr)?", requested):
         version = requested
     else:
-        raise ValueError("FIREFOX_VERSION must be latest, esr, a positive major, or an exact release")
+        raise ValueError("FIREFOX_VERSION must be latest, esr, esr:MAJOR, a positive major, or an exact release")
     if not re.fullmatch(RELEASE_PATTERN + r"(?:esr)?", version):
         raise ValueError(f"Invalid Firefox release: {version}")
     print(json.dumps({"requested": requested, "version": version,

@@ -10,7 +10,7 @@ esac
 results="$PWD/test-results/selenium-$PROFILE-$BROWSER"
 mkdir -p "$results"
 chmod 1777 "$results"
-rm -f "$results"/{junit.xml,browser.log,environment.log,run.log}
+rm -f "$results"/{junit.xml,browser.log,environment.log,run.log,firefox-esr.sha256}
 exec > >(tee "$results/run.log") 2>&1
 export DEBIAN_FRONTEND=noninteractive
 # Chromium's image installs sid packages, then removes the Debian source.
@@ -34,7 +34,7 @@ if [[ "$ID" == debian ]]; then
     apt-get remove -y "$python_package" "$python_package-venv" "lib$python_package-stdlib"
   fi
 fi
-apt-get install -y --no-install-recommends "${apt_options[@]}" xsel xdotool at-spi2-core dbus \
+apt-get install -y --no-install-recommends "${apt_options[@]}" xsel xdotool at-spi2-core dbus xz-utils \
   python3-gi gir1.2-atspi-2.0 "$venv_package"
 # Use the distro's GI-compatible Python, rather than the pre-existing image venv.
 "$python_bin" -m venv --system-site-packages /tmp/selenium-test-venv
@@ -49,13 +49,32 @@ if [[ "$BROWSER" == chromium ]]; then
   "$CHROMEDRIVER_BINARY" --version
 else
   if [[ "$PROFILE" == esr ]]; then
-    # During ESR overlap APT may prefer the next branch; follow Mozilla's primary.
-    primary=$(/tmp/selenium-test-venv/bin/python -c 'import json; from urllib.request import urlopen; print(json.load(urlopen("https://product-details.mozilla.org/1.0/firefox_versions.json",timeout=30))["FIREFOX_ESR"])')
-    major="${primary%%.*}"
-    release="$(apt-cache madison firefox-esr | awk -v major="$major" '$3 ~ "^" major "\\." {print $3; exit}')"
-    test -n "$release"
-    apt-get install -y --no-install-recommends "firefox-esr=$release"
-    export FIREFOX_BINARY="$(command -v firefox-esr)"
+    resolved=$(/tmp/selenium-test-venv/bin/python docker/selenium-ci/resolve_firefox.py "esr:${FIREFOX_ESR_MAJOR:?Set FIREFOX_ESR_MAJOR in CI}")
+    version=$(/tmp/selenium-test-venv/bin/python -c 'import json,sys; print(json.load(sys.stdin)["version"])' <<< "$resolved")
+    release="$(apt-cache madison firefox-esr | awk -v version="$version" 'index($3, version "~") == 1 {print $3; exit}')"
+    if [[ -n "$release" ]] && apt-get install -y --no-install-recommends "firefox-esr=$release"; then
+      export FIREFOX_BINARY="$(command -v firefox-esr)"
+      echo "[ESR] $version installed via APT"
+    else
+      echo "[ESR] APT cannot install $version; downloading Mozilla archive"
+      case "$(dpkg --print-architecture)" in
+        amd64) archive_arch=linux-x86_64 ;;
+        arm64) archive_arch=linux-aarch64 ;;
+        *) echo 'Unsupported Firefox archive architecture' >&2; exit 1 ;;
+      esac
+      archive="$archive_arch/en-US/firefox-$version.tar.xz"
+      url="https://archive.mozilla.org/pub/firefox/releases/$version"
+      curl -fsSL --retry 3 "$url/$archive" -o /tmp/firefox-esr.tar.xz
+      curl -fsSL --retry 3 "$url/SHA256SUMS" -o /tmp/firefox-esr-SHA256SUMS
+      awk -v archive="$archive" '$2 == archive {print $1 "  /tmp/firefox-esr.tar.xz"}' \
+        /tmp/firefox-esr-SHA256SUMS > "$results/firefox-esr.sha256"
+      test "$(wc -l < "$results/firefox-esr.sha256")" -eq 1
+      sha256sum -c "$results/firefox-esr.sha256"
+      mkdir -p /opt/firefox-esr
+      tar -xJf /tmp/firefox-esr.tar.xz --strip-components=1 -C /opt/firefox-esr
+      export FIREFOX_BINARY=/opt/firefox-esr/firefox
+    fi
+    test "$("$FIREFOX_BINARY" --version)" = "Mozilla Firefox $version"
   else
     export FIREFOX_BINARY="$(command -v firefox)"
   fi

@@ -21,10 +21,12 @@ One image contains Firefox Stable, Firefox ESR and CfT Stable. The default runs
 both Stable browsers in one session. `PROFILE=esr` selects Mozilla's current
 primary ESR instead.
 
-CI runs Firefox, Chromium and primary Firefox ESR using official Selenium images,
+CI runs Firefox, Chromium and Firefox ESR using official Selenium images,
 installing test utilities with APT. It reuses test extensions from the build job.
 Stable browsers use the versions shipped in those images, which may lag Stable.
 The local commands above retain the shared image and CfT version selection.
+CI pins the ESR major with `FIREFOX_ESR_MAJOR` in the workflow and installs that
+branch's latest patch via APT, falling back to a Mozilla archive if unavailable.
 
 To run a subset of test cases, pass pytest arguments after `--`:
 

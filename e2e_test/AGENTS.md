@@ -36,8 +36,11 @@ interface limited to `PROFILE`, `BROWSER` and pytest arguments.
 CI uses [run-official.sh](../docker/selenium-ci/run-official.sh) inside official
 Firefox/Chromium images, with test extensions downloaded from the same run's
 build artifact. Tests run as `seluser` with distro-compatible Python / APT GI, on the
-same Xvfb and D-Bus session as the browser. ESR is installed from Mozilla APT
-using the primary channel's major, rather than APT's potentially newer next ESR.
+same Xvfb and D-Bus session as the browser. CI's `FIREFOX_ESR_MAJOR` pins its ESR
+branch; resolve the latest patch from Mozilla ESR metadata, then try that exact
+release in APT. If unavailable or installation fails, use the official archive
+and verify SHA256SUMS. Never silently switch the pinned major; missing channel
+metadata requires revisiting the pin. The local image still follows primary ESR.
 There is no CI image build or remote freshness check. Preserve actual browser
 version checks: Chromium requires matching driver major; CfT requires its exact
 browser/driver pair. Older local geckodriver needs Firefox's system-access
