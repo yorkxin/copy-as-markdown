@@ -49,3 +49,5 @@ Ubuntu's Python 3.12 for its GI bindings.
 Replace the Chromium image's Ubuntu PPA Python with the distro packages before
 installing GI: its monolithic files otherwise conflict with Debian's minimal
 Python packages. These changes are limited to the disposable CI container.
+When reproducing CI, include GitHub's root-owned `HOME=/github/home`. Let
+`runuser` reset HOME for `seluser`; preserving it prevents browsers from starting.

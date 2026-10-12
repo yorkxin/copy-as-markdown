@@ -71,7 +71,8 @@ fi
 } | tee "$results/environment.log"
 export CI=true GNOME_ACCESSIBILITY=1
 # Keep tests and browser in the same X11/D-Bus session for native input and clipboard.
-runuser -u seluser --preserve-environment -- dbus-run-session -- xvfb-run -a \
+# Let runuser reset HOME: GitHub's /github/home is not writable by seluser.
+runuser -u seluser -- dbus-run-session -- xvfb-run -a \
   --server-args='-screen 0 1280x720x24 -ac +extension RANDR' \
   /tmp/selenium-test-venv/bin/python -m pytest "${pytest_targets[@]}" -v -r s \
   --continue-on-collection-errors -o "cache_dir=$results/.pytest_cache" --junitxml="$results/junit.xml" "$@"
