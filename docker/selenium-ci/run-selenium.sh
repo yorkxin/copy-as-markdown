@@ -12,18 +12,22 @@ esac
 
 mkdir -p test-results
 {
-  echo "Environment: Firefox $FIREFOX_VERSION + Chrome for Testing $CFT_VERSION; tests: $BROWSER; architecture: $(uname -m)"
+  echo "Environment: Firefox $FIREFOX_VERSION + Chrome for Testing ${CFT_VERSION:-not installed}; tests: $BROWSER; architecture: $(uname -m)"
   "$FIREFOX_BINARY" --version
   geckodriver --version
   cat /opt/firefox/archive.sha256
-  "$CHROME_BINARY" --version
-  "$CHROMEDRIVER_BINARY" --version
-  cat /opt/cft/archive.sha256
+  if [[ -n "${CFT_VERSION:-}" ]]; then
+    "$CHROME_BINARY" --version
+    "$CHROMEDRIVER_BINARY" --version
+    cat /opt/cft/archive.sha256
+  fi
 } | tee test-results/browser.log
 
 test "$("$FIREFOX_BINARY" --version)" = "Mozilla Firefox $FIREFOX_VERSION"
-test "$("$CHROME_BINARY" --version | awk '{print $NF}')" = "$CFT_VERSION"
-test "$("$CHROMEDRIVER_BINARY" --version | awk '{print $2}')" = "$CFT_VERSION"
+if [[ -n "${CFT_VERSION:-}" ]]; then
+  test "$("$CHROME_BINARY" --version | awk '{print $NF}')" = "$CFT_VERSION"
+  test "$("$CHROMEDRIVER_BINARY" --version | awk '{print $2}')" = "$CFT_VERSION"
+fi
 
 echo "[docker] Building test extensions..."
 npm run test:e2e:build

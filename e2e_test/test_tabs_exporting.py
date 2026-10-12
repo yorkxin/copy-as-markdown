@@ -61,7 +61,7 @@ class TestTabsExporting:
         )
         self.browser.switch_to_demo_window()
         Clipboard.clear()
-        kbd.press()
+        kbd.press(self.browser.driver)
         clipboard_text = Clipboard.poll()
         assert clipboard_text == expected_text
 

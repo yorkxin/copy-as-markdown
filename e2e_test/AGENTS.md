@@ -10,11 +10,12 @@ Read [CLAUDE.md](../CLAUDE.md) and [DEVELOPMENT.md](../DEVELOPMENT.md) first.
 - Check `browser.log` and `environment.log` before claiming a browser version or
   architecture was tested. Keep resolver/unit/controlled-stub checks distinct
   from actual browser runtime verification.
-- `metadata.json` records the Stable-check status. An offline `unverified` run
-  validates the installed browser, not its agreement with current Stable.
-- Validate minimum versions on CI or an AMD64 Linux host. Do not introduce
-  cross-architecture browser emulation or special handling of shell platform
-  overrides.
+- `metadata.json` records the channel-check status. An offline `unverified` run
+  validates the installed browser, not its agreement with the current release channel.
+- The ESR profile tracks Mozilla’s primary `FIREFOX_ESR` branch; it uses a real
+  ESR binary. Additional supported branches during ESR transitions are a separate
+  scope decision. Do not introduce cross-architecture emulation or special
+  handling of shell platform overrides.
 
 For harness changes, inspect [docker_e2e.py](../docker/selenium-ci/docker_e2e.py),
 [run-selenium.sh](../docker/selenium-ci/run-selenium.sh) and

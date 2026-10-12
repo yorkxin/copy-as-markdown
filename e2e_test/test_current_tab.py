@@ -44,7 +44,7 @@ class TestCurrentTab:
         try:
             self.browser.driver.get(self.fixture_server.url + "/selection.html")
             self.browser.select_all()
-            self.all_keyboard_shortcuts.get_by_manifest_key("selection-as-markdown").press()
+            self.all_keyboard_shortcuts.get_by_manifest_key("selection-as-markdown").press(self.browser.driver)
             clipboard_text = Clipboard.poll()
             expected_content = open(
                 os.path.join(os.path.dirname(__file__), "..", "fixtures", "selection.md"),
@@ -61,7 +61,7 @@ class TestCurrentTab:
         qa_tab = self.browser.driver.current_window_handle
         try:
             self.browser.driver.get(self.fixture_server.url + "/qa.html")
-            self.all_keyboard_shortcuts.get_by_manifest_key("current-tab-link").press()
+            self.all_keyboard_shortcuts.get_by_manifest_key("current-tab-link").press(self.browser.driver)
             clipboard_text = Clipboard.poll()
             expected_text = f"[[QA] \\*\\*Hello\\*\\* \\_World\\_]({self.fixture_server.url}/qa.html)"
             assert clipboard_text == expected_text
@@ -77,7 +77,7 @@ class TestCurrentTab:
         qa_tab = self.browser.driver.current_window_handle
         try:
             self.browser.driver.get(self.fixture_server.url + "/qa.html")
-            self.all_keyboard_shortcuts.get_by_manifest_key("current-tab-custom-format-1").press()
+            self.all_keyboard_shortcuts.get_by_manifest_key("current-tab-custom-format-1").press(self.browser.driver)
             clipboard_text = Clipboard.poll()
             expected_text = f"[QA] \\*\\*Hello\\*\\* \\_World\\_,{self.fixture_server.url}/qa.html"
             assert clipboard_text == expected_text

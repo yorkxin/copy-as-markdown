@@ -88,17 +88,15 @@ jobs:
       matrix:
         include:
           - browser: firefox
-            profile: "minimum"
+            profile: "esr"
           - browser: firefox
             profile: "latest"
-          - browser: cft
-            profile: "minimum"
           - browser: cft
             profile: "latest"
     steps:
       - uses: actions/checkout@v6
       - name: Run selected Selenium browser suite (Docker)
-        # Both profiles contain both browsers; each job selects its test suite.
+        # Stable contains both browsers; ESR contains Firefox only.
         env:
           BROWSER: ${{ matrix.browser }}
           PROFILE: ${{ matrix.profile }}

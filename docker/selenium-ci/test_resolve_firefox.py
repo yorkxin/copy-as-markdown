@@ -1,9 +1,22 @@
 """Offline release selection checks, separate from browser runtime validation."""
 import unittest
-from resolve_firefox import ReleaseDirectories, select_major
+from resolve_firefox import ReleaseDirectories, select_major, channel_version
 
 
 class ResolveFirefoxTest(unittest.TestCase):
+    def test_esr_uses_official_primary_channel_not_next_branch(self):
+        self.assertEqual(channel_version({"FIREFOX_ESR": "140.17.0esr",
+                                          "FIREFOX_ESR_NEXT": "153.4.0esr"}, "esr"), "140.17.0esr")
+
+    def test_esr_rejects_ordinary_release_and_beta(self):
+        for version in ("140.17.0", "153.0b1", ""):
+            with self.subTest(version=version), self.assertRaises(ValueError):
+                channel_version({"FIREFOX_ESR": version}, "esr")
+
+    def test_stable_rejects_esr(self):
+        with self.assertRaises(ValueError):
+            channel_version({"LATEST_FIREFOX_VERSION": "140.17.0esr"}, "latest")
+
     def test_numeric_sort_and_other_major_exclusion(self):
         versions = {"139.0.2": "date", "139.0.10": "date", "140.0": "date"}
         self.assertEqual(select_major("139", {"139.0": "date"}, versions,

@@ -12,17 +12,14 @@ From the repository root:
 
 ```sh
 npm run test:e2e:selenium:docker # both browsers, latest profile
-PROFILE=minimum npm run test:e2e:selenium:docker
+PROFILE=esr npm run test:e2e:selenium:docker
 BROWSER=firefox npm run test:e2e:selenium:docker
 BROWSER=cft npm run test:e2e:selenium:docker
 ```
 
 The default runs both browsers in one session. `latest` uses the Stable versions
-installed when the image was built; `minimum` uses Firefox 139.0 and CfT
-116.
-
-The `minimum` profile requires an AMD64 Linux host. When running on an ARM64 host 
-(e.g. macOS); use the `latest` profile.
+installed when the image was built. `esr` runs Firefox only, using Mozilla's
+current primary ESR channel. CI tests Firefox Stable, CfT Stable and Firefox ESR.
 
 To run a subset of test cases, pass pytest arguments after `--`:
 
@@ -30,25 +27,19 @@ To run a subset of test cases, pass pytest arguments after `--`:
 BROWSER=firefox npm run test:e2e:selenium:docker -- -k test_current_tab
 ```
 
-## Stable version checking
+## Version checking
 
-When running the `latest` profile, the test script checks wheter the installed
-version still matches the latest stable version. If the installed version 
-does not match the major version of the latest stable version, it would ask you 
-to refresh the image by running:
+The installed major must match its current channel: Stable for `latest`, ESR for
+`esr`. If it differs, refresh the corresponding image:
 
 ```sh
 npm run test:e2e:selenium:build-image
+PROFILE=esr npm run test:e2e:selenium:build-image
 ```
 
-Only the major version number is considered. Older patches within the same major 
-is accepted.
-
-The version checking requires internet access. If version checking fails due to 
-offline or server unavailability, the script reuses the existing image with a 
-warning. 
-
-Set `CI=true` to enforce the stable-version check.
+Older patches within the same major are accepted. If metadata is unavailable,
+local runs reuse an existing image with a warning. Creating or updating an image
+requires network access. CI requires the channel check to succeed.
 
 ## Results
 

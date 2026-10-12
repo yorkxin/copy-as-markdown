@@ -46,6 +46,8 @@ def pytest_sessionstart(session):
 
 def pytest_report_header(config):
     if os.environ.get("BROWSER"):
+        if os.environ.get("PROFILE") == "esr":
+            return f"Firefox ESR {os.environ['FIREFOX_VERSION']} | selected: firefox"
         return (f"Firefox {os.environ['FIREFOX_VERSION']} | "
                 f"Chrome for Testing {os.environ['CFT_VERSION']} | "
                 f"selected: {os.environ['BROWSER']}")
@@ -86,6 +88,8 @@ def pytest_terminal_summary(terminalreporter):
         return
     terminalreporter.section("Selenium browser summary")
     for browser, name in (("firefox", "Firefox"), ("cft", "Chrome for Testing")):
+        if browser == "firefox" and os.environ.get("PROFILE") == "esr":
+            name = "Firefox ESR"
         outcomes = _browser_results.get(browser)
         if outcomes:
             counts = {outcome: list(outcomes.values()).count(outcome)
@@ -307,6 +311,7 @@ class FirefoxBrowserEnvironment:
     def switch_to_demo_window(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
         self.driver.find_element(By.ID, "switch-to-demo").click()
+        self.driver.switch_to.window(self._demo_window_handle)
 
     def set_grouped_tabs(self):
         self.driver.switch_to.window(self._test_helper_window_handle)
@@ -487,7 +492,7 @@ def _browser_environment(force_accessibility: bool):
         expected_version = os.environ.get("FIREFOX_VERSION")
         version_log = f"Firefox session version: {actual_version}; binary: {firefox_options.binary_location}"
         _log_browser_version(version_log)
-        if expected_version and actual_version != expected_version:
+        if expected_version and actual_version.removesuffix("esr") != expected_version.removesuffix("esr"):
             raise RuntimeError(f"Firefox version mismatch: expected {expected_version}, got {actual_version}")
         for path, addon_id, uuid, page in extensions:
             installed_id = driver.install_addon(path, temporary=True)

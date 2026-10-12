@@ -57,29 +57,7 @@ ENV CHROMEDRIVER_BINARY=/usr/local/bin/chromedriver
 COPY docker/selenium-ci/resolve_cft.py /usr/local/bin/resolve_cft.py
 COPY docker/selenium-ci/install-browser.sh /usr/local/bin/install-browser.sh
 
-# Independent browser stages keep a CfT update from re-downloading Firefox.
-FROM common AS firefox-browser
-ARG TARGETARCH
-ARG FIREFOX_VERSION=139.0
-ARG GECKODRIVER_VERSION=0.35.0
-RUN SELENIUM_BROWSER=firefox bash /usr/local/bin/install-browser.sh
-
-FROM common AS cft-browser
-ARG TARGETARCH
-ARG CFT_VERSION
-RUN SELENIUM_BROWSER=cft bash /usr/local/bin/install-browser.sh
-
-FROM common AS environment
-ARG FIREFOX_VERSION=139.0
-ARG CFT_VERSION
-ENV BROWSER=all
-ENV FIREFOX_VERSION=${FIREFOX_VERSION}
-ENV CFT_VERSION=${CFT_VERSION}
-COPY --from=firefox-browser /opt/firefox /opt/firefox
-COPY --from=firefox-browser /usr/local/bin/geckodriver /usr/local/bin/geckodriver
-COPY --from=cft-browser /opt/cft /opt/cft
-COPY --from=cft-browser /usr/local/bin/chromedriver /usr/local/bin/chromedriver
-
+FROM common AS runtime
 COPY docker/selenium-ci/run-selenium.sh /usr/local/bin/run-selenium.sh
 RUN chmod +x /usr/local/bin/run-selenium.sh
 
@@ -90,6 +68,33 @@ RUN chmod +x /usr/local/bin/run-selenium.sh
 # sandbox; see e2e_test/conftest.py.)
 RUN useradd --create-home --uid 1000 appuser \
     && chown -R appuser:appuser /workspace
-USER appuser
 
+# Independent browser stages keep a CfT update from re-downloading Firefox.
+FROM common AS firefox-browser
+ARG TARGETARCH
+ARG FIREFOX_VERSION
+ARG GECKODRIVER_VERSION=0.35.0
+RUN SELENIUM_BROWSER=firefox bash /usr/local/bin/install-browser.sh
+
+FROM common AS cft-browser
+ARG TARGETARCH
+ARG CFT_VERSION
+RUN SELENIUM_BROWSER=cft bash /usr/local/bin/install-browser.sh
+
+FROM runtime AS firefox-environment
+ARG FIREFOX_VERSION
+ENV PROFILE=esr
+ENV BROWSER=firefox
+ENV FIREFOX_VERSION=${FIREFOX_VERSION}
+COPY --from=firefox-browser /opt/firefox /opt/firefox
+COPY --from=firefox-browser /usr/local/bin/geckodriver /usr/local/bin/geckodriver
+USER appuser
 ENTRYPOINT ["/usr/local/bin/run-selenium.sh"]
+
+FROM firefox-environment AS environment
+ARG CFT_VERSION
+ENV PROFILE=latest
+ENV BROWSER=all
+ENV CFT_VERSION=${CFT_VERSION}
+COPY --from=cft-browser /opt/cft /opt/cft
+COPY --from=cft-browser /usr/local/bin/chromedriver /usr/local/bin/chromedriver

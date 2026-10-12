@@ -10,6 +10,15 @@ ARCHIVE_ROOT = "https://archive.mozilla.org/pub/firefox/releases"
 RELEASE_PATTERN = r"[1-9]\d*\.\d+(?:\.\d+)?"
 
 
+def channel_version(metadata, requested):
+    key = "FIREFOX_ESR" if requested == "esr" else "LATEST_FIREFOX_VERSION"
+    version = metadata[key]
+    pattern = RELEASE_PATTERN + ("esr" if requested == "esr" else "")
+    if not re.fullmatch(pattern, version):
+        raise ValueError(f"Invalid Firefox {requested} release: {version}")
+    return version
+
+
 class ReleaseDirectories(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -41,9 +50,9 @@ def read_json(url):
 def main():
     requested = sys.argv[1]
     sources = []
-    if requested == "latest":
+    if requested in ("latest", "esr"):
         sources.append(f"{METADATA_ROOT}/firefox_versions.json")
-        version = read_json(sources[0])["LATEST_FIREFOX_VERSION"]
+        version = channel_version(read_json(sources[0]), requested)
     elif re.fullmatch(r"[1-9]\d*", requested):
         sources = [f"{METADATA_ROOT}/firefox_history_major_releases.json",
                    f"{METADATA_ROOT}/firefox_history_stability_releases.json", ARCHIVE_ROOT + "/"]
@@ -52,11 +61,11 @@ def main():
             directories = ReleaseDirectories()
             directories.feed(response.read().decode("utf-8"))
         version = select_major(requested, major_history, stability_history, directories.versions)
-    elif re.fullmatch(RELEASE_PATTERN, requested):
+    elif re.fullmatch(RELEASE_PATTERN + r"(?:esr)?", requested):
         version = requested
     else:
-        raise ValueError("FIREFOX_VERSION must be latest, a positive major, or an exact release")
-    if not re.fullmatch(RELEASE_PATTERN, version):
+        raise ValueError("FIREFOX_VERSION must be latest, esr, a positive major, or an exact release")
+    if not re.fullmatch(RELEASE_PATTERN + r"(?:esr)?", version):
         raise ValueError(f"Invalid Firefox release: {version}")
     print(json.dumps({"requested": requested, "version": version,
                       "metadata_urls": sources}, indent=2))

@@ -1,4 +1,5 @@
 import subprocess
+import re
 from dataclasses import dataclass
 
 @dataclass
@@ -7,8 +8,17 @@ class Shortcut:
     manifest_key: str
     keystroke: str
 
-    def press(self):
-        subprocess.run(['xdotool', 'key', f'alt+shift+{self.keystroke}'], check=True)
+    def press(self, driver):
+        # WebDriver tab navigation does not always restore native window focus
+        # under Xvfb (notably ESR). Focus the selected Firefox window before OS input.
+        windows = subprocess.check_output(
+            ['xdotool', 'search', '--sync', '--onlyvisible', '--name', '^' + re.escape(driver.title)],
+            text=True, timeout=10,
+        ).split()
+        if len(windows) != 1:
+            raise RuntimeError(f"Expected one Firefox window titled {driver.title!r}, found {windows}")
+        subprocess.run(['xdotool', 'windowfocus', windows[0]], check=True)
+        subprocess.run(['xdotool', 'key', '--clearmodifiers', f'alt+shift+{self.keystroke}'], check=True)
 
 class KeyboardShortcuts:
     def __init__(self):

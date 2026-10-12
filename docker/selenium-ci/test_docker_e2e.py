@@ -26,7 +26,7 @@ name = os.path.basename(__file__)
 if os.environ.get("FAIL_RESOLVE") == name:
     sys.exit("controlled metadata failure")
 requested = sys.argv[1]
-version = ("157.0" if requested == "latest" else "139.0.4" if requested == "139" else requested) if "firefox" in name else ("154.0.8037.92" if requested in ("latest", "154") else requested)
+version = ("140.17.0esr" if requested == "esr" else "157.0" if requested == "latest" else "139.0.4" if requested == "139" else requested) if "firefox" in name else ("154.0.8037.92" if requested in ("latest", "154") else requested)
 print(json.dumps({"requested": requested, "version": version, "chrome_url": "https://example.invalid/chrome", "chromedriver_url": "https://example.invalid/driver"}))
 '''
         for name in ("resolve_firefox.py", "resolve_cft.py"):
@@ -102,10 +102,58 @@ if args[0] in ("build", "run"):
         self.assertFalse(self.runs)
         self.assertIn("Firefox 139.0.4", result.stdout)
 
-    def test_minimum_image_contains_both_fixed_versions(self):
-        result = self.run_harness({"PROFILE": "minimum"})
+    def test_esr_image_has_only_firefox_and_uses_firefox_target(self):
+        result = self.run_harness({"PROFILE": "esr"})
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("Firefox 139.0 + Chrome for Testing 116.0.5845.96", result.stdout)
+        self.assertIn("BROWSER=firefox", self.runs[0])
+        self.assertIn("Firefox ESR 140.17.0esr", result.stdout)
+        self.assertNotIn("Chrome for Testing", result.stdout)
+        calls = [json.loads(line) for line in self.calls.read_text().splitlines()]
+        environment = next(c for c in calls if c[0] == "build")
+        self.assertIn("firefox-environment", environment)
+        self.assertFalse(any("CFT_VERSION=" in arg for arg in environment))
+
+    def test_esr_cannot_select_chrome(self):
+        result = self.run_harness({"PROFILE": "esr", "BROWSER": "cft"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+
+    def test_cached_esr_accepts_old_patch_without_chrome_resolution(self):
+        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "140.16.0esr",
+                                   "INSTALLED_CFT": "", "FAIL_RESOLVE": "resolve_cft.py"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Firefox ESR 140.16.0esr", result.stdout)
+
+    def test_esr_compares_primary_esr_major_not_stable_major(self):
+        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "153.4.0esr",
+                                   "INSTALLED_CFT": ""})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+        self.assertIn("major mismatch", result.stderr)
+
+    def test_esr_rejects_cached_ordinary_firefox(self):
+        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "140.17.0",
+                                   "INSTALLED_CFT": ""})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+        self.assertIn("must contain an ESR release", result.stderr)
+
+    def test_esr_offline_local_fallback(self):
+        result = self.run_harness({"PROFILE": "esr", "INSTALLED_FIREFOX": "140.17.0esr",
+                                   "INSTALLED_CFT": "", "FAIL_RESOLVE": "resolve_firefox.py"})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("unverified", result.stderr)
+
+    def test_esr_offline_ci_stops(self):
+        result = self.run_harness({"PROFILE": "esr", "CI": "true", "INSTALLED_FIREFOX": "140.17.0esr",
+                                   "INSTALLED_CFT": "", "FAIL_RESOLVE": "resolve_firefox.py"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
+
+    def test_minimum_profile_is_removed(self):
+        result = self.run_harness({"PROFILE": "minimum"})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(self.runs)
 
     def test_cached_latest_accepts_older_patch_in_same_major(self):
         result = self.run_harness({"INSTALLED_FIREFOX": "157.0", "INSTALLED_CFT": "154.0.8037.91"})

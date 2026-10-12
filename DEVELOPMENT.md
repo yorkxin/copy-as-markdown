@@ -176,7 +176,7 @@ inside the container. Host requirements: Docker, curl and Python 3.
 
 ```sh
 npm run test:e2e:selenium:docker # Firefox + CfT, one session
-PROFILE=minimum npm run test:e2e:selenium:docker
+PROFILE=esr npm run test:e2e:selenium:docker
 BROWSER=cft npm run test:e2e:selenium:docker
 ```
 
