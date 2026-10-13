@@ -1,4 +1,7 @@
 import type { Options as TurndownOptions } from 'turndown';
+import type { CleanupSettings } from '../lib/cleanup-settings.js';
+
+export type MarkdownConversionOptions = TurndownOptions & Partial<CleanupSettings>;
 
 export const OFFSCREEN_CLIPBOARD_TARGET = 'offscreen-clipboard';
 export const OFFSCREEN_MARKDOWN_TARGET = 'offscreen-markdown';
@@ -11,7 +14,7 @@ export interface OffscreenClipboardMessage {
 export interface OffscreenMarkdownMessage {
   target: typeof OFFSCREEN_MARKDOWN_TARGET;
   html: string;
-  options: TurndownOptions;
+  options: MarkdownConversionOptions;
 }
 
 export type OffscreenMessage = OffscreenClipboardMessage | OffscreenMarkdownMessage;

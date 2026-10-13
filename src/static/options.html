@@ -317,6 +317,31 @@
             </div>
           </fieldset>
         </form>
+
+        <form id="form-selection-cleanup" class="field">
+          <fieldset>
+            <legend class="label">Cleanup</legend>
+            <p class="help">
+              Optional clean-up of the copied Markdown, useful for web chat pages such as Gemini
+              and ChatGPT. Formulas are always converted to <code>$...$</code> LaTeX.
+            </p>
+            <div class="control">
+              <label class="checkbox is-block mb-2">
+                <input type="checkbox" name="cleanup-remove-images" data-setting="removeImages"/>
+                Remove images
+              </label>
+              <label class="checkbox is-block mb-2">
+                <input type="checkbox" name="cleanup-remove-links" data-setting="removeLinks"/>
+                Remove links (keep the link text)
+              </label>
+              <label class="checkbox is-block mb-2">
+                <input type="checkbox" name="cleanup-chat-export" data-setting="cleanChatExport"/>
+                Remove chat page boilerplate (copy/share/feedback widgets, dates, source citations)
+                and label turns as <code>User</code> / <code>Assistant</code>
+              </label>
+            </div>
+          </fieldset>
+        </form>
       </div>
       <div class="field is-grouped">
         <div class="control">

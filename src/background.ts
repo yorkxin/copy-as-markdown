@@ -1,6 +1,8 @@
 import './ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
 import type { SelectionMarkdownSettings } from './lib/selection-settings.js';
 import SelectionSettings from './lib/selection-settings.js';
+import type { CleanupSettings } from './lib/cleanup-settings.js';
+import CleanupSettingsStorage from './lib/cleanup-settings.js';
 import type { MarkdownSettings } from './lib/markdown-settings.js';
 import { loadMarkdownSettings, markdownSettingsKeys, readMarkdownSettings } from './lib/markdown-settings.js';
 import Markdown from './lib/markdown.js';
@@ -34,6 +36,7 @@ import type { PendingPopupFeedbackCode, RuntimeMessage } from './contracts/messa
 // Link and tab exports share this instance; Copy Selection has separate settings.
 const markdownInstance = new Markdown();
 let selectionSettings: SelectionMarkdownSettings = SelectionSettings.defaultSettings;
+let cleanupSettings: CleanupSettings = CleanupSettingsStorage.defaultSettings;
 const bookmarks = new Bookmarks({
   markdown: markdownInstance,
 });
@@ -73,6 +76,7 @@ const selectionConverterService = createBrowserSelectionConverterService(
   {
     getTurndownOptions: () => ({
       ...selectionSettings,
+      ...cleanupSettings,
     }),
   },
   markdownConverter,
@@ -262,6 +266,22 @@ browser.storage.sync.onChanged.addListener(async (changes) => {
     .then(applyMarkdownSettings)
     .catch(error => console.error('error getting settings', error));
 });
+
+async function refreshCleanupSettings(): Promise<void> {
+  try {
+    cleanupSettings = await CleanupSettingsStorage.getAll();
+  } catch (error) {
+    console.error('error getting cleanup settings', error);
+  }
+}
+
+browser.storage.sync.onChanged.addListener(async (changes) => {
+  if (Object.keys(changes).some(key => CleanupSettingsStorage.keys.includes(key))) {
+    await refreshCleanupSettings();
+  }
+});
+
+refreshCleanupSettings().then(() => null);
 
 // Startup migration runs even when no options page is opened.
 loadMarkdownSettings()
