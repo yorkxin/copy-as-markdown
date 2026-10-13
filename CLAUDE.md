@@ -42,17 +42,3 @@ current task, use it instead of creating another worktree.
   [DEVELOPMENT.md → E2E tests](DEVELOPMENT.md#e2e-tests-playwright).
 
 Run `npm run typecheck`, `npm run lint`, and `npm test` before considering a change complete.
-
-## Agent skills
-
-### Issue tracker
-
-Issues and PRDs are tracked in this repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-Triage uses the five default canonical labels. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-This is a single-context repository. See `docs/agents/domain.md`.
