@@ -1,16 +1,15 @@
-import type { Options as TurndownOptions } from 'turndown';
 import type { OffscreenDocumentService } from './offscreen-document-service.js';
-import type { OffscreenMarkdownResponse } from '../contracts/offscreen-messages.js';
+import type { MarkdownConversionOptions, OffscreenMarkdownResponse } from '../contracts/offscreen-messages.js';
 import { OFFSCREEN_MARKDOWN_TARGET } from '../contracts/offscreen-messages.js';
 
 export interface MarkdownConverter {
-  convert: (html: string, options: TurndownOptions) => Promise<string>;
+  convert: (html: string, options: MarkdownConversionOptions) => Promise<string>;
 }
 
 export function createOffscreenMarkdownConverter(
   documentService: OffscreenDocumentService,
 ): MarkdownConverter {
-  async function convert(html: string, options: TurndownOptions): Promise<string> {
+  async function convert(html: string, options: MarkdownConversionOptions): Promise<string> {
     const response = await documentService.sendMessage<OffscreenMarkdownResponse | undefined>({
       target: OFFSCREEN_MARKDOWN_TARGET,
       html,
@@ -34,7 +33,7 @@ export function createOffscreenMarkdownConverter(
 export function createEventPageMarkdownConverter(): MarkdownConverter {
   let htmlToMarkdownPromise: Promise<typeof import('../lib/html-to-markdown.js')> | null = null;
 
-  async function convert(html: string, options: TurndownOptions): Promise<string> {
+  async function convert(html: string, options: MarkdownConversionOptions): Promise<string> {
     if (!htmlToMarkdownPromise) {
       htmlToMarkdownPromise = import('../lib/html-to-markdown.js');
     }

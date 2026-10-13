@@ -15,6 +15,13 @@ const selectionSettingsMock = {
   setReferencedLinkStyle: vi.fn(),
 };
 
+const cleanupSettingsMock = {
+  keys: ['selection.cleanup.removeImages', 'selection.cleanup.removeLinks', 'selection.cleanup.cleanChatExport'],
+  getAll: vi.fn(),
+  set: vi.fn(),
+  reset: vi.fn(),
+};
+
 const ensureMarkdownSettingsMigratedMock = vi.fn();
 const resetSelectionSettingsMock = vi.fn();
 
@@ -23,6 +30,14 @@ vi.mock('../../src/lib/selection-settings.js', async (importOriginal) => {
   return {
     ...actual,
     default: selectionSettingsMock,
+  };
+});
+
+vi.mock('../../src/lib/cleanup-settings.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/lib/cleanup-settings.js')>();
+  return {
+    ...actual,
+    default: cleanupSettingsMock,
   };
 });
 
@@ -77,6 +92,9 @@ describe('copy selection options page', () => {
     vi.clearAllMocks();
     mockBrowser();
     ensureMarkdownSettingsMigratedMock.mockResolvedValue(undefined);
+    cleanupSettingsMock.getAll.mockResolvedValue({ removeImages: false, removeLinks: false, cleanChatExport: false });
+    cleanupSettingsMock.set.mockResolvedValue(undefined);
+    cleanupSettingsMock.reset.mockResolvedValue(undefined);
     selectionSettingsMock.getAll.mockResolvedValue({ bulletListMarker: '-', codeBlockStyle: 'fenced', emDelimiter: '_', strongDelimiter: '**', headingStyle: 'atx', fence: '```', linkStyle: 'inlined', linkReferenceStyle: 'full' });
     selectionSettingsMock.setBulletListMarker.mockResolvedValue(undefined);
     selectionSettingsMock.setCodeBlockStyle.mockResolvedValue(undefined);

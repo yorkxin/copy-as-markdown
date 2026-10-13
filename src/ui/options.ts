@@ -1,4 +1,6 @@
 import '../ensure-browser-global.js'; // Installs `browser` before dependent modules evaluate.
+import type { CleanupSettings } from '../lib/cleanup-settings.js';
+import CleanupSettingsStorage from '../lib/cleanup-settings.js';
 import { isBulletListMarker } from '../lib/markdown.js';
 import { ensureMarkdownSettingsMigrated, resetSelectionSettings } from '../lib/markdown-settings.js';
 import SelectionSettings, { isEmDelimiter, isHeadingStyle, isLinkReferenceStyle, isStrongDelimiter } from '../lib/selection-settings.js';
@@ -11,6 +13,13 @@ const EmDelimiterFormId = 'form-selection-em-delimiter';
 const StrongDelimiterFormId = 'form-selection-strong-delimiter';
 const HeadingStyleFormId = 'form-selection-heading-style';
 const LinkStyleFormId = 'form-selection-link-style';
+const CleanupFormId = 'form-selection-cleanup';
+
+const CleanupNames: (keyof CleanupSettings)[] = ['removeImages', 'removeLinks', 'cleanChatExport'];
+
+function isCleanupName(value: unknown): value is keyof CleanupSettings {
+  return CleanupNames.includes(value as keyof CleanupSettings);
+}
 
 // The UI presents four output formats; storage retains Turndown's two independent options.
 type LinkFormat = 'inlined' | 'full' | 'collapsed' | 'shortcut';
@@ -45,7 +54,19 @@ function radioGroup(formId: string, name: string): RadioNodeList | null {
   return form.elements.namedItem(name) as RadioNodeList | null;
 }
 
+async function loadCleanupSettings(): Promise<void> {
+  const form = document.forms.namedItem(CleanupFormId);
+  if (!form) return;
+
+  const cleanup = await CleanupSettingsStorage.getAll();
+  form.querySelectorAll<HTMLInputElement>('input[data-setting]').forEach((input) => {
+    const name = input.dataset.setting;
+    if (isCleanupName(name)) input.checked = cleanup[name];
+  });
+}
+
 async function loadSettings(): Promise<void> {
+  await loadCleanupSettings();
   const { bulletListMarker, codeBlockStyle, emDelimiter, strongDelimiter, headingStyle, fence, linkStyle, linkReferenceStyle } = await SelectionSettings.getAll();
 
   const markers = radioGroup(BulletListMarkerFormId, 'bullet-list-marker');
@@ -109,6 +130,27 @@ function wireSetting<T extends string>(
   });
 }
 
+function wireCleanup(): void {
+  const form = document.forms.namedItem(CleanupFormId);
+  if (!form) return;
+
+  form.addEventListener('change', async (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    const name = target.dataset.setting;
+    if (!isCleanupName(name)) return;
+
+    try {
+      await CleanupSettingsStorage.set(name, target.checked);
+      hideFlash();
+    } catch (error) {
+      console.error('failed to save settings:', error);
+      await refresh();
+      showFlash('Failed to save setting. Please try again.');
+    }
+  });
+}
+
 function wireReset(): void {
   const resetButton = document.querySelector('#reset');
   if (!resetButton) return;
@@ -116,6 +158,7 @@ function wireReset(): void {
   resetButton.addEventListener('click', async () => {
     try {
       await resetSelectionSettings();
+      await CleanupSettingsStorage.reset();
       await loadSettings();
       hideFlash();
     } catch (error) {
@@ -133,6 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   wireSetting(StrongDelimiterFormId, isStrongDelimiter, SelectionSettings.setStrongDelimiter);
   wireSetting(HeadingStyleFormId, isHeadingStyle, SelectionSettings.setHeadingStyle);
   wireSetting(LinkStyleFormId, isLinkFormat, saveLinkFormat);
+  wireCleanup();
   wireReset();
 
   await ensureMarkdownSettingsMigrated();
@@ -147,7 +191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 browser.storage.sync.onChanged.addListener(async (changes) => {
-  const hasSettingsChanged = Object.keys(changes).some(key => SelectionSettings.keys.includes(key));
+  const hasSettingsChanged = Object.keys(changes)
+    .some(key => SelectionSettings.keys.includes(key) || CleanupSettingsStorage.keys.includes(key));
   if (hasSettingsChanged) {
     await refresh();
   }
